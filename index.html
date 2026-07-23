@@ -44,7 +44,9 @@
   .app{display:flex;min-height:100vh}
   /* icon rail */
   .rail{width:58px;flex:none;background:var(--surface);border-right:1px solid var(--border);
-    display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0;position:sticky;top:0;height:100vh}
+    display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0;position:sticky;top:0;height:100vh;
+    overflow-y:auto;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
   .rail .logo{width:32px;height:32px;border-radius:9px;background:var(--primary);color:var(--primary-ink);
     display:grid;place-items:center;margin-bottom:8px}
   .rail .logo svg{width:18px;height:18px}
@@ -862,9 +864,10 @@
   // 界面缩放（每台设备各记各的，不跟随云同步）
   var zoomPref=load("tt_zoom","auto");
   function autoZoomFactor(){var w=window.innerWidth||1280;if(w>=2400)return 1.35;if(w>=1900)return 1.2;if(w>=1500)return 1.1;return 1;}
-  function applyZoom(){var z=(zoomPref==="auto")?autoZoomFactor():(parseFloat(zoomPref)||1);root.style.zoom=z;}
+  function applyZoom(){var z=(zoomPref==="auto")?autoZoomFactor():(parseFloat(zoomPref)||1);root.style.zoom=z;
+    var rail=document.querySelector(".rail");if(rail)rail.style.height=(window.innerHeight/z)+"px";}
   applyZoom();
-  window.addEventListener("resize",function(){if(zoomPref==="auto")applyZoom();});
+  window.addEventListener("resize",applyZoom);
   document.getElementById("set-zoom").addEventListener("change",function(){zoomPref=this.value;save("tt_zoom",zoomPref);applyZoom();});
 
   // ---------- rail nav ----------
