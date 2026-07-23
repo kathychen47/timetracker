@@ -717,8 +717,8 @@
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
   function eventsOn(ds){
     var local=events.filter(function(e){return e.date===ds;});
-    var gids={};local.forEach(function(e){if(e.gid)gids[e.gid]=1;});
-    var g=gcalEvents.filter(function(e){return e.date===ds&&!gids[e.id.slice(2)];});
+    var gids={},sig={};local.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.start]=1;});
+    var g=gcalEvents.filter(function(e){return e.date===ds&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.start];});
     return local.concat(g);
   }
   function toMin(s){var p=s.split(":");return(+p[0])*60+(+p[1]);}
