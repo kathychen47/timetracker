@@ -480,6 +480,20 @@
   .cat-colors{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px}
   .cat-colors .sw{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent}
   .cat-colors .sw.on{border-color:var(--text)}
+  .cs-cat{border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
+  .cs-cat-h{display:flex;align-items:center;gap:8px;font-size:14px}
+  .cs-cat-h i{width:11px;height:11px;border-radius:50%;flex:none}
+  .cs-del{margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--danger);border-radius:7px;padding:3px 10px;font-size:12px;cursor:pointer}
+  .cs-del:hover{background:var(--danger);color:#fff}
+  .cs-subs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .cs-sub{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:7px;padding:3px 9px;font-size:12.5px}
+  .cs-sub i{width:8px;height:8px;border-radius:50%;flex:none}
+  .cs-subdel{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 1px;line-height:1}
+  .cs-subdel:hover{color:var(--danger)}
+  .cs-addsub{cursor:pointer;color:var(--primary);border:1px dashed var(--border);background:transparent}
+  .cs-colors{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+  .cs-colors .sw{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .cs-colors .sw.on{border-color:var(--text)}
   .cat-manage{display:flex;flex-direction:column;gap:6px;margin-top:12px}
   .cat-manage .cm{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text)}
   .cat-manage .cm i{width:10px;height:10px;border-radius:50%;flex:none}
@@ -2209,6 +2223,7 @@ margin-left: -22px;
         <button class="set-nav-i" type="button" data-pane="gcal">📅 Google 日历</button>
         <button class="set-nav-i" type="button" data-pane="cloud">☁️ 云同步</button>
         <button class="set-nav-i" type="button" data-pane="appear">🎨 外观</button>
+        <button class="set-nav-i" type="button" data-pane="cats">🏷️ 分类</button>
         <button class="set-nav-i" type="button" data-pane="dict">📖 词典</button>
         <button class="set-nav-i" type="button" data-pane="general">🌐 通用</button>
       </div>
@@ -2335,6 +2350,18 @@ margin-left: -22px;
           <div class="set-row-txt"><div class="set-row-t">语言 / Language</div><div class="set-desc">切换界面中文 / English（切换后会刷新一次）。</div></div>
           <select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select>
         </div>
+      </div>
+    </div>
+
+    <div class="set-pane" data-pane="cats">
+      <div class="set-sec-h">🏷️ 分类</div>
+      <div class="set-desc" style="margin-bottom:12px">管理你自己的大类 / 小类和配色。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。</div>
+      <div id="cat-settings"></div>
+      <div class="set-item" style="margin-top:12px">
+        <div style="font-weight:600;font-size:13px;margin-bottom:8px">＋ 新建大类</div>
+        <input type="text" id="cs-newcat" placeholder="名称，如：学英语" autocomplete="off" style="width:100%;box-sizing:border-box;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text)">
+        <div class="cs-colors" id="cs-colors"></div>
+        <button class="btn primary" id="cs-addcat" type="button">添加大类</button>
       </div>
     </div>
 
@@ -3308,7 +3335,37 @@ margin-left: -22px;
   document.querySelector(".set-nav").addEventListener("click",function(e){var b=e.target.closest("[data-pane]");if(!b)return;var p=b.getAttribute("data-pane");
     document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
     document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});
-    if(p==="dict")openDictSettings();});
+    if(p==="dict")openDictSettings();
+    if(p==="cats"){renderCatColors();renderCatSettings();}});
+
+  // ---------- 分类管理（设置里） ----------
+  var csColor=PALETTE[0];
+  function renderCatColors(){var el=document.getElementById("cs-colors");if(!el)return;
+    el.innerHTML=PALETTE.map(function(c){return '<span class="sw'+(c===csColor?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></span>';}).join("");}
+  function renderCatSettings(){var box=document.getElementById("cat-settings");if(!box)return;
+    box.innerHTML=cats.map(function(c){var subs=c.subs||[];
+      return '<div class="cs-cat"><div class="cs-cat-h"><i style="background:'+c.color+'"></i><b>'+esc(c.name)+'</b>'+
+        '<button class="cs-del" type="button" data-delcat="'+c.key+'">删除</button></div>'+
+        '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+c.color+'"></i>'+esc(s.name)+'<button class="cs-subdel" type="button" data-delsub="'+c.key+'|'+s.key+'" title="删除">✕</button></span>';}).join("")+
+        '<span class="cs-sub cs-addsub" data-addsub="'+c.key+'">＋ 小类</span></div></div>';}).join("");}
+  function afterCatChange(){renderCatSettings();save("tt_cats",cats);try{renderParents();renderSubs();}catch(e){}renderCal();renderDashboard();if(state.tab==="todo")renderTodos();}
+  (function(){var box=document.getElementById("cat-settings");if(!box)return;
+    renderCatColors();renderCatSettings();
+    var cc=document.getElementById("cs-colors");if(cc)cc.addEventListener("click",function(e){var s=e.target.closest(".sw");if(!s)return;csColor=s.getAttribute("data-c");renderCatColors();});
+    var add=document.getElementById("cs-addcat");if(add)add.addEventListener("click",function(){
+      var i=document.getElementById("cs-newcat"),nm=i.value.trim();if(!nm){i.focus();return;}
+      cats.push({key:"c"+uid(),name:nm,color:csColor,kw:[nm],subs:[]});i.value="";afterCatChange();});
+    box.addEventListener("click",function(e){
+      var dc=e.target.closest("[data-delcat]"),dsb=e.target.closest("[data-delsub]"),asb=e.target.closest("[data-addsub]");
+      if(dc){var k=dc.getAttribute("data-delcat");if(cats.length<=1){alert("至少保留一个大类");return;}var c=parentObj(k);
+        if(!confirm("删除大类「"+(c?c.name:"")+"」？用过它的事件不会被删，只会变默认色。"))return;
+        cats=cats.filter(function(x){return x.key!==k;});afterCatChange();return;}
+      if(dsb){var pr=dsb.getAttribute("data-delsub").split("|"),p=parentObj(pr[0]);
+        if(p){if(!confirm("删除这个小类？"))return;p.subs=(p.subs||[]).filter(function(x){return x.key!==pr[1];});afterCatChange();}return;}
+      if(asb){var p2=parentObj(asb.getAttribute("data-addsub"));if(!p2)return;
+        var nm=prompt("在「"+p2.name+"」下新建小类，名称：");if(!nm||!nm.trim())return;
+        p2.subs=p2.subs||[];p2.subs.push({key:"s"+uid(),name:nm.trim(),kw:[nm.trim()]});afterCatChange();return;}
+    });})();
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
