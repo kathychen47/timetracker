@@ -401,7 +401,7 @@
   .set-nav-i{text-align:left;border:none;background:transparent;color:var(--text);font-size:13.5px;padding:9px 11px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
   .set-nav-i:hover{background:var(--surface-2)}
   .set-nav-i.on{background:var(--primary-soft);color:var(--primary);font-weight:600}
-  .set-panes{flex:1;min-width:0;min-height:250px}
+  .set-panes{flex:1;min-width:0;height:min(58vh,430px);overflow-y:auto;padding-right:6px}
   .set-pane{display:none}
   .set-pane.on{display:block}
   .set-pane .set-sec-h{margin-top:0}
@@ -409,7 +409,7 @@
     .set-shell{flex-direction:column;gap:8px}
     .set-nav{flex-direction:row;flex-wrap:wrap;width:auto;border-right:none;border-bottom:1px solid var(--border);padding:0 0 8px;gap:6px}
     .set-nav-i{padding:7px 10px;font-size:12.5px}
-    .set-panes{min-height:0}
+    .set-panes{height:min(56vh,400px)}
   }
   .set-sec{border-top:1px solid var(--border);padding-top:15px;margin-top:16px}
   .set-sec:first-of-type{border-top:none;padding-top:0;margin-top:6px}
