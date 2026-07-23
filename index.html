@@ -575,8 +575,13 @@
     <h3>设置</h3>
     <div class="field"><label>Gemini API Key（AI 助手用 · 只存在你本机浏览器）</label>
       <input type="password" id="set-apikey" placeholder="粘贴 AIza… 开头的 key"></div>
-    <div class="field"><label>AI 模型（配额报错可换：gemini-2.0-flash / gemini-1.5-flash / gemini-2.0-flash-lite）</label>
-      <input type="text" id="set-model" placeholder="gemini-2.0-flash"></div>
+    <div class="field"><label>AI 模型（下面这几个免费额度还有量 · 约 20 次/天）</label>
+      <select id="set-model">
+        <option value="gemini-2.5-flash">Gemini 2.5 Flash · 推荐</option>
+        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite · 更快</option>
+        <option value="gemini-3-flash">Gemini 3 Flash · 最新</option>
+      </select>
+      <input type="text" id="set-model-custom" placeholder="或手动输入其它模型名（留空则用上面选的）" style="margin-top:8px"></div>
     <div class="set-note">在 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免费获取。key 不上传、不进代码；别人打开你的网站，用的是他们自己填的 key，动不到你的额度。</div>
     <div class="field" style="margin-top:14px"><label>Google 日历（连接后可显示你的日历事件、并把 App 事件加进去）</label>
       <div style="display:flex;align-items:center;gap:10px">
@@ -1298,13 +1303,16 @@
   }
 
   // ---------- settings (Gemini API key，只存本机) ----------
-  var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-2.0-flash";
-  var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model");
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;setModelI.value=apiModel;document.getElementById("set-gcal-default").checked=gcalDefault;settingsOverlay.classList.add("on");});
+  var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-2.5-flash";
+  if(/^gemini-(1\.5|2\.0)/.test(apiModel)){apiModel="gemini-2.5-flash";save("tt_aimodel",apiModel);} // 旧模型免费额度已为0，自动升级
+  var KNOWN_MODELS=["gemini-2.5-flash","gemini-2.5-flash-lite","gemini-3-flash"];
+  var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model"),setModelCustomI=document.getElementById("set-model-custom");
+  function fillModelFields(){if(KNOWN_MODELS.indexOf(apiModel)>=0){setModelI.value=apiModel;setModelCustomI.value="";}else{setModelI.value="gemini-2.5-flash";setModelCustomI.value=apiModel;}}
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();document.getElementById("set-gcal-default").checked=gcalDefault;settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
-  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-2.0-flash";gcalDefault=document.getElementById("set-gcal-default").checked;save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_gcaldefault",gcalDefault);closeSettings();});
+  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=(setModelCustomI.value.trim()||setModelI.value)||"gemini-2.5-flash";gcalDefault=document.getElementById("set-gcal-default").checked;save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_gcaldefault",gcalDefault);closeSettings();});
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
@@ -1335,7 +1343,11 @@
       {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
       .then(function(r){return r.json();})
       .then(function(j){
-        if(j.error){aiMsg("出错："+esc(j.error.message||"请求失败")+"（检查 key 是否正确）","err");return;}
+        if(j.error){var em=j.error.message||"请求失败";
+          var hint=/quota|exhaust|resource_exhausted|429|limit/i.test(em+(j.error.status||""))
+            ?"（这个模型今天的免费次数用完了，或它没有免费额度——到 ⚙️设置 换成 Gemini 2.5 Flash，免费约 20 次/天）"
+            :"（检查 key 是否正确、模型名是否存在）";
+          aiMsg("出错："+esc(em)+hint,"err");return;}
         var c=j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0];
         var txt=c&&c.text;
         if(!txt){aiMsg("AI 没返回内容，换句话再试。","err");return;}
