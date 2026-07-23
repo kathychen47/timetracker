@@ -66,9 +66,7 @@
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
   @media (max-width:900px){.cal-layout{grid-template-columns:1fr}.pomo-col{grid-column:auto}}
   .cal-main{min-width:0}.pomo-col{min-width:0}
-  .dash{display:flex;flex-direction:column;gap:14px;align-self:stretch;min-height:0}
-  .dash-grow{flex:1;min-height:0;display:flex;flex-direction:column}
-  @media (max-width:900px){.dash{align-self:auto}.dash-grow{flex:none}#due-list{max-height:300px}}
+  .dash{display:flex;flex-direction:column;gap:14px}
   .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:14px}
   .dash-h{font-size:12px;font-weight:640;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;
@@ -101,8 +99,8 @@
   .due-body .dt{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .due-body .dm{font-size:11px;color:var(--muted);margin-top:1px}
   .dash-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 0}
-  #due-list{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
-  #goal-list{max-height:300px;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+  #due-list{max-height:280px;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+  #goal-list{max-height:280px;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
   #due-list::-webkit-scrollbar,#goal-list::-webkit-scrollbar{width:6px}
 
   /* memos */
@@ -304,7 +302,8 @@
   .ti{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--tc,var(--border));border-radius:12px;background:color-mix(in srgb,var(--tc,var(--surface)) 7%,var(--surface))}
   .ti .box{width:20px;height:20px;border-radius:6px;border:1.6px solid var(--muted);flex:none;cursor:pointer;display:grid;place-items:center}
   .ti.done .box{background:var(--primary);border-color:var(--primary)}
-  .ti.done .box svg{width:12px;height:12px;color:var(--primary-ink)}
+  .ti .box svg{width:12px;height:12px;color:var(--primary-ink);opacity:0}
+  .ti.done .box svg{opacity:1}
   .ti .txt{flex:1;font-size:14px;min-width:0;cursor:pointer}
   .ti .txt .due{font-size:11.5px;color:var(--muted);margin-top:2px}
   .ti.done .txt .main{color:var(--muted);text-decoration:line-through}
@@ -485,9 +484,13 @@
             </div>
             <div class="mc-grid" id="mc-grid"></div>
           </div>
-          <div class="dash-card dash-grow">
+          <div class="dash-card">
             <div class="dash-h">临近截止</div>
             <div id="due-list"></div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
+            <div id="goal-list"></div>
           </div>
         </aside>
 
@@ -545,10 +548,6 @@
               <div class="s"><div class="k">今日时长</div><div class="v" id="stat-min">0<small> 分</small></div></div>
             </div>
           </div></div>
-          <div class="dash-card">
-            <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
-            <div id="goal-list"></div>
-          </div>
         </aside>
       </div>
     </section>
