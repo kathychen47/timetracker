@@ -2181,7 +2181,7 @@
 
   function cloudSQL(){
     var uid=(sbUser&&sbUser.id)||"你的UID";
-    return "insert into storage.buckets (id, name, public)\nvalues ('dict','dict',false)\non conflict (id) do nothing;\n\ncreate policy \"dict_rw\" on storage.objects\nfor all to authenticated\nusing ( bucket_id='dict' and auth.uid() in ('"+uid+"') )\nwith check ( bucket_id='dict' and auth.uid() in ('"+uid+"') );";}
+    return "-- 建私有桶（只你能改）\ninsert into storage.buckets (id, name, public)\nvalues ('dict','dict',false)\non conflict (id) do nothing;\n\n-- 可重复运行：先清掉旧策略\ndrop policy if exists \"dict_read\" on storage.objects;\ndrop policy if exists \"dict_write\" on storage.objects;\ndrop policy if exists \"dict_update\" on storage.objects;\n\n-- 任何登录用户都可下载词典（方便偶尔给朋友用）\ncreate policy \"dict_read\" on storage.objects\nfor select to authenticated using ( bucket_id='dict' );\n\n-- 只有你能上传/更新词典\ncreate policy \"dict_write\" on storage.objects\nfor insert to authenticated with check ( bucket_id='dict' and auth.uid()='"+uid+"' );\ncreate policy \"dict_update\" on storage.objects\nfor update to authenticated using ( bucket_id='dict' and auth.uid()='"+uid+"' );";}
   function showCloudSQL(){var box=document.getElementById("dict-sql");if(!box)return;
     box.style.display="";var ta=box.querySelector("textarea");if(ta)ta.value=cloudSQL();ta.scrollIntoView({block:"nearest"});}
 
