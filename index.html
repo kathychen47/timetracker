@@ -1227,13 +1227,13 @@
   }
 
   // ---------- settings (Gemini API key，只存本机) ----------
-  var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-1.5-flash";
+  var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-2.0-flash";
   var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model");
   document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;setModelI.value=apiModel;settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
-  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-1.5-flash";save("tt_apikey",apiKey);save("tt_aimodel",apiModel);closeSettings();});
+  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-2.0-flash";save("tt_apikey",apiKey);save("tt_aimodel",apiModel);closeSettings();});
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
