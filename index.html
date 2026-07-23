@@ -66,7 +66,9 @@
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
   @media (max-width:900px){.cal-layout{grid-template-columns:1fr}.pomo-col{grid-column:auto}}
   .cal-main{min-width:0}.pomo-col{min-width:0}
-  .dash{display:flex;flex-direction:column;gap:14px}
+  .dash{display:flex;flex-direction:column;gap:14px;align-self:stretch;min-height:0}
+  .dash-grow{flex:1;min-height:0;display:flex;flex-direction:column}
+  @media (max-width:900px){.dash{align-self:auto}.dash-grow{flex:none}#due-list{max-height:300px}}
   .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:14px}
   .dash-h{font-size:12px;font-weight:640;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;
@@ -99,8 +101,8 @@
   .due-body .dt{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .due-body .dm{font-size:11px;color:var(--muted);margin-top:1px}
   .dash-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 0}
-  #due-list,#goal-list{max-height:232px;overflow-y:auto;scrollbar-width:thin}
-  #due-list{padding-right:2px}#goal-list{padding-right:2px}
+  #due-list{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
+  #goal-list{max-height:300px;overflow-y:auto;scrollbar-width:thin;padding-right:2px}
   #due-list::-webkit-scrollbar,#goal-list::-webkit-scrollbar{width:6px}
 
   /* memos */
@@ -482,13 +484,9 @@
             </div>
             <div class="mc-grid" id="mc-grid"></div>
           </div>
-          <div class="dash-card">
+          <div class="dash-card dash-grow">
             <div class="dash-h">临近截止</div>
             <div id="due-list"></div>
-          </div>
-          <div class="dash-card">
-            <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
-            <div id="goal-list"></div>
           </div>
         </aside>
 
@@ -546,6 +544,10 @@
               <div class="s"><div class="k">今日时长</div><div class="v" id="stat-min">0<small> 分</small></div></div>
             </div>
           </div></div>
+          <div class="dash-card">
+            <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
+            <div id="goal-list"></div>
+          </div>
         </aside>
       </div>
     </section>
@@ -1401,7 +1403,7 @@
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
   var skipBtn=document.getElementById("pomo-skip");
   function todayKey(){return fmt(new Date());}
-  var MAXDIAL=60,pomoHint=document.getElementById("pomo-hint");
+  var MAXDIAL=90,pomoHint=document.getElementById("pomo-hint");
   function drawPomo(){
     var tk=(pomoTask.value||"").trim();
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
