@@ -586,6 +586,7 @@
         <button class="btn" id="gcal-connect" type="button">连接 Google Calendar</button>
         <span id="gcal-status" style="font-size:12.5px;color:var(--muted)">未连接</span>
       </div>
+      <label class="pomo-log" style="justify-content:flex-start;margin-top:10px"><input type="checkbox" id="set-gcal-default"> 新建事件默认加入 Google 日历</label>
     </div>
     <div class="modal-actions"><div class="grow"></div><button class="btn" id="set-cancel">取消</button><button class="btn primary" id="set-save">保存</button></div>
   </div>
@@ -659,7 +660,7 @@
   var state={view:"week",cursor:new Date(),tab:"calendar"};
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
-  var gToken=null,gcalEvents=[];
+  var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false);
 
   if(events===null){
     var mon=startOfWeek(new Date());
@@ -1090,7 +1091,7 @@
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
-    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=!!(obj&&obj.gid);
+    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?!!obj.gid:!!(gToken&&gcalDefault);
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   function closeModal(){overlay.classList.remove("on");}
@@ -1275,11 +1276,11 @@
   // ---------- settings (Gemini API key，只存本机) ----------
   var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-2.0-flash";
   var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model");
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;setModelI.value=apiModel;settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;setModelI.value=apiModel;document.getElementById("set-gcal-default").checked=gcalDefault;settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
-  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-2.0-flash";save("tt_apikey",apiKey);save("tt_aimodel",apiModel);closeSettings();});
+  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-2.0-flash";gcalDefault=document.getElementById("set-gcal-default").checked;save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_gcaldefault",gcalDefault);closeSettings();});
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
