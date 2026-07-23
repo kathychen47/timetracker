@@ -2329,6 +2329,10 @@ margin-left: -22px;
         <div class="set-desc" style="margin-bottom:8px">↑↓ 调整查词结果里词典的先后；取消勾选可在结果中隐藏该词典。（查词卡片点标题栏可折叠）</div>
         <div class="dict-order" id="dict-order"></div>
       </div>
+      <div class="set-item">
+        <label class="do-name" style="cursor:pointer"><input type="checkbox" id="dict-autoadd"> 查词后自动加入生词本</label>
+        <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。</div>
+      </div>
     </div>
       </div>
     </div>
@@ -3482,7 +3486,8 @@ margin-left: -22px;
   var dictPrefs=load("tt_dictprefs",null)||{};
   (function(){if(!dictPrefs.order||dictPrefs.order.length<2)dictPrefs.order=["oald","collins"];
     if(!dictPrefs.enabled)dictPrefs.enabled={oald:true,collins:true};
-    if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};})();
+    if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};
+    if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;})();
   function saveDictPrefs(){save("tt_dictprefs",dictPrefs);}
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
@@ -3540,7 +3545,8 @@ margin-left: -22px;
     return refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});}
   function openDict(){ensureDictInit().then(function(){renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
-  function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(function(){renderDictSetup();renderDictOrder();},function(){renderDictSetup();renderDictOrder();});}
+  function syncDictPane(){renderDictSetup();renderDictOrder();var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;}
+  function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
     var el=document.getElementById("dict-setup");if(!el)return;
@@ -3597,11 +3603,14 @@ margin-left: -22px;
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
     if(!q){box.innerHTML="";return;}
     await ensureDictDB();
-    var key=q.toLowerCase(),html="";
+    var key=q.toLowerCase(),matches=[];
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];
       if(dictPrefs.enabled[store]===false)continue;
       var rec=null;try{rec=await idbGet(store,key);}catch(e){}
-      if(rec)html+=dictCardHTML(store,rec);}
+      if(rec)matches.push([store,rec]);}
+    if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
+      if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now()});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
+    var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
     if(!html){
       if(!dictCounts.oald&&!dictCounts.collins)html='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';
       else html='<div class="dict-hint">没找到 “'+esc(q)+'”。换个词或检查拼写试试。</div>';}
@@ -3691,6 +3700,8 @@ margin-left: -22px;
         var i=+mv.getAttribute("data-i"),j=i+(+mv.getAttribute("data-dir"));if(j<0||j>=dictPrefs.order.length)return;
         var a=dictPrefs.order,t=a[i];a[i]=a[j];a[j]=t;saveDictPrefs();renderDictOrder();refreshLookup();});
       order.addEventListener("change",function(e){var cb=e.target.closest(".do-en");if(!cb)return;dictPrefs.enabled[cb.getAttribute("data-store")]=cb.checked;saveDictPrefs();refreshLookup();});}
+    var aa=document.getElementById("dict-autoadd");
+    if(aa)aa.addEventListener("change",function(){dictPrefs.autoAdd=aa.checked;saveDictPrefs();});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
