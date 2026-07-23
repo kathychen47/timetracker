@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <title>时间管理 · 初版</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <style>
   :root{
@@ -187,6 +188,8 @@
   .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
   .ev.done .chk svg{opacity:1;color:var(--bg)}
   .ev.done .t{text-decoration:line-through}
+  .ev.gcal{border:1px dashed color-mix(in srgb,var(--c) 55%,var(--border))}
+  .ev .gtag{position:absolute;right:3px;bottom:3px;font-size:9px;font-weight:700;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;line-height:13px;padding:0 3px}
 
   /* week + single-day grid */
   .grid-head{display:grid;border-bottom:1px solid var(--border)}
@@ -499,6 +502,7 @@
       </div>
       <div class="cat-manage" id="cat-manage"></div>
     </div>
+    <label class="pomo-log" id="ev-gcal-row" style="display:none;justify-content:flex-start;margin-top:4px"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
     <div class="modal-actions">
       <button class="link-danger" id="ev-delete" style="display:none">删除</button>
       <div class="grow"></div>
@@ -577,6 +581,12 @@
     <div class="field"><label>AI 模型（配额报错可换：gemini-2.0-flash / gemini-1.5-flash / gemini-2.0-flash-lite）</label>
       <input type="text" id="set-model" placeholder="gemini-2.0-flash"></div>
     <div class="set-note">在 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免费获取。key 不上传、不进代码；别人打开你的网站，用的是他们自己填的 key，动不到你的额度。</div>
+    <div class="field" style="margin-top:14px"><label>Google 日历（连接后可显示你的日历事件、并把 App 事件加进去）</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="btn" id="gcal-connect" type="button">连接 Google Calendar</button>
+        <span id="gcal-status" style="font-size:12.5px;color:var(--muted)">未连接</span>
+      </div>
+    </div>
     <div class="modal-actions"><div class="grow"></div><button class="btn" id="set-cancel">取消</button><button class="btn primary" id="set-save">保存</button></div>
   </div>
 </div>
@@ -648,6 +658,8 @@
   var settings=load("tt_settings",{theme:null,focus:25,brk:5}),pstats=load("tt_pstats",{});
   var state={view:"week",cursor:new Date(),tab:"calendar"};
   var miniCursor=new Date();
+  var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
+  var gToken=null,gcalEvents=[];
 
   if(events===null){
     var mon=startOfWeek(new Date());
@@ -702,7 +714,7 @@
   // ---------- calendar core ----------
   var HS=7,HE=23,PH=44,GH=(HE-HS)*PH;
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
-  function eventsOn(ds){return events.filter(function(e){return e.date===ds;});}
+  function eventsOn(ds){return events.filter(function(e){return e.date===ds;}).concat(gcalEvents.filter(function(e){return e.date===ds;}));}
   function toMin(s){var p=s.split(":");return(+p[0])*60+(+p[1]);}
   function evMinutes(e){var s=toMin(e.start),en=toMin(e.end);return en>s?en-s:0;}
   function evPos(e){var s=toMin(e.start),en=toMin(e.end);if(en<=s)en=s+30;
@@ -721,11 +733,12 @@
     return map;
   }
   function evHTML(e,withLabel,lay){var p=evPos(e);
-    var lbl=withLabel?'<div class="lbl">'+esc(catName(e.cat))+(e.sub?" · "+esc(subName(e.cat,e.sub)):"")+'</div>':'';
+    var lbl=withLabel?'<div class="lbl">'+(e.gcal?"Google 日历":esc(catName(e.cat))+(e.sub?" · "+esc(subName(e.cat,e.sub)):""))+'</div>':'';
     var box='top:'+p.top+'px;height:'+p.h+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
-    return '<div class="ev'+(e.done?" done":"")+'" data-id="'+e.id+'" style="--c:'+catColor(e.cat)+';'+box+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+chkSVG()+'</div>';}
+    var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
+    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+'" data-id="'+e.id+'" style="--c:'+catColor(e.cat)+';'+box+'">'+
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -824,7 +837,9 @@
     if(chk){var evc=chk.closest(".ev");if(evc){var id=evc.getAttribute("data-id");
       events=events.map(function(x){return x.id===id?Object.assign({},x,{done:!x.done}):x;});save("tt_events",events);renderCal();}return;}
     var ev=e.target.closest(".ev");
-    if(ev){var id2=ev.getAttribute("data-id");var obj=events.filter(function(x){return x.id===id2;})[0];if(obj)openModal(obj);return;}
+    if(ev){var id2=ev.getAttribute("data-id");
+      if(id2.indexOf("g_")===0){var gg=gcalEvents.filter(function(x){return x.id===id2;})[0];if(gg)alert("Google 日历事件\n"+gg.title+"\n"+gg.date+"  "+gg.start+"–"+gg.end);return;}
+      var obj=events.filter(function(x){return x.id===id2;})[0];if(obj)openModal(obj);return;}
     var go=e.target.closest("[data-goday]");
     if(go&&e.target.closest(".dn,.d")){state.cursor=parse(go.getAttribute("data-goday"));state.view="day";renderCal();return;}
     var cell=e.target.closest(".cell");
@@ -1070,6 +1085,7 @@
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
+    var gr=document.getElementById("ev-gcal-row");gr.style.display=(gToken&&!obj)?"flex":"none";document.getElementById("ev-gcal").checked=false;
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   function closeModal(){overlay.classList.remove("on");}
@@ -1080,6 +1096,7 @@
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     if(editingId){events=events.map(function(e){return e.id===editingId?{id:e.id,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:e.done||false}:e;});}
     else{events.push({id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false});}
+    if(!editingId&&gToken&&document.getElementById("ev-gcal").checked)gcalCreate(title,fDate.value,fStart.value,fEnd.value);
     save("tt_events",events);closeModal();renderCal();
   });
   delBtn.addEventListener("click",function(){events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);closeModal();renderCal();});
@@ -1305,6 +1322,50 @@
     }
     aiInput.value="";
   }
+
+  // ---------- Google Calendar 双向 ----------
+  var gConnectBtn=document.getElementById("gcal-connect"),gStatusEl=document.getElementById("gcal-status"),tokenClient=null;
+  function gisReady(){return window.google&&google.accounts&&google.accounts.oauth2;}
+  function initGis(){
+    if(tokenClient||!gisReady())return;
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:GCAL_CLIENT_ID,
+      scope:"https://www.googleapis.com/auth/calendar.events",
+      callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;onGcalConnected();}else{gStatusEl.textContent="授权失败";}}
+    });
+  }
+  function updateGcalUI(){if(gToken){gConnectBtn.textContent="重新连接";}else{gConnectBtn.textContent="连接 Google Calendar";gStatusEl.textContent="未连接";}}
+  gConnectBtn.addEventListener("click",function(){
+    initGis();
+    if(!tokenClient){gStatusEl.textContent="Google 库未加载（预览页不支持，请到你的网站上用）";return;}
+    gStatusEl.textContent="正在打开 Google 登录…";
+    tokenClient.requestAccessToken({prompt:gToken?"":"consent"});
+  });
+  function onGcalConnected(){updateGcalUI();fetchGcal();}
+  function fetchGcal(){
+    if(!gToken)return;
+    var lo=addDays(state.cursor,-31),hi=addDays(state.cursor,62);
+    var url="https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250"+
+      "&timeMin="+encodeURIComponent(lo.toISOString())+"&timeMax="+encodeURIComponent(hi.toISOString());
+    fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
+      if(j.error){gStatusEl.textContent="读取失败："+(j.error.message||"");if(j.error.code===401){gToken=null;updateGcalUI();}return;}
+      gcalEvents=(j.items||[]).filter(function(it){return it.start&&it.start.dateTime;}).map(mapGEvent);
+      gStatusEl.textContent="已连接 ✓（本区间 "+gcalEvents.length+" 个事件）";
+      renderCal();
+    }).catch(function(e){gStatusEl.textContent="网络错误："+e;});
+  }
+  function mapGEvent(it){
+    var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
+    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:it.summary||"(无标题)",cat:"meeting",sub:null,done:false,gcal:true};
+  }
+  function gcalCreate(title,date,start,end){
+    if(!gToken)return;
+    var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    var body={summary:title,start:{dateTime:date+"T"+start+":00",timeZone:tz},end:{dateTime:date+"T"+end+":00",timeZone:tz}};
+    fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events",{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(body)})
+      .then(function(r){return r.json();}).then(function(){fetchGcal();}).catch(function(){});
+  }
+  updateGcalUI();
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
