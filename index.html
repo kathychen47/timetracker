@@ -312,7 +312,8 @@
   .ti .del:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--bg))}
   .ti .del svg{width:15px;height:15px}
   .todo-empty{text-align:center;color:var(--muted);font-size:13.5px;padding:40px 0}
-  .todo-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+  .todo-controls{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+  .tf-catrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .tf-chips{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
   .tf-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;padding:5px 11px;border-radius:99px;cursor:pointer;font-family:inherit}
   .tf-chip i{width:9px;height:9px;border-radius:50%;background:var(--c);flex:none}
@@ -845,6 +846,7 @@
     "日历":"Calendar","待办":"To-do","统计":"Stats","AI 助手":"AI Assistant","设置":"Settings","切换明暗":"Toggle theme",
     "上一个":"Previous","下一个":"Next","上月":"Prev month","下月":"Next month","今天":"Today","+ 事件":"+ Event","全部":"All",
     "临近截止":"Due soon","目标进度":"Goals","+ 新目标":"+ New goal","相关记录":"Related records","打卡 +1":"Check-in +1",
+    "本周":"This week","本月":"This month","今年":"This year",
     "添加一个待办，回车确认…":"Add a to-do, press Enter…","这里还没有待办 ✦":"No to-dos yet ✦","没有已归档的待办":"No archived to-dos",
     "高":"High","中":"Med","低":"Low",
     "总时长":"Total time","事件数":"Events","日均时长":"Daily avg","专注番茄":"Pomodoros",
@@ -1529,18 +1531,24 @@
   var todoList=document.getElementById("todo-list"),todoInput=document.getElementById("todo-input"),todoPrio=document.getElementById("todo-prio"),todoDue=document.getElementById("todo-due"),todoCat=document.getElementById("todo-cat");
   function fillTodoCatSelect(sel,val){sel.innerHTML='<option value="">无类别</option>'+cats.map(function(c){return '<option value="'+c.key+'"'+(val===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
   fillTodoCatSelect(todoCat,"");
-  var todoFilter=null,showArchived=false;
+  var todoFilter=null,showArchived=false,todoTimeFilter="all";
   function renderTodos(){
     var todayStr=fmt(new Date()),order={high:0,mid:1,low:2};
+    var now=new Date(),ws=startOfWeek(now),we=addDays(ws,6);
+    function inTodoRange(t){var tf=todoTimeFilter||"all";if(tf==="all")return true;if(!t.due)return false;var d=parse(t.due);
+      if(tf==="day")return t.due===todayStr;if(tf==="week")return d>=ws&&d<=we;if(tf==="month")return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();if(tf==="year")return d.getFullYear()===now.getFullYear();return true;}
     var archN=todos.filter(function(t){return t.archived;}).length;
+    var times=[["all","全部"],["day","今天"],["week","本周"],["month","本月"],["year","今年"]];
+    var timeHTML=times.map(function(o){return '<button class="tf-chip'+((todoTimeFilter||"all")===o[0]?" on":"")+'" data-tt="'+o[0]+'">'+o[1]+'</button>';}).join("");
     var chipHTML='<button class="tf-chip'+(!todoFilter?" on":"")+'" data-tf="__all">全部</button>'+
       cats.map(function(c){var n=todos.filter(function(t){return t.cat===c.key&&!t.archived;}).length;return n?'<button class="tf-chip'+(todoFilter===c.key?" on":"")+'" data-tf="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+' '+n+'</button>':"";}).join("");
     var archBtn=archN?'<button class="tf-arch'+(showArchived?" on":"")+'" data-arch>📦 已归档 '+archN+'</button>':"";
-    document.getElementById("todo-controls").innerHTML='<div class="tf-chips">'+chipHTML+'</div>'+archBtn;
+    document.getElementById("todo-controls").innerHTML='<div class="tf-chips">'+timeHTML+'</div><div class="tf-catrow"><div class="tf-chips">'+chipHTML+'</div>'+archBtn+'</div>';
     var arr=todos.filter(function(t){
       if(showArchived)return !!t.archived;
       if(t.archived)return false;
       if(todoFilter&&t.cat!==todoFilter)return false;
+      if(!inTodoRange(t))return false;
       return true;
     }).sort(function(a,b){var ra=a.done?3:(a.due&&a.due<todayStr?2:0),rb=b.done?3:(b.due&&b.due<todayStr?2:0);if(ra!==rb)return ra-rb;return order[a.prio]-order[b.prio];});
     if(!arr.length){todoList.innerHTML='<div class="todo-empty">'+(showArchived?"没有已归档的待办":"这里还没有待办 ✦")+'</div>';}
@@ -1558,6 +1566,7 @@
     renderDashboard();
   }
   document.getElementById("todo-controls").addEventListener("click",function(e){
+    var tt=e.target.closest("[data-tt]");if(tt){todoTimeFilter=tt.getAttribute("data-tt");showArchived=false;renderTodos();return;}
     var c=e.target.closest("[data-tf]");if(c){var v=c.getAttribute("data-tf");todoFilter=(v==="__all")?null:v;showArchived=false;renderTodos();return;}
     if(e.target.closest("[data-arch]")){showArchived=!showArchived;renderTodos();}
   });
