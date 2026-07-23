@@ -248,9 +248,14 @@
   .pill b{font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--c) 72%,var(--text))}
   .cell .more{font-size:10px;color:var(--muted);padding-left:2px}
 
-  .legend{display:flex;flex-wrap:wrap;gap:8px 15px;margin-top:14px;padding:0 2px}
-  .legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 9px;margin-top:14px;padding:0 2px}
+  .legend .li{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);cursor:pointer;
+    border:1px solid var(--border);background:var(--surface);border-radius:99px;padding:5px 12px;font-family:inherit}
   .legend .li i{width:11px;height:11px;border-radius:4px;background:var(--c)}
+  .legend .li:hover{background:var(--surface-2);color:var(--text)}
+  .legend .li.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 15%,var(--bg));color:var(--text);font-weight:600}
+  .ev.faded{opacity:.12}
+  .pill.faded{opacity:.22}
 
   /* todos */
   .page-h{font-size:19px;font-weight:680;margin:2px 0 16px}
@@ -414,15 +419,7 @@
             </div>
             <div class="cal-scroll" id="cal-body"></div>
           </div>
-          <div class="legend">
-            <div class="li" style="--c:var(--cat-focus)"><i></i>专注</div>
-            <div class="li" style="--c:var(--cat-meeting)"><i></i>会议</div>
-            <div class="li" style="--c:var(--cat-sport)"><i></i>运动</div>
-            <div class="li" style="--c:var(--cat-study)"><i></i>学习</div>
-            <div class="li" style="--c:var(--cat-goal)"><i></i>目标</div>
-            <div class="li" style="--c:var(--cat-habit)"><i></i>习惯</div>
-            <div class="li" style="--c:var(--cat-life)"><i></i>生活</div>
-          </div>
+          <div class="legend" id="legend"></div>
         </div>
 
         <aside class="pomo-col">
@@ -657,7 +654,7 @@
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
   var settings=load("tt_settings",{theme:null,focus:25,brk:5}),pstats=load("tt_pstats",{});
-  var state={view:"week",cursor:new Date(),tab:"calendar"};
+  var state={view:"week",cursor:new Date(),tab:"calendar",catFilter:null};
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
   var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false);
@@ -743,7 +740,8 @@
     var box='top:'+p.top+'px;height:'+p.h+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
-    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+'" data-id="'+e.id+'" style="--c:'+catColor(e.cat)+';'+box+'">'+
+    var faded=state.catFilter&&e.cat!==state.catFilter?" faded":"";
+    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+faded+'" data-id="'+e.id+'" style="--c:'+catColor(e.cat)+';'+box+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
@@ -820,7 +818,7 @@
     for(var i=0;i<42;i++){
       var day=addDays(gstart,i),ds=fmt(day),dim=day.getMonth()!==c.getMonth(),isT=sameDay(day,today);
       var evs=eventsOn(ds),pills="";
-      for(var k=0;k<evs.length&&k<3;k++)pills+='<div class="pill" style="--c:'+catColor(evs[k].cat)+'"><i></i><b>'+esc(evs[k].title)+'</b></div>';
+      for(var k=0;k<evs.length&&k<3;k++)pills+='<div class="pill'+(state.catFilter&&evs[k].cat!==state.catFilter?" faded":"")+'" style="--c:'+catColor(evs[k].cat)+'"><i></i><b>'+esc(evs[k].title)+'</b></div>';
       if(evs.length>3)pills+='<div class="more">+'+(evs.length-3)+'</div>';
       html+='<div class="cell'+(dim?" dim":"")+(isT?" today":"")+'" data-date="'+ds+'" data-goday="'+ds+'"><div class="dn">'+day.getDate()+'</div>'+pills+'</div>';
     }
@@ -829,8 +827,17 @@
   function renderCal(){
     document.getElementById("view-seg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-v")===state.view);});
     if(state.view==="day")renderDay();else if(state.view==="month")renderMonth();else renderWeek();
-    renderDashboard();
+    renderLegend();renderDashboard();
   }
+  var legendEl=document.getElementById("legend");
+  function renderLegend(){
+    if(cats.some(function(c){return c.key===state.catFilter;})===false&&state.catFilter)state.catFilter=null;
+    var html='<button class="li'+(state.catFilter?"":" on")+'" data-cf="__all"><i style="--c:var(--muted)"></i>全部</button>';
+    html+=cats.map(function(c){return '<button class="li'+(state.catFilter===c.key?" on":"")+'" data-cf="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</button>';}).join("");
+    legendEl.innerHTML=html;
+  }
+  legendEl.addEventListener("click",function(e){var b=e.target.closest("[data-cf]");if(!b)return;
+    var cf=b.getAttribute("data-cf");state.catFilter=(cf==="__all"||state.catFilter===cf)?null:cf;renderCal();});
   document.getElementById("view-seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;state.view=b.getAttribute("data-v");renderCal();});
   document.getElementById("today-btn").addEventListener("click",function(){state.cursor=new Date();renderCal();});
   document.getElementById("prev-btn").addEventListener("click",function(){shift(-1);});
@@ -844,7 +851,7 @@
       events=events.map(function(x){return x.id===id?Object.assign({},x,{done:!x.done}):x;});save("tt_events",events);renderCal();}return;}
     var ev=e.target.closest(".ev");
     if(ev){var id2=ev.getAttribute("data-id");
-      if(id2.indexOf("g_")===0){var gg=gcalEvents.filter(function(x){return x.id===id2;})[0];if(gg)alert("Google 日历事件\n"+gg.title+"\n"+gg.date+"  "+gg.start+"–"+gg.end);return;}
+      if(id2.indexOf("g_")===0){var gg=gcalEvents.filter(function(x){return x.id===id2;})[0];if(gg)openModal(gg);return;}
       var obj=events.filter(function(x){return x.id===id2;})[0];if(obj)openModal(obj);return;}
     var go=e.target.closest("[data-goday]");
     if(go&&e.target.closest(".dn,.d")){state.cursor=parse(go.getAttribute("data-goday"));state.view="day";renderCal();return;}
@@ -1027,7 +1034,7 @@
     fTitle=document.getElementById("ev-title"),fDate=document.getElementById("ev-date"),
     fStart=document.getElementById("ev-start"),fEnd=document.getElementById("ev-end"),
     catsBox=document.getElementById("ev-cats"),subsBox=document.getElementById("ev-subs"),delBtn=document.getElementById("ev-delete");
-  var editingId=null,selCat="focus",selSub=null,catManual=false,addMode="parent",selAddColor=PALETTE[0];
+  var editingId=null,adoptGid=null,selCat="focus",selSub=null,catManual=false,addMode="parent",selAddColor=PALETTE[0];
   function renderParents(){
     catsBox.innerHTML=cats.map(function(c){return '<div class="cat-chip" data-cat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+
       '<div class="cat-chip add-chip" data-add="parent" style="border-style:dashed">+ 新建大类</div>';
@@ -1082,16 +1089,19 @@
   fTitle.addEventListener("input",function(){if(!catManual){var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();}});
 
   function openModal(obj,opts){opts=opts||{};
-    editingId=obj?obj.id:null;catManual=!!obj||!!opts.cat;closeAddPanel();
+    var isG=obj&&obj.gcal;                       // Google 事件（还没转成本地）
+    adoptGid=isG?obj.id.slice(2):null;
+    editingId=(obj&&!isG)?obj.id:null;catManual=!!obj||!!opts.cat;closeAddPanel();
     mTitle.textContent=obj?"编辑事件":"新建事件";
     delBtn.style.display=obj?"inline":"none";
+    delBtn.textContent=isG?"从 Google 删除":"删除";
     fTitle.value=obj?obj.title:"";
     fDate.value=obj?obj.date:(opts.date||fmt(new Date()));
     fStart.value=obj?obj.start:(opts.start||"09:00");
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
-    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?!!obj.gid:!!(gToken&&gcalDefault);
+    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?(isG?true:!!obj.gid):!!(gToken&&gcalDefault);
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   function closeModal(){overlay.classList.remove("on");}
@@ -1101,6 +1111,13 @@
   document.getElementById("ev-save").addEventListener("click",function(){
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
+    if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid};
+      events.push(obj);save("tt_events",events);
+      gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
+      if(gToken)gcalSync(obj,want);
+      closeModal();renderCal();return;
+    }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
       obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null};
       events=events.map(function(e){return e.id===editingId?obj:e;});}
@@ -1109,7 +1126,14 @@
     if(gToken)gcalSync(obj,want);
     closeModal();renderCal();
   });
-  delBtn.addEventListener("click",function(){var old=events.filter(function(e){return e.id===editingId;})[0];
+  delBtn.addEventListener("click",function(){
+    if(adoptGid){                                // 删除的是纯 Google 事件（本地还没有副本）
+      if(!confirm("从 Google 日历删除「"+(fTitle.value.trim()||"该事件")+"」？会同步删除你 Google 账号里的这个事件。"))return;
+      var gid=adoptGid;gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+gid;});
+      closeModal();renderCal();if(gToken)gcalDeleteById(gid);return;
+    }
+    var old=events.filter(function(e){return e.id===editingId;})[0];
+    if(old&&old.gid&&!confirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。"))return;
     events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);
     if(gToken&&old&&old.gid)gcalDeleteById(old.gid);
     closeModal();renderCal();});
