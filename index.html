@@ -574,6 +574,8 @@
     <h3>设置</h3>
     <div class="field"><label>Gemini API Key（AI 助手用 · 只存在你本机浏览器）</label>
       <input type="password" id="set-apikey" placeholder="粘贴 AIza… 开头的 key"></div>
+    <div class="field"><label>AI 模型（配额报错可换：gemini-2.0-flash / gemini-1.5-flash / gemini-2.0-flash-lite）</label>
+      <input type="text" id="set-model" placeholder="gemini-2.0-flash"></div>
     <div class="set-note">在 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免费获取。key 不上传、不进代码；别人打开你的网站，用的是他们自己填的 key，动不到你的额度。</div>
     <div class="modal-actions"><div class="grow"></div><button class="btn" id="set-cancel">取消</button><button class="btn primary" id="set-save">保存</button></div>
   </div>
@@ -1225,13 +1227,13 @@
   }
 
   // ---------- settings (Gemini API key，只存本机) ----------
-  var apiKey=load("tt_apikey","");
-  var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey");
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;settingsOverlay.classList.add("on");});
+  var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-2.0-flash";
+  var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model");
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;setModelI.value=apiModel;settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
-  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();save("tt_apikey",apiKey);closeSettings();});
+  document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=setModelI.value.trim()||"gemini-2.0-flash";save("tt_apikey",apiKey);save("tt_aimodel",apiModel);closeSettings();});
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
@@ -1258,7 +1260,7 @@
       "所有情况都要 reply(和用户同语言的简短确认或回答)。"+
       "参考：本周已安排约 "+(Math.round(wkMin/6)/10)+" 小时，未完成待办 "+pend+" 条。只输出 JSON。";
     var body={contents:[{role:"user",parts:[{text:sys+"\n\n用户："+text}]}],generationConfig:{responseMimeType:"application/json",temperature:0.2}};
-    fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+encodeURIComponent(apiKey),
+    fetch("https://generativelanguage.googleapis.com/v1beta/models/"+apiModel+":generateContent?key="+encodeURIComponent(apiKey),
       {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
       .then(function(r){return r.json();})
       .then(function(j){
