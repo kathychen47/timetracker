@@ -710,6 +710,20 @@
           <div class="seg" id="set-theme-seg"><button type="button" data-th="light">浅色</button><button type="button" data-th="dark">深色</button></div>
         </div>
       </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">界面缩放</div><div class="set-desc">整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。</div></div>
+          <select id="set-zoom">
+            <option value="auto">自动（按屏幕）</option>
+            <option value="0.9">90%</option>
+            <option value="1">100%</option>
+            <option value="1.1">110%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+            <option value="1.75">175%</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="modal-actions"><div class="grow"></div><button class="btn" id="set-cancel">取消</button><button class="btn primary" id="set-save">保存</button></div>
@@ -825,6 +839,13 @@
   function applyTheme(t){root.setAttribute("data-theme",t);themeBtn.innerHTML=(t==="dark"?MOON:SUN);settings.theme=t;save("tt_settings",settings);}
   applyTheme(settings.theme||curTheme());
   themeBtn.addEventListener("click",function(){applyTheme(curTheme()==="dark"?"light":"dark");});
+  // 界面缩放（每台设备各记各的，不跟随云同步）
+  var zoomPref=load("tt_zoom","auto");
+  function autoZoomFactor(){var w=window.innerWidth||1280;if(w>=2400)return 1.35;if(w>=1900)return 1.2;if(w>=1500)return 1.1;return 1;}
+  function applyZoom(){var z=(zoomPref==="auto")?autoZoomFactor():(parseFloat(zoomPref)||1);root.style.zoom=z;}
+  applyZoom();
+  window.addEventListener("resize",function(){if(zoomPref==="auto")applyZoom();});
+  document.getElementById("set-zoom").addEventListener("change",function(){zoomPref=this.value;save("tt_zoom",zoomPref);applyZoom();});
 
   // ---------- rail nav ----------
   document.querySelector(".rail").addEventListener("click",function(e){
@@ -1547,7 +1568,7 @@
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;syncThemeSeg();settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
