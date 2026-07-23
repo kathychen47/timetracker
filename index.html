@@ -2515,7 +2515,7 @@ margin-left: -22px;
   // ---------- rail nav ----------
   document.querySelector(".rail").addEventListener("click",function(e){
     var b=e.target.closest("button[data-tab]");if(!b)return;
-    var tab=b.getAttribute("data-tab");state.tab=tab;
+    var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
     ["calendar","todo","stats","dict"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
@@ -3763,5 +3763,8 @@ margin-left: -22px;
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
   initLang();
+  // 刷新后停留在上次所在页面
+  (function(){var savedTab=load("tt_tab","calendar");
+    if(savedTab&&savedTab!=="calendar"){var b=document.querySelector('.rail button[data-tab="'+savedTab+'"]');if(b)b.click();}})();
 })();
 </script>
