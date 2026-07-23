@@ -652,11 +652,16 @@
         <div class="set-item">
           <label for="set-ollama-url">Ollama 地址</label>
           <input type="text" id="set-ollama-url" placeholder="http://localhost:11434">
+          <div class="set-desc">这台 Mac 上用 <code>http://localhost:11434</code>；同一 Wi-Fi 下的手机/别的电脑填 <code>http://Mac的IP:11434</code>（如 http://192.168.1.23:11434）。</div>
         </div>
         <div class="set-item">
           <label for="set-ollama-model">Ollama 模型</label>
-          <input type="text" id="set-ollama-model" placeholder="qwen3:8b">
-          <div class="set-desc">要让网页连本地 Ollama，先在 Mac 终端跑一次 <code>launchctl setenv OLLAMA_ORIGINS "*"</code> 再重启 Ollama（允许网页跨域访问）。注意：只有跑 Ollama 的这台电脑能用，手机/别的设备连不到。</div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="set-ollama-model" placeholder="qwen3:8b" style="flex:1">
+            <button class="btn" id="set-ollama-test" type="button" style="white-space:nowrap;flex:none">测试连接</button>
+          </div>
+          <div class="set-desc" id="set-ollama-status">点「测试连接」确认能连上、并看有哪些模型。</div>
+          <div class="set-desc">要让别的设备也能连，在 Mac 上设这两个再重启 Ollama：<br><code>launchctl setenv OLLAMA_HOST "0.0.0.0:11434"</code><br><code>launchctl setenv OLLAMA_ORIGINS "*"</code></div>
         </div>
       </div>
     </div>
@@ -1508,6 +1513,17 @@
   var setProviderSel=document.getElementById("set-provider"),ollamaUrlI=document.getElementById("set-ollama-url"),ollamaModelI=document.getElementById("set-ollama-model");
   function syncProviderFields(){var pv=setProviderSel.value;document.getElementById("gemini-fields").style.display=(pv==="ollama"?"none":"");document.getElementById("ollama-fields").style.display=(pv==="ollama"?"":"none");}
   setProviderSel.addEventListener("change",syncProviderFields);
+  function setOllamaNote(t,isErr){var el=document.getElementById("set-ollama-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
+  document.getElementById("set-ollama-test").addEventListener("click",function(){
+    var u=(ollamaUrlI.value.trim()||"http://localhost:11434").replace(/\/+$/,"");
+    setOllamaNote("测试中… "+u,false);
+    fetch(u+"/api/tags").then(function(r){return r.json();}).then(function(j){
+      var names=(j.models||[]).map(function(m){return m.name;});
+      if(!names.length){setOllamaNote("连上了，但还没下载模型。先在 Mac 上跑：ollama pull qwen3:8b",false);return;}
+      setOllamaNote("连上了 ✓ 可用模型："+names.join("、"),false);
+      if(names.indexOf(ollamaModelI.value.trim())<0)ollamaModelI.value=names[0];
+    }).catch(function(e){setOllamaNote("连不上 "+u+"。检查：①Mac 设了 OLLAMA_HOST=0.0.0.0 + OLLAMA_ORIGINS=* 并重启 Ollama ②与 Mac 同一 Wi-Fi、IP 正确 ③https 网页连 http 局域网会被浏览器拦——请用 http 打开网页。("+String(e)+")",true);});
+  });
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
