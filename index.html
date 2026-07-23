@@ -296,7 +296,7 @@
   .todo-add input:focus{outline:2px solid var(--primary);outline-offset:0}
   .todo-add select,.todo-add input[type=date]{padding:0 10px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text)}
   .todo-list{display:flex;flex-direction:column;gap:8px}
-  .ti{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)}
+  .ti{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--tc,var(--border));border-radius:12px;background:color-mix(in srgb,var(--tc,var(--surface)) 7%,var(--surface))}
   .ti .box{width:20px;height:20px;border-radius:6px;border:1.6px solid var(--muted);flex:none;cursor:pointer;display:grid;place-items:center}
   .ti.done .box{background:var(--primary);border-color:var(--primary)}
   .ti.done .box svg{width:12px;height:12px;color:var(--primary-ink)}
@@ -1098,13 +1098,13 @@
     if(e.button!==0)return;
     if(e.target.closest(".ev")||e.target.closest("[data-chk]"))return;
     var col=e.target.closest(".dv-col")||e.target.closest(".col");if(!col)return;
-    var rect=col.getBoundingClientRect(),y0=e.clientY-rect.top;
+    var rect=col.getBoundingClientRect(),y0=(e.clientY-rect.top)/rect.height*GH;
     drag={col:col,rect:rect,y0:y0,pv:null,moved:false,m1:yToMin(y0),m2:yToMin(y0),
       date:col.getAttribute("data-date"),cat:col.getAttribute("data-cat")||null,sub:col.getAttribute("data-sub")||null};
     e.preventDefault();
   });
   document.addEventListener("mousemove",function(e){
-    if(!drag)return;var y1=e.clientY-drag.rect.top;
+    if(!drag)return;var y1=(e.clientY-drag.rect.top)/drag.rect.height*GH;
     if(Math.abs(y1-drag.y0)>4){drag.moved=true;if(!drag.pv){drag.pv=document.createElement("div");drag.pv.className="drag-pv";drag.col.appendChild(drag.pv);}}
     if(drag.moved){drag.m2=yToMin(y1);paintDrag();}
   });
@@ -1472,13 +1472,14 @@
       if(t.archived)return false;
       if(todoFilter&&t.cat!==todoFilter)return false;
       return true;
-    }).sort(function(a,b){if(a.done!==b.done)return a.done?1:-1;return order[a.prio]-order[b.prio];});
+    }).sort(function(a,b){var ra=a.done?3:(a.due&&a.due<todayStr?2:0),rb=b.done?3:(b.due&&b.due<todayStr?2:0);if(ra!==rb)return ra-rb;return order[a.prio]-order[b.prio];});
     if(!arr.length){todoList.innerHTML='<div class="todo-empty">'+(showArchived?"没有已归档的待办":"这里还没有待办 ✦")+'</div>';}
     else todoList.innerHTML=arr.map(function(t){
       var overdue=t.due&&!t.done&&t.due<todayStr;
       var due=t.due?'<div class="due'+(overdue?" overdue":"")+'">'+(overdue?"⚠ 已逾期 · ":"")+'截止 '+t.due+'</div>':'';
       var archAct=t.archived?'<button class="tact" data-act="unarch" title="取消归档">↩︎</button>':(t.done?'<button class="tact" data-act="arch" title="归档">📦</button>':"");
-      return '<div class="ti'+(t.done?" done":"")+(overdue?" overdue":"")+'" data-id="'+t.id+'">'+
+      var tc=(t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--border)";
+      return '<div class="ti'+(t.done?" done":"")+(overdue?" overdue":"")+'" data-id="'+t.id+'" style="--tc:'+tc+'">'+
         '<div class="box" data-act="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>'+
         '<div class="txt"><div class="main">'+esc(t.title)+'</div>'+due+'</div>'+
         (t.cat&&parentObj(t.cat)?'<span class="tcat" style="--tc:'+catColor(t.cat)+'"><i></i>'+esc(catName(t.cat))+'</span>':'')+
