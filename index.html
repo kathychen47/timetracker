@@ -2745,7 +2745,7 @@ margin-left: -22px;
       .sort(function(a,b){return a.d-b.d;}).slice(0,6);
     if(!items.length){box.innerHTML='<div class="dash-empty">暂无带截止日期的待办</div>';return;}
     box.innerHTML=items.map(function(it){
-      var u=it.d<=0?"var(--danger)":(it.d<=2?"var(--cat-goal)":"var(--cat-sport)");
+      var u=it.d<0?"var(--danger)":todoColor(it.t);
       var big=it.d<0?"逾":(it.d===0?"0":it.d),unit=it.d<0?"期":(it.d===0?"今天":"天后");
       return '<div class="due-item" style="--u:'+u+'"><div class="due-badge"><b>'+big+'</b><span>'+unit+'</span></div>'+
         '<div class="due-body"><div class="dt">'+esc(it.t.title)+'</div><div class="dm">截止 '+it.t.due+'</div></div></div>';
