@@ -2048,6 +2048,7 @@
   // ---------- 词典 · 背单词 ----------
   var DICT_DB=null,DICT_STORES=["oald","collins"],dictCounts={oald:0,collins:0};
   var DICT_FILES={oald:"oald.tsv.gz",collins:"collins.tsv.gz"};
+  var importedBlobs={};
   var words=load("tt_words",[])||[];
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
@@ -2097,14 +2098,20 @@
     var el=document.getElementById("dict-setup");if(!el)return;
     var ao=dictCounts.oald,co=dictCounts.collins;
     var line='牛津(英→中) '+(ao?'<b>✓ '+ao.toLocaleString()+'</b>':'✗ 未加载')+' · 柯林斯(中→英) '+(co?'<b>✓ '+co.toLocaleString()+'</b>':'✗ 未加载');
-    el.innerHTML=line+'<div><button class="btn primary" id="dict-dl">☁️ 从云端下载</button> <label class="btn" style="cursor:pointer">📁 导入文件<input type="file" id="dict-file" accept=".gz" multiple hidden></label></div><div id="dict-prog" style="margin-top:8px;color:var(--muted)"></div>';}
+    var loggedIn=(typeof SB!=="undefined"&&SB&&sbUser);
+    var btns='<label class="btn primary" style="cursor:pointer">📁 导入文件<input type="file" id="dict-file" accept=".gz" multiple hidden></label> <button class="btn" id="dict-dl">☁️ 从云端下载</button>';
+    if(loggedIn)btns+=' <button class="btn" id="dict-up">⬆️ 上传到云端</button> <button class="btn" id="dict-sqlbtn">① 配置云端(SQL)</button>';
+    el.innerHTML=line+'<div>'+btns+'</div>'+
+      '<div id="dict-sql" style="display:none;margin-top:10px"><div style="color:var(--muted);margin-bottom:4px">把这段贴到 Supabase → SQL Editor 运行一次（建私有桶 + 只授权你自己），然后回来点「⬆️ 上传到云端」：</div><textarea readonly style="width:100%;height:130px;font-family:monospace;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--surface);color:var(--text)"></textarea><button class="btn" id="dict-sqlcopy" style="margin-top:6px">复制 SQL</button></div>'+
+      '<div id="dict-prog" style="margin-top:8px;color:var(--muted)"></div>';
+    if(!loggedIn&&(!ao||!co))el.insertAdjacentHTML("beforeend",'<div style="margin-top:6px;color:var(--muted);font-size:12px">想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。</div>');}
   function dictProg(t){var p=document.getElementById("dict-prog");if(p)p.textContent=t;}
 
   async function importDictFiles(files){
     for(var i=0;i<files.length;i++){var f=files[i];
       var store=/collins|柯林/i.test(f.name)?"collins":(/oald|oxford|牛津/i.test(f.name)?"oald":null);
       if(!store){dictProg("认不出文件："+f.name+"（名字里要含 oald 或 collins）");continue;}
-      dictProg("导入 "+f.name+" …");
+      dictProg("导入 "+f.name+" …");importedBlobs[store]=f;
       try{await loadDictBlob(store,f,function(n){dictProg("导入 "+store+"："+n.toLocaleString()+" 词…");});}
       catch(err){dictProg("导入失败："+String(err&&err.message||err));return;}}
     renderDictSetup();dictProg("✓ 加载完成，可以查词了");}
@@ -2119,6 +2126,24 @@
         await loadDictBlob(store,r.data,function(n){dictProg("写入 "+store+"："+n.toLocaleString()+" 词…");});
       }catch(err){dictProg("下载失败："+String(err&&err.message||err));return;}}
     renderDictSetup();dictProg("✓ 云端词典已加载，跨设备可用");}
+
+  function cloudSQL(){
+    var uid=(sbUser&&sbUser.id)||"你的UID";
+    return "insert into storage.buckets (id, name, public)\nvalues ('dict','dict',false)\non conflict (id) do nothing;\n\ncreate policy \"dict_rw\" on storage.objects\nfor all to authenticated\nusing ( bucket_id='dict' and auth.uid() in ('"+uid+"') )\nwith check ( bucket_id='dict' and auth.uid() in ('"+uid+"') );";}
+  function showCloudSQL(){var box=document.getElementById("dict-sql");if(!box)return;
+    box.style.display="";var ta=box.querySelector("textarea");if(ta)ta.value=cloudSQL();ta.scrollIntoView({block:"nearest"});}
+
+  async function uploadDictToCloud(){
+    if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再上传。");return;}
+    var have=DICT_STORES.filter(function(s){return importedBlobs[s];});
+    if(!have.length){dictProg("先用「📁 导入文件」把两本词典载入，再点上传（上传的就是你导入的那两个文件）。");return;}
+    for(var i=0;i<have.length;i++){var store=have[i];
+      dictProg("上传 "+srcName(store)+" 到云端…（"+(i+1)+"/"+have.length+"）");
+      try{
+        var r=await SB.storage.from("dict").upload(DICT_FILES[store],importedBlobs[store],{upsert:true,contentType:"application/gzip"});
+        if(r.error){dictProg("上传失败："+r.error.message+"　—— 多半是还没跑配置 SQL");showCloudSQL();return;}
+      }catch(err){dictProg("上传失败："+String(err&&err.message||err));showCloudSQL();return;}}
+    dictProg("✓ 已上传到云端。现在手机/其他设备登录后，点「☁️ 从云端下载」就能用了。");}
 
   async function doLookup(q){
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
@@ -2195,7 +2220,11 @@
     q.addEventListener("keydown",function(e){if(e.key==="Enter"){if(timer)clearTimeout(timer);doLookup(q.value);}});
     document.getElementById("dict-go").addEventListener("click",function(){doLookup(q.value);});
     var setup=document.getElementById("dict-setup");
-    setup.addEventListener("click",function(e){if(e.target.closest("#dict-dl"))cloudDownloadDicts();});
+    setup.addEventListener("click",function(e){
+      if(e.target.closest("#dict-dl"))cloudDownloadDicts();
+      else if(e.target.closest("#dict-up"))uploadDictToCloud();
+      else if(e.target.closest("#dict-sqlbtn"))showCloudSQL();
+      else if(e.target.closest("#dict-sqlcopy")){var ta=document.querySelector("#dict-sql textarea");if(ta){ta.select();try{document.execCommand("copy");}catch(_){}dictProg("SQL 已复制，去 Supabase → SQL Editor 粘贴运行");}}});
     setup.addEventListener("change",function(e){var inp=e.target.closest("#dict-file");if(inp&&inp.files&&inp.files.length)importDictFiles(inp.files);});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
