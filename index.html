@@ -3055,6 +3055,11 @@ margin-left: -22px;
   var skipBtn=document.getElementById("pomo-skip");
   function todayKey(){return fmt(new Date());}
   var MAXDIAL=90,MAXMIN=180,dialRevs=0,dialPrevAng=null,pomoHint=document.getElementById("pomo-hint");
+  function darken(hex,amt){hex=(hex||"#ec8b76").trim().replace("#","");if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+    var r=parseInt(hex.slice(0,2),16)||236,g=parseInt(hex.slice(2,4),16)||139,b=parseInt(hex.slice(4,6),16)||118;
+    return "rgb("+Math.round(r*(1-amt))+","+Math.round(g*(1-amt))+","+Math.round(b*(1-amt))+")";}
+  function lapShade(n){var base=getComputedStyle(document.documentElement).getPropertyValue("--cat-focus");
+    return n<=1?(base.trim()||"#ec8b76"):darken(base,Math.min(0.55,(n-1)*0.2));}
   function drawPomo(){
     var tk=(pomoTask.value||"").trim();
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
@@ -3062,12 +3067,14 @@ margin-left: -22px;
     if(pomoHint)pomoHint.style.visibility=idleDial?"visible":"hidden";
     if(timerMode==="up"){var m=Math.floor(pElapsed/60),s=pElapsed%60;pTime.textContent=pad(m)+":"+pad(s);
       pMode.textContent="计时中"+(tk?" · "+tk:"");ring.classList.remove("brk");
-      var up=Math.min(100,pElapsed/((+setFocus.value||25)*60)*100);ring.style.setProperty("--p",up.toFixed(1));
+      ring.style.background="";var up=Math.min(100,pElapsed/((+setFocus.value||25)*60)*100);ring.style.setProperty("--p",up.toFixed(1));
     }else{var mm=Math.floor(pLeft/60),ss=pLeft%60;pTime.textContent=pad(mm)+":"+pad(ss);
       pMode.textContent=(pMode2==="focus"?("专注"+(tk?" · "+tk:"")):"休息");ring.classList.toggle("brk",pMode2==="break");
-      var mn=Math.round(pTotal/60),lapPct=(mn>0&&mn%60===0)?100:(mn%60)/60*100;
-      var pct=idleDial?lapPct:(pTotal>0?(1-pLeft/pTotal)*100:0);
-      ring.style.setProperty("--p",pct.toFixed(1));}
+      if(idleDial){var min=Math.max(1,Math.round(pTotal/60)),curLap=Math.ceil(min/60),cp=(((min-1)%60)+1)/60*100;
+        var cur=lapShade(curLap),rest=curLap>=2?lapShade(curLap-1):"var(--surface-2)";
+        ring.style.background="conic-gradient("+cur+" 0 "+cp.toFixed(1)+"%,"+rest+" "+cp.toFixed(1)+"% 100%)";
+        ring.style.setProperty("--p",cp.toFixed(1));
+      }else{ring.style.background="";var pct=(pTotal>0?(1-pLeft/pTotal)*100:0);ring.style.setProperty("--p",pct.toFixed(1));}}
   }
   // 拖动圆环直接设置倒计时时长（不用打字）
   function ringSetFromEvent(e){
