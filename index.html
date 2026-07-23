@@ -99,6 +99,9 @@
   .due-body .dt{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .due-body .dm{font-size:11px;color:var(--muted);margin-top:1px}
   .dash-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 0}
+  #due-list,#goal-list{max-height:232px;overflow-y:auto;scrollbar-width:thin}
+  #due-list{padding-right:2px}#goal-list{padding-right:2px}
+  #due-list::-webkit-scrollbar,#goal-list::-webkit-scrollbar{width:6px}
 
   /* memos */
   .memo-input{width:100%;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);
