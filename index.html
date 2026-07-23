@@ -3597,14 +3597,21 @@ margin-left: -22px;
   function showCloudSQL(){var box=document.getElementById("dict-sql");if(!box)return;
     box.style.display="";var ta=box.querySelector("textarea");if(ta)ta.value=cloudSQL();ta.scrollIntoView({block:"nearest"});}
 
+  function blobFromStore(store){return ensureDictDB().then(function(){return new Promise(function(res,rej){
+    var out=[];var rq=DICT_DB.transaction(store,"readonly").objectStore(store).openCursor();
+    rq.onsuccess=function(){var c=rq.result;if(c){var r=c.value;out.push(r.k+"\t"+(r.disp||r.k)+"\t"+r.html);c.continue();}
+      else{try{var text=out.join("\n")+"\n";var gz=new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));new Response(gz).blob().then(res,rej);}catch(e){rej(e);}}};
+    rq.onerror=function(){rej(rq.error);};});});}
   async function uploadDictToCloud(){
     if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再上传。");return;}
-    var have=DICT_STORES.filter(function(s){return importedBlobs[s];});
-    if(!have.length){dictProg("先用「📁 导入文件」把两本词典载入，再点上传（上传的就是你导入的那两个文件）。");return;}
-    for(var i=0;i<have.length;i++){var store=have[i];
-      dictProg("上传 "+srcName(store)+" 到云端…（"+(i+1)+"/"+have.length+"）");
+    var stores=DICT_STORES.filter(function(s){return importedBlobs[s]||dictCounts[s]>0;});
+    if(!stores.length){dictProg("先用「📁 导入文件」把词典载入，再点上传。");return;}
+    for(var i=0;i<stores.length;i++){var store=stores[i];
       try{
-        var r=await SB.storage.from("dict").upload(DICT_FILES[store],importedBlobs[store],{upsert:true,contentType:"application/gzip"});
+        var blob=importedBlobs[store];
+        if(!blob){dictProg("打包 "+srcName(store)+"（从本机词典生成，稍等）…");blob=await blobFromStore(store);}
+        dictProg("上传 "+srcName(store)+" 到云端…（"+(i+1)+"/"+stores.length+"）");
+        var r=await SB.storage.from("dict").upload(DICT_FILES[store],blob,{upsert:true,contentType:"application/gzip"});
         if(r.error){dictProg("上传失败："+r.error.message+"　—— 多半是还没跑配置 SQL");showCloudSQL();return;}
       }catch(err){dictProg("上传失败："+String(err&&err.message||err));showCloudSQL();return;}}
     dictProg("✓ 已上传到云端。现在手机/其他设备登录后，点「☁️ 从云端下载」就能用了。");}
