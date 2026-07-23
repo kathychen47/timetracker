@@ -385,6 +385,7 @@
   .field{margin-bottom:13px}
   .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
   .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+  .field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;min-height:46px}
   .field .row{display:flex;gap:10px}.field .row>div{flex:1}
   .cats{display:flex;flex-wrap:wrap;gap:7px}
   .cat-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;color:var(--text)}
@@ -597,6 +598,7 @@
       </div>
       <div class="cat-manage" id="cat-manage"></div>
     </div>
+    <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-gcal-row" style="display:none;justify-content:flex-start;margin-top:4px"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
     <div class="modal-actions">
@@ -636,9 +638,14 @@
       <div><label>类型</label><select id="g-type"><option value="time">时长(小时)</option><option value="count">次数</option></select></div>
       <div><label>目标值</label><input type="number" id="g-target" min="1" value="5"></div>
     </div></div>
+    <div class="field" id="g-unit-field"><label>单位（次数型 · 如 次 / 杯 / 页 / 趟）</label><input type="text" id="g-unit" placeholder="次"></div>
     <div class="field"><div class="row">
-      <div><label>周期</label><select id="g-period"><option value="week">每周</option><option value="month">每月</option></select></div>
+      <div><label>周期</label><select id="g-period"><option value="week">每周</option><option value="month">每月</option><option value="year">每年</option><option value="custom">自定义区间</option></select></div>
       <div><label>大类</label><select id="g-cat"></select></div>
+    </div></div>
+    <div class="field" id="g-range-field" style="display:none"><div class="row">
+      <div><label>开始日期</label><input type="date" id="g-from"></div>
+      <div><label>结束日期</label><input type="date" id="g-to"></div>
     </div></div>
     <div class="field"><label>小类（可选）</label><select id="g-sub"></select></div>
     <div class="field"><label>关键词（可选 · 只统计标题含此词的事件，如“游泳”）</label><input type="text" id="g-keyword" placeholder="留空则按大类/小类统计"></div>
@@ -959,7 +966,7 @@
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
     var faded=state.catFilter&&e.cat!==state.catFilter?" faded":"";
-    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+faded+'" data-id="'+e.id+'" style="--c:'+catColor(e.cat)+';'+box+'">'+
+    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+catColor(e.cat)+';'+box+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
@@ -1166,8 +1173,18 @@
 
   // ---------- goals / plans ----------
   var goalList=document.getElementById("goal-list");
-  function goalPeriodStart(p){var t=new Date();return p==="month"?new Date(t.getFullYear(),t.getMonth(),1):startOfWeek(t);}
-  function goalPeriodEnd(p){var t=new Date();if(p==="month")return new Date(t.getFullYear(),t.getMonth()+1,0,23,59,59);var e=addDays(startOfWeek(t),6);return new Date(e.getFullYear(),e.getMonth(),e.getDate(),23,59,59);}
+  function goalPeriodStart(g){var p=g.period,t=new Date();
+    if(p==="custom"&&g.from)return parse(g.from);
+    if(p==="year")return new Date(t.getFullYear(),0,1);
+    if(p==="month")return new Date(t.getFullYear(),t.getMonth(),1);
+    return startOfWeek(t);}
+  function goalPeriodEnd(g){var p=g.period,t=new Date();
+    if(p==="custom"&&g.to){var d=parse(g.to);return new Date(d.getFullYear(),d.getMonth(),d.getDate(),23,59,59);}
+    if(p==="year")return new Date(t.getFullYear(),11,31,23,59,59);
+    if(p==="month")return new Date(t.getFullYear(),t.getMonth()+1,0,23,59,59);
+    var e=addDays(startOfWeek(t),6);return new Date(e.getFullYear(),e.getMonth(),e.getDate(),23,59,59);}
+  function periodName(p){return p==="month"?"每月":p==="year"?"每年":p==="custom"?"区间":"每周";}
+  function periodWord(p){return p==="month"?"月":p==="year"?"年":p==="custom"?"区间":"周";}
   function matchesGoal(e,g){
     if(e.noGoal)return false;                     // 手动排除：不计入任何目标
     if(e.goalId)return e.goalId===g.id;          // 手动指定了目标：只算进那个目标
@@ -1178,17 +1195,17 @@
     return true;
   }
   function goalProgress(g){
-    var st=goalPeriodStart(g.period),en=goalPeriodEnd(g.period);
+    var st=goalPeriodStart(g),en=goalPeriodEnd(g);
     var matched=events.filter(function(e){var d=parse(e.date);return d>=st&&d<=en&&matchesGoal(e,g);});
     if(g.type==="time"){var mins=matched.reduce(function(a,e){return a+evMinutes(e);},0);
       return{cur:mins,target:g.target*60,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};}
-    return{cur:matched.length,target:g.target,disp:matched.length+"/"+g.target+"次"};
+    return{cur:matched.length,target:g.target,disp:matched.length+"/"+g.target+(g.unit||"次")};
   }
   function renderGoals(){
     if(!goals.length){goalList.innerHTML='<div class="dash-empty">还没有目标，点右上「+ 新目标」</div>';return;}
     goalList.innerHTML=goals.map(function(g){
       var pr=goalProgress(g),pct=pr.target>0?Math.min(100,pr.cur/pr.target*100):0,gc=g.cat?catColor(g.cat):"var(--primary)";
-      var subtxt=(g.period==="month"?"每月":"每周")+(g.cat?" · "+catName(g.cat):"")+(g.sub?" › "+subName(g.cat,g.sub):"");
+      var subtxt=periodName(g.period)+(g.cat?" · "+catName(g.cat):"")+(g.sub?" › "+subName(g.cat,g.sub):"");
       var plus=g.type==="count"?'<button class="goal-plus" data-plus="'+g.id+'">打卡 +1</button>':'';
       return '<div class="goal-item" data-gedit="'+g.id+'" style="--gc:'+gc+';cursor:pointer" title="点开查看详情/编辑/删除"><div class="goal-top"><span class="gt">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
         '<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
@@ -1212,15 +1229,18 @@
   function openGoalModal(g){if(!g&&g!==null)return;gEditId=g?g.id:null;
     document.getElementById("goal-modal-title").textContent=g?"编辑目标":"新目标";gDel.style.display=g?"inline":"none";
     gTitleI.value=g?g.title:"";gType.value=g?g.type:"time";gTarget.value=g?g.target:5;gPeriod.value=g?g.period:"week";gCat.value=g?(g.cat||""):"";gFillSubs();gSub.value=g?(g.sub||""):"";gKeyword.value=g?(g.keyword||""):"";
+    document.getElementById("g-unit").value=g?(g.unit||""):"";document.getElementById("g-from").value=g?(g.from||""):"";document.getElementById("g-to").value=g?(g.to||""):"";gToggleFields();
     gOverlay.classList.add("on");setTimeout(function(){gTitleI.focus();},30);}
   function closeGoalModal(){gOverlay.classList.remove("on");}
+  function gToggleFields(){document.getElementById("g-unit-field").style.display=(gType.value==="count"?"":"none");document.getElementById("g-range-field").style.display=(gPeriod.value==="custom"?"":"none");}
+  gType.addEventListener("change",gToggleFields);gPeriod.addEventListener("change",gToggleFields);
   gCat.addEventListener("change",gFillSubs);
   document.getElementById("g-cancel").addEventListener("click",closeGoalModal);
   gOverlay.addEventListener("click",function(e){if(e.target===gOverlay)closeGoalModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&gOverlay.classList.contains("on"))closeGoalModal();});
   document.getElementById("g-save").addEventListener("click",function(){
     var t=gTitleI.value.trim();if(!t){gTitleI.focus();return;}
-    var obj={id:gEditId||uid(),title:t,type:gType.value,target:+gTarget.value||1,period:gPeriod.value,cat:gCat.value||null,sub:gSub.value||null,keyword:gKeyword.value.trim()||null};
+    var obj={id:gEditId||uid(),title:t,type:gType.value,target:+gTarget.value||1,period:gPeriod.value,cat:gCat.value||null,sub:gSub.value||null,keyword:gKeyword.value.trim()||null,unit:document.getElementById("g-unit").value.trim()||null,from:document.getElementById("g-from").value||null,to:document.getElementById("g-to").value||null};
     if(gEditId)goals=goals.map(function(x){return x.id===gEditId?obj:x;});else goals.push(obj);
     save("tt_goals",goals);closeGoalModal();renderGoals();});
   gDel.addEventListener("click",function(){goals=goals.filter(function(x){return x.id!==gEditId;});save("tt_goals",goals);closeGoalModal();renderGoals();});
@@ -1233,7 +1253,7 @@
     document.getElementById("gd-title").textContent="目标 · "+g.title;
     var pr=goalProgress(g),pct=pr.target>0?Math.round(pr.cur/pr.target*100):0;
     var assoc=(g.cat?catName(g.cat):"不限类别")+(g.sub?" › "+subName(g.cat,g.sub):"")+(g.keyword?" · 标题含“"+g.keyword+"”":"");
-    document.getElementById("gd-summary").innerHTML=(g.period==="month"?"每月":"每周")+"目标 "+(g.type==="time"?g.target+"h":g.target+"次")+" · 本"+(g.period==="month"?"月":"周")+"已完成 "+pr.disp+"（"+pct+"%）<br>关联："+esc(assoc);
+    document.getElementById("gd-summary").innerHTML=periodName(g.period)+"目标 "+(g.type==="time"?g.target+"h":g.target+(g.unit||"次"))+" · "+(g.period==="custom"?"区间内":"本"+periodWord(g.period))+"已完成 "+pr.disp+"（"+pct+"%）<br>关联："+esc(assoc);
     var gc=g.cat?catColor(g.cat):"var(--primary)";
     var weeks=26,today=new Date();today.setHours(0,0,0,0);var endW=startOfWeek(today),startW=addDays(endW,-(weeks-1)*7);
     var counts={};events.forEach(function(e){if(matchesGoal(e,g))counts[e.date]=(counts[e.date]||0)+(g.type==="time"?evMinutes(e):1);});
@@ -1341,6 +1361,7 @@
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
+    document.getElementById("ev-note").value=obj?(obj.note||""):"";
     var gf=document.getElementById("ev-goal-field"),gsel=document.getElementById("ev-goal");
     if(goals.length){gf.style.display="";
       gsel.innerHTML='<option value="">（自动 · 按分类/关键词判断）</option><option value="__none">不计入任何目标</option>'+goals.map(function(g){return '<option value="'+g.id+'">计入：'+esc(g.title)+'</option>';}).join("");
@@ -1356,18 +1377,18 @@
   document.getElementById("ev-save").addEventListener("click",function(){
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
-    var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");
+    var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
-      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal};
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       if(gToken)gcalSync(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
-      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note};
       events=events.map(function(e){return e.id===editingId?obj:e;});}
-    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal};events.push(obj);}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note};events.push(obj);}
     save("tt_events",events);
     if(gToken)gcalSync(obj,want);
     closeModal();renderCal();
@@ -1843,11 +1864,11 @@
   }
   function mapGEvent(it){
     var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
-    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:it.summary||"(无标题)",cat:"meeting",sub:null,done:false,gcal:true};
+    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:it.summary||"(无标题)",cat:"meeting",sub:null,done:false,gcal:true,note:it.description||""};
   }
   var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
   function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return {summary:o.title,start:{dateTime:o.date+"T"+o.start+":00",timeZone:tz},end:{dateTime:o.date+"T"+o.end+":00",timeZone:tz}};}
+    return {summary:o.title,description:o.note||"",start:{dateTime:o.date+"T"+o.start+":00",timeZone:tz},end:{dateTime:o.date+"T"+o.end+":00",timeZone:tz}};}
   function gcalSync(obj,want){
     if(!gToken)return;
     if(want){
