@@ -335,7 +335,17 @@
   .dict-result{min-height:40px}
   .dict-hint{color:var(--muted);font-size:14px;padding:20px 4px;text-align:center}
   .dict-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px}
-  .dict-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px}
+  .dict-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+  .dict-fold{border:none;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0;min-width:0}
+  .dict-fold .caret{font-size:10px;transition:transform .15s;display:inline-block;flex:none}
+  .dict-card.collapsed .caret{transform:rotate(-90deg)}
+  .dict-card.collapsed .dict-def{display:none}
+  .dict-actions{display:flex;gap:8px;align-items:center;flex:none}
+  .do-row{display:flex;justify-content:space-between;align-items:center;padding:8px 11px;background:var(--surface);border:1px solid var(--border);border-radius:9px;margin-bottom:6px}
+  .do-name{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+  .do-btns{display:flex;gap:4px}
+  .do-mv{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:7px;width:28px;height:28px;cursor:pointer;font-size:14px}
+  .do-mv:disabled{opacity:.35;cursor:default}
   .dict-src{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.03em}
   .dict-add{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:9px;padding:5px 11px;font-size:13px;cursor:pointer;white-space:nowrap;flex:none}
   .dict-add:hover{color:var(--primary);border-color:var(--primary)}
@@ -917,6 +927,11 @@
       <div class="set-item">
         <div class="set-desc" style="margin-bottom:10px">牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。</div>
         <div class="dict-setup" id="dict-setup"></div>
+      </div>
+      <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">结果顺序 / 显示</div>
+        <div class="set-desc" style="margin-bottom:8px">↑↓ 调整查词结果里词典的先后；取消勾选可在结果中隐藏该词典。（查词卡片点标题栏可折叠）</div>
+        <div class="dict-order" id="dict-order"></div>
       </div>
     </div>
       </div>
@@ -1890,7 +1905,7 @@
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth");if(!btn)return;
     if(!sbUrl||!sbKey){btn.textContent="登录";btn.disabled=true;sbStatus("先填 Supabase 网址和 anon key，保存后再登录");return;}
@@ -1907,8 +1922,8 @@
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
-    words=load("tt_words",[])||[];
-    applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();}}
+    words=load("tt_words",[])||[];var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
@@ -2068,6 +2083,11 @@
   var importedBlobs={};
   var words=load("tt_words",[])||[];
   var pronAccent=load("tt_pronacc","en-GB");
+  var dictPrefs=load("tt_dictprefs",null)||{};
+  (function(){if(!dictPrefs.order||dictPrefs.order.length<2)dictPrefs.order=["oald","collins"];
+    if(!dictPrefs.enabled)dictPrefs.enabled={oald:true,collins:true};
+    if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};})();
+  function saveDictPrefs(){save("tt_dictprefs",dictPrefs);}
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
   function pronounce(text,cjk){
@@ -2124,7 +2144,7 @@
     return refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});}
   function openDict(){ensureDictInit().then(function(){renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
-  function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(renderDictSetup,renderDictSetup);}
+  function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(function(){renderDictSetup();renderDictOrder();},function(){renderDictSetup();renderDictOrder();});}
 
   function renderDictSetup(){
     var el=document.getElementById("dict-setup");if(!el)return;
@@ -2181,24 +2201,30 @@
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
     if(!q){box.innerHTML="";return;}
     await ensureDictDB();
-    var key=q.toLowerCase(),cjk=isCJK(q);
-    var primary=cjk?"collins":"oald",secondary=cjk?"oald":"collins",html="";
-    var rec=null;try{rec=await idbGet(primary,key);}catch(e){}
-    if(rec)html+=dictCardHTML(primary,rec);
-    var rec2=null;try{rec2=await idbGet(secondary,key);}catch(e){}
-    if(rec2)html+=dictCardHTML(secondary,rec2);
+    var key=q.toLowerCase(),html="";
+    for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];
+      if(dictPrefs.enabled[store]===false)continue;
+      var rec=null;try{rec=await idbGet(store,key);}catch(e){}
+      if(rec)html+=dictCardHTML(store,rec);}
     if(!html){
       if(!dictCounts.oald&&!dictCounts.collins)html='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';
       else html='<div class="dict-hint">没找到 “'+esc(q)+'”。换个词或检查拼写试试。</div>';}
     box.innerHTML=html;}
+  function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
 
   function dictCardHTML(store,rec){
     var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store==="oald"?disp:w;
-    return '<div class="dict-card"><div class="dict-card-top"><span class="dict-src">'+srcName(store)+'</span>'+
-      '<div style="display:flex;gap:8px;align-items:center;flex:none">'+
+    var col=dictPrefs.collapsed[store]?" collapsed":"";
+    return '<div class="dict-card'+col+'" data-store="'+store+'"><div class="dict-card-top">'+
+      '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
+      '<div class="dict-actions">'+
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
       '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'✓ 已收藏':'★ 加入生词本')+'</button></div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
+  function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
+    el.innerHTML=dictPrefs.order.map(function(store,i){var en=dictPrefs.enabled[store]!==false;
+      return '<div class="do-row"><label class="do-name"><input type="checkbox" class="do-en" data-store="'+store+'"'+(en?" checked":"")+'> '+srcName(store)+'</label>'+
+        '<span class="do-btns"><button class="do-mv" data-dir="-1" data-i="'+i+'"'+(i===0?" disabled":"")+'>↑</button><button class="do-mv" data-dir="1" data-i="'+i+'"'+(i===dictPrefs.order.length-1?" disabled":"")+'>↓</button></span></div>';}).join("");}
 
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
   function toggleWord(w,disp,store){
@@ -2264,7 +2290,13 @@
       else if(e.target.closest("#dict-sqlbtn"))showCloudSQL();
       else if(e.target.closest("#dict-sqlcopy")){var ta=document.querySelector("#dict-sql textarea");if(ta){ta.select();try{document.execCommand("copy");}catch(_){}dictProg("SQL 已复制，去 Supabase → SQL Editor 粘贴运行");}}});
     setup.addEventListener("change",function(e){var inp=e.target.closest("#dict-file");if(inp&&inp.files&&inp.files.length)importDictFiles(inp.files);});
+    var order=document.getElementById("dict-order");
+    if(order){order.addEventListener("click",function(e){var mv=e.target.closest(".do-mv");if(!mv)return;
+        var i=+mv.getAttribute("data-i"),j=i+(+mv.getAttribute("data-dir"));if(j<0||j>=dictPrefs.order.length)return;
+        var a=dictPrefs.order,t=a[i];a[i]=a[j];a[j]=t;saveDictPrefs();renderDictOrder();refreshLookup();});
+      order.addEventListener("change",function(e){var cb=e.target.closest(".do-en");if(!cb)return;dictPrefs.enabled[cb.getAttribute("data-store")]=cb.checked;saveDictPrefs();refreshLookup();});}
     document.getElementById("dict-result").addEventListener("click",function(e){
+      var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
       var en=e.target.closest(".dict-def .en");if(en){var t=en.textContent.trim();if(t){q.value=t;doLookup(t);window.scrollTo(0,0);}}});
