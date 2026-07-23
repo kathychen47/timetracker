@@ -1343,7 +1343,7 @@
     tokenClient=google.accounts.oauth2.initTokenClient({
       client_id:GCAL_CLIENT_ID,
       scope:"https://www.googleapis.com/auth/calendar.events",
-      callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;save("tt_gcal","1");onGcalConnected();}},
+      callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;save("tt_gcal","1");save("tt_gtok",{t:gToken,exp:Date.now()+((resp.expires_in||3600)-60)*1000});onGcalConnected();}},
       error_callback:function(){if(!silentMode)gStatusEl.textContent="连接已取消或失败";}
     });
   }
@@ -1362,7 +1362,7 @@
     var url="https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250"+
       "&timeMin="+encodeURIComponent(lo.toISOString())+"&timeMax="+encodeURIComponent(hi.toISOString());
     fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
-      if(j.error){gStatusEl.textContent="读取失败："+(j.error.message||"");if(j.error.code===401){gToken=null;updateGcalUI();}return;}
+      if(j.error){gStatusEl.textContent="读取失败："+(j.error.message||"");if(j.error.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();}return;}
       gcalEvents=(j.items||[]).filter(function(it){return it.start&&it.start.dateTime;}).map(mapGEvent);
       gStatusEl.textContent="已连接 ✓（本区间 "+gcalEvents.length+" 个事件）";
       renderCal();
@@ -1385,7 +1385,11 @@
   function gcalDeleteById(gid){if(!gToken||!gid)return;
     fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}}).then(function(){fetchGcal();}).catch(function(){});}
   updateGcalUI();
-  if(load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
+  (function(){
+    var saved=load("tt_gtok",null);
+    if(saved&&saved.t&&saved.exp>Date.now()){gToken=saved.t;onGcalConnected();return;}
+    if(load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
+  })();
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
