@@ -394,14 +394,30 @@
   .ai-msg.err{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--border))}
   .ai-msg.ok{border-color:color-mix(in srgb,var(--cat-sport) 45%,var(--border))}
 
-  /* settings — grouped sections */
-  .set-modal{max-width:440px}
+  /* settings — sidebar + panes */
+  .set-modal{max-width:660px}
+  .set-shell{display:flex;gap:18px;margin-top:10px;align-items:flex-start}
+  .set-nav{flex:none;width:134px;display:flex;flex-direction:column;gap:3px;border-right:1px solid var(--border);padding-right:10px}
+  .set-nav-i{text-align:left;border:none;background:transparent;color:var(--text);font-size:13.5px;padding:9px 11px;border-radius:9px;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .set-nav-i:hover{background:var(--surface-2)}
+  .set-nav-i.on{background:var(--primary-soft);color:var(--primary);font-weight:600}
+  .set-panes{flex:1;min-width:0;min-height:250px}
+  .set-pane{display:none}
+  .set-pane.on{display:block}
+  .set-pane .set-sec-h{margin-top:0}
+  @media (max-width:560px){
+    .set-shell{flex-direction:column;gap:8px}
+    .set-nav{flex-direction:row;flex-wrap:wrap;width:auto;border-right:none;border-bottom:1px solid var(--border);padding:0 0 8px;gap:6px}
+    .set-nav-i{padding:7px 10px;font-size:12.5px}
+    .set-panes{min-height:0}
+  }
   .set-sec{border-top:1px solid var(--border);padding-top:15px;margin-top:16px}
   .set-sec:first-of-type{border-top:none;padding-top:0;margin-top:6px}
   .set-sec-h{font-size:11.5px;font-weight:680;color:var(--muted);letter-spacing:.7px;text-transform:uppercase;margin-bottom:12px}
   .set-item{margin-bottom:15px}.set-item:last-child{margin-bottom:0}
   .set-item>label{display:block;font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:7px}
   .set-item input[type=password],.set-item input[type=text],.set-item select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+  .set-row select{width:auto;flex:none;font-size:13px;padding:8px 11px}
   .set-desc{font-size:11.5px;color:var(--muted);line-height:1.7;margin-top:6px}
   .set-desc a{color:var(--primary)}
   .set-desc code{background:var(--surface-2);color:var(--text);padding:1px 6px;border-radius:5px;font-size:11px;word-break:break-all}
@@ -640,8 +656,15 @@
 <div class="overlay" id="settings-overlay">
   <div class="modal set-modal">
     <h3>设置</h3>
-
-    <div class="set-sec">
+    <div class="set-shell">
+      <div class="set-nav">
+        <button class="set-nav-i on" type="button" data-pane="ai">✨ AI 助手</button>
+        <button class="set-nav-i" type="button" data-pane="gcal">📅 Google 日历</button>
+        <button class="set-nav-i" type="button" data-pane="cloud">☁️ 云同步</button>
+        <button class="set-nav-i" type="button" data-pane="appear">🎨 外观</button>
+      </div>
+      <div class="set-panes">
+    <div class="set-pane on" data-pane="ai">
       <div class="set-sec-h">✨ AI 助手</div>
       <div class="set-item">
         <label for="set-provider">AI 服务</label>
@@ -689,7 +712,7 @@
       </div>
     </div>
 
-    <div class="set-sec">
+    <div class="set-pane" data-pane="gcal">
       <div class="set-sec-h">📅 Google 日历</div>
       <div class="set-item">
         <div class="set-row">
@@ -705,7 +728,7 @@
       </div>
     </div>
 
-    <div class="set-sec">
+    <div class="set-pane" data-pane="cloud">
       <div class="set-sec-h">☁️ 云同步（多设备）</div>
       <div class="set-item">
         <label for="set-sb-url">Supabase 网址</label>
@@ -724,7 +747,7 @@
       </div>
     </div>
 
-    <div class="set-sec">
+    <div class="set-pane" data-pane="appear">
       <div class="set-sec-h">🎨 外观</div>
       <div class="set-item">
         <div class="set-row">
@@ -745,6 +768,8 @@
             <option value="1.75">175%</option>
           </select>
         </div>
+      </div>
+    </div>
       </div>
     </div>
 
@@ -1120,6 +1145,7 @@
   // ---------- goals / plans ----------
   var goalList=document.getElementById("goal-list");
   function goalPeriodStart(p){var t=new Date();return p==="month"?new Date(t.getFullYear(),t.getMonth(),1):startOfWeek(t);}
+  function goalPeriodEnd(p){var t=new Date();if(p==="month")return new Date(t.getFullYear(),t.getMonth()+1,0,23,59,59);var e=addDays(startOfWeek(t),6);return new Date(e.getFullYear(),e.getMonth(),e.getDate(),23,59,59);}
   function matchesGoal(e,g){
     if(e.goalId)return e.goalId===g.id;          // 手动指定了目标：只算进那个目标
     if(g.cat&&e.cat!==g.cat)return false;
@@ -1129,8 +1155,8 @@
     return true;
   }
   function goalProgress(g){
-    var st=goalPeriodStart(g.period),today=new Date();
-    var matched=events.filter(function(e){var d=parse(e.date);return d>=st&&d<=today&&matchesGoal(e,g);});
+    var st=goalPeriodStart(g.period),en=goalPeriodEnd(g.period);
+    var matched=events.filter(function(e){var d=parse(e.date);return d>=st&&d<=en&&matchesGoal(e,g);});
     if(g.type==="time"){var mins=matched.reduce(function(a,e){return a+evMinutes(e);},0);
       return{cur:mins,target:g.target*60,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};}
     return{cur:matched.length,target:g.target,disp:matched.length+"/"+g.target+"次"};
@@ -1604,6 +1630,9 @@
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
   document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.querySelector(".set-nav").addEventListener("click",function(e){var b=e.target.closest("[data-pane]");if(!b)return;var p=b.getAttribute("data-pane");
+    document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
+    document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
@@ -1617,7 +1646,9 @@
     closeSettings();});
 
   // ---------- 云同步 (Supabase · 多设备) ----------
-  var SB=null,sbUser=null,sbUrl=load("tt_sburl",""),sbKey=load("tt_sbkey",""),pushTimer=null,pulling=false,applyingCloud=false;
+  var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
+  var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
+  var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
   var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth");if(!btn)return;
