@@ -340,6 +340,11 @@
   .dict-add{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:9px;padding:5px 11px;font-size:13px;cursor:pointer;white-space:nowrap;flex:none}
   .dict-add:hover{color:var(--primary);border-color:var(--primary)}
   .dict-add.saved{background:var(--primary-soft);color:var(--primary);border-color:transparent}
+  .dict-spk{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:9px;padding:4px 10px;font-size:14px;cursor:pointer;flex:none}
+  .dict-spk:hover{border-color:var(--primary)}
+  .dict-acc{flex:none}
+  .dict-acc button{padding:7px 11px;font-size:13px}
+  .flash-spk{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:9px;padding:1px 10px;font-size:16px;cursor:pointer;margin-left:8px;vertical-align:middle}
   /* rendered definition */
   .dict-def{font-size:14px;line-height:1.65}
   .dict-def .headword,.dict-def .hw{font-size:20px;font-weight:700;color:var(--text)}
@@ -645,6 +650,10 @@
         <div id="dict-look">
           <div class="dict-search">
             <input type="text" id="dict-q" placeholder="输入英文或中文查词… (Enter)" autocomplete="off">
+            <div class="seg dict-acc" id="dict-acc" title="发音口音">
+              <button data-acc="en-GB" class="on">英</button>
+              <button data-acc="en-US">美</button>
+            </div>
             <button class="btn" id="dict-go">查</button>
           </div>
           <div class="dict-result" id="dict-result"></div>
@@ -657,8 +666,6 @@
           </div>
           <div id="wb-list"></div>
         </div>
-
-        <div class="dict-setup" id="dict-setup"></div>
       </div>
     </section>
   </main>
@@ -785,6 +792,7 @@
         <button class="set-nav-i" type="button" data-pane="gcal">📅 Google 日历</button>
         <button class="set-nav-i" type="button" data-pane="cloud">☁️ 云同步</button>
         <button class="set-nav-i" type="button" data-pane="appear">🎨 外观</button>
+        <button class="set-nav-i" type="button" data-pane="dict">📖 词典</button>
         <button class="set-nav-i" type="button" data-pane="general">🌐 通用</button>
       </div>
       <div class="set-panes">
@@ -901,6 +909,14 @@
           <div class="set-row-txt"><div class="set-row-t">语言 / Language</div><div class="set-desc">切换界面中文 / English（切换后会刷新一次）。</div></div>
           <select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select>
         </div>
+      </div>
+    </div>
+
+    <div class="set-pane" data-pane="dict">
+      <div class="set-sec-h">📖 词典 · 背单词</div>
+      <div class="set-item">
+        <div class="set-desc" style="margin-bottom:10px">牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。</div>
+        <div class="dict-setup" id="dict-setup"></div>
       </div>
     </div>
       </div>
@@ -1856,7 +1872,8 @@
   document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
   document.querySelector(".set-nav").addEventListener("click",function(e){var b=e.target.closest("[data-pane]");if(!b)return;var p=b.getAttribute("data-pane");
     document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
-    document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});});
+    document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});
+    if(p==="dict")openDictSettings();});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
@@ -2050,8 +2067,23 @@
   var DICT_FILES={oald:"oald.tsv.gz",collins:"collins.tsv.gz"};
   var importedBlobs={};
   var words=load("tt_words",[])||[];
+  var pronAccent=load("tt_pronacc","en-GB");
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
+  function pronounce(text,cjk){
+    try{
+      if(!("speechSynthesis" in window)||!text)return;
+      speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(text);
+      u.lang=cjk?"zh-CN":pronAccent;u.rate=.9;
+      var vs=speechSynthesis.getVoices()||[],want=u.lang.toLowerCase();
+      var exact=vs.filter(function(x){return x.lang&&x.lang.toLowerCase()===want;});
+      var loose=vs.filter(function(x){return x.lang&&x.lang.toLowerCase().slice(0,2)===want.slice(0,2);});
+      if(exact.length)u.voice=exact[0];else if(loose.length)u.voice=loose[0];
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  if("speechSynthesis" in window){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=function(){};}catch(e){}}
   function srcName(store){return store==="oald"?"牛津高阶 · 英汉双解":"柯林斯 · 中英/近义词";}
 
   function idbOpen(){return new Promise(function(res,rej){
@@ -2088,11 +2120,11 @@
     dictCounts[store]=await idbCount(store);return count;}
 
   var dictInit=false;
-  function openDict(){
-    var run=dictInit?Promise.resolve():refreshDictCounts().then(function(){bindDictUI();dictInit=true;});
-    run.then(function(){renderDictSetup();renderWordbook();
-      var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);},
-      function(){bindDictUI();dictInit=true;renderDictSetup();renderWordbook();});}
+  function ensureDictInit(){if(dictInit)return Promise.resolve();
+    return refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});}
+  function openDict(){ensureDictInit().then(function(){renderWordbook();
+    var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
+  function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(renderDictSetup,renderDictSetup);}
 
   function renderDictSetup(){
     var el=document.getElementById("dict-setup");if(!el)return;
@@ -2156,14 +2188,16 @@
     var rec2=null;try{rec2=await idbGet(secondary,key);}catch(e){}
     if(rec2)html+=dictCardHTML(secondary,rec2);
     if(!html){
-      if(!dictCounts.oald&&!dictCounts.collins)html='<div class="dict-hint">词典还没加载，往下拉「加载词典」先下载/导入。</div>';
+      if(!dictCounts.oald&&!dictCounts.collins)html='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';
       else html='<div class="dict-hint">没找到 “'+esc(q)+'”。换个词或检查拼写试试。</div>';}
     box.innerHTML=html;}
 
   function dictCardHTML(store,rec){
-    var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w);
+    var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store==="oald"?disp:w;
     return '<div class="dict-card"><div class="dict-card-top"><span class="dict-src">'+srcName(store)+'</span>'+
-      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'✓ 已收藏':'★ 加入生词本')+'</button></div>'+
+      '<div style="display:flex;gap:8px;align-items:center;flex:none">'+
+      '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
+      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'✓ 已收藏':'★ 加入生词本')+'</button></div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
 
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
@@ -2191,9 +2225,10 @@
     flashIdx=0;document.getElementById("flash-overlay").classList.add("on");showFlash();}
   function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();alert("背完啦，共 "+flashArr.length+" 词 🎉");return;}
-    var x=flashArr[flashIdx];
+    var x=flashArr[flashIdx],word=x.disp||x.w;
     document.getElementById("flash-prog").textContent=(flashIdx+1)+" / "+flashArr.length;
-    document.getElementById("flash-word").textContent=x.disp||x.w;
+    document.getElementById("flash-word").innerHTML=esc(word)+' <button class="flash-spk" id="flash-spk" title="朗读">🔊</button>';
+    document.getElementById("flash-spk").onclick=function(){pronounce(word,isCJK(word));};
     var def=document.getElementById("flash-def");def.className="flash-def hidden";def.innerHTML="";
     document.getElementById("flash-btns").innerHTML='<button class="btn primary" id="flash-reveal">显示释义</button>';
     document.getElementById("flash-reveal").onclick=revealFlash;}
@@ -2219,6 +2254,9 @@
     q.addEventListener("input",function(){if(timer)clearTimeout(timer);var v=q.value;timer=setTimeout(function(){doLookup(v);},250);});
     q.addEventListener("keydown",function(e){if(e.key==="Enter"){if(timer)clearTimeout(timer);doLookup(q.value);}});
     document.getElementById("dict-go").addEventListener("click",function(){doLookup(q.value);});
+    var acc=document.getElementById("dict-acc");
+    if(acc){acc.addEventListener("click",function(e){var b=e.target.closest("button[data-acc]");if(!b)return;pronAccent=b.getAttribute("data-acc");save("tt_pronacc",pronAccent);acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});});
+      acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-acc")===pronAccent);});}
     var setup=document.getElementById("dict-setup");
     setup.addEventListener("click",function(e){
       if(e.target.closest("#dict-dl"))cloudDownloadDicts();
@@ -2227,6 +2265,7 @@
       else if(e.target.closest("#dict-sqlcopy")){var ta=document.querySelector("#dict-sql textarea");if(ta){ta.select();try{document.execCommand("copy");}catch(_){}dictProg("SQL 已复制，去 Supabase → SQL Editor 粘贴运行");}}});
     setup.addEventListener("change",function(e){var inp=e.target.closest("#dict-file");if(inp&&inp.files&&inp.files.length)importDictFiles(inp.files);});
     document.getElementById("dict-result").addEventListener("click",function(e){
+      var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
       var en=e.target.closest(".dict-def .en");if(en){var t=en.textContent.trim();if(t){q.value=t;doLookup(t);window.scrollTo(0,0);}}});
     document.getElementById("wb-list").addEventListener("click",function(e){
