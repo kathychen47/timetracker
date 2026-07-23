@@ -3321,7 +3321,7 @@ margin-left: -22px;
     if(!sbUrl||!sbKey){btn.textContent="登录";btn.disabled=true;sbStatus("先填 Supabase 网址和 anon key，保存后再登录");return;}
     btn.disabled=false;
     if(sbUser){btn.textContent="退出登录";sbStatus("已登录："+(sbUser.email||sbUser.id)+" · 多设备已同步（这台设备下次打开免登录）");}
-    else{btn.textContent="用 Google 登录";sbStatus("已配置，点「用 Google 登录」开始同步");}}
+    else{btn.textContent="用 Google 登录";sbStatus("点「用 Google 登录」开始同步（同时会连上 Google 日历，不用再单独登录）");}}
   function schedulePush(key){if(applyingCloud||!SB||!sbUser)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   function pushCloud(){if(!SB||!sbUser)return;sbStatus("上传中…");
@@ -3344,15 +3344,16 @@ margin-left: -22px;
     if(SB||!window.supabase||!sbUrl||!sbKey)return;
     try{SB=window.supabase.createClient(sbUrl,sbKey);}catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
     SB.auth.onAuthStateChange(function(ev,session){
-      if(session&&session.user){sbUser=session.user;updateSbUI();if(ev==="SIGNED_IN")pullCloud();}
+      if(session&&session.user){sbUser=session.user;updateSbUI();if(session.provider_token)adoptProviderToken(session.provider_token);if(ev==="SIGNED_IN")pullCloud();}
       else if(ev==="SIGNED_OUT"){sbUser=null;updateSbUI();}});
-    SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();pullCloud();}else updateSbUI();});}
+    SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();if(r.data.session.provider_token)adoptProviderToken(r.data.session.provider_token);pullCloud();}else updateSbUI();});}
+  function adoptProviderToken(tok){if(!tok)return;gToken=tok;save("tt_gcal","1");save("tt_gtok",{t:tok,exp:Date.now()+3540*1000});try{onGcalConnected();}catch(e){}}
   document.getElementById("set-sb-auth").addEventListener("click",function(){
     if(!sbUrl||!sbKey){alert("先填 Supabase 网址和 anon key，点保存，再登录");return;}
     if(!SB)initSupabase();
     if(!SB){alert("Supabase 还没加载好（或网址不对），稍等几秒或检查网址");return;}
     if(sbUser){SB.auth.signOut().then(function(){sbUser=null;updateSbUI();});}
-    else{SB.auth.signInWithOAuth({provider:"google",options:{redirectTo:location.href.split("#")[0].split("?")[0]}});}});
+    else{SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:{access_type:"offline"},redirectTo:location.href.split("#")[0].split("?")[0]}});}});
   (function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
