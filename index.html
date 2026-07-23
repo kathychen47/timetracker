@@ -487,11 +487,6 @@
             <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
             <div id="goal-list"></div>
           </div>
-          <div class="dash-card">
-            <div class="dash-h">备忘</div>
-            <input type="text" class="memo-input" id="memo-input" placeholder="记一条备忘，回车…">
-            <div id="memo-list"></div>
-          </div>
         </aside>
 
         <div class="cal-main">
@@ -828,31 +823,32 @@
   // ---------- categories (2-level) ----------
   var PRESET_KEYS=["focus","meeting","sport","study","goal","habit","life"];
   var DEFAULT_CATS=[
-    {key:"focus",name:"专注",color:"var(--cat-focus)",kw:["专注","写代码","开发","coding","编程","方案"],subs:[]},
-    {key:"meeting",name:"会议",color:"var(--cat-meeting)",kw:["会","会议","评审","对齐","沟通","面试","汇报","例会"],subs:[]},
-    {key:"sport",name:"运动",color:"var(--cat-sport)",kw:["健身","跑步","运动","锻炼","爬山","游泳","球","瑜伽"],subs:[]},
-    {key:"study",name:"学习",color:"var(--cat-study)",kw:["学习","看书","读书","课","复习"],subs:[
-      {key:"s-eng",name:"学英语",kw:["英语","背单词","单词","口语","听力"]},
-      {key:"s-read",name:"阅读",kw:["阅读","读书","看书"]}
+    {key:"focus",name:"专注",color:"var(--cat-focus)",kw:["专注","写代码","开发","coding","编程","方案","focus","dev","work","deep work"],subs:[]},
+    {key:"meeting",name:"会议",color:"var(--cat-meeting)",kw:["会","会议","评审","对齐","沟通","面试","汇报","例会","meeting","call","sync","standup","interview","1:1","zoom"],subs:[]},
+    {key:"sport",name:"运动",color:"var(--cat-sport)",kw:["健身","跑步","运动","锻炼","爬山","游泳","球","瑜伽","gym","run","swim","workout","yoga","hike","walk","fitness"],subs:[]},
+    {key:"study",name:"学习",color:"var(--cat-study)",kw:["学习","看书","读书","课","复习","study","class","lecture","homework","learn"],subs:[
+      {key:"s-eng",name:"学英语",kw:["英语","背单词","单词","口语","听力","english","vocabulary","toefl","ielts","listening","speaking"]},
+      {key:"s-read",name:"阅读",kw:["阅读","读书","看书","reading","book"]}
     ]},
-    {key:"goal",name:"目标",color:"var(--cat-goal)",kw:["目标","复盘","总结","规划","计划"],subs:[]},
-    {key:"habit",name:"习惯",color:"var(--cat-habit)",kw:["冥想","早起","喝水","日记","打卡"],subs:[]},
-    {key:"life",name:"生活",color:"var(--cat-life)",kw:["午餐","吃饭","晚餐","休息","购物","家务","睡"],subs:[]}
+    {key:"goal",name:"目标",color:"var(--cat-goal)",kw:["目标","复盘","总结","规划","计划","goal","plan","review","retro","summary"],subs:[]},
+    {key:"habit",name:"习惯",color:"var(--cat-habit)",kw:["冥想","早起","喝水","日记","打卡","habit","meditate","journal","water"],subs:[]},
+    {key:"life",name:"生活",color:"var(--cat-life)",kw:["午餐","吃饭","晚餐","休息","购物","家务","睡","lunch","dinner","breakfast","rest","break","shopping","sleep","nap"],subs:[]}
   ];
   var PALETTE=["#ec8b76","#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#9aa1b0"];
   var cats=load("tt_cats",null);if(cats===null){cats=DEFAULT_CATS;save("tt_cats",cats);}
+  else{var _kwch=false;DEFAULT_CATS.forEach(function(dc){var ec=cats.filter(function(c){return c.key===dc.key;})[0];if(!ec)return;ec.kw=ec.kw||[];dc.kw.forEach(function(k){if(ec.kw.indexOf(k)<0){ec.kw.push(k);_kwch=true;}});(dc.subs||[]).forEach(function(ds){var es=(ec.subs||[]).filter(function(s){return s.key===ds.key;})[0];if(!es)return;es.kw=es.kw||[];ds.kw.forEach(function(k){if(es.kw.indexOf(k)<0){es.kw.push(k);_kwch=true;}});});});if(_kwch)save("tt_cats",cats);}
   function parentObj(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return cats[i];return null;}
   function catIndex(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return i;return 99;}
   function subsOf(k){var p=parentObj(k);return p&&p.subs?p.subs:[];}
   function subName(pk,sk){var s=subsOf(pk);for(var i=0;i<s.length;i++)if(s[i].key===sk)return s[i].name;return "";}
   function catColor(k){var p=parentObj(k);return p?p.color:"var(--cat-focus)";}
   function catName(k){var p=parentObj(k);return p?p.name:"专注";}
-  function autoCat(title){
+  function autoCat(title){var t=(title||"").toLowerCase();
     for(var i=0;i<cats.length;i++){var subs=cats[i].subs||[];
       for(var s=0;s<subs.length;s++){var kw=subs[s].kw||[];
-        for(var j=0;j<kw.length;j++){if(kw[j]&&title.indexOf(kw[j])>=0)return{cat:cats[i].key,sub:subs[s].key};}}}
+        for(var j=0;j<kw.length;j++){if(kw[j]&&t.indexOf(String(kw[j]).toLowerCase())>=0)return{cat:cats[i].key,sub:subs[s].key};}}}
     for(var a=0;a<cats.length;a++){var pk=cats[a].kw||[];
-      for(var b=0;b<pk.length;b++){if(pk[b]&&title.indexOf(pk[b])>=0)return{cat:cats[a].key,sub:null};}}
+      for(var b=0;b<pk.length;b++){if(pk[b]&&t.indexOf(String(pk[b]).toLowerCase())>=0)return{cat:cats[a].key,sub:null};}}
     return{cat:"focus",sub:null};
   }
 
@@ -1151,16 +1147,16 @@
     }).join("");
   }
   var memoInput=document.getElementById("memo-input"),memoList=document.getElementById("memo-list");
-  function renderMemos(){
+  function renderMemos(){if(!memoList)return;
     if(!memos.length){memoList.innerHTML='<div class="dash-empty">还没有备忘</div>';return;}
     memoList.innerHTML=memos.map(function(m){
       return '<div class="memo" data-id="'+m.id+'"><div class="mtx">'+esc(m.text)+'</div>'+
         '<button class="mdel" data-del aria-label="删除"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button></div>';
     }).join("");
   }
-  memoInput.addEventListener("keydown",function(e){if(e.key==="Enter"){var v=memoInput.value.trim();if(!v)return;
+  if(memoInput)memoInput.addEventListener("keydown",function(e){if(e.key==="Enter"){var v=memoInput.value.trim();if(!v)return;
     memos.unshift({id:uid(),text:v});save("tt_memos",memos);memoInput.value="";renderMemos();}});
-  memoList.addEventListener("click",function(e){var b=e.target.closest("[data-del]");if(!b)return;
+  if(memoList)memoList.addEventListener("click",function(e){var b=e.target.closest("[data-del]");if(!b)return;
     var id=b.closest(".memo").getAttribute("data-id");memos=memos.filter(function(m){return m.id!==id;});save("tt_memos",memos);renderMemos();});
 
   // ---------- goals / plans ----------
@@ -1189,7 +1185,7 @@
       var pr=goalProgress(g),pct=pr.target>0?Math.min(100,pr.cur/pr.target*100):0,gc=g.cat?catColor(g.cat):"var(--primary)";
       var subtxt=(g.period==="month"?"每月":"每周")+(g.cat?" · "+catName(g.cat):"")+(g.sub?" › "+subName(g.cat,g.sub):"");
       var plus=g.type==="count"?'<button class="goal-plus" data-plus="'+g.id+'">打卡 +1</button>':'';
-      return '<div class="goal-item" style="--gc:'+gc+'"><div class="goal-top"><span class="gt" data-gedit="'+g.id+'">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
+      return '<div class="goal-item" data-gedit="'+g.id+'" style="--gc:'+gc+';cursor:pointer" title="点开查看详情/编辑/删除"><div class="goal-top"><span class="gt">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
         '<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
         '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+'</span>'+plus+'</div></div>';
     }).join("");
@@ -1199,7 +1195,7 @@
     if(pl){var g=goals.filter(function(x){return x.id===pl.getAttribute("data-plus");})[0];if(g){
       if(!window.confirm("确认给「"+g.title+"」打卡一次？"))return;
       var end=new Date(),start=new Date(end.getTime()-3600*1000);
-      events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||"life",sub:g.sub||null,done:false});
+      var _ac=autoCat(g.title);events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:false,goalId:g.id});
       save("tt_events",events);renderCal();}return;}
     var ed=e.target.closest("[data-gedit]");if(ed){var gg=goals.filter(function(x){return x.id===ed.getAttribute("data-gedit");})[0];if(gg)renderGoalDetail(gg);}
   });
@@ -1446,7 +1442,7 @@
   document.getElementById("pomo-mode-seg").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;var tm=b.getAttribute("data-tm");if(tm===timerMode)return;
     stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
-    skipBtn.textContent=(tm==="up"?"结束":"跳过");var ps=document.querySelector(".pomo-set");if(ps)ps.style.display=(tm==="up"?"none":"");
+    skipBtn.textContent=(tm==="up"?"结束":"跳过");
     if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();});
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
