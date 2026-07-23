@@ -355,6 +355,29 @@
   .ai-msg.err{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--border))}
   .ai-msg.ok{border-color:color-mix(in srgb,var(--cat-sport) 45%,var(--border))}
 
+  /* settings — grouped sections */
+  .set-modal{max-width:440px}
+  .set-sec{border-top:1px solid var(--border);padding-top:15px;margin-top:16px}
+  .set-sec:first-of-type{border-top:none;padding-top:0;margin-top:6px}
+  .set-sec-h{font-size:11.5px;font-weight:680;color:var(--muted);letter-spacing:.7px;text-transform:uppercase;margin-bottom:12px}
+  .set-item{margin-bottom:15px}.set-item:last-child{margin-bottom:0}
+  .set-item>label{display:block;font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:7px}
+  .set-item input[type=password],.set-item input[type=text],.set-item select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
+  .set-desc{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:6px}
+  .set-desc a{color:var(--primary)}
+  .set-row{display:flex;align-items:center;gap:12px}
+  .set-row-txt{flex:1;min-width:0}
+  .set-row-t{font-size:13.5px;font-weight:600;color:var(--text)}
+  .set-row-txt .set-desc{margin-top:3px}
+  .switch{position:relative;flex:none;cursor:pointer;display:inline-flex}
+  .switch input{position:absolute;opacity:0;width:0;height:0}
+  .sw-track{display:block;width:42px;height:24px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);position:relative;transition:background .2s}
+  .sw-track::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+  .switch input:checked+.sw-track{background:var(--primary);border-color:transparent}
+  .switch input:checked+.sw-track::after{transform:translateX(18px)}
+  #set-theme-seg button{white-space:nowrap}
+  .pomo-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:-2px;height:14px}
+
   @media (max-width:560px){main{padding:12px 10px 50px}.stat-cards{grid-template-columns:1fr 1fr}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -438,6 +461,7 @@
               <div class="time" id="pomo-time">25:00</div>
               <div class="mode" id="pomo-mode">专注</div>
             </div></div></div>
+            <div class="pomo-hint" id="pomo-hint">拖动圆环设置时长</div>
             <div class="pomo-btns">
               <button class="btn primary" id="pomo-start">开始</button>
               <button class="btn" id="pomo-reset">重置</button>
@@ -499,6 +523,7 @@
       </div>
       <div class="cat-manage" id="cat-manage"></div>
     </div>
+    <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-gcal-row" style="display:none;justify-content:flex-start;margin-top:4px"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
     <div class="modal-actions">
       <button class="link-danger" id="ev-delete" style="display:none">删除</button>
@@ -571,25 +596,54 @@
 
 <!-- settings modal -->
 <div class="overlay" id="settings-overlay">
-  <div class="modal">
+  <div class="modal set-modal">
     <h3>设置</h3>
-    <div class="field"><label>Gemini API Key（AI 助手用 · 只存在你本机浏览器）</label>
-      <input type="password" id="set-apikey" placeholder="粘贴 AIza… 开头的 key"></div>
-    <div class="field"><label>AI 模型（下面这几个免费额度还有量 · 约 20 次/天）</label>
-      <select id="set-model">
-        <option value="gemini-2.5-flash">Gemini 2.5 Flash · 推荐</option>
-        <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite · 更快</option>
-        <option value="gemini-3-flash">Gemini 3 Flash · 最新</option>
-      </select>
-      <input type="text" id="set-model-custom" placeholder="或手动输入其它模型名（留空则用上面选的）" style="margin-top:8px"></div>
-    <div class="set-note">在 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免费获取。key 不上传、不进代码；别人打开你的网站，用的是他们自己填的 key，动不到你的额度。</div>
-    <div class="field" style="margin-top:14px"><label>Google 日历（连接后可显示你的日历事件、并把 App 事件加进去）</label>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn" id="gcal-connect" type="button">连接 Google Calendar</button>
-        <span id="gcal-status" style="font-size:12.5px;color:var(--muted)">未连接</span>
+
+    <div class="set-sec">
+      <div class="set-sec-h">✨ AI 助手</div>
+      <div class="set-item">
+        <label for="set-apikey">Gemini API Key</label>
+        <input type="password" id="set-apikey" placeholder="粘贴 AIza… 开头的 key">
+        <div class="set-desc">只存在你本机浏览器，不上传、不进代码。别人打开你的网站用的是他们自己填的 key，动不到你的额度。在 <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a> 免费获取。</div>
       </div>
-      <label class="pomo-log" style="justify-content:flex-start;margin-top:10px"><input type="checkbox" id="set-gcal-default"> 新建事件默认加入 Google 日历</label>
+      <div class="set-item">
+        <label for="set-model">AI 模型</label>
+        <select id="set-model">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash · 推荐</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite · 更快</option>
+          <option value="gemini-3-flash">Gemini 3 Flash · 最新</option>
+        </select>
+        <input type="text" id="set-model-custom" placeholder="或手动输入其它模型名（留空则用上面选的）" style="margin-top:8px">
+        <div class="set-desc">这几个免费额度还有量（约 20 次/天）。gemini-2.0 / 1.5 系列免费额度已为 0。</div>
+      </div>
     </div>
+
+    <div class="set-sec">
+      <div class="set-sec-h">📅 Google 日历</div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">连接状态</div><div class="set-desc" id="gcal-status">未连接</div></div>
+          <button class="btn" id="gcal-connect" type="button">连接</button>
+        </div>
+      </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">新建事件默认加入 Google 日历</div><div class="set-desc">勾选后新建的事件会自动同步到 Google，不用每次手动勾。</div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-default"><span class="sw-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="set-sec">
+      <div class="set-sec-h">🎨 外观</div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">主题</div><div class="set-desc">浅色 / 深色。也可以点左下角图标快速切换。</div></div>
+          <div class="seg" id="set-theme-seg"><button type="button" data-th="light">浅色</button><button type="button" data-th="dark">深色</button></div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal-actions"><div class="grow"></div><button class="btn" id="set-cancel">取消</button><button class="btn primary" id="set-save">保存</button></div>
   </div>
 </div>
@@ -943,6 +997,7 @@
   var goalList=document.getElementById("goal-list");
   function goalPeriodStart(p){var t=new Date();return p==="month"?new Date(t.getFullYear(),t.getMonth(),1):startOfWeek(t);}
   function matchesGoal(e,g){
+    if(e.goalId)return e.goalId===g.id;          // 手动指定了目标：只算进那个目标
     if(g.cat&&e.cat!==g.cat)return false;
     if(g.sub&&(e.sub||null)!==g.sub)return false;
     if(g.keyword&&e.title.indexOf(g.keyword)<0)return false;
@@ -1066,16 +1121,23 @@
     colorsWrap.style.display=(mode==="parent"?"block":"none");
     catNameI.value="";addPanel.removeAttribute("hidden");renderManage();setTimeout(function(){catNameI.focus();},20);}
   function renderManage(){
-    if(addMode==="parent"){var cs=cats.filter(function(c){return PRESET_KEYS.indexOf(c.key)<0;});
-      manageBox.innerHTML=cs.length?cs.map(function(c){return '<div class="cm"><i style="background:'+c.color+'"></i>'+esc(c.name)+'<button type="button" data-delp="'+c.key+'">删除</button></div>';}).join(""):'<div class="cm-empty">还没有自定义大类</div>';
+    if(addMode==="parent"){var cs=cats.slice();  // 现在全部大类（含预设）都可删
+      manageBox.innerHTML=cs.length?cs.map(function(c){return '<div class="cm"><i style="background:'+c.color+'"></i>'+esc(c.name)+'<button type="button" data-delp="'+c.key+'">删除</button></div>';}).join(""):'<div class="cm-empty">还没有大类</div>';
     }else{var subs=subsOf(selCat);
       manageBox.innerHTML=subs.length?subs.map(function(s){return '<div class="cm"><i style="background:'+catColor(selCat)+'"></i>'+esc(s.name)+'<button type="button" data-dels="'+s.key+'">删除</button></div>';}).join(""):'<div class="cm-empty">「'+esc(catName(selCat))+'」下还没有小类</div>';}
   }
   manageBox.addEventListener("click",function(e){
     var dp=e.target.closest("[data-delp]"),ds=e.target.closest("[data-dels]");
-    if(dp){var k=dp.getAttribute("data-delp");cats=cats.filter(function(c){return c.key!==k;});save("tt_cats",cats);
-      if(selCat===k){selCat="focus";selSub=null;}renderParents();renderSubs();renderManage();}
-    else if(ds){var sk=ds.getAttribute("data-dels");var p=parentObj(selCat);if(p){p.subs=(p.subs||[]).filter(function(x){return x.key!==sk;});save("tt_cats",cats);}
+    if(dp){var k=dp.getAttribute("data-delp");
+      if(cats.length<=1){alert("至少保留一个大类");return;}
+      var cobj=parentObj(k);
+      if(!confirm("删除大类「"+(cobj?cobj.name:"")+"」？用了它的事件不会被删除，只会显示为默认颜色。"))return;
+      cats=cats.filter(function(c){return c.key!==k;});save("tt_cats",cats);
+      if(selCat===k){selCat=cats[0].key;selSub=null;}renderParents();renderSubs();renderManage();}
+    else if(ds){var sk=ds.getAttribute("data-dels");var p=parentObj(selCat);var sobj=null;
+      if(p)(p.subs||[]).forEach(function(x){if(x.key===sk)sobj=x;});
+      if(!confirm("删除小类「"+(sobj?sobj.name:"")+"」？"))return;
+      if(p){p.subs=(p.subs||[]).filter(function(x){return x.key!==sk;});save("tt_cats",cats);}
       if(selSub===sk)selSub=null;renderSubs();renderManage();}
   });
   document.getElementById("cat-add-cancel").addEventListener("click",closeAddPanel);
@@ -1106,6 +1168,11 @@
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
+    var gf=document.getElementById("ev-goal-field"),gsel=document.getElementById("ev-goal");
+    if(goals.length){gf.style.display="";
+      gsel.innerHTML='<option value="">（不指定 · 自动按关键词/分类）</option>'+goals.map(function(g){return '<option value="'+g.id+'">'+esc(g.title)+'</option>';}).join("");
+      gsel.value=(obj&&obj.goalId)?obj.goalId:"";
+    }else{gf.style.display="none";}
     var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?(isG?true:!!obj.gid):!!(gToken&&gcalDefault);
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
@@ -1116,17 +1183,18 @@
   document.getElementById("ev-save").addEventListener("click",function(){
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
+    var goalId=document.getElementById("ev-goal").value||null;
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
-      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid};
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       if(gToken)gcalSync(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
-      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId};
       events=events.map(function(e){return e.id===editingId?obj:e;});}
-    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null};events.push(obj);}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId};events.push(obj);}
     save("tt_events",events);
     if(gToken)gcalSync(obj,want);
     closeModal();renderCal();
@@ -1162,15 +1230,36 @@
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
   var skipBtn=document.getElementById("pomo-skip");
   function todayKey(){return fmt(new Date());}
+  var MAXDIAL=60,pomoHint=document.getElementById("pomo-hint");
   function drawPomo(){
     var tk=(pomoTask.value||"").trim();
+    var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
+    ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
+    if(pomoHint)pomoHint.style.visibility=idleDial?"visible":"hidden";
     if(timerMode==="up"){var m=Math.floor(pElapsed/60),s=pElapsed%60;pTime.textContent=pad(m)+":"+pad(s);
       pMode.textContent="计时中"+(tk?" · "+tk:"");ring.classList.remove("brk");
       var up=Math.min(100,pElapsed/((+setFocus.value||25)*60)*100);ring.style.setProperty("--p",up.toFixed(1));
     }else{var mm=Math.floor(pLeft/60),ss=pLeft%60;pTime.textContent=pad(mm)+":"+pad(ss);
       pMode.textContent=(pMode2==="focus"?("专注"+(tk?" · "+tk:"")):"休息");ring.classList.toggle("brk",pMode2==="break");
-      var pct=pTotal>0?(1-pLeft/pTotal)*100:0;ring.style.setProperty("--p",pct.toFixed(1));}
+      var pct=idleDial?Math.min(100,pTotal/(MAXDIAL*60)*100):(pTotal>0?(1-pLeft/pTotal)*100:0);
+      ring.style.setProperty("--p",pct.toFixed(1));}
   }
+  // 拖动圆环直接设置倒计时时长（不用打字）
+  function ringSetFromEvent(e){
+    var rect=ring.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+    var pt=(e.touches&&e.touches[0])?e.touches[0]:e;
+    var ang=Math.atan2(pt.clientX-cx,cy-pt.clientY);if(ang<0)ang+=2*Math.PI; // 12点=0，顺时针
+    var min=Math.round(ang/(2*Math.PI)*MAXDIAL);if(min<1)min=1;if(min>MAXDIAL)min=MAXDIAL;
+    setFocus.value=min;settings.focus=min;save("tt_settings",settings);
+    pMode2="focus";pTotal=min*60;pLeft=pTotal;drawPomo();
+  }
+  var ringDrag=false;
+  ring.addEventListener("mousedown",function(e){if(timerMode!=="down"||pTimer)return;ringDrag=true;ring.style.cursor="grabbing";ringSetFromEvent(e);e.preventDefault();});
+  document.addEventListener("mousemove",function(e){if(ringDrag)ringSetFromEvent(e);});
+  document.addEventListener("mouseup",function(){if(ringDrag){ringDrag=false;drawPomo();}});
+  ring.addEventListener("touchstart",function(e){if(timerMode!=="down"||pTimer)return;ringDrag=true;ringSetFromEvent(e);e.preventDefault();},{passive:false});
+  document.addEventListener("touchmove",function(e){if(ringDrag){ringSetFromEvent(e);e.preventDefault();}},{passive:false});
+  document.addEventListener("touchend",function(){if(ringDrag){ringDrag=false;drawPomo();}});
   function stopTimer(){if(pTimer){clearInterval(pTimer);pTimer=null;}startBtn.textContent="开始";}
   function startTimer(){if(pTimer)return;pTimer=setInterval(function(){if(timerMode==="up"){pElapsed++;drawPomo();}else{pLeft--;if(pLeft<=0){onComplete();}drawPomo();}},1000);startBtn.textContent="暂停";}
   function resetPomo(){stopTimer();if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();}
@@ -1308,7 +1397,10 @@
   var KNOWN_MODELS=["gemini-2.5-flash","gemini-2.5-flash-lite","gemini-3-flash"];
   var settingsOverlay=document.getElementById("settings-overlay"),setApiKeyI=document.getElementById("set-apikey"),setModelI=document.getElementById("set-model"),setModelCustomI=document.getElementById("set-model-custom");
   function fillModelFields(){if(KNOWN_MODELS.indexOf(apiModel)>=0){setModelI.value=apiModel;setModelCustomI.value="";}else{setModelI.value="gemini-2.5-flash";setModelCustomI.value=apiModel;}}
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();document.getElementById("set-gcal-default").checked=gcalDefault;settingsOverlay.classList.add("on");});
+  var setThemeSeg=document.getElementById("set-theme-seg");
+  function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
+  setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();document.getElementById("set-gcal-default").checked=gcalDefault;syncThemeSeg();settingsOverlay.classList.add("on");});
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
   settingsOverlay.addEventListener("click",function(e){if(e.target===settingsOverlay)closeSettings();});
