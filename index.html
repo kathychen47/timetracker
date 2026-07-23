@@ -54,11 +54,11 @@
   .rail button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
   .rail .grow{flex:1}
 
-  main{flex:1;min-width:0;max-width:1180px;margin:0 auto;padding:18px 18px 60px;width:100%}
+  main{flex:1;min-width:0;max-width:1460px;margin:0 auto;padding:18px 18px 60px;width:100%}
   .view{display:none}.view.on{display:block}
 
   /* calendar + dashboard layout */
-  .cal-layout{display:grid;grid-template-columns:278px minmax(0,1fr) 248px;gap:16px;align-items:start}
+  .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 230px;gap:14px;align-items:start}
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
   @media (max-width:900px){.cal-layout{grid-template-columns:1fr}.pomo-col{grid-column:auto}}
   .cal-main{min-width:0}.pomo-col{min-width:0}
@@ -733,7 +733,7 @@
     head+='</div>';
     if(weekHasToday&&nowVisible())body+='<div class="now-line" style="left:46px;right:0;top:'+nowTop()+'px"></div>';
     body+='</div>';
-    calBody.innerHTML='<div style="min-width:700px">'+head+body+'</div>';
+    calBody.innerHTML='<div style="min-width:560px">'+head+body+'</div>';
   }
 
   function renderMonth(){
