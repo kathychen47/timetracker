@@ -714,7 +714,12 @@
   // ---------- calendar core ----------
   var HS=7,HE=23,PH=44,GH=(HE-HS)*PH;
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
-  function eventsOn(ds){return events.filter(function(e){return e.date===ds;}).concat(gcalEvents.filter(function(e){return e.date===ds;}));}
+  function eventsOn(ds){
+    var local=events.filter(function(e){return e.date===ds;});
+    var gids={};local.forEach(function(e){if(e.gid)gids[e.gid]=1;});
+    var g=gcalEvents.filter(function(e){return e.date===ds&&!gids[e.id.slice(2)];});
+    return local.concat(g);
+  }
   function toMin(s){var p=s.split(":");return(+p[0])*60+(+p[1]);}
   function evMinutes(e){var s=toMin(e.start),en=toMin(e.end);return en>s?en-s:0;}
   function evPos(e){var s=toMin(e.start),en=toMin(e.end);if(en<=s)en=s+30;
@@ -1085,7 +1090,7 @@
     fEnd.value=obj?obj.end:(opts.end||"10:00");
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
-    var gr=document.getElementById("ev-gcal-row");gr.style.display=(gToken&&!obj)?"flex":"none";document.getElementById("ev-gcal").checked=false;
+    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=!!(obj&&obj.gid);
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   function closeModal(){overlay.classList.remove("on");}
@@ -1094,12 +1099,19 @@
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(!addPanel.hasAttribute("hidden"))closeAddPanel();else if(overlay.classList.contains("on"))closeModal();}});
   document.getElementById("ev-save").addEventListener("click",function(){
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
-    if(editingId){events=events.map(function(e){return e.id===editingId?{id:e.id,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:e.done||false}:e;});}
-    else{events.push({id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false});}
-    if(!editingId&&gToken&&document.getElementById("ev-gcal").checked)gcalCreate(title,fDate.value,fStart.value,fEnd.value);
-    save("tt_events",events);closeModal();renderCal();
+    var want=gToken&&document.getElementById("ev-gcal").checked,obj;
+    if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null};
+      events=events.map(function(e){return e.id===editingId?obj:e;});}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null};events.push(obj);}
+    save("tt_events",events);
+    if(gToken)gcalSync(obj,want);
+    closeModal();renderCal();
   });
-  delBtn.addEventListener("click",function(){events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);closeModal();renderCal();});
+  delBtn.addEventListener("click",function(){var old=events.filter(function(e){return e.id===editingId;})[0];
+    events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);
+    if(gToken&&old&&old.gid)gcalDeleteById(old.gid);
+    closeModal();renderCal();});
 
   // ---------- pomodoro ----------
   var ring=document.getElementById("ring"),pTime=document.getElementById("pomo-time"),pMode=document.getElementById("pomo-mode"),
@@ -1358,13 +1370,18 @@
     var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
     return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:it.summary||"(无标题)",cat:"meeting",sub:null,done:false,gcal:true};
   }
-  function gcalCreate(title,date,start,end){
+  var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
+  function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return {summary:o.title,start:{dateTime:o.date+"T"+o.start+":00",timeZone:tz},end:{dateTime:o.date+"T"+o.end+":00",timeZone:tz}};}
+  function gcalSync(obj,want){
     if(!gToken)return;
-    var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
-    var body={summary:title,start:{dateTime:date+"T"+start+":00",timeZone:tz},end:{dateTime:date+"T"+end+":00",timeZone:tz}};
-    fetch("https://www.googleapis.com/calendar/v3/calendars/primary/events",{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(body)})
-      .then(function(r){return r.json();}).then(function(){fetchGcal();}).catch(function(){});
+    if(want){
+      if(obj.gid){fetch(GEV+"/"+encodeURIComponent(obj.gid),{method:"PATCH",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(){fetchGcal();}).catch(function(){});}
+      else{fetch(GEV,{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(r){return r.json();}).then(function(j){if(j&&j.id){obj.gid=j.id;save("tt_events",events);}fetchGcal();}).catch(function(){});}
+    }else if(obj.gid){var gid=obj.gid;obj.gid=null;save("tt_events",events);gcalDeleteById(gid);}
   }
+  function gcalDeleteById(gid){if(!gToken||!gid)return;
+    fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}}).then(function(){fetchGcal();}).catch(function(){});}
   updateGcalUI();
 
   // ---------- init ----------
