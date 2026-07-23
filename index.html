@@ -1336,23 +1336,25 @@
   }
 
   // ---------- Google Calendar 双向 ----------
-  var gConnectBtn=document.getElementById("gcal-connect"),gStatusEl=document.getElementById("gcal-status"),tokenClient=null;
+  var gConnectBtn=document.getElementById("gcal-connect"),gStatusEl=document.getElementById("gcal-status"),tokenClient=null,silentMode=false;
   function gisReady(){return window.google&&google.accounts&&google.accounts.oauth2;}
   function initGis(){
     if(tokenClient||!gisReady())return;
     tokenClient=google.accounts.oauth2.initTokenClient({
       client_id:GCAL_CLIENT_ID,
       scope:"https://www.googleapis.com/auth/calendar.events",
-      callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;onGcalConnected();}else{gStatusEl.textContent="授权失败";}}
+      callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;save("tt_gcal","1");onGcalConnected();}},
+      error_callback:function(){if(!silentMode)gStatusEl.textContent="连接已取消或失败";}
     });
   }
   function updateGcalUI(){if(gToken){gConnectBtn.textContent="重新连接";}else{gConnectBtn.textContent="连接 Google Calendar";gStatusEl.textContent="未连接";}}
   gConnectBtn.addEventListener("click",function(){
-    initGis();
+    silentMode=false;initGis();
     if(!tokenClient){gStatusEl.textContent="Google 库未加载（预览页不支持，请到你的网站上用）";return;}
     gStatusEl.textContent="正在打开 Google 登录…";
     tokenClient.requestAccessToken({prompt:gToken?"":"consent"});
   });
+  function trySilentGcal(){silentMode=true;initGis();if(tokenClient){try{tokenClient.requestAccessToken({prompt:"none"});}catch(e){}}}
   function onGcalConnected(){updateGcalUI();fetchGcal();}
   function fetchGcal(){
     if(!gToken)return;
@@ -1383,6 +1385,7 @@
   function gcalDeleteById(gid){if(!gToken||!gid)return;
     fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}}).then(function(){fetchGcal();}).catch(function(){});}
   updateGcalUI();
+  if(load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
