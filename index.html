@@ -257,7 +257,11 @@
 
   /* todos shown on the calendar */
   .allday{display:grid;border-bottom:1px solid var(--border);background:var(--bg)}
-  .allday .adh{font-size:9.5px;color:var(--muted);padding:4px;display:flex;align-items:center;justify-content:flex-end;border-right:1px solid var(--line)}
+  .allday .adh{font-size:9.5px;color:var(--muted);padding:4px;display:flex;align-items:center;justify-content:flex-end;border-right:1px solid var(--line);cursor:pointer;white-space:nowrap}
+  .allday .adh:hover{color:var(--text)}
+  .allday.collapsed .adc{min-height:0;padding:2px 4px;flex-direction:row;align-items:center}
+  .ad-mini{font-size:10px;color:var(--muted);background:var(--surface-2);border-radius:99px;padding:1px 7px;font-weight:600}
+  .dv-allday-h{cursor:pointer}.dv-allday-h:hover{color:var(--text)}
   .allday .adc{border-left:1px solid var(--line);padding:3px;display:flex;flex-direction:column;gap:3px;min-height:24px}
   .allday .adc:nth-child(2){border-left:none}
   .dv-allday{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap}
@@ -921,6 +925,7 @@
   // ---------- calendar core ----------
   var HS=7,HE=23,PH=44,GH=(HE-HS)*PH;
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
+  var todoBandCollapsed=load("tt_todoband",false);
   function todosOn(ds){return todos.filter(function(t){return t.due===ds&&!t.archived;});}
   function todoColor(t){return (t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--cat-goal)";}
   function todoChipHTML(t){return '<div class="ad-todo'+(t.done?" done":"")+'" data-todo="'+t.id+'" style="--c:'+todoColor(t)+'"><span class="adk" data-todocheck><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><b>'+esc(t.title)+'</b></div>';}
@@ -963,7 +968,8 @@
     var d=state.cursor,ds=fmt(d),today=new Date();
     calTitle.innerHTML=(d.getMonth()+1)+"月"+d.getDate()+"日<em>周"+WD[(d.getDay()+6)%7]+"</em>";
     var dayEvents=eventsOn(ds);
-    var tStrip=todosOn(ds).length?'<div class="dv-allday"><div class="dv-allday-h">待办</div><div class="dv-allday-list">'+todosOn(ds).map(todoChipHTML).join("")+'</div></div>':'';
+    var dtds=todosOn(ds);
+    var tStrip=dtds.length?'<div class="dv-allday"><div class="dv-allday-h" data-todoband>'+(todoBandCollapsed?"▸":"▾")+' 待办 '+dtds.length+'</div>'+(todoBandCollapsed?'':'<div class="dv-allday-list">'+dtds.map(todoChipHTML).join("")+'</div>')+'</div>':'';
     var catKeys=[];dayEvents.forEach(function(e){if(catKeys.indexOf(e.cat)<0)catKeys.push(e.cat);});
     catKeys.sort(function(a,b){return catIndex(a)-catIndex(b);});
     if(!catKeys.length){calBody.innerHTML=tStrip+'<div class="dv-empty">今天还没有时间安排，点右上「+ 事件」添加</div>';return;}
@@ -1016,8 +1022,9 @@
       body+='<div class="col'+(isT?" today":"")+'" data-date="'+ds+'" style="height:'+GH+'px">'+evs+'</div>';
     }
     head+='</div>';
-    var adband='<div class="allday" style="grid-template-columns:46px repeat(7,1fr)"><div class="adh">待办</div>';
-    for(var a=0;a<7;a++){adband+='<div class="adc">'+todosOn(fmt(addDays(start,a))).map(todoChipHTML).join("")+'</div>';}
+    var tbc=todoBandCollapsed;
+    var adband='<div class="allday'+(tbc?" collapsed":"")+'" style="grid-template-columns:46px repeat(7,1fr)"><div class="adh" data-todoband>'+(tbc?"▸":"▾")+' 待办</div>';
+    for(var a=0;a<7;a++){var atds=todosOn(fmt(addDays(start,a)));adband+='<div class="adc">'+(tbc?(atds.length?'<span class="ad-mini">'+atds.length+'</span>':""):atds.map(todoChipHTML).join(""))+'</div>';}
     adband+='</div>';
     if(weekHasToday&&nowVisible())body+='<div class="now-line" style="left:46px;right:0;top:'+nowTop()+'px"></div>';
     body+='</div>';
@@ -1063,6 +1070,7 @@
   document.getElementById("add-btn").addEventListener("click",function(){openModal(null,{date:fmt(state.cursor)});});
 
   calBody.addEventListener("click",function(e){
+    if(e.target.closest("[data-todoband]")){todoBandCollapsed=!todoBandCollapsed;save("tt_todoband",todoBandCollapsed);renderCal();return;}
     var chk=e.target.closest("[data-chk]");
     if(chk){var evc=chk.closest(".ev");if(evc){var id=evc.getAttribute("data-id");
       events=events.map(function(x){return x.id===id?Object.assign({},x,{done:!x.done}):x;});save("tt_events",events);renderCal();}return;}
