@@ -333,9 +333,6 @@
   .dict-search input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:15px}
   .dict-search input:focus{outline:none;border-color:var(--primary)}
   .dict-result{min-height:40px}
-  .dict-star{flex:none;font-size:17px;line-height:1;padding:0 12px;min-width:42px}
-  .dict-star.on{color:#eab308;border-color:#eab308}
-  .dict-star:disabled{opacity:.4;cursor:default}
   .dict-sugg{margin:-6px 0 12px}
   .dict-sugg .sg{padding:9px 14px;border:1px solid var(--border);border-top:none;background:var(--surface);cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:10px}
   .dict-sugg .sg:first-child{border-top:1px solid var(--border);border-radius:10px 10px 0 0}
@@ -2097,7 +2094,6 @@ margin-left: -22px;
               <button data-acc="en-US">美</button>
             </div>
             <button class="btn" id="dict-go">查</button>
-            <button class="btn dict-star" id="dict-star" type="button" title="加入生词本" disabled>☆</button>
           </div>
           <div class="dict-sugg" id="dict-sugg"></div>
           <div class="dict-result" id="dict-result"></div>
@@ -3764,21 +3760,16 @@ margin-left: -22px;
     if(!list||!list.length){el.innerHTML="";return;}
     el.innerHTML=list.map(function(s){return '<div class="sg" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'<span class="m">'+(s.store==="collins"?"中→英":"英→中")+'</span></div>';}).join("");}
 
-  var curWord=null;
-  function updateDictStar(){var b=document.getElementById("dict-star");if(!b)return;
-    if(!curWord){b.disabled=true;b.classList.remove("on");b.textContent="☆";b.title="加入生词本";return;}
-    b.disabled=false;var s=isSaved(curWord.w);b.classList.toggle("on",s);b.textContent=s?"★":"☆";b.title=s?"已收藏（点取消）":"加入生词本";}
   async function doLookup(q){
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
     renderSugg([]);
-    if(!q){box.innerHTML="";curWord=null;updateDictStar();return;}
+    if(!q){box.innerHTML="";return;}
     await ensureDictDB();
     var key=q.toLowerCase(),matches=[];
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];
       if(dictPrefs.enabled[store]===false)continue;
       var rec=null;try{rec=await idbGet(store,key);}catch(e){}
       if(rec)matches.push([store,rec]);}
-    curWord=matches.length?{w:matches[0][1].k,disp:matches[0][1].disp||matches[0][1].k,store:matches[0][0]}:null;updateDictStar();
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
       if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:(wbActive!=="all"?wbActive:wbGroups.def)});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
@@ -3791,13 +3782,13 @@ margin-left: -22px;
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
 
   function dictCardHTML(store,rec){
-    var say=store==="oald"?(rec.disp||rec.k):rec.k;
+    var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store==="oald"?disp:w;
     var col=dictPrefs.collapsed[store]?" collapsed":"";
     return '<div class="dict-card'+col+'" data-store="'+store+'"><div class="dict-card-top">'+
       '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
       '<div class="dict-actions">'+
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
-      '</div></div>'+
+      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'✓ 已收藏':'★ 加入生词本')+'</button></div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
   function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
     el.innerHTML=dictPrefs.order.map(function(store,i){var en=dictPrefs.enabled[store]!==false;
@@ -3886,8 +3877,6 @@ margin-left: -22px;
     q.addEventListener("keydown",function(e){if(e.key==="Enter"){if(timer)clearTimeout(timer);doLookup(q.value);}});
     document.getElementById("dict-go").addEventListener("click",function(){doLookup(q.value);});
     document.getElementById("dict-sugg").addEventListener("click",function(e){var sg=e.target.closest(".sg");if(sg){q.value=sg.getAttribute("data-w");doLookup(q.value);q.focus();}});
-    var star=document.getElementById("dict-star");
-    if(star)star.addEventListener("click",function(){if(!curWord)return;toggleWord(curWord.w,curWord.disp,curWord.store);updateDictStar();});
     var acc=document.getElementById("dict-acc");
     if(acc){acc.addEventListener("click",function(e){var b=e.target.closest("button[data-acc]");if(!b)return;pronAccent=b.getAttribute("data-acc");save("tt_pronacc",pronAccent);acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});});
       acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-acc")===pronAccent);});}
