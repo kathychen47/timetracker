@@ -4305,7 +4305,14 @@ margin-left: -22px;
     if(dictInitP)return dictInitP;
     dictInitP=refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});
     return dictInitP;}
-  function openDict(){ensureDictInit().then(function(){renderWordbook();
+  function openDict(){ensureDictInit().then(function(){
+    var dt=load("tt_dicttab","look");
+    var tb=document.querySelector('#dict-tabs button[data-dt="'+dt+'"]');
+    if(tb&&!tb.classList.contains("on")){
+      document.querySelectorAll("#dict-tabs button").forEach(function(x){x.classList.toggle("on",x===tb);});
+      document.getElementById("dict-look").style.display=dt==="look"?"":"none";
+      document.getElementById("dict-study").style.display=dt==="study"?"":"none";}
+    renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
   function bookmarkletCode(){var base=location.origin+location.pathname;
     return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;var p=window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');if(p)p.focus();else alert('\\u5f39\\u7a97\\u88ab\\u62e6\\u622a\\uff0c\\u8bf7\\u5141\\u8bb8\\u5f39\\u7a97');})();";}
@@ -4881,7 +4888,7 @@ margin-left: -22px;
     document.getElementById("dict-tabs").addEventListener("click",function(e){
       var b=e.target.closest("button[data-dt]");if(!b)return;
       document.querySelectorAll("#dict-tabs button").forEach(function(x){x.classList.toggle("on",x===b);});
-      var dt=b.getAttribute("data-dt");
+      var dt=b.getAttribute("data-dt");save("tt_dicttab",dt);
       document.getElementById("dict-look").style.display=dt==="look"?"":"none";
       document.getElementById("dict-study").style.display=dt==="study"?"":"none";
       if(dt==="study")renderWordbook();});
@@ -5209,7 +5216,7 @@ margin-left: -22px;
   }
 
   function showShelf(){document.getElementById("rd-shelf").style.display="";document.getElementById("rd-read").style.display="none";
-    hideRdPop();curEpub=null;curPdf=null;curBook=null;renderShelf();}
+    hideRdPop();curEpub=null;curPdf=null;curBook=null;save("tt_rdbook","");renderShelf();}
 
   var rdContent=null,rdPosEl=null,rdTitleEl=null;
   function applyRdFs(){if(rdContent)rdContent.style.setProperty("--rdfs",rdFs+"px");}
@@ -5224,7 +5231,7 @@ margin-left: -22px;
   async function openBook(id){
     var meta=await bGet("meta",id);if(!meta)return;
     var rec=await bGet("blob",id);if(!rec||!rec.blob){ttAlert("这本书的文件丢了，建议删掉重新导入");return;}
-    curBook=meta;
+    curBook=meta;save("tt_rdbook",id);
     document.getElementById("rd-shelf").style.display="none";
     document.getElementById("rd-read").style.display="";
     rdTitleEl.textContent=meta.name;rdContent.innerHTML='<div class="rd-empty">加载中…</div>';applyRdFs();
@@ -5845,7 +5852,10 @@ margin-left: -22px;
         if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
       window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
     }
-    if(!curBook)renderShelf();
+    if(!curBook){                                  // 上次正在读某本书 → 直接续上
+      var last=load("tt_rdbook","");
+      if(last)bGet("meta",last).then(function(m){if(m)openBook(last);else{save("tt_rdbook","");renderShelf();}},function(){renderShelf();});
+      else renderShelf();}
     ensureDictInit();}
 
   // ---------- 税务（新西兰：PAYE / ACC / GST） ----------
@@ -5854,7 +5864,7 @@ margin-left: -22px;
                    2026:{brackets:TX_BRACKETS,accRate:3.33,accMax:156641,gstRate:15}};
   var TXC={income:"#1D9E75",tax:"#378ADD",acc:"#D85A30",gst:"#BA7517",total:"#c44"};
   var taxRecs=load("tt_taxrec",[])||[],taxRates=load("tt_taxrates",{})||{};
-  var taxTab="rec",taxYear=null;
+  var taxTab=load("tt_taxtab","rec")||"rec",taxYear=null;
   function txMoney(n){return "$"+Math.round(n).toLocaleString();}
   function taxOn(income,bk){var t=0;
     for(var i=0;i<bk.length;i++){var b=bk[i];if(income<=b.min)break;
@@ -6089,7 +6099,7 @@ margin-left: -22px;
       taxInit=true;
       document.getElementById("tax-tabs").addEventListener("click",function(e){
         var b=e.target.closest("[data-tt]");if(!b)return;
-        taxTab=b.getAttribute("data-tt");
+        taxTab=b.getAttribute("data-tt");save("tt_taxtab",taxTab);
         this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
         renderTax();});
       document.getElementById("tax-year").addEventListener("change",function(){
