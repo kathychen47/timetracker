@@ -5765,7 +5765,7 @@ margin-left: -22px;
         if(en.isIntersecting){
           if(!el.__busy&&!el.__done){el.__busy=true;renderPdfInto(el,p,scale).then(function(){el.__busy=false;el.__done=true;});}
         }else if(el.__done&&Math.abs(p-curPdf.page)>4){  // 离太远就卸掉，省内存
-          el.innerHTML="";el.__done=false;el.style.height=Math.floor(vp1.height)+"px";addPageNo(el,p);}});
+          el.innerHTML="";el.__done=false;el.classList.add("ph");el.style.height=Math.floor(vp1.height)+"px";addPageNo(el,p);}});
       syncScrollPage();
     },{root:rdContent,rootMargin:"300px 0px"});
     [].slice.call(rdContent.children).forEach(function(el){pdfIO.observe(el);});
