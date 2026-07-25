@@ -4383,6 +4383,20 @@ margin-left: -22px;
     if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再上传。");return;}
     var stores=DICT_STORES.filter(function(s){return importedBlobs[s]||dictCounts[s]>0;});
     if(!stores.length){dictProg("先用「📁 导入文件」把词典载入，再点上传。");return;}
+    // 云端已有就先问一句，避免误点白传 70+MB
+    try{
+      var ls=await SB.storage.from("dict").list("",{limit:100});
+      var have=(ls&&ls.data)?ls.data.filter(function(f){
+        return DICT_STORES.some(function(s){return DICT_FILES[s]===f.name;});}):[];
+      if(have.length){
+        var info=have.map(function(f){
+          var mb=f.metadata&&f.metadata.size?(" "+(f.metadata.size/1048576).toFixed(0)+"MB"):"";
+          var t=f.updated_at?("，"+String(f.updated_at).slice(0,10)+" 传的"):"";
+          return "· "+f.name+mb+t;}).join("\n");
+        var ok=await ttConfirm("云端已经有词典了：\n"+info+"\n\n重新上传会覆盖它们（约 70MB 流量）。\n只有换了词典文件才需要重传，确定继续吗？",
+          {okText:"仍然重传",danger:true,anchor:document.getElementById("dict-up")});
+        if(!ok){dictProg("已取消，云端词典保持不变。");return;}}
+    }catch(e){}
     for(var i=0;i<stores.length;i++){var store=stores[i];
       try{
         var blob=importedBlobs[store];
