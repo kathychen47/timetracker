@@ -4609,7 +4609,14 @@ margin-left: -22px;
       if(!dictCounts.oald&&!dictCounts.collins){box.innerHTML='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';return;}
       var sug=await fuzzySuggest(q);
       var dym=sug.length?'<div class="dym">'+sug.map(function(s){return '<span class="dym-i" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'</span>';}).join("")+'</div>':'';
-      box.innerHTML='<div class="dict-hint">没找到 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'换个词或检查拼写试试。')+'</div>'+dym;return;}
+      box.innerHTML='<div class="dict-hint">词典没收录 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'')+'</div>'+dym+
+        '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
+      try{var tr2=await translateText(q);
+        var fb=document.getElementById("dict-fallback");
+        if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr2.by)+'</span></div>'+
+          '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';}
+      catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
+      return;}
     box.innerHTML=html;}
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
 
@@ -4776,7 +4783,17 @@ margin-left: -22px;
     return html||'<div class="dict-hint">词典未加载或查不到（去 ⚙️设置 → 📖词典 加载）。</div>';}
   async function toggleWbItem(item){if(!item)return;var def=item.querySelector(".wb-def");if(!def)return;
     if(!def.hasAttribute("hidden")){def.setAttribute("hidden","");item.classList.remove("open");return;}
-    if(!def.getAttribute("data-loaded")){def.innerHTML='<div class="dict-hint">加载中…</div>';def.innerHTML=await wbDefHTML(item.getAttribute("data-w"));def.setAttribute("data-loaded","1");}
+    if(!def.getAttribute("data-loaded")){
+      var w=item.getAttribute("data-w");
+      def.innerHTML='<div class="dict-hint">加载中…</div>';
+      def.innerHTML=await wbDefHTML(w);
+      if(!def.querySelector(".dict-card")){
+        def.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
+        try{var tr=await translateText(w);
+          def.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
+            '<div class="rd-tr">'+esc(tr.text)+'</div></div>';}
+        catch(e){def.innerHTML='<div class="dict-hint">查不到，翻译也失败了</div>';}}
+      def.setAttribute("data-loaded","1");}
     def.removeAttribute("hidden");item.classList.add("open");}
 
   // ===== 记忆调度（SM-2 遗忘曲线，Anki 式四级评分）=====
@@ -5784,6 +5801,13 @@ margin-left: -22px;
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
     rdPop.style.display="";applyPopSize();placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
+    if(!bd.querySelector(".dict-card")){        // 词典里没有 → 直接翻译
+      var w0=rdPopWord.disp;
+      bd.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
+      try{var tr=await translateText(w0);
+        bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
+          '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>';}
+      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>';}}
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
   var ANNC=load("tt_anncolors",null)||["#ffe58a","#b7f0c8","#bcd9ff","#ffc9d8"];
