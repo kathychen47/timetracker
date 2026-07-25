@@ -375,6 +375,8 @@
   .rd-textlayer > span{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;cursor:text}
   .rd-textlayer ::selection{background:#6366F1}
   .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
+  #rd-hl{position:fixed;z-index:59;background:color-mix(in srgb,var(--primary) 22%,transparent);
+    border-radius:4px;pointer-events:none;display:none;transition:left .06s,top .06s,width .06s}
   #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
     background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
   .rd-pop-hd{position:sticky;top:0;background:var(--surface);display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);z-index:2}
@@ -2582,6 +2584,23 @@ margin-left: -22px;
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="dict-autospeak"> 查词后自动发音</label>
         <div class="set-desc" style="margin-top:4px">查词、以及看书时划词，出结果就自动朗读（口音在查词页的「英/美」切换）。</div>
         <div class="set-row" style="margin-top:12px">
+          <div class="set-row-txt"><div class="set-row-t">看书查词方式</div><div class="set-desc">读书时怎么触发查词。鼠标指到的词会有半透明色块提示；<b>右键任何词</b>永远可以直接查。</div></div>
+          <select id="dict-trigger">
+            <option value="select">选中单词（划词）</option>
+            <option value="hover">鼠标停住即出</option>
+            <option value="click">指到高亮·点一下出</option>
+            <option value="key">按住快捷键 + 指过去</option>
+          </select>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">快捷键</div><div class="set-desc">上面选「按住快捷键」时用哪个键。</div></div>
+          <select id="dict-hotkey">
+            <option value="alt">Alt / Option</option>
+            <option value="ctrl">Ctrl / ⌘</option>
+            <option value="shift">Shift</option>
+          </select>
+        </div>
+        <div class="set-row" style="margin-top:12px">
           <div class="set-row-txt"><div class="set-row-t">看书划词卡片</div><div class="set-desc">读书时选中单词弹出的释义卡片，什么时候收起。</div></div>
           <select id="dict-popmode">
             <option value="pin">固定不动</option>
@@ -3895,7 +3914,9 @@ margin-left: -22px;
     if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};
     if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;
     if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
-    if(!dictPrefs.popMode)dictPrefs.popMode="pin";})();
+    if(!dictPrefs.popMode)dictPrefs.popMode="pin";
+    if(!dictPrefs.trigger)dictPrefs.trigger="select";
+    if(!dictPrefs.hotkey)dictPrefs.hotkey="alt";})();
   function saveDictPrefs(){save("tt_dictprefs",dictPrefs);}
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
@@ -3962,6 +3983,8 @@ margin-left: -22px;
     var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;
     var as=document.getElementById("dict-autospeak");if(as)as.checked=!!dictPrefs.autoSpeak;
     var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";
+    var tg2=document.getElementById("dict-trigger");if(tg2)tg2.value=dictPrefs.trigger||"select";
+    var hk=document.getElementById("dict-hotkey");if(hk)hk.value=dictPrefs.hotkey||"alt";
     var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
     var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
@@ -4518,6 +4541,10 @@ margin-left: -22px;
     if(as)as.addEventListener("change",function(){dictPrefs.autoSpeak=as.checked;saveDictPrefs();});
     var pm=document.getElementById("dict-popmode");
     if(pm)pm.addEventListener("change",function(){dictPrefs.popMode=pm.value;saveDictPrefs();});
+    var tg2=document.getElementById("dict-trigger");
+    if(tg2)tg2.addEventListener("change",function(){dictPrefs.trigger=tg2.value;saveDictPrefs();});
+    var hk=document.getElementById("dict-hotkey");
+    if(hk)hk.addEventListener("change",function(){dictPrefs.hotkey=hk.value;saveDictPrefs();});
     var te=document.getElementById("tr-engine");
     if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
     var tg=document.getElementById("tr-lang");
@@ -4851,7 +4878,7 @@ margin-left: -22px;
 
   // 阅读中划词
   var rdPop=null,rdPopWord=null,rdPopTimer=null;
-  function hideRdPop(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}if(rdPop)rdPop.style.display="none";rdPopWord=null;}
+  function hideRdPop(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}if(rdPop)rdPop.style.display="none";rdPopWord=null;lastHoverWord="";hideHl();}
   function rdPopArm(){ // 「鼠标移开就消失」模式：离开卡片后收起
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
     if(dictPrefs.popMode==="hover")rdPopTimer=setTimeout(hideRdPop,600);}
@@ -4868,13 +4895,89 @@ margin-left: -22px;
     rdPop.style.display="";placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
     if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,2600);}}
+  // 取鼠标位置下的那个词 + 它的矩形（用于半透明高亮）
+  function wordAtPoint(x,y){
+    var node=null,off=0;
+    if(document.caretRangeFromPoint){var r=document.caretRangeFromPoint(x,y);if(r){node=r.startContainer;off=r.startOffset;}}
+    else if(document.caretPositionFromPoint){var p=document.caretPositionFromPoint(x,y);if(p){node=p.offsetNode;off=p.offset;}}
+    if(!node||node.nodeType!==3)return null;
+    if(rdContent&&!rdContent.contains(node))return null;
+    var t=node.textContent||"";if(!t)return null;
+    var isLat=function(c){return !!c&&/[A-Za-zÀ-ÿ'’-]/.test(c);};
+    var isHan=function(c){return !!c&&/[一-鿿]/.test(c);};
+    var i=Math.min(off,t.length-1);if(i<0)return null;
+    var s,e,cands=[];
+    if(isHan(t[i])){
+      s=i;e=i;while(e<t.length&&isHan(t[e])&&e-s<4)e++;
+      for(var L=e-s;L>=1;L--)cands.push(t.slice(s,s+L));
+      e=s+1;
+    }else{
+      if(!isLat(t[i])&&isLat(t[i-1]))i--;
+      if(!isLat(t[i]))return null;
+      s=i;e=i;
+      while(s>0&&isLat(t[s-1]))s--;
+      while(e<t.length&&isLat(t[e]))e++;
+      var w=t.slice(s,e).replace(/^['’-]+|['’-]+$/g,"");
+      if(!w)return null;cands.push(w);
+    }
+    var rg=document.createRange();rg.setStart(node,s);rg.setEnd(node,Math.max(e,s+1));
+    var rect=rg.getBoundingClientRect();
+    if(!rect||(!rect.width&&!rect.height))return null;
+    return {cands:cands,w:cands[0],rect:rect};}
+  var rdHl=null;
+  function showHl(rect){
+    if(!rdHl){rdHl=document.createElement("div");rdHl.id="rd-hl";document.body.appendChild(rdHl);}
+    var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+    rdHl.style.display="";rdHl.style.left=(rect.left/z-2)+"px";rdHl.style.top=(rect.top/z-1)+"px";
+    rdHl.style.width=(rect.width/z+4)+"px";rdHl.style.height=(rect.height/z+2)+"px";}
+  function hideHl(){if(rdHl)rdHl.style.display="none";}
+  // 依次尝试候选词（中文 4→1 字），命中就弹卡片
+  async function lookupCands(cands,rect){
+    await ensureDictDB();
+    for(var i=0;i<cands.length;i++){
+      var w=cands[i].toLowerCase();
+      var hit=null;
+      for(var j=0;j<dictPrefs.order.length;j++){var st=dictPrefs.order[j];
+        if(dictPrefs.enabled[st]===false)continue;
+        try{hit=await idbGet(st,w);}catch(e){}
+        if(hit)break;}
+      if(hit){showRdPop(cands[i],rect);return true;}}
+    if(cands.length)showRdPop(cands[cands.length-1],rect);
+    return false;}
+  var hoverTimer=null,lastHoverWord="";
+  function rdHover(e){
+    var mode=dictPrefs.trigger||"select";
+    if(mode==="select")return;
+    if(rdPop&&rdPop.style.display!=="none"&&rdPop.contains(e.target))return;
+    if(mode==="key"){var mk=dictPrefs.hotkey||"alt";
+      var held=(mk==="alt"&&e.altKey)||(mk==="ctrl"&&(e.ctrlKey||e.metaKey))||(mk==="shift"&&e.shiftKey);
+      if(!held){hideHl();return;}}
+    var hit=wordAtPoint(e.clientX,e.clientY);
+    if(!hit){hideHl();lastHoverWord="";return;}
+    showHl(hit.rect);
+    if(mode==="click")return;                       // 点击模式：只高亮，等点击
+    if(hit.w===lastHoverWord&&rdPop&&rdPop.style.display!=="none")return;
+    if(hoverTimer)clearTimeout(hoverTimer);
+    hoverTimer=setTimeout(function(){lastHoverWord=hit.w;lookupCands(hit.cands,hit.rect);},mode==="key"?60:300);}
+  function rdClickWord(e){
+    var mode=dictPrefs.trigger||"select";
+    if(mode!=="click")return;
+    if(String(getSelection()||"").trim())return;    // 正在选文字就不打扰
+    var hit=wordAtPoint(e.clientX,e.clientY);
+    if(!hit){hideHl();return;}
+    showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
+  function rdContextWord(e){
+    var hit=wordAtPoint(e.clientX,e.clientY);
+    if(!hit)return;
+    e.preventDefault();showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
   function rdSelHandler(){
     var s=(getSelection()?String(getSelection()):"").trim();
     if(!s||s.length>1200)return;
     var sel=getSelection();if(!sel.rangeCount)return;
     var rect=sel.getRangeAt(0).getBoundingClientRect();
     if(!rect||(!rect.width&&!rect.height))return;
-    if(rdLooksLikeWord(s))showRdPop(s,rect);else showRdTrans(s,rect);}
+    if(rdLooksLikeWord(s)){if((dictPrefs.trigger||"select")==="select")showRdPop(s,rect);}
+    else showRdTrans(s,rect);}   // 选中整句 → 任何模式都翻译
   function placeRdPop(rect){
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
@@ -4960,7 +5063,11 @@ margin-left: -22px;
       document.getElementById("rd-fs-up").addEventListener("click",function(){rdFs=Math.min(30,rdFs+1);save("tt_rdfs",rdFs);applyRdFs();});
       document.getElementById("rd-fs-down").addEventListener("click",function(){rdFs=Math.max(12,rdFs-1);save("tt_rdfs",rdFs);applyRdFs();});
       rdContent.addEventListener("mouseup",function(){setTimeout(rdSelHandler,10);});
-      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();});
+      rdContent.addEventListener("mousemove",rdHover);
+      rdContent.addEventListener("click",rdClickWord);
+      rdContent.addEventListener("contextmenu",rdContextWord);
+      rdContent.addEventListener("mouseleave",function(){hideHl();if(hoverTimer)clearTimeout(hoverTimer);});
+      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();hideHl();});
       rdPop.addEventListener("mouseenter",function(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
       rdPop.addEventListener("mouseleave",rdPopArm);
       document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
