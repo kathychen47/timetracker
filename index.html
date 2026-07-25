@@ -440,7 +440,24 @@
   .rd-bar .btn{padding:6px 11px;font-size:13px}
   .rd-bar .grow{flex:1}
   .rd-title{font-size:15px;font-weight:650;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .rd-pos{font-size:12.5px;color:var(--muted);min-width:74px;text-align:center}
+  .rd-pos{font-size:12.5px;color:var(--muted);text-align:center}
+  .rd-jump{display:inline-flex;align-items:center;gap:5px}
+  .rd-jump input{width:52px;padding:5px 7px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+    color:var(--text);font-size:12.5px;text-align:center;font-variant-numeric:tabular-nums}
+  .rd-jump input:focus{outline:none;border-color:var(--primary)}
+  .rd-jump input::-webkit-outer-spin-button,.rd-jump input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  /* 右侧快速定位条 */
+  .rd-main{position:relative}
+  .rd-scrub{position:absolute;right:-2px;top:0;width:14px;height:100%;cursor:pointer;z-index:5}
+  .rd-scrub:before{content:"";position:absolute;left:5px;top:0;width:4px;height:100%;background:var(--border);border-radius:99px;opacity:.5}
+  .rd-scrub .thumb{position:absolute;left:3px;width:8px;border-radius:99px;background:var(--primary);opacity:.55}
+  .rd-scrub:hover .thumb{opacity:.9;left:2px;width:10px}
+  .rd-scrub .tip{position:absolute;right:20px;display:none;background:var(--text);color:var(--bg);
+    font-size:11.5px;padding:3px 8px;border-radius:7px;white-space:nowrap;pointer-events:none}
+  .rd-main.notes-on .rd-scrub{display:none}
+  .rd-content::-webkit-scrollbar{width:10px}
+  .rd-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+  .rd-content::-webkit-scrollbar-thumb:hover{background:var(--muted)}
   .rd-content{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 30px;
     height:calc(100vh - 168px);overflow-y:auto;font-size:var(--rdfs,17px);line-height:1.85}
   .rd-content p{margin:0 0 1em}
@@ -2506,11 +2523,12 @@ margin-left: -22px;
           </div>
           <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
           <button class="btn" id="rd-prev">上一节</button>
-          <span class="rd-pos" id="rd-pos"></span>
+          <span class="rd-jump"><input type="number" id="rd-go" min="1" placeholder="页"><span class="rd-pos" id="rd-pos"></span></span>
           <button class="btn" id="rd-next">下一节</button>
         </div>
         <div class="rd-main" id="rd-main">
           <div class="rd-content" id="rd-content"></div>
+          <div class="rd-scrub" id="rd-scrub"><div class="thumb" id="rd-thumb"></div><div class="tip" id="rd-scrub-tip"></div></div>
           <aside class="rd-notes" id="rd-notes"></aside>
         </div>
       </div>
@@ -5494,7 +5512,7 @@ margin-left: -22px;
       try{var b=await f.async("blob");var u=URL.createObjectURL(b);curEpub.urls.push(u);el.setAttribute("src",u);}catch(e){el.remove();}}
     doc.querySelectorAll("a").forEach(function(a){a.removeAttribute("href");a.style.color="inherit";});
     rdContent.innerHTML=doc.body?doc.body.innerHTML:html;applyAnnots();
-    rdPosEl.textContent=(n+1)+" / "+curEpub.spine.length;
+    rdPosEl.textContent="/ "+curEpub.spine.length;setGoVal(n+1);
     rdContent.scrollTop=top||0;
     savePos({ch:n,top:top||0});}
 
@@ -5597,7 +5615,7 @@ margin-left: -22px;
   async function showPdfPage(n){
     if(!curPdf)return;
     n=Math.max(1,Math.min(n,curPdf.n));curPdf.page=n;
-    rdPosEl.textContent=n+" / "+curPdf.n;
+    rdPosEl.textContent="/ "+curPdf.n;setGoVal(n);
     var page=await curPdf.doc.getPage(n);
     var avail=Math.max(320,rdContent.clientWidth-64);
     var base=page.getViewport({scale:1});
@@ -5630,7 +5648,7 @@ margin-left: -22px;
     [].slice.call(rdContent.children).forEach(function(el){
       if(el.offsetTop<=top)best=+el.getAttribute("data-p")||best;});
     if(best!==curPdf.page){curPdf.page=best;schedulePos();}
-    rdPosEl.textContent=curPdf.page+" / "+curPdf.n;}
+    rdPosEl.textContent="/ "+curPdf.n;setGoVal(curPdf.page);}
   async function renderPdfScroll(startPage){
     if(!curPdf)return;
     rdContent.innerHTML="";
@@ -5673,6 +5691,53 @@ margin-left: -22px;
       var save=curPdf.page;curPdf.page=n;await drawPdfAnnots(page,vp,wrap);curPdf.page=save;
       addPageNo(wrap,n);
     }catch(e){}}
+  function setGoVal(n){
+    var i=document.getElementById("rd-go");
+    if(i&&document.activeElement!==i)i.value=n;
+    setTimeout(updateScrub,0);}
+  // 跳到指定页 / 章
+  function gotoPage(n){
+    if(curPdf){
+      n=Math.max(1,Math.min(curPdf.n,n||1));
+      if(rdMode()==="scroll"){var t=rdContent.querySelector('[data-p="'+n+'"]');
+        if(t){rdContent.scrollTop=t.offsetTop-8;curPdf.page=n;syncScrollPage();}}
+      else showPdfPage(n);
+    }else if(curEpub)showChapter(Math.max(0,Math.min(curEpub.spine.length-1,(n||1)-1)),0);}
+  // 右侧定位条
+  function updateScrub(){
+    var sc=document.getElementById("rd-scrub"),th=document.getElementById("rd-thumb");
+    if(!sc||!th||!rdContent)return;
+    var max=rdContent.scrollHeight-rdContent.clientHeight;
+    if(max<40){sc.style.display="none";return;}
+    sc.style.display="";
+    var r=rdContent.scrollTop/max;
+    var h=Math.max(28,sc.clientHeight*(rdContent.clientHeight/rdContent.scrollHeight));
+    th.style.height=h+"px";
+    th.style.top=(r*(sc.clientHeight-h))+"px";}
+  function scrubLabel(ratio){
+    if(curPdf)return "第 "+Math.max(1,Math.min(curPdf.n,Math.round(ratio*(curPdf.n-1))+1))+" 页";
+    if(curEpub)return "第 "+(curEpub.ch+1)+" 节";
+    return Math.round(ratio*100)+"%";}
+  function bindScrub(){
+    var sc=document.getElementById("rd-scrub"),tip=document.getElementById("rd-scrub-tip");
+    if(!sc||sc.__b)return;sc.__b=1;
+    var dragging=false;
+    function seek(e){
+      var r=sc.getBoundingClientRect();
+      var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+      var y=(e.clientY-r.top)/(r.height||1);y=Math.max(0,Math.min(1,y));
+      rdContent.scrollTop=y*(rdContent.scrollHeight-rdContent.clientHeight);
+      tip.style.display="";tip.style.top=Math.max(0,y*r.height-10)+"px";
+      tip.textContent=scrubLabel(y);
+      updateScrub();}
+    sc.addEventListener("mousedown",function(e){dragging=true;seek(e);e.preventDefault();});
+    document.addEventListener("mousemove",function(e){if(dragging)seek(e);});
+    document.addEventListener("mouseup",function(){if(dragging){dragging=false;setTimeout(function(){tip.style.display="none";},600);}});
+    sc.addEventListener("mousemove",function(e){
+      if(dragging)return;
+      var r=sc.getBoundingClientRect(),y=Math.max(0,Math.min(1,(e.clientY-r.top)/(r.height||1)));
+      tip.style.display="";tip.style.top=Math.max(0,y*r.height-10)+"px";tip.textContent=scrubLabel(y);});
+    sc.addEventListener("mouseleave",function(){if(!dragging)tip.style.display="none";});}
   function rdMode(){return load("tt_rdmode","page");}
   async function applyRdMode(){
     var m=rdMode();
@@ -6276,13 +6341,17 @@ margin-left: -22px;
       rdContent.addEventListener("click",rdClickWord);
       rdContent.addEventListener("contextmenu",rdContextWord);
       rdContent.addEventListener("mouseleave",function(){hideHl();if(hoverTimer)clearTimeout(hoverTimer);});
-      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();hideHl();hideRdTools();syncScrollPage();
+      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();hideHl();hideRdTools();syncScrollPage();updateScrub();
         // EPUB 滚动模式：读到底自动接下一章
         if(rdMode()==="scroll"&&curEpub&&!curEpub.loading&&
            rdContent.scrollTop+rdContent.clientHeight>=rdContent.scrollHeight-80&&
            curEpub.ch<curEpub.spine.length-1){
           curEpub.loading=true;
           showChapter(curEpub.ch+1,0).then(function(){curEpub.loading=false;});}});
+      bindScrub();
+      var goI=document.getElementById("rd-go");
+      if(goI)goI.addEventListener("keydown",function(e){
+        if(e.key==="Enter"){e.preventDefault();var v=parseInt(this.value,10);if(v>0){gotoPage(v);this.blur();}}});
       var rmBox=document.getElementById("rd-mode");
       if(rmBox)rmBox.addEventListener("click",function(e){
         var b=e.target.closest("[data-rm]");if(!b)return;
