@@ -516,7 +516,11 @@
     transform:scale(1.13);transform-origin:left center;animation:hlpop .13s ease-out}
   @keyframes hlpop{from{transform:scale(1);opacity:.6}to{transform:scale(1.13);opacity:1}}
   #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
-    background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+    background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22);
+    resize:both;min-width:250px;min-height:120px;max-width:96vw}
+  #rd-pop::-webkit-resizer{background:transparent}
+  #rd-pop::after{content:"";position:absolute;right:2px;bottom:2px;width:12px;height:12px;pointer-events:none;
+    background:linear-gradient(135deg,transparent 45%,var(--border) 45%,var(--border) 55%,transparent 55%,transparent 70%,var(--border) 70%,var(--border) 80%,transparent 80%)}
   .rd-pop-hd{position:sticky;top:0;background:var(--surface);display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);z-index:2}
   .rd-pop-w{font-weight:700;font-size:15px;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd-pop-hd .btn{padding:3px 9px;font-size:12px}
@@ -5471,7 +5475,7 @@ margin-left: -22px;
     star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
     if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
-    rdPop.style.display="";placeRdPop(rect);
+    rdPop.style.display="";applyPopSize();placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
@@ -5803,6 +5807,22 @@ margin-left: -22px;
     if(curBook&&curBook.type!=="pdf")showRdTools(rect);   // 选中就出标注工具条
     if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
     else showRdTrans(s,rect);}   // 选中整句 → 任何模式都翻译
+  function applyPopSize(){       // 用上次拖出来的大小
+    if(!rdPop)return;var sz=load("tt_popsize",null);
+    if(sz&&sz.w>200&&sz.h>100){
+      rdPop.style.width=Math.min(sz.w,innerWidth-24)+"px";
+      rdPop.style.height=Math.min(sz.h,innerHeight-24)+"px";
+      rdPop.style.maxHeight="none";}}
+  function watchPopSize(){       // 拖完记下来
+    if(!rdPop||!window.ResizeObserver||rdPop.__ro)return;
+    var t=null;
+    rdPop.__ro=new ResizeObserver(function(){
+      if(rdPop.style.display==="none")return;
+      if(t)clearTimeout(t);
+      t=setTimeout(function(){
+        var w=rdPop.offsetWidth,h=rdPop.offsetHeight;
+        if(w>200&&h>100)save("tt_popsize",{w:w,h:h});},400);});
+    rdPop.__ro.observe(rdPop);}
   function placeRdPop(rect){
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
@@ -5817,7 +5837,7 @@ margin-left: -22px;
     var star=document.getElementById("rd-pop-star");star.style.display="none";
     var bd=document.getElementById("rd-pop-bd");
     bd.innerHTML='<div class="dict-hint">翻译中…</div>';
-    rdPop.style.display="";placeRdPop(rect);
+    rdPop.style.display="";applyPopSize();placeRdPop(rect);
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 等 AI 期间不倒计时
     translateText(text).then(function(res){
       bd.innerHTML='<div class="rd-tr">'+esc(res.text)+'</div>'+
@@ -5836,6 +5856,7 @@ margin-left: -22px;
       rdTitleEl=document.getElementById("rd-title");
       rdPop=document.getElementById("rd-pop");
       if(rdPop&&rdPop.parentNode!==document.body)document.body.appendChild(rdPop);
+      watchPopSize();
       applyRdFs();
       document.getElementById("rd-file").addEventListener("change",function(e){
         if(e.target.files&&e.target.files.length)importBooks([].slice.call(e.target.files));e.target.value="";});
