@@ -556,6 +556,35 @@
   .tr-flow h3{font-size:1.12em;margin:1.1em 0 .5em;line-height:1.45}
   .tr-flow .src{color:var(--muted);font-size:.86em;display:block;margin-top:.15em}
   .tr-wait{color:var(--muted);font-size:12.5px;padding:8px 2px}
+  /* ===== 分屏：同时开两个文件 ===== */
+  .rd-split{display:flex;align-items:stretch}
+  .rd-split>.rd-main{flex:1 1 auto;min-width:0}
+  .rd-div{display:none;flex:0 0 10px;cursor:col-resize;position:relative;align-self:stretch}
+  .rd-div:before{content:"";position:absolute;left:4px;top:0;width:2px;height:100%;background:var(--border);border-radius:2px}
+  .rd-div:hover:before,.rd-div.on:before{background:var(--primary);width:3px;left:3.5px}
+  .rd-side{display:none;flex:0 0 46%;min-width:200px;flex-direction:column;
+    background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;
+    height:calc(100vh - 168px)}
+  .rd-split.split-on .rd-side,.rd-split.split-on .rd-div{display:flex}
+  .rs-top{display:flex;align-items:center;gap:6px;padding:7px 9px;border-bottom:1px solid var(--border);flex:none}
+  .rs-top select{flex:1;min-width:0;padding:4px 6px;border:1px solid var(--border);border-radius:8px;
+    background:var(--surface);color:var(--text);font-size:12px}
+  .rs-top .btn{padding:4px 8px;font-size:12px}
+  .rd-side iframe{flex:1;min-height:0;width:100%;border:none;background:var(--bg)}
+  /* 上下分屏 */
+  .rd-split.vert{flex-direction:column}
+  .rd-split.vert .rd-div{flex:0 0 10px;cursor:row-resize;width:100%}
+  .rd-split.vert .rd-div:before{left:0;top:4px;width:100%;height:2px}
+  .rd-split.vert .rd-side{flex:0 0 46%;min-width:0;min-height:140px;height:auto}
+  @media (max-width:760px){.rd-split{flex-direction:column}.rd-split .rd-div{cursor:row-resize;width:100%}
+    .rd-split .rd-side{flex:0 0 48vh;min-width:0;height:auto}}
+  /* 副屏里的 app：只留看书部分 */
+  body.solo .rail{display:none}
+  body.solo main{max-width:none;padding:8px 10px 10px}
+  body.solo .rd-content,body.solo .rd-toc,body.solo .rd-notes,body.solo .rd-trans{height:calc(100vh - 78px)}
+  body.solo .rd-side,body.solo .rd-div,body.solo #rd-zen-btn,body.solo #rd-split-btn,body.solo .page-h{display:none}
+  body.solo .rd-bar{margin-bottom:8px}
+  body.solo .rd-import{margin-top:4px}
   /* ===== 沉浸式阅读 ===== */
   #rd-zen-exit{display:none;position:fixed;right:14px;top:12px;z-index:70;width:34px;height:34px;border-radius:10px;
     border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;place-items:center;
@@ -2620,10 +2649,12 @@ margin-left: -22px;
             <select id="rd-ocr-lang" title="识别语言"><option value="eng">英文</option><option value="chi_sim">中文</option><option value="both">中英</option></select>
           </span>
           <button class="btn" id="rd-bi-btn" title="左原文右译文（整页翻译，保留排版）">🌐 对照</button>
+          <button class="btn" id="rd-split-btn" title="分屏：同时开两个文件对着看">⧉ 分屏</button>
           <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
           <button class="btn" id="rd-zen-btn" title="沉浸式阅读（隐藏所有按钮，全屏看书）">⛶ 沉浸</button>
         </div>
         <div class="rd-ocr-note" id="rd-ocr-note" style="display:none"></div>
+        <div class="rd-split" id="rd-split">
         <div class="rd-main" id="rd-main">
           <aside class="rd-toc" id="rd-toc"></aside>
           <div class="rd-content" id="rd-content"></div>
@@ -2648,6 +2679,17 @@ margin-left: -22px;
           </aside>
           <div class="rd-scrub" id="rd-scrub"><div class="thumb" id="rd-thumb"></div><div class="tip" id="rd-scrub-tip"></div></div>
           <aside class="rd-notes" id="rd-notes"></aside>
+        </div>
+        <div class="rd-div" id="rd-div" title="拖动调整两边宽度"></div>
+        <section class="rd-side" id="rd-side">
+          <div class="rs-top">
+            <select id="rs-pick" title="这一格看哪本书"></select>
+            <button class="btn" id="rs-swap" title="和左边换一下">⇄</button>
+            <button class="btn" id="rs-dir" title="改成上下分屏">⇅</button>
+            <button class="btn" id="rs-close" title="关掉这一格">✕</button>
+          </div>
+          <iframe id="rs-frame" title="副屏" allow="fullscreen"></iframe>
+        </section>
         </div>
         <button id="rd-zen-exit" title="退出沉浸式（Esc）">⤢</button>
       </div>
@@ -3094,7 +3136,10 @@ margin-left: -22px;
   "use strict";
   var LS=window.localStorage;
   function load(k,d){try{var v=LS.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
-  function save(k,v){try{LS.setItem(k,JSON.stringify(v));}catch(e){}schedulePush(k);}
+  // 副屏模式：同一个 app 以 ?solo=1 装进 iframe 当第二个阅读窗口
+  var SOLO=false;try{SOLO=(new URLSearchParams(location.search).get("solo")==="1");}catch(e){}
+  var SOLO_SKIP={tt_tab:1,tt_rdbook:1,tt_rdzen:1,tt_rdbi:1,tt_rdnotes:1,tt_rdtoc:1,tt_rdsplit:1};
+  function save(k,v){if(SOLO&&SOLO_SKIP[k])return;try{LS.setItem(k,JSON.stringify(v));}catch(e){}schedulePush(k);}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
   function pad(n){return(n<10?"0":"")+n;}
   function fmt(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
@@ -4269,7 +4314,7 @@ margin-left: -22px;
     if(as){if(!ready)as.textContent="（云同步还没配置，先去「☁️ 云同步」页填一下网址+key）";
       else if(sbUser)as.innerHTML="已登录：<b>"+esc(sbUser.email||sbUser.id)+"</b><br>✓ 多设备云同步"+(gToken?" ・ ✓ 已连 Google 日历":"")+"<br><span style=\"color:var(--muted)\">这台设备下次打开免登录。</span>";
       else as.textContent="还没登录。点上面按钮用 Google 登录 —— 云同步和 Google 日历一次搞定。";}}
-  function schedulePush(key){if(applyingCloud||!SB||!sbUser)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
+  function schedulePush(key){if(SOLO||applyingCloud||!SB||!sbUser)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   function pushCloud(){if(!SB||!sbUser)return;sbStatus("上传中…");
     SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()}).then(function(r){
@@ -4303,7 +4348,7 @@ margin-left: -22px;
     else{SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:{access_type:"offline"},redirectTo:location.href.split("#")[0].split("?")[0]}});}}
   document.getElementById("set-sb-auth").addEventListener("click",cloudAuthClick);
   document.getElementById("acct-login").addEventListener("click",cloudAuthClick);
-  (function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
+  if(!SOLO)(function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
@@ -4464,7 +4509,7 @@ margin-left: -22px;
   (function(){
     var saved=load("tt_gtok",null);
     if(saved&&saved.t&&saved.exp>Date.now()){gToken=saved.t;onGcalConnected();return;}
-    if(load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
+    if(!SOLO&&load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
   })();
 
   // ---------- 词典 · 背单词 ----------
@@ -5428,7 +5473,8 @@ margin-left: -22px;
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});
       if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});
       if(!db.objectStoreNames.contains("trans"))db.createObjectStore("trans",{keyPath:"k"});};
-    r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+    r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};
+    r.onblocked=function(){rej(new Error("书库正在别的标签页里升级，刷新一下再试"));};});}
   function ensureBDB(){return BDB?Promise.resolve(BDB):bdbOpen().then(function(d){BDB=d;return d;});}
   function bPut(store,val){return ensureBDB().then(function(d){return new Promise(function(res,rej){
     var tx=d.transaction(store,"readwrite");tx.objectStore(store).put(val);
@@ -6439,6 +6485,84 @@ margin-left: -22px;
     bookTrRun=false;trProg(-1);
     if(btn)btn.textContent="📚 整本";}
 
+  // ===== 分屏：右边（或下面）再开一个完整的阅读窗口 =====
+  var splitOn=false,sideBook=load("tt_rdsidebook","")||"",sideReady=false;
+  function sideFrame(){return document.getElementById("rs-frame");}
+  function sidePost(id){
+    var f=sideFrame();
+    if(!f||!f.contentWindow)return;
+    try{f.contentWindow.postMessage({tt:"open",id:id||""},"*");}catch(e){}}
+  function sideOpen(id){
+    sideBook=id||"";save("tt_rdsidebook",sideBook);
+    if(sideReady)sidePost(sideBook);
+    var sel=document.getElementById("rs-pick");if(sel)sel.value=sideBook;}
+  async function fillSidePick(){
+    var sel=document.getElementById("rs-pick");if(!sel)return;
+    var all=await bAll();
+    all.sort(function(a,b){return (b.added||0)-(a.added||0);});
+    sel.innerHTML='<option value="">（这一格：选一本书）</option>'+all.map(function(b){
+      var cur=(curBook&&b.id===curBook.id)?"（左边正在看）":"";
+      return '<option value="'+b.id+'">'+esc(b.name)+cur+'</option>';}).join("");
+    sel.value=sideBook||"";}
+  function toggleSplit(on){
+    var sp=document.getElementById("rd-split");if(!sp)return;
+    var want=(on===undefined)?!sp.classList.contains("split-on"):!!on;
+    sp.classList.toggle("split-on",want);splitOn=want;save("tt_rdsplit",want);
+    var b=document.getElementById("rd-split-btn");if(b)b.classList.toggle("on",want);
+    if(want){
+      var f=sideFrame();
+      if(f&&!f.getAttribute("src")){
+        f.addEventListener("load",function(){sideReady=true;if(sideBook)sidePost(sideBook);});
+        f.setAttribute("src",location.pathname+"?solo=1");}
+      else if(sideReady&&sideBook)sidePost(sideBook);
+      fillSidePick();
+      applySideSize();}
+    setTimeout(function(){relayoutPdf();updateScrub();biUpdate();},80);}
+  function applySideSize(){
+    var side=document.getElementById("rd-side");if(!side)return;
+    var pct=+load("tt_rdsidew",46)||46;
+    pct=Math.max(18,Math.min(82,pct));
+    side.style.flexBasis=pct+"%";}
+  function bindSplit(){
+    var div=document.getElementById("rd-div"),sp=document.getElementById("rd-split");
+    if(!div||!sp||div.__b)return;div.__b=1;
+    var dragging=false,rt=null;
+    function move(e){
+      if(!dragging)return;
+      var r=sp.getBoundingClientRect();
+      var vert=sp.classList.contains("vert")||window.innerWidth<=760;
+      var pct=vert?((r.bottom-e.clientY)/(r.height||1)*100):((r.right-e.clientX)/(r.width||1)*100);
+      pct=Math.max(18,Math.min(82,pct));
+      save("tt_rdsidew",Math.round(pct));applySideSize();
+      if(rt)clearTimeout(rt);
+      rt=setTimeout(function(){relayoutPdf();updateScrub();},220);}
+    div.addEventListener("mousedown",function(e){dragging=true;div.classList.add("on");e.preventDefault();
+      document.body.style.userSelect="none";});
+    document.addEventListener("mousemove",move);
+    document.addEventListener("mouseup",function(){
+      if(!dragging)return;
+      dragging=false;div.classList.remove("on");document.body.style.userSelect="";
+      relayoutPdf();updateScrub();});
+    div.addEventListener("touchmove",function(e){
+      var t=e.touches&&e.touches[0];if(!t)return;
+      dragging=true;move({clientX:t.clientX,clientY:t.clientY});dragging=false;e.preventDefault();},{passive:false});
+    document.getElementById("rs-close").addEventListener("click",function(){toggleSplit(false);});
+    document.getElementById("rs-pick").addEventListener("change",function(){sideOpen(this.value);});
+    document.getElementById("rs-swap").addEventListener("click",function(){
+      var mine=curBook?curBook.id:"",his=sideBook;
+      if(!his){ttAlert("右边还没选书");return;}
+      sideOpen(mine);
+      openBook(his).then(fillSidePick,fillSidePick);});
+    document.getElementById("rs-dir").addEventListener("click",function(){
+      var vert=!sp.classList.contains("vert");
+      sp.classList.toggle("vert",vert);save("tt_rdsplitv",vert);
+      this.textContent=vert?"⇆":"⇅";this.title=vert?"改成左右分屏":"改成上下分屏";
+      setTimeout(function(){relayoutPdf();updateScrub();},80);});
+    if(load("tt_rdsplitv",false)){
+      sp.classList.add("vert");
+      var db=document.getElementById("rs-dir");if(db){db.textContent="⇆";db.title="改成左右分屏";}}
+    applySideSize();}
+
   // ===== 沉浸式阅读（隐藏所有按钮，全屏看书）=====
   var zenOn=false,zenT=null;
   function showZenBar(){if(zenT){clearTimeout(zenT);zenT=null;}document.body.classList.add("zbar");}
@@ -6990,6 +7114,10 @@ margin-left: -22px;
       if(load("tt_rdnotes",false))toggleNotes(true);
       if(load("tt_rdbi",false))toggleBi(true);
       if(load("tt_rdzen",false))toggleZen(true);
+      // 分屏
+      document.getElementById("rd-split-btn").addEventListener("click",function(){toggleSplit();});
+      bindSplit();
+      if(!SOLO&&load("tt_rdsplit",false))toggleSplit(true);
       document.getElementById("rd-notes").addEventListener("click",async function(e){
         if(e.target.closest("#rn-close")){toggleNotes(false);return;}
         var pd=e.target.closest("[data-pdone]");
@@ -7150,8 +7278,8 @@ margin-left: -22px;
         if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
       window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
     }
-    if(!curBook){                                  // 上次正在读某本书 → 直接续上
-      var last=load("tt_rdbook","");
+    if(!curBook){                                  // 上次正在读某本书 → 直接续上（副屏不续，等主窗口指定）
+      var last=SOLO?"":load("tt_rdbook","");
       if(last)bGet("meta",last).then(function(m){if(m)openBook(last);else{save("tt_rdbook","");renderShelf();}},function(){renderShelf();});
       else renderShelf();}
     ensureDictInit();}
@@ -7425,6 +7553,17 @@ margin-left: -22px;
     schedulePush("tt_words");});
   // 划词查词入口：?w=单词 [&add=1 自动收藏] [&mini=1 小窗模式]；否则恢复上次所在页面
   (function(){
+    if(SOLO){                       // 副屏：只显示看书页，等主窗口告诉它开哪本
+      document.body.classList.add("solo");
+      var rb=document.querySelector('.rail button[data-tab="reader"]');if(rb)rb.click();
+      window.addEventListener("message",function(e){
+        var d=e.data;if(!d||d.tt!=="open")return;
+        if(d.id)openBook(d.id);else showShelf();});
+      var qs0=null;try{qs0=new URLSearchParams(location.search);}catch(e){}
+      var b0=qs0?(qs0.get("book")||""):"";
+      if(b0)setTimeout(function(){openBook(b0);},80);
+      return;
+    }
     var qs=null;try{qs=new URLSearchParams(location.search);}catch(e){}
     var w=qs?(qs.get("w")||"").trim():"";
     if(w){
