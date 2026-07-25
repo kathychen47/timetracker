@@ -465,6 +465,12 @@
   .rd-content h1,.rd-content h2,.rd-content h3{line-height:1.4;margin:1.2em 0 .5em}
   .rd-content img{max-width:100%;height:auto;border-radius:8px}
   .rd-content pre{white-space:pre-wrap;word-break:break-word;font:inherit;margin:0}
+  .rd-content .md h1{font-size:1.55em}.rd-content .md h2{font-size:1.3em}.rd-content .md h3{font-size:1.12em}
+  .rd-content .md blockquote{margin:.8em 0;padding:.4em 0 .4em 14px;border-left:3px solid var(--border);color:var(--muted)}
+  .rd-content .md code{background:var(--surface-2);border-radius:5px;padding:1px 5px;font-size:.9em}
+  .rd-content .md pre{background:var(--surface-2);border-radius:9px;padding:11px 13px;margin:.8em 0;font-size:.9em}
+  .rd-content .md hr{border:none;border-top:1px solid var(--border);margin:1.4em 0}
+  .rd-content .md ul,.rd-content .md ol{margin:.6em 0 .6em 1.4em}
   .rd-content canvas{max-width:100%;display:block;margin:0 auto 14px;box-shadow:0 2px 12px rgba(0,0,0,.1)}
   .rd-page{position:relative;margin:0 auto 16px;width:fit-content}
   .rd-page.ph{background:var(--surface-2);border-radius:6px}
@@ -491,6 +497,15 @@
   .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
   /* 阅读标注 */
   .rd-main{display:flex;gap:14px;align-items:flex-start}
+  .rd-toc{display:none;flex:none;width:240px;max-width:34vw;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:12px;height:calc(100vh - 168px);overflow-y:auto}
+  .rd-main.toc-on .rd-toc{display:block}
+  .toc-i{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:none;background:transparent;
+    color:var(--text);font-family:inherit;font-size:12.5px;line-height:1.5;padding:7px 10px;border-radius:8px;cursor:pointer}
+  .toc-i:hover{background:var(--surface-2)}
+  .toc-i.on{background:var(--primary-soft);color:var(--primary);font-weight:600}
+  .toc-i .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .toc-i .pg{flex:none;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
   .rd-main .rd-content{flex:1;min-width:0}
   .rd-notes{display:none;flex:none;width:280px;max-width:38vw;background:var(--surface);border:1px solid var(--border);
     border-radius:14px;padding:12px;height:calc(100vh - 168px);overflow-y:auto}
@@ -656,6 +671,12 @@
   .wb-item.open .wb-caret{transform:rotate(90deg)}
   .wb-item .w{font-weight:600;font-size:15px}
   .wb-item .m{flex:1;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wb-note{flex:none;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;opacity:0;transition:opacity .12s}
+  .wb-item:hover .wb-note{opacity:1}
+  .wb-note:hover{color:var(--primary)}
+  .dict-card.mynote{background:#FFFBEA;border-color:#F2E2AE}
+  .mynote-t{font-size:14px;line-height:1.7;white-space:pre-wrap;color:#5B4A12}
+  @media (prefers-color-scheme:dark){.dict-card.mynote{background:#2A2617;border-color:#4A4326}.mynote-t{color:#E8D9A0}}
   .wb-move{flex:none;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
     border-radius:7px;padding:3px 6px;font-size:11.5px;max-width:110px;opacity:0;transition:opacity .12s}
   .wb-item:hover .wb-move,.wb-move:focus{opacity:1}
@@ -2514,6 +2535,7 @@ margin-left: -22px;
       <div id="rd-read" style="display:none">
         <div class="rd-bar">
           <button class="btn" id="rd-back">← 书架</button>
+          <button class="btn" id="rd-toc-btn" title="目录">☰ 目录</button>
           <b class="rd-title" id="rd-title"></b>
           <span class="grow"></span>
           <div class="rd-nav">
@@ -2531,6 +2553,7 @@ margin-left: -22px;
           <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
         </div>
         <div class="rd-main" id="rd-main">
+          <aside class="rd-toc" id="rd-toc"></aside>
           <div class="rd-content" id="rd-content"></div>
           <div class="rd-scrub" id="rd-scrub"><div class="thumb" id="rd-thumb"></div><div class="tip" id="rd-scrub-tip"></div></div>
           <aside class="rd-notes" id="rd-notes"></aside>
@@ -2544,6 +2567,7 @@ margin-left: -22px;
     <div class="rd-pop-hd">
       <span class="rd-pop-w" id="rd-pop-w"></span>
       <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
+      <button class="btn" id="rd-pop-note" title="写笔记">📝</button>
       <button class="btn" id="rd-pop-star" title="加入生词本"><svg class="star-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg></button>
       <button class="btn" id="rd-pop-x" title="关闭">✕</button>
     </div>
@@ -4705,6 +4729,7 @@ margin-left: -22px;
       return '<div class="wb-item" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
         '<span class="badge '+(overdue?"due":lab[1])+'">'+lab[0]+'</span>'+
         '<span class="m">'+meta+'</span>'+
+        '<button class="wb-note" data-note="'+esc(x.w)+'" title="'+(x.note?"编辑笔记":"写笔记")+'">'+(x.note?"📝":"✎")+'</button>'+
         '<select class="wb-move" data-w="'+esc(x.w)+'" title="移到别的词书">'+
           wbGroups.list.map(function(g){return '<option value="'+g.id+'"'+(wbGroupOf(x)===g.id?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
         '</select>'+
@@ -4773,7 +4798,21 @@ margin-left: -22px;
     el.innerHTML=wbGroups.list.map(function(g){var isDef=g.id===wbGroups.def,n=words.filter(function(x){return wbGroupOf(x)===g.id;}).length;
       return '<div class="do-row"><span class="wbg-l"><button class="wbg-def'+(isDef?" on":"")+'" type="button" data-def="'+g.id+'" title="设为默认（新词进这里）">'+(isDef?"⭐":"☆")+'</button><b>'+esc(g.name)+'</b> <span class="wbg-n">'+n+' 词</span></span>'+
         '<span class="do-btns"><button class="do-mv" type="button" data-ren="'+g.id+'" title="重命名">✎</button>'+((wbGroups.list.length>1&&!isDef)?'<button class="do-mv" type="button" data-delg="'+g.id+'" title="删除">✕</button>':'')+'</span></div>';}).join("");}
-  async function wbDefHTML(w){await ensureDictDB();var key=(w||"").toLowerCase(),html="";
+  function wordOf(w){w=(w||"").toLowerCase();for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
+  function wordNoteHTML(w){
+    var x=wordOf(w);if(!x||!x.note)return "";
+    return '<div class="dict-card mynote"><div class="dict-card-top"><span class="dict-src">📝 我的笔记</span>'+
+      '<button class="dict-add" data-note="'+esc(x.w)+'">编辑</button></div>'+
+      '<div class="mynote-t">'+esc(x.note)+'</div></div>';}
+  async function setWordNote(w,anchor){
+    var x=wordOf(w);
+    if(!x){ttAlert("先把这个词加入生词本，再写笔记");return false;}
+    var v=await ttPrompt("给「"+(x.disp||x.w)+"」写笔记（记忆法/例句/用法都行）：",x.note||"",{anchor:anchor});
+    if(v===null)return false;
+    x.note=v.trim();saveWords();
+    if(state.tab==="dict")renderWordbook();
+    return true;}
+  async function wbDefHTML(w){await ensureDictDB();var key=(w||"").toLowerCase(),html=wordNoteHTML(key);
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];if(dictPrefs.enabled[store]===false)continue;
       var rec=null;try{rec=await idbGet(store,key);}catch(e){}
       if(rec){var say=store==="oald"?(rec.disp||rec.k):rec.k;
@@ -4787,7 +4826,7 @@ margin-left: -22px;
       var w=item.getAttribute("data-w");
       def.innerHTML='<div class="dict-hint">加载中…</div>';
       def.innerHTML=await wbDefHTML(w);
-      if(!def.querySelector(".dict-card")){
+      if(!def.querySelector(".dict-card:not(.mynote)")){
         def.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
         try{var tr=await translateText(w);
           def.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
@@ -5161,6 +5200,8 @@ margin-left: -22px;
       saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();ttAlert("已重置");});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
+      var nb2=e.target.closest("[data-note]");
+      if(nb2){setWordNote(nb2.getAttribute("data-note"),nb2).then(function(ok){if(ok)doLookup(q.value);});return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
@@ -5171,6 +5212,8 @@ margin-left: -22px;
       words.forEach(function(x){if(x.w===w)x.group=gid;});saveWords();renderWordbook();});
     document.getElementById("wb-list").addEventListener("click",function(e){
       if(e.target.closest(".wb-move"))return;            // 别把下拉当成展开
+      var nb=e.target.closest("[data-note]");
+      if(nb){e.stopPropagation();setWordNote(nb.getAttribute("data-note"),nb);return;}
       var del=e.target.closest(".del");if(del){removeWord(del.getAttribute("data-w"));return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
@@ -5447,7 +5490,7 @@ margin-left: -22px;
   async function openBook(id){
     var meta=await bGet("meta",id);if(!meta)return;
     var rec=await bGet("blob",id);if(!rec||!rec.blob){ttAlert("这本书的文件丢了，建议删掉重新导入");return;}
-    curBook=meta;save("tt_rdbook",id);
+    curBook=meta;save("tt_rdbook",id);tocData=null;
     document.getElementById("rd-shelf").style.display="none";
     document.getElementById("rd-read").style.display="";
     rdTitleEl.textContent=meta.name;rdContent.innerHTML='<div class="rd-empty">加载中…</div>';applyRdFs();
@@ -5458,10 +5501,44 @@ margin-left: -22px;
       else if(meta.type==="html")await openHtmlBook(rec.blob);
       else await openPdfBook(rec.blob);
       renderNotes();
+      if(document.getElementById("rd-main").classList.contains("toc-on"))buildToc();
     }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
 
+  function mdToHtml(md){        // 轻量 Markdown 渲染
+    var esc2=function(s){return s.replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});};
+    var out=[],lines=md.split(/\r?\n/),inCode=false,codeBuf=[],listType=null;
+    function closeList(){if(listType){out.push(listType==="ul"?"</ul>":"</ol>");listType=null;}}
+    var inline=function(t){
+      t=esc2(t);
+      t=t.replace(/`([^`]+)`/g,'<code>$1</code>');
+      t=t.replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>").replace(/__([^_]+)__/g,"<b>$1</b>");
+      t=t.replace(/(^|[^*])\*([^*\n]+)\*/g,"$1<i>$2</i>");
+      t=t.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,'<i>[图片 $1]</i>');
+      t=t.replace(/\[([^\]]+)\]\(([^)]+)\)/g,'<u>$1</u>');
+      return t;};
+    lines.forEach(function(ln){
+      if(/^```/.test(ln)){
+        if(inCode){out.push("<pre>"+esc2(codeBuf.join("\n"))+"</pre>");codeBuf=[];inCode=false;}
+        else{closeList();inCode=true;}return;}
+      if(inCode){codeBuf.push(ln);return;}
+      var h=ln.match(/^(#{1,6})\s+(.*)$/);
+      if(h){closeList();out.push("<h"+h[1].length+">"+inline(h[2])+"</h"+h[1].length+">");return;}
+      if(/^\s*([-*_])\1{2,}\s*$/.test(ln)){closeList();out.push("<hr>");return;}
+      var q=ln.match(/^>\s?(.*)$/);
+      if(q){closeList();out.push('<blockquote>'+inline(q[1])+'</blockquote>');return;}
+      var ul=ln.match(/^\s*[-*+]\s+(.*)$/),ol=ln.match(/^\s*\d+[.)]\s+(.*)$/);
+      if(ul){if(listType!=="ul"){closeList();out.push("<ul>");listType="ul";}out.push("<li>"+inline(ul[1])+"</li>");return;}
+      if(ol){if(listType!=="ol"){closeList();out.push("<ol>");listType="ol";}out.push("<li>"+inline(ol[1])+"</li>");return;}
+      if(!ln.trim()){closeList();return;}
+      closeList();out.push("<p>"+inline(ln)+"</p>");});
+    if(inCode&&codeBuf.length)out.push("<pre>"+esc2(codeBuf.join("\n"))+"</pre>");
+    closeList();
+    return out.join("");}
   async function openTxt(blob){
     var text=await blob.text();
+    if(curBook&&/\.(md|markdown)$/i.test(curBook.name||"")||/^#{1,6}\s|\n#{1,6}\s|\*\*/.test(text.slice(0,2000))){
+      rdContent.innerHTML='<div class="md">'+mdToHtml(text)+'</div>';applyAnnots();
+      rdPosEl.textContent="—";rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;return;}
     rdContent.innerHTML="<pre></pre>";rdContent.querySelector("pre").textContent=text;applyAnnots();
     rdPosEl.textContent="—";
     rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
@@ -5712,6 +5789,49 @@ margin-left: -22px;
       var save=curPdf.page;curPdf.page=n;await drawPdfAnnots(page,vp,wrap);curPdf.page=save;
       addPageNo(wrap,n);
     }catch(e){}}
+  // ===== 目录 =====
+  var tocData=null;
+  async function buildToc(){
+    tocData=[];
+    try{
+      if(curPdf){
+        var out=await curPdf.doc.getOutline();
+        if(out&&out.length){
+          var walk=async function(items,depth){
+            for(var i=0;i<items.length;i++){var it=items[i],pg=null;
+              try{
+                var dest=it.dest;
+                if(typeof dest==="string")dest=await curPdf.doc.getDestination(dest);
+                if(dest&&dest[0]){var idx=await curPdf.doc.getPageIndex(dest[0]);pg=idx+1;}
+              }catch(e){}
+              tocData.push({t:it.title||"（无标题）",d:depth,page:pg});
+              if(it.items&&it.items.length)await walk(it.items,depth+1);}};
+          await walk(out,0);}
+        if(!tocData.length)                       // 没有书签就按页列
+          for(var p=1;p<=curPdf.n;p++)tocData.push({t:"第 "+p+" 页",d:0,page:p});
+      }else if(curEpub){
+        curEpub.spine.forEach(function(href,i){
+          var nm=decodeURIComponent(String(href).split("/").pop().replace(/\.[^.]+$/,""));
+          tocData.push({t:"第 "+(i+1)+" 节 · "+nm,d:0,ch:i});});
+      }
+    }catch(e){}
+    renderToc();}
+  function renderToc(){
+    var box=document.getElementById("rd-toc");if(!box)return;
+    if(!tocData||!tocData.length){box.innerHTML='<div class="rn-empty">这本书没有目录</div>';return;}
+    var cur=curPdf?curPdf.page:(curEpub?curEpub.ch:0);
+    box.innerHTML='<div class="rn-top"><span class="rn-title">☰ 目录 '+tocData.length+'</span>'+
+      '<button class="rn-x" id="toc-close" title="隐藏">✕</button></div>'+
+      tocData.map(function(t,i){
+        var on=curPdf?(t.page&&t.page===cur):(t.ch===cur);
+        return '<button class="toc-i'+(on?" on":"")+'" data-toc="'+i+'" style="padding-left:'+(10+t.d*12)+'px">'+
+          '<span class="t">'+esc(t.t)+'</span>'+(t.page?('<span class="pg">'+t.page+'</span>'):"")+'</button>';}).join("");}
+  function toggleToc(on){
+    var m=document.getElementById("rd-main");if(!m)return;
+    var want=(on===undefined)?!m.classList.contains("toc-on"):!!on;
+    m.classList.toggle("toc-on",want);save("tt_rdtoc",want);
+    var b=document.getElementById("rd-toc-btn");if(b)b.classList.toggle("on",want);
+    if(want){if(!tocData)buildToc();else renderToc();}}
   function setGoVal(n){
     var i=document.getElementById("rd-go");
     if(i&&document.activeElement!==i)i.value=n;
@@ -5801,7 +5921,7 @@ margin-left: -22px;
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
     rdPop.style.display="";applyPopSize();placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
-    if(!bd.querySelector(".dict-card")){        // 词典里没有 → 直接翻译
+    if(!bd.querySelector(".dict-card:not(.mynote)")){        // 词典里没有 → 直接翻译
       var w0=rdPopWord.disp;
       bd.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
       try{var tr=await translateText(w0);
@@ -6377,6 +6497,14 @@ margin-left: -22px;
           curEpub.loading=true;
           showChapter(curEpub.ch+1,0).then(function(){curEpub.loading=false;});}});
       bindScrub();
+      document.getElementById("rd-toc-btn").addEventListener("click",function(){toggleToc();});
+      document.getElementById("rd-toc").addEventListener("click",function(e){
+        if(e.target.closest("#toc-close")){toggleToc(false);return;}
+        var b2=e.target.closest("[data-toc]");if(!b2)return;
+        var t=tocData[+b2.getAttribute("data-toc")];if(!t)return;
+        if(t.page)gotoPage(t.page);else if(t.ch!==undefined)showChapter(t.ch,0);
+        renderToc();});
+      if(load("tt_rdtoc",false))toggleToc(true);
       var goI=document.getElementById("rd-go");
       if(goI)goI.addEventListener("keydown",function(e){
         if(e.key==="Enter"){e.preventDefault();var v=parseInt(this.value,10);if(v>0){gotoPage(v);this.blur();}}});
@@ -6388,6 +6516,16 @@ margin-left: -22px;
       rdPop.addEventListener("mouseleave",function(){rdPopHover=false;rdPopArm();});
       document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
       document.getElementById("rd-pop-spk").addEventListener("click",function(){if(rdPopWord)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));});
+      document.getElementById("rd-pop-note").addEventListener("click",async function(){
+        if(!rdPopWord)return;
+        if(!isSaved(rdPopWord.w))toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
+        var ok=await setWordNote(rdPopWord.w,this);
+        if(ok){var bd=document.getElementById("rd-pop-bd");
+          var old=bd.querySelector(".mynote");
+          if(old)old.outerHTML=wordNoteHTML(rdPopWord.w);
+          else bd.insertAdjacentHTML("afterbegin",wordNoteHTML(rdPopWord.w));
+          var st=document.getElementById("rd-pop-star");
+          st.classList.add("on");st.innerHTML=starSVG(true);}});
       document.getElementById("rd-pop-star").addEventListener("click",function(){
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
