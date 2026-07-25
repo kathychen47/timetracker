@@ -445,8 +445,21 @@
   #rd-tools button:hover{border-color:var(--primary)}
   #rd-tools .ct{border:1px solid rgba(0,0,0,.12)}
   #rd-tools .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
-  #rd-hl{position:fixed;z-index:59;background:rgba(99,102,241,.22);background:color-mix(in srgb,var(--primary) 24%,transparent);
-    outline:1px solid rgba(99,102,241,.35);border-radius:4px;pointer-events:none;display:none}
+  #rd-hl{position:fixed;z-index:59;pointer-events:none;display:none;border-radius:5px;box-sizing:content-box}
+  /* ① 色块 */
+  #rd-hl.s-block{background:rgba(99,102,241,.22);background:color-mix(in srgb,var(--primary) 24%,transparent);
+    outline:1px solid rgba(99,102,241,.3)}
+  /* ② 方框 */
+  #rd-hl.s-box{border:1.5px solid var(--primary);background:transparent;border-radius:6px;
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 12%,transparent)}
+  /* ③ 下划线 */
+  #rd-hl.s-underline{background:transparent;border-bottom:2.5px solid var(--primary);border-radius:0}
+  /* ④ 浮起变大（把这个词照原样浮在上面，略放大） */
+  #rd-hl.s-pop{padding:2px 5px;color:var(--text);background:var(--surface);
+    border:1px solid color-mix(in srgb,var(--primary) 35%,var(--border));border-radius:7px;
+    box-shadow:0 4px 14px rgba(0,0,0,.16);white-space:pre;
+    transform:scale(1.13);transform-origin:left center;animation:hlpop .13s ease-out}
+  @keyframes hlpop{from{transform:scale(1);opacity:.6}to{transform:scale(1.13);opacity:1}}
   #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
     background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
   .rd-pop-hd{position:sticky;top:0;background:var(--surface);display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);z-index:2}
@@ -2677,6 +2690,15 @@ margin-left: -22px;
           </div>
         </div>
         <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">指到单词时的效果</div><div class="set-desc">鼠标指到某个词时，怎么提示"现在会查这个词"。</div></div>
+          <select id="dict-hlstyle">
+            <option value="pop">浮起放大（推荐）</option>
+            <option value="block">半透明色块</option>
+            <option value="box">方框选中</option>
+            <option value="underline">下划线</option>
+          </select>
+        </div>
+        <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">快捷键</div><div class="set-desc">上面选「按住快捷键」时用哪个键。</div></div>
           <select id="dict-hotkey">
             <option value="alt">Alt / Option</option>
@@ -4054,6 +4076,7 @@ margin-left: -22px;
     if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
     if(!dictPrefs.popMode)dictPrefs.popMode="pin";
     if(!dictPrefs.hotkey)dictPrefs.hotkey="alt";
+    if(!dictPrefs.hlStyle)dictPrefs.hlStyle="pop";
     if(!dictPrefs.trig){var old=dictPrefs.trigger;
       dictPrefs.trig=old?{select:old==="select",hover:old==="hover",click:old==="click",key:old==="key"}
                         :{select:true,hover:false,click:true,key:false};}})();
@@ -4127,6 +4150,7 @@ margin-left: -22px;
     var tb=document.getElementById("dict-trig");
     if(tb)tb.querySelectorAll("input").forEach(function(i){i.checked=trigOn(i.value);i.parentNode.classList.toggle("on",i.checked);});
     var hk=document.getElementById("dict-hotkey");if(hk)hk.value=dictPrefs.hotkey||"alt";
+    var hs=document.getElementById("dict-hlstyle");if(hs)hs.value=dictPrefs.hlStyle||"pop";
     var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
     var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
@@ -4690,6 +4714,8 @@ margin-left: -22px;
       i.parentNode.classList.toggle("on",i.checked);saveDictPrefs();});
     var hk=document.getElementById("dict-hotkey");
     if(hk)hk.addEventListener("change",function(){dictPrefs.hotkey=hk.value;saveDictPrefs();});
+    var hs=document.getElementById("dict-hlstyle");
+    if(hs)hs.addEventListener("change",function(){dictPrefs.hlStyle=hs.value;saveDictPrefs();});
     var te=document.getElementById("tr-engine");
     if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
     var tg=document.getElementById("tr-lang");
@@ -5315,13 +5341,27 @@ margin-left: -22px;
     if(!rect||(!rect.width&&!rect.height))return null;
     // 必须真的点/指在这个词上；点在空白处时浏览器会返回最近的词，要排除掉
     if(x<rect.left-2||x>rect.right+2||y<rect.top-2||y>rect.bottom+2)return null;
-    return {cands:cands,w:cands[0],rect:rect};}
+    return {cands:cands,w:cands[0],rect:rect,el:node.parentElement,text:t.slice(s,Math.max(e,s+1))};}
   var rdHl=null;
-  function showHl(rect){
+  function showHl(hit){
+    var rect=hit.rect!==undefined?hit.rect:hit;   // 兼容只传 rect
     if(!rdHl){rdHl=document.createElement("div");rdHl.id="rd-hl";document.body.appendChild(rdHl);}
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
-    rdHl.style.display="";rdHl.style.left=(rect.left/z-2)+"px";rdHl.style.top=(rect.top/z-1)+"px";
-    rdHl.style.width=(rect.width/z+4)+"px";rdHl.style.height=(rect.height/z+2)+"px";}
+    var style=dictPrefs.hlStyle||"pop";
+    rdHl.className="s-"+style;
+    if(style==="pop"&&hit.el&&hit.text){          // 用同样字体把这个词"浮"在原位上，略微放大
+      var cs=getComputedStyle(hit.el);
+      rdHl.textContent=hit.text;
+      rdHl.style.font=cs.font;rdHl.style.fontFamily=cs.fontFamily;rdHl.style.fontSize=cs.fontSize;
+      rdHl.style.fontWeight=cs.fontWeight;rdHl.style.fontStyle=cs.fontStyle;
+      rdHl.style.letterSpacing=cs.letterSpacing;rdHl.style.lineHeight=(rect.height/z)+"px";
+      rdHl.style.width="auto";rdHl.style.height="auto";
+      rdHl.style.left=(rect.left/z-5)+"px";rdHl.style.top=(rect.top/z-3)+"px";
+    }else{
+      rdHl.textContent="";
+      rdHl.style.left=(rect.left/z-2)+"px";rdHl.style.top=(rect.top/z-1)+"px";
+      rdHl.style.width=(rect.width/z+4)+"px";rdHl.style.height=(rect.height/z+2)+"px";}
+    rdHl.style.display="";}
   function hideHl(){if(rdHl)rdHl.style.display="none";}
   // 依次尝试候选词（中文 4→1 字），命中就弹卡片
   async function lookupCands(cands,rect){
@@ -5345,7 +5385,7 @@ margin-left: -22px;
     var byKey=trigOn("key")&&keyHeld(e);
     var hit=wordAtPoint(e.clientX,e.clientY);
     if(!hit){hideHl();lastHoverWord="";return;}
-    showHl(hit.rect);                               // 只要开了悬停/点击/快捷键，指到就高亮
+    showHl(hit);                               // 只要开了悬停/点击/快捷键，指到就高亮
     if(!trigOn("hover")&&!byKey)return;             // 点击模式：只高亮，等点击
     if(hit.w===lastHoverWord&&rdPop&&rdPop.style.display!=="none")return;
     if(hoverTimer)clearTimeout(hoverTimer);
@@ -5356,11 +5396,11 @@ margin-left: -22px;
       if(!String(getSelection()||"").trim()){hideRdPop();hideRdTools();}return;}
     if(!trigOn("click"))return;
     if(String(getSelection()||"").trim())return;    // 正在选文字就不打扰
-    showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
+    showHl(hit);lookupCands(hit.cands,hit.rect);}
   function rdContextWord(e){
     var hit=wordAtPoint(e.clientX,e.clientY);
     if(!hit)return;
-    e.preventDefault();showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
+    e.preventDefault();showHl(hit);lookupCands(hit.cands,hit.rect);}
   function rdSelHandler(){
     var s=(getSelection()?String(getSelection()):"").trim();
     if(!s||s.length>1200){hideRdTools();return;}
@@ -5510,7 +5550,7 @@ margin-left: -22px;
           if(!trigOn("click")&&!trigOn("select"))return;
           var hit=wordAtPoint(tStart.x,tStart.y);
           if(!hit){hideHl();hideRdPop();return;}
-          showHl(hit.rect);lookupCands(hit.cands,hit.rect);
+          showHl(hit);lookupCands(hit.cands,hit.rect);
         },80);},{passive:true});
       // iOS 长按选词不一定触发 mouseup，靠 selectionchange 兜底
       var selTimer=null;
