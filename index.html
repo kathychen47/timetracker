@@ -481,6 +481,10 @@
     width:28px;height:28px;cursor:pointer;font-size:13px;display:grid;place-items:center;padding:0}
   #rd-tools button:hover{border-color:var(--primary)}
   #rd-tools .ct{border:1px solid rgba(0,0,0,.12)}
+  #rd-tools .addc{position:relative;display:grid;place-items:center;background:var(--surface-2);color:var(--muted);
+    font-size:15px;line-height:1;cursor:pointer;width:28px;height:28px;border-radius:7px;border:1px dashed var(--border)}
+  #rd-tools .addc:hover{color:var(--primary);border-color:var(--primary)}
+  #rd-tools .addc input{position:absolute;inset:0;opacity:0;cursor:pointer;padding:0;border:none}
   #rd-tools .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
   #rd-hl{position:fixed;z-index:59;pointer-events:none;display:none;border-radius:5px;box-sizing:content-box}
   /* ① 色块 */
@@ -2755,6 +2759,7 @@ margin-left: -22px;
             <option value="block">半透明色块</option>
             <option value="box">方框选中</option>
             <option value="underline">下划线</option>
+            <option value="off">不显示</option>
           </select>
         </div>
         <div class="set-row">
@@ -3933,7 +3938,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -5198,7 +5203,17 @@ margin-left: -22px;
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
-  var ANNC=["#ffe58a","#b7f0c8","#bcd9ff","#ffc9d8"];
+  var ANNC=load("tt_anncolors",null)||["#ffe58a","#b7f0c8","#bcd9ff","#ffc9d8"];
+  function saveAnnColors(){save("tt_anncolors",ANNC);}
+  function annToolsHTML(){
+    return ANNC.map(function(c){
+      return '<button class="ct" data-hl="'+c+'" style="background:'+c+'" title="高亮（右键删除这个颜色）"></button>';}).join("")+
+      '<label class="ct addc" title="添加自定义颜色">＋<input type="color" id="ann-newc" value="#ffd6a5"></label>'+
+      '<span class="sep"></span>'+
+      '<button data-t="ul" title="下划线"><u>U</u></button>'+
+      '<button data-t="bd" title="加粗"><b>B</b></button>'+
+      '<button data-note title="加笔记">📝</button>'+
+      '<button data-clear title="清除标注">🚫</button>';}
   function annScope(){ // 当前"页/节"的标识
     if(!curBook)return "0";
     if(curBook.type==="epub")return "c"+((curEpub&&curEpub.ch)||0);
@@ -5351,20 +5366,29 @@ margin-left: -22px;
   function showRdTools(rect){
     if(!rdTools){
       rdTools=document.createElement("div");rdTools.id="rd-tools";
-      rdTools.innerHTML=ANNC.map(function(c){return '<button class="ct" data-hl="'+c+'" style="background:'+c+'" title="高亮"></button>';}).join("")+
-        '<span class="sep"></span>'+
-        '<button data-t="ul" title="下划线"><u>U</u></button>'+
-        '<button data-t="bd" title="加粗"><b>B</b></button>'+
-        '<button data-note title="加笔记">📝</button>'+
-        '<button data-clear title="清除标注">🚫</button>';
+      rdTools.innerHTML=annToolsHTML();
       document.body.appendChild(rdTools);
-      rdTools.addEventListener("mousedown",function(e){e.preventDefault();});
+      rdTools.addEventListener("mousedown",function(e){
+        if(!e.target.closest("#ann-newc"))e.preventDefault();});   // 保住选区
       rdTools.addEventListener("click",function(e){
         var hl=e.target.closest("[data-hl]"),t=e.target.closest("[data-t]"),cl=e.target.closest("[data-clear]"),nt=e.target.closest("[data-note]");
         if(hl)addAnnot("hl",hl.getAttribute("data-hl"));
         else if(t)addAnnot(t.getAttribute("data-t"),null);
         else if(nt)addNote();
-        else if(cl)clearAnnotAt();});}
+        else if(cl)clearAnnotAt();});
+      // 右键色块 → 从常用色里删掉
+      rdTools.addEventListener("contextmenu",function(e){
+        var hl=e.target.closest("[data-hl]");if(!hl)return;
+        e.preventDefault();
+        if(ANNC.length<=1)return;
+        ANNC=ANNC.filter(function(c){return c!==hl.getAttribute("data-hl");});
+        saveAnnColors();rdTools.innerHTML=annToolsHTML();});
+      // 取色盘选色 → 固定到工具条
+      rdTools.addEventListener("change",function(e){
+        var inp=e.target.closest("#ann-newc");if(!inp)return;
+        var c=inp.value;
+        if(ANNC.indexOf(c)<0){ANNC.push(c);if(ANNC.length>10)ANNC.shift();saveAnnColors();}
+        rdTools.innerHTML=annToolsHTML();});}
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     rdTools.style.display="flex";
     var w=rdTools.offsetWidth||230,vw=innerWidth/z;
@@ -5440,12 +5464,13 @@ margin-left: -22px;
   function keyHeld(e){var mk=dictPrefs.hotkey||"alt";
     return (mk==="alt"&&e.altKey)||(mk==="ctrl"&&(e.ctrlKey||e.metaKey))||(mk==="shift"&&e.shiftKey);}
   function rdHover(e){
-    if(!trigOn("hover")&&!trigOn("click")&&!trigOn("key")){hideHl();return;}
+    if(dictPrefs.hlStyle==="off"){hideHl();return;}
     if(rdPop&&rdPop.style.display!=="none"&&rdPop.contains(e.target))return;
+    if(String(getSelection()||"").trim()){hideHl();return;}   // 正在选文字时不干扰
     var byKey=trigOn("key")&&keyHeld(e);
     var hit=wordAtPoint(e.clientX,e.clientY);
     if(!hit){hideHl();lastHoverWord="";return;}
-    showHl(hit);                               // 只要开了悬停/点击/快捷键，指到就高亮
+    showHl(hit);                               // 任何触发方式下，指到词都给视觉提示
     if(!trigOn("hover")&&!byKey)return;             // 点击模式：只高亮，等点击
     if(hit.w===lastHoverWord&&rdPop&&rdPop.style.display!=="none")return;
     if(hoverTimer)clearTimeout(hoverTimer);
