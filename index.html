@@ -3683,13 +3683,15 @@ margin-left: -22px;
     if(batch.length)await flush(batch);
     dictCounts[store]=await idbCount(store);return count;}
 
-  var dictInit=false;
+  var dictInit=false,dictInitP=null;
   function ensureDictInit(){if(dictInit)return Promise.resolve();
-    return refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});}
+    if(dictInitP)return dictInitP;
+    dictInitP=refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});
+    return dictInitP;}
   function openDict(){ensureDictInit().then(function(){renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
   function bookmarkletCode(){var base=location.origin+location.pathname;
-    return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');})();";}
+    return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;var p=window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');if(p)p.focus();else alert('\\u5f39\\u7a97\\u88ab\\u62e6\\u622a\\uff0c\\u8bf7\\u5141\\u8bb8\\u5f39\\u7a97');})();";}
   function renderBookmarklet(){var a=document.getElementById("bm-link");if(a)a.setAttribute("href",bookmarkletCode());}
   function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
@@ -3957,7 +3959,7 @@ margin-left: -22px;
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
-  initLang();
+  initLang();renderBookmarklet();
   // 划词查词入口：?w=单词 [&add=1 自动收藏] [&mini=1 小窗模式]；否则恢复上次所在页面
   (function(){
     var qs=null;try{qs=new URLSearchParams(location.search);}catch(e){}
