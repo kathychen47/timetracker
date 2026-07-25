@@ -4349,6 +4349,11 @@ margin-left: -22px;
   function dictProg(t){var p=document.getElementById("dict-prog");if(p)p.textContent=t;}
 
   async function importDictFiles(files){
+    var already=DICT_STORES.filter(function(s){return dictCounts[s]>0;});
+    if(already.length){
+      var ok=await ttConfirm("本机已经有词典了（"+already.map(srcName).join("、")+"）。\n重新导入会覆盖，确定继续吗？",
+        {okText:"覆盖导入",anchor:document.getElementById("dict-prog")});
+      if(!ok){dictProg("已取消。");return;}}
     for(var i=0;i<files.length;i++){var f=files[i];
       var store=/collins|柯林/i.test(f.name)?"collins":(/oald|oxford|牛津/i.test(f.name)?"oald":null);
       if(!store){dictProg("认不出文件："+f.name+"（名字里要含 oald 或 collins）");continue;}
@@ -4359,6 +4364,13 @@ margin-left: -22px;
 
   async function cloudDownloadDicts(){
     if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再点下载。");return;}
+    // 本机已经有词典就先问一句，避免误点白下 70+MB 流量
+    var loaded=DICT_STORES.filter(function(s){return dictCounts[s]>0;});
+    if(loaded.length){
+      var info=loaded.map(function(s){return "· "+srcName(s)+"（已有 "+dictCounts[s].toLocaleString()+" 词）";}).join("\n");
+      var ok=await ttConfirm("这台设备已经有词典了：\n"+info+"\n\n重新下载会消耗约 70MB 流量并覆盖本机词典。\n只有换设备或词典损坏时才需要下载，确定继续吗？",
+        {okText:"仍然重下",danger:true,anchor:document.getElementById("dict-dl")});
+      if(!ok){dictProg("已取消，本机词典保持不变。");return;}}
     for(var i=0;i<DICT_STORES.length;i++){var store=DICT_STORES[i];
       dictProg("下载 "+srcName(store)+" …（首次较大，稍等）");
       try{
