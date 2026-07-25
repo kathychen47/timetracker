@@ -527,6 +527,10 @@
     border-radius:14px;height:calc(100vh - 168px);overflow:hidden;flex-direction:column}
   .rd-main.bi-on .rd-trans{display:flex}
   .rd-main.bi-on .rd-scrub{display:none}
+  @media (max-width:760px){                       /* 手机/iPad 竖屏：上下对照，别挤成两条 */
+    .rd-main.bi-on{flex-wrap:wrap}
+    .rd-main.bi-on .rd-content,.rd-main.bi-on .rd-trans{flex:1 1 100%;height:calc(50vh - 88px)}
+    body.zen .rd-main.bi-on .rd-content,body.zen .rd-main.bi-on .rd-trans{height:50vh}}
   .tr-top{display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);flex:none;flex-wrap:wrap}
   .tr-title{font-size:12.5px;font-weight:650;color:var(--muted);flex:none}
   .tr-top .grow{flex:1}
@@ -6328,8 +6332,15 @@ margin-left: -22px;
     if(curBook.trLang!==trLang){curBook.trLang=trLang;curBook.trDone={};}
     curBook.trDone=curBook.trDone||{};
     return curBook.trDone;}
+  function trTitleUpd(){
+    var el=document.querySelector("#rd-trans .tr-title");if(!el)return;
+    if(curPdf&&curBook){
+      var d=Object.keys(curBook.trDone||{}).length;
+      el.textContent=d?("译文 · 已翻 "+d+"/"+curPdf.n+" 页"):"译文";
+    }else el.textContent="译文";}
   function renderTrans(v){
     var body=trBodyEl();if(!body)return;
+    trTitleUpd();
     if(!v||!v.b||!v.b.length){
       body.innerHTML='<div class="tr-empty">这一页没找到可翻译的文字。<br>要是扫描件，先点上面「🔍 OCR」识别，再点 ⟳ 重译。</div>';return;}
     if(v.flow){
@@ -6422,7 +6433,7 @@ margin-left: -22px;
         fails++;
         if(fails>=4){ttAlert("翻译中断了（多半是 Google 免费接口限流）。已经翻好 "+k+" 页，过几分钟再点「📚 整本」会从没翻的那页接着来。");break;}
         await sleepMs(4000);continue;}                                   // 同一页退一步重试
-      k++;trProg(k,todo.length);
+      k++;trProg(k,todo.length);trTitleUpd();
       await sleepMs(trEngine==="ai"?120:260);}
     await bPut("meta",curBook);
     bookTrRun=false;trProg(-1);
