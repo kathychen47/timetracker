@@ -560,7 +560,9 @@
   .dict-acc button{padding:7px 11px;font-size:13px}
   .flash-spk{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:9px;padding:1px 10px;font-size:16px;cursor:pointer;margin-left:8px;vertical-align:middle}
   /* rendered definition */
-  .dict-def{font-size:14px;line-height:1.65}
+  .dict-def{font-size:14px;line-height:1.65;position:relative}
+  /* 词典里的义项序号是绝对定位的，必须锚在滚动内容里，否则滚动时会"钉"在原处 */
+  .dict-def .oald li.sense{position:relative}
   .dict-def .headword,.dict-def .hw{font-size:20px;font-weight:700;color:var(--text)}
   .dict-def .pos{font-style:italic;color:var(--muted);margin-left:6px;font-size:13px}
   .dict-def .phon{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--primary);font-size:13px;margin:0 3px}
