@@ -334,6 +334,45 @@
   .ti .tact{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;flex:none;font-size:14px;line-height:1}
   .ti .tact:hover{background:var(--surface-2)}
 
+  /* reader */
+  .rd-sub{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:8px}
+  .rd-import{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+  .rd-note{color:var(--muted);font-size:13px}
+  .rd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .rd-book{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:transform .12s}
+  .rd-book:hover{transform:translateY(-2px);border-color:var(--primary)}
+  .rd-cover{height:78px;border-radius:9px;display:grid;place-items:center;font-size:28px;margin-bottom:10px;background:var(--surface-2)}
+  .rd-book .n{font-size:13.5px;font-weight:600;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .rd-book .s{font-size:11.5px;color:var(--muted);margin-top:5px}
+  .rd-book .x{position:absolute;top:6px;right:6px;border:none;background:var(--surface-2);color:var(--muted);border-radius:7px;
+    width:22px;height:22px;cursor:pointer;font-size:12px;opacity:0;transition:opacity .12s}
+  .rd-book:hover .x{opacity:1}
+  .rd-book .x:hover{background:var(--danger);color:#fff}
+  .rd-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .rd-bar .btn{padding:6px 11px;font-size:13px}
+  .rd-bar .grow{flex:1}
+  .rd-title{font-size:15px;font-weight:650;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rd-pos{font-size:12.5px;color:var(--muted);min-width:74px;text-align:center}
+  .rd-content{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 30px;
+    height:calc(100vh - 168px);overflow-y:auto;font-size:var(--rdfs,17px);line-height:1.85}
+  .rd-content p{margin:0 0 1em}
+  .rd-content h1,.rd-content h2,.rd-content h3{line-height:1.4;margin:1.2em 0 .5em}
+  .rd-content img{max-width:100%;height:auto;border-radius:8px}
+  .rd-content pre{white-space:pre-wrap;word-break:break-word;font:inherit;margin:0}
+  .rd-content canvas{max-width:100%;display:block;margin:0 auto 14px;box-shadow:0 2px 12px rgba(0,0,0,.1)}
+  .rd-page{position:relative;margin:0 auto 16px;width:fit-content}
+  .rd-textlayer{position:absolute;inset:0;overflow:hidden;opacity:.25;line-height:1}
+  .rd-textlayer > span{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;cursor:text}
+  .rd-textlayer ::selection{background:#6366F1}
+  .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
+  #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
+    background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22)}
+  .rd-pop-hd{position:sticky;top:0;background:var(--surface);display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);z-index:2}
+  .rd-pop-w{font-weight:700;font-size:15px;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rd-pop-hd .btn{padding:3px 9px;font-size:12px}
+  .rd-pop-hd .btn.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
+  .rd-pop-bd{padding:10px 12px 14px}
+
   /* dictionary · vocab */
   .dict-wrap{max-width:720px;margin:0 auto}
   .dict-tabs{margin-bottom:14px}
@@ -1977,6 +2016,7 @@ margin-left: -22px;
     <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg></button>
     <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg></button>
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
+    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
     <div class="grow"></div>
     <button id="settings-btn" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
@@ -2122,7 +2162,44 @@ margin-left: -22px;
         </div>
       </div>
     </section>
+
+    <!-- READER -->
+    <section class="view" id="view-reader">
+      <div id="rd-shelf">
+        <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / TXT，选中单词即可查词</span></div>
+        <div class="rd-import">
+          <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.txt" multiple hidden></label>
+          <span class="rd-note" id="rd-note"></span>
+        </div>
+        <div class="rd-grid" id="rd-grid"></div>
+      </div>
+
+      <div id="rd-read" style="display:none">
+        <div class="rd-bar">
+          <button class="btn" id="rd-back">← 书架</button>
+          <b class="rd-title" id="rd-title"></b>
+          <span class="grow"></span>
+          <button class="btn" id="rd-fs-down" title="缩小字号">A−</button>
+          <button class="btn" id="rd-fs-up" title="放大字号">A+</button>
+          <button class="btn" id="rd-prev">上一节</button>
+          <span class="rd-pos" id="rd-pos"></span>
+          <button class="btn" id="rd-next">下一节</button>
+        </div>
+        <div class="rd-content" id="rd-content"></div>
+      </div>
+    </section>
   </main>
+
+  <!-- 阅读中划词卡片 -->
+  <div id="rd-pop" style="display:none">
+    <div class="rd-pop-hd">
+      <span class="rd-pop-w" id="rd-pop-w"></span>
+      <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
+      <button class="btn" id="rd-pop-star" title="加入生词本">★</button>
+      <button class="btn" id="rd-pop-x" title="关闭">✕</button>
+    </div>
+    <div class="rd-pop-bd" id="rd-pop-bd"></div>
+  </div>
 
   <!-- 背诵卡片 -->
   <div class="overlay" id="flash-overlay">
@@ -2594,10 +2671,11 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
-    ["calendar","todo","stats","dict"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo")renderTodos();
     if(tab==="dict")openDict();
+    if(tab==="reader")openReader();
   });
 
   // ---------- calendar core ----------
@@ -3956,6 +4034,253 @@ margin-left: -22px;
     document.getElementById("flash-close").addEventListener("click",closeFlash);
     document.getElementById("flash-overlay").addEventListener("click",function(e){if(e.target.id==="flash-overlay")closeFlash();});
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
+
+  // ---------- 看书（PDF / EPUB / TXT，边读边查词） ----------
+  var BDB=null,curBook=null,curEpub=null,curPdf=null,rdFs=+load("tt_rdfs",17)||17;
+  function bdbOpen(){return new Promise(function(res,rej){
+    var r=indexedDB.open("ttbooks",1);
+    r.onupgradeneeded=function(){var db=r.result;
+      if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});};
+    r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+  function ensureBDB(){return BDB?Promise.resolve(BDB):bdbOpen().then(function(d){BDB=d;return d;});}
+  function bPut(store,val){return ensureBDB().then(function(d){return new Promise(function(res,rej){
+    var tx=d.transaction(store,"readwrite");tx.objectStore(store).put(val);
+    tx.oncomplete=function(){res();};tx.onerror=function(){rej(tx.error);};});});}
+  function bGet(store,id){return ensureBDB().then(function(d){return new Promise(function(res){
+    var rq=d.transaction(store,"readonly").objectStore(store).get(id);
+    rq.onsuccess=function(){res(rq.result||null);};rq.onerror=function(){res(null);};});});}
+  function bAll(){return ensureBDB().then(function(d){return new Promise(function(res){
+    var out=[],rq=d.transaction("meta","readonly").objectStore("meta").openCursor();
+    rq.onsuccess=function(){var c=rq.result;if(c){out.push(c.value);c.continue();}else res(out);};
+    rq.onerror=function(){res(out);};});});}
+  function bDel(id){return ensureBDB().then(function(d){return new Promise(function(res){
+    var tx=d.transaction(["meta","blob"],"readwrite");
+    tx.objectStore("meta").delete(id);tx.objectStore("blob").delete(id);
+    tx.oncomplete=function(){res();};tx.onerror=function(){res();};});});}
+
+  function loadScript(src){return new Promise(function(res,rej){
+    var s=document.createElement("script");s.src=src;s.onload=function(){res();};
+    s.onerror=function(){rej(new Error("加载失败（需要联网）"));};document.head.appendChild(s);});}
+  function ensureJSZip(){return window.JSZip?Promise.resolve():loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js");}
+  function ensurePdfjs(){if(window.pdfjsLib)return Promise.resolve();
+    return loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js").then(function(){
+      pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";});}
+
+  var rdNote=function(t){var e=document.getElementById("rd-note");if(e)e.textContent=t||"";};
+  function bookType(name){var n=name.toLowerCase();
+    return n.endsWith(".pdf")?"pdf":(n.endsWith(".epub")?"epub":(n.endsWith(".txt")?"txt":null));}
+  function fmtSize(b){return b>1048576?(b/1048576).toFixed(1)+" MB":Math.round(b/1024)+" KB";}
+
+  async function importBooks(files){
+    for(var i=0;i<files.length;i++){var f=files[i],t=bookType(f.name);
+      if(!t){rdNote("不支持的格式："+f.name);continue;}
+      rdNote("导入 "+f.name+" …");
+      var id="b"+uid();
+      try{
+        await bPut("blob",{id:id,blob:f});
+        await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null});
+      }catch(e){rdNote("导入失败："+String(e&&e.message||e));return;}}
+    rdNote("✓ 导入完成");renderShelf();}
+
+  async function renderShelf(){
+    var g=document.getElementById("rd-grid");if(!g)return;
+    var list=await bAll();
+    list.sort(function(a,b){return (b.added||0)-(a.added||0);});
+    if(!list.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / TXT。</div>';return;}
+    var icon={pdf:"📕",epub:"📗",txt:"📄"};
+    g.innerHTML=list.map(function(b){
+      var p=b.pos?(b.type==="pdf"?("第 "+(b.pos.page||1)+" 页"):(b.type==="epub"?("第 "+((b.pos.ch||0)+1)+" 节"):"读过")):"未读";
+      return '<div class="rd-book" data-id="'+b.id+'"><button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
+        '<div class="rd-cover">'+(icon[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
+        '<div class="s">'+fmtSize(b.size||0)+' · '+p+'</div></div>';}).join("");}
+
+  function showShelf(){document.getElementById("rd-shelf").style.display="";document.getElementById("rd-read").style.display="none";
+    hideRdPop();curEpub=null;curPdf=null;curBook=null;renderShelf();}
+
+  var rdContent=null,rdPosEl=null,rdTitleEl=null;
+  function applyRdFs(){if(rdContent)rdContent.style.setProperty("--rdfs",rdFs+"px");}
+  function savePos(pos){if(!curBook)return;curBook.pos=pos;bPut("meta",curBook);}
+  var posTimer=null;
+  function schedulePos(){if(posTimer)clearTimeout(posTimer);posTimer=setTimeout(function(){
+    if(!curBook)return;
+    if(curBook.type==="pdf")savePos({page:(curPdf&&curPdf.page)||1});
+    else if(curBook.type==="epub")savePos({ch:(curEpub&&curEpub.ch)||0,top:rdContent.scrollTop});
+    else savePos({top:rdContent.scrollTop});},600);}
+
+  async function openBook(id){
+    var meta=await bGet("meta",id);if(!meta)return;
+    var rec=await bGet("blob",id);if(!rec||!rec.blob){alert("这本书的文件丢了，建议删掉重新导入");return;}
+    curBook=meta;
+    document.getElementById("rd-shelf").style.display="none";
+    document.getElementById("rd-read").style.display="";
+    rdTitleEl.textContent=meta.name;rdContent.innerHTML='<div class="rd-empty">加载中…</div>';applyRdFs();
+    try{
+      if(meta.type==="txt")await openTxt(rec.blob);
+      else if(meta.type==="epub")await openEpubBook(rec.blob);
+      else await openPdfBook(rec.blob);
+    }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
+
+  async function openTxt(blob){
+    var text=await blob.text();
+    rdContent.innerHTML="<pre></pre>";rdContent.querySelector("pre").textContent=text;
+    rdPosEl.textContent="—";
+    rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
+
+  function resolvePath(baseDir,rel){
+    try{rel=decodeURIComponent(rel);}catch(e){}
+    if(/^[a-z]+:/i.test(rel))return null;
+    rel=rel.split("#")[0];
+    var parts=baseDir?baseDir.split("/").filter(Boolean):[];
+    rel.split("/").forEach(function(p){if(!p||p===".")return;if(p==="..")parts.pop();else parts.push(p);});
+    return parts.join("/");}
+
+  async function openEpubBook(blob){
+    await ensureJSZip();
+    var zip=await JSZip.loadAsync(blob);
+    var contXml=await zip.file("META-INF/container.xml").async("string");
+    var cdoc=new DOMParser().parseFromString(contXml,"application/xml");
+    var rootfile=cdoc.getElementsByTagNameNS("*","rootfile")[0];
+    var opfPath=rootfile.getAttribute("full-path");
+    var opfDir=opfPath.split("/").slice(0,-1).join("/");
+    var opfXml=await zip.file(opfPath).async("string");
+    var odoc=new DOMParser().parseFromString(opfXml,"application/xml");
+    var man={},items=odoc.getElementsByTagNameNS("*","item");
+    for(var i=0;i<items.length;i++)man[items[i].getAttribute("id")]={href:items[i].getAttribute("href")};
+    var refs=odoc.getElementsByTagNameNS("*","itemref"),spine=[];
+    for(var j=0;j<refs.length;j++){var m=man[refs[j].getAttribute("idref")];if(m&&m.href)spine.push(m.href);}
+    if(!spine.length)throw new Error("这本 EPUB 没有可读章节");
+    curEpub={zip:zip,dir:opfDir,spine:spine,ch:0,urls:[]};
+    var start=(curBook.pos&&curBook.pos.ch)||0;
+    await showChapter(Math.min(start,spine.length-1),(curBook.pos&&curBook.pos.top)||0);}
+
+  async function showChapter(n,top){
+    if(!curEpub)return;
+    n=Math.max(0,Math.min(n,curEpub.spine.length-1));curEpub.ch=n;
+    curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});curEpub.urls=[];
+    var path=resolvePath(curEpub.dir,curEpub.spine[n]);
+    var file=curEpub.zip.file(path);
+    if(!file){rdContent.innerHTML='<div class="rd-empty">这一节读不出来</div>';return;}
+    var html=await file.async("string");
+    var doc=new DOMParser().parseFromString(html,"text/html");
+    doc.querySelectorAll("script,style,link").forEach(function(x){x.remove();});
+    var chDir=path.split("/").slice(0,-1).join("/");
+    var imgs=[].slice.call(doc.querySelectorAll("img,image"));
+    for(var i=0;i<imgs.length;i++){
+      var el=imgs[i],src=el.getAttribute("src")||el.getAttribute("xlink:href")||el.getAttribute("href");
+      if(!src)continue;
+      var p=resolvePath(chDir,src);var f=p&&curEpub.zip.file(p);
+      if(!f){el.remove();continue;}
+      try{var b=await f.async("blob");var u=URL.createObjectURL(b);curEpub.urls.push(u);el.setAttribute("src",u);}catch(e){el.remove();}}
+    doc.querySelectorAll("a").forEach(function(a){a.removeAttribute("href");a.style.color="inherit";});
+    rdContent.innerHTML=doc.body?doc.body.innerHTML:html;
+    rdPosEl.textContent=(n+1)+" / "+curEpub.spine.length;
+    rdContent.scrollTop=top||0;
+    savePos({ch:n,top:top||0});}
+
+  async function openPdfBook(blob){
+    await ensurePdfjs();
+    var buf=await blob.arrayBuffer();
+    var pdf=await pdfjsLib.getDocument({data:buf}).promise;
+    curPdf={doc:pdf,page:1,n:pdf.numPages};
+    await showPdfPage((curBook.pos&&curBook.pos.page)||1);}
+
+  async function showPdfPage(n){
+    if(!curPdf)return;
+    n=Math.max(1,Math.min(n,curPdf.n));curPdf.page=n;
+    rdPosEl.textContent=n+" / "+curPdf.n;
+    var page=await curPdf.doc.getPage(n);
+    var avail=Math.max(320,rdContent.clientWidth-64);
+    var base=page.getViewport({scale:1});
+    var scale=Math.min(2.2,avail/base.width);
+    var vp=page.getViewport({scale:scale});
+    var wrap=document.createElement("div");wrap.className="rd-page";
+    var canvas=document.createElement("canvas");canvas.width=Math.floor(vp.width);canvas.height=Math.floor(vp.height);
+    canvas.style.width=Math.floor(vp.width)+"px";canvas.style.height=Math.floor(vp.height)+"px";
+    var layer=document.createElement("div");layer.className="rd-textlayer";
+    layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
+    wrap.appendChild(canvas);wrap.appendChild(layer);
+    rdContent.innerHTML="";rdContent.appendChild(wrap);rdContent.scrollTop=0;
+    await page.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
+    try{var tc=await page.getTextContent();
+      pdfjsLib.renderTextLayer({textContentSource:tc,textContent:tc,container:layer,viewport:vp,textDivs:[]});}catch(e){}
+    savePos({page:n});}
+
+  function rdPrev(){if(curPdf)showPdfPage(curPdf.page-1);else if(curEpub)showChapter(curEpub.ch-1,0);}
+  function rdNext(){if(curPdf)showPdfPage(curPdf.page+1);else if(curEpub)showChapter(curEpub.ch+1,0);}
+
+  // 阅读中划词
+  var rdPop=null,rdPopWord=null;
+  function hideRdPop(){if(rdPop)rdPop.style.display="none";rdPopWord=null;}
+  function rdLooksLikeWord(s){s=s.trim();
+    return isCJK(s)?(s.length<=4):(/^[A-Za-z][A-Za-z'’-]*$/.test(s));}
+  async function showRdPop(text,rect){
+    if(!rdPop)return;
+    rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
+    document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
+    var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
+    star.classList.toggle("on",saved);star.textContent=saved?"✓ 已收藏":"★";
+    var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
+    rdPop.style.display="";
+    var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+    var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
+    var left=Math.max(8,Math.min(rect.left/z,vw-w-12));
+    var top=rect.bottom/z+8;
+    if(top>vh-160)top=Math.max(8,rect.top/z-Math.min(rdPop.offsetHeight||280,vh*0.5)-8);
+    rdPop.style.left=left+"px";rdPop.style.top=top+"px";
+    bd.innerHTML=await wbDefHTML(rdPopWord.w);}
+  function rdSelHandler(){
+    var s=(getSelection()?String(getSelection()):"").trim();
+    if(!s||s.length>60){return;}
+    if(!rdLooksLikeWord(s))return;
+    var sel=getSelection();if(!sel.rangeCount)return;
+    var rect=sel.getRangeAt(0).getBoundingClientRect();
+    if(!rect||(!rect.width&&!rect.height))return;
+    showRdPop(s,rect);}
+
+  var readerInit=false;
+  function openReader(){
+    if(!readerInit){
+      readerInit=true;
+      rdContent=document.getElementById("rd-content");
+      rdPosEl=document.getElementById("rd-pos");
+      rdTitleEl=document.getElementById("rd-title");
+      rdPop=document.getElementById("rd-pop");
+      if(rdPop&&rdPop.parentNode!==document.body)document.body.appendChild(rdPop);
+      applyRdFs();
+      document.getElementById("rd-file").addEventListener("change",function(e){
+        if(e.target.files&&e.target.files.length)importBooks([].slice.call(e.target.files));e.target.value="";});
+      document.getElementById("rd-grid").addEventListener("click",function(e){
+        var del=e.target.closest("[data-del]");
+        if(del){e.stopPropagation();if(!confirm("删除这本书？"))return;bDel(del.getAttribute("data-del")).then(renderShelf);return;}
+        var b=e.target.closest(".rd-book");if(b)openBook(b.getAttribute("data-id"));});
+      document.getElementById("rd-back").addEventListener("click",showShelf);
+      document.getElementById("rd-prev").addEventListener("click",rdPrev);
+      document.getElementById("rd-next").addEventListener("click",rdNext);
+      document.getElementById("rd-fs-up").addEventListener("click",function(){rdFs=Math.min(30,rdFs+1);save("tt_rdfs",rdFs);applyRdFs();});
+      document.getElementById("rd-fs-down").addEventListener("click",function(){rdFs=Math.max(12,rdFs-1);save("tt_rdfs",rdFs);applyRdFs();});
+      rdContent.addEventListener("mouseup",function(){setTimeout(rdSelHandler,10);});
+      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();});
+      document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
+      document.getElementById("rd-pop-spk").addEventListener("click",function(){if(rdPopWord)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));});
+      document.getElementById("rd-pop-star").addEventListener("click",function(){
+        if(!rdPopWord)return;
+        toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
+        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.textContent=saved?"✓ 已收藏":"★";});
+      document.getElementById("rd-pop-bd").addEventListener("click",function(e){
+        var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
+        var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+      document.addEventListener("mousedown",function(e){
+        if(rdPop&&rdPop.style.display!=="none"&&!rdPop.contains(e.target)&&!rdContent.contains(e.target))hideRdPop();});
+      document.addEventListener("keydown",function(e){
+        if(e.key==="Escape")hideRdPop();
+        if(state.tab!=="reader"||document.getElementById("rd-read").style.display==="none")return;
+        if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+        if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
+      window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
+    }
+    if(!curBook)renderShelf();
+    ensureDictInit();}
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
