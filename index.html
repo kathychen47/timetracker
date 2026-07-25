@@ -603,9 +603,32 @@
   .wb-item .del{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;flex:none}
   .wb-item .del:hover{color:var(--danger)}
   .wb-def{padding:4px 14px 12px;border-top:1px solid var(--border)}
-  .wb-groups{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-  .wbg-chip{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;padding:5px 12px;font-size:13px;cursor:pointer}
-  .wbg-chip.on{background:var(--primary-soft);color:var(--primary);border-color:transparent;font-weight:600}
+  /* 书桌：词书卡片 */
+  .wb-groups{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:13px;margin-bottom:18px}
+  .wb-book{cursor:pointer}
+  .wb-book .cover{position:relative;height:104px;border-radius:12px;padding:11px 12px 10px;box-sizing:border-box;
+    background:linear-gradient(150deg,color-mix(in srgb,var(--bc) 82%,#fff) 0%,var(--bc) 100%);
+    color:#fff;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
+    box-shadow:0 3px 10px color-mix(in srgb,var(--bc) 35%,transparent);transition:transform .13s,box-shadow .13s}
+  .wb-book:hover .cover{transform:translateY(-3px);box-shadow:0 8px 20px color-mix(in srgb,var(--bc) 45%,transparent)}
+  .wb-book.on .cover{outline:2.5px solid var(--text);outline-offset:2px}
+  .wb-book .ttl{position:absolute;top:11px;left:12px;right:12px;font-size:13px;font-weight:700;line-height:1.35;
+    text-shadow:0 1px 2px rgba(0,0,0,.16);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .wb-book .star{position:absolute;top:8px;right:8px;font-size:12px}
+  .wb-book .due{position:absolute;top:34px;right:9px;background:rgba(255,255,255,.9);color:#B4720B;
+    font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px}
+  .wb-book .prog{height:5px;background:rgba(255,255,255,.35);border-radius:99px;overflow:hidden;margin-bottom:5px}
+  .wb-book .prog i{display:block;height:100%;background:#fff;border-radius:99px}
+  .wb-book .num{font-size:11px;font-weight:600;opacity:.95;font-variant-numeric:tabular-nums}
+  .wb-book .nm{display:flex;align-items:center;gap:4px;margin-top:7px;font-size:12.5px;color:var(--text);line-height:1.3}
+  .wb-book .ops{margin-left:auto;display:flex;gap:1px;opacity:0;transition:opacity .12s}
+  .wb-book:hover .ops{opacity:1}
+  .wb-book .op{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11.5px;padding:1px 3px}
+  .wb-book .op:hover{color:var(--primary)}
+  .wb-book.add .cover{background:var(--surface-2);border:1.5px dashed var(--border);box-shadow:none;
+    align-items:center;justify-content:center;color:var(--muted)}
+  .wb-book.add:hover .cover{border-color:var(--primary);color:var(--primary);transform:none}
+  .wb-book.add .plus{font-size:26px;line-height:1}
   .wbg-l{display:flex;align-items:center;gap:8px;font-size:14px}
   .wbg-def{background:transparent;border:none;cursor:pointer;font-size:15px;padding:0;line-height:1}
   .wbg-n{color:var(--muted);font-size:12px}
@@ -2815,13 +2838,16 @@ margin-left: -22px;
           <div class="set-row-txt"><div class="set-row-t">每天复习上限</div><div class="set-desc">到期需要复习的词，每天最多做多少。</div></div>
           <select id="srs-rev"><option>50</option><option>100</option><option>150</option><option>200</option><option>300</option><option>999</option></select>
         </div>
+        <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="srs-logcal"> 背完自动记入日历（记为「背单词」）</label>
+        <div class="set-desc" style="margin-top:4px">每次背完自动在日历上添一条，时间就是你实际背的那段（不足 1 分钟不记）。</div>
+        <label class="do-name" style="cursor:pointer;margin-top:8px"><input type="checkbox" id="srs-loggcal"> 同时加到 Google 日历</label>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="srs-hide"> 生词本里隐藏「已掌握」的词</label>
         <div class="set-desc" style="margin-top:4px">太简单/已掌握的词默认仍列在生词本里（只是不再排复习）。勾上就从列表里藏起来，眼不见为净。</div>
         <div style="margin-top:10px"><button class="btn" id="srs-reset" type="button">重置全部记忆进度</button></div>
       </div>
       <div class="set-item">
-        <div class="set-sec-h" style="font-size:14px">生词本分组</div>
-        <div class="set-desc" style="margin-bottom:8px">把生词分成不同词库（如 雅思 / 工作 / GRE）。⭐ 是默认组，新词默认加到这里。删除分组时里面的词会移到默认组。</div>
+        <div class="set-sec-h" style="font-size:14px">词书管理</div>
+        <div class="set-desc" style="margin-bottom:8px">也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时里面的词会移到默认词书。</div>
         <div id="wbg-manage"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <input type="text" id="wbg-new" placeholder="新分组名，如：雅思" autocomplete="off" style="flex:1;box-sizing:border-box;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text)">
@@ -4208,6 +4234,8 @@ margin-left: -22px;
     if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};
     if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;
     if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
+    if(dictPrefs.logCal===undefined)dictPrefs.logCal=true;
+    if(dictPrefs.logGcal===undefined)dictPrefs.logGcal=false;
     if(!dictPrefs.popMode)dictPrefs.popMode="pin";
     if(!dictPrefs.hotkey)dictPrefs.hotkey="alt";
     if(!dictPrefs.hlStyle)dictPrefs.hlStyle="pop";
@@ -4289,7 +4317,9 @@ margin-left: -22px;
     var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
     var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);
-    var sh=document.getElementById("srs-hide");if(sh)sh.checked=!!dictPrefs.hideMastered;}
+    var sh=document.getElementById("srs-hide");if(sh)sh.checked=!!dictPrefs.hideMastered;
+    var lc=document.getElementById("srs-logcal");if(lc)lc.checked=dictPrefs.logCal!==false;
+    var lg=document.getElementById("srs-loggcal");if(lg)lg.checked=!!dictPrefs.logGcal;}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
@@ -4437,11 +4467,28 @@ margin-left: -22px;
   function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();renderWordbook();}
   function updateWbCount(){var el=document.getElementById("wb-count");if(el)el.textContent=words.length?("("+words.length+")"):"";}
 
+  var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
+  function wbColor(g,i){return g.color||WBCOL[i%WBCOL.length];}
   function renderWbGroups(){var el=document.getElementById("wb-groups");if(!el)return;
-    var chips='<button class="wbg-chip'+(wbActive==="all"?" on":"")+'" data-g="all">全部 '+words.length+'</button>';
-    chips+=wbGroups.list.map(function(g){var n=words.filter(function(x){return wbGroupOf(x)===g.id;}).length;
-      return '<button class="wbg-chip'+(wbActive===g.id?" on":"")+'" data-g="'+g.id+'">'+esc(g.name)+' '+n+(g.id===wbGroups.def?" ⭐":"")+'</button>';}).join("");
-    el.innerHTML=chips;}
+    function card(id,name,color,list,isDef){
+      var tot=list.length,done=list.filter(function(x){return srsStage(x)==="mature"||srsStage(x)==="done";}).length;
+      var due=list.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=Date.now();}).length;
+      var pct=tot?Math.round(done/tot*100):0;
+      return '<div class="wb-book'+(wbActive===id?" on":"")+'" data-g="'+id+'" style="--bc:'+color+'">'+
+        '<div class="cover"><div class="ttl">'+esc(name)+'</div>'+
+        (isDef?'<span class="star" title="默认词书">⭐</span>':'')+
+        (due?'<span class="due">'+due+' 待复习</span>':'')+
+        '<div class="prog"><i style="width:'+pct+'%"></i></div>'+
+        '<div class="num">'+done+' / '+tot+'</div></div>'+
+        '<div class="nm">'+esc(name)+
+        (id!=="all"?'<span class="ops"><button class="op" data-ren="'+id+'" title="重命名">✎</button>'+
+          (isDef?'':'<button class="op" data-def="'+id+'" title="设为默认">☆</button><button class="op" data-delg="'+id+'" title="删除">✕</button>')+'</span>':'')+
+        '</div></div>';}
+    var html=card("all","全部",WBCOL[7],words,false);
+    html+=wbGroups.list.map(function(g,i){
+      return card(g.id,g.name,wbColor(g,i),words.filter(function(x){return wbGroupOf(x)===g.id;}),g.id===wbGroups.def);}).join("");
+    html+='<div class="wb-book add" id="wb-newbook"><div class="cover"><div class="plus">＋</div></div><div class="nm">新建词书</div></div>';
+    el.innerHTML=html;}
   function renderWordbook(){
     var box=document.getElementById("wb-list");if(!box)return;updateWbCount();renderWbGroups();
     var startBtn=document.getElementById("wb-start"),hint=document.getElementById("wb-hint"),exp=document.getElementById("wb-export");
@@ -4461,7 +4508,8 @@ margin-left: -22px;
       '<div class="wb-st new"><div class="k">今日新词</div><div class="v">'+plan.fresh.length+'</div></div>'+
       '<div class="wb-st"><div class="k">学习中</div><div class="v">'+(stg.learn+stg.review)+'</div></div>'+
       '<div class="wb-st done"><div class="k">已掌握</div><div class="v">'+(stg.mature+stg.done)+'</div></div>'+
-      '<div class="wb-st"><div class="k">今日已学</div><div class="v">'+((plan.st.n||0)+(plan.st.r||0))+'</div></div>';
+      '<div class="wb-st"><div class="k">今日已学</div><div class="v">'+((plan.st.n||0)+(plan.st.r||0))+'</div></div>'+
+      '<div class="wb-st"><div class="k">今日时长</div><div class="v">'+(((load("tt_srshist",{})||{})[todayKey()]||{}).m||0)+'<small style="font-size:12px"> 分</small></div></div>';
     renderWbCharts(arr);
     if(dictPrefs.hideMastered){var hidN=arr.filter(function(x){return x.mastered;}).length;
       arr=arr.filter(function(x){return !x.mastered;});
@@ -4745,7 +4793,23 @@ margin-left: -22px;
           openBuild(LVORD.slice(Math.max(0,idx),Math.min(LVORD.length,idx+2)));});});
     },function(e){b.innerHTML='<div class="wt-note">读取失败：'+esc(String(e&&e.message||e))+'</div>';});}
 
-  var flashDone=0,flashRevealed=false;
+  var flashDone=0,flashRevealed=false,flashStart=0;
+  function hhmm(t){var d=new Date(t);return pad(d.getHours())+":"+pad(d.getMinutes());}
+  function endStudySession(){                       // 结束一轮：记时长，按设置写入日历
+    if(!flashStart)return;
+    var st=flashStart,en=Date.now(),mins=Math.round((en-st)/60000);
+    flashStart=0;
+    if(mins<1)return;
+    var k=todayKey(),h=load("tt_srshist",{})||{};
+    if(!h[k])h[k]={n:0,r:0};h[k].m=(h[k].m||0)+mins;save("tt_srshist",h);
+    if(dictPrefs.logCal===false)return;
+    var ac=autoCat("背单词");
+    var ev={id:uid(),date:fmt(new Date(st)),start:hhmm(st),end:hhmm(en),
+      title:"背单词"+(flashDone?("（"+flashDone+" 词）"):""),cat:ac.cat,sub:ac.sub,done:true,
+      note:"复习 "+flashDone+" 个单词"};
+    events.push(ev);save("tt_events",events);
+    if(state.tab==="calendar")renderCal();
+    if(dictPrefs.logGcal&&gToken)gcalSync(ev,true);}
   function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
   async function startFlash(){
     var plan=srsPlan();
@@ -4755,7 +4819,7 @@ margin-left: -22px;
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;
+    flashIdx=0;flashDone=0;flashStart=Date.now();
     document.getElementById("flash-overlay").classList.add("on");showFlash();}
   function flashProgress(){
     var total=flashArr.length,left=total-flashIdx;
@@ -4805,7 +4869,7 @@ margin-left: -22px;
     var x=flashArr[flashIdx];if(!x)return;
     x.mastered=true;x.due=Date.now()+365*DAY;saveWords();
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
-  function closeFlash(){document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
+  function closeFlash(){endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
@@ -4860,6 +4924,10 @@ margin-left: -22px;
     if(sr)sr.addEventListener("change",function(){dictPrefs.dailyRev=+sr.value||100;saveDictPrefs();renderWordbook();});
     var sh=document.getElementById("srs-hide");
     if(sh)sh.addEventListener("change",function(){dictPrefs.hideMastered=sh.checked;saveDictPrefs();renderWordbook();});
+    var lc=document.getElementById("srs-logcal");
+    if(lc)lc.addEventListener("change",function(){dictPrefs.logCal=lc.checked;saveDictPrefs();});
+    var lg=document.getElementById("srs-loggcal");
+    if(lg)lg.addEventListener("change",function(){dictPrefs.logGcal=lg.checked;saveDictPrefs();});
     var srst=document.getElementById("srs-reset");
     if(srst)srst.addEventListener("click",async function(){
       if(!await ttConfirm("把所有生词的记忆进度清零（词本身不删）？",{danger:true,anchor:srst}))return;
@@ -4899,7 +4967,28 @@ margin-left: -22px;
     var wtc=document.getElementById("wbtool-close");if(wtc)wtc.addEventListener("click",wbtClose);
     var wto=document.getElementById("wbtool-overlay");
     if(wto)wto.addEventListener("click",function(e){if(e.target===wto)wbtClose();});
-    var wbg=document.getElementById("wb-groups");if(wbg)wbg.addEventListener("click",function(e){var b=e.target.closest(".wbg-chip");if(!b)return;wbActive=b.getAttribute("data-g");save("tt_wbactive",wbActive);renderWordbook();});
+    var wbg=document.getElementById("wb-groups");
+    if(wbg)wbg.addEventListener("click",async function(e){
+      var ren=e.target.closest("[data-ren]"),df=e.target.closest("[data-def]"),dg=e.target.closest("[data-delg]");
+      if(ren){e.stopPropagation();var id=ren.getAttribute("data-ren"),g=null;
+        wbGroups.list.forEach(function(x){if(x.id===id)g=x;});if(!g)return;
+        var nm=await ttPrompt("重命名词书：",g.name,{anchor:ren});if(!nm||!nm.trim())return;
+        g.name=nm.trim();saveWbGroups();renderWordbook();return;}
+      if(df){e.stopPropagation();wbGroups.def=df.getAttribute("data-def");saveWbGroups();renderWordbook();renderWbgManage();return;}
+      if(dg){e.stopPropagation();var gid=dg.getAttribute("data-delg");
+        if(!await ttConfirm("删除词书「"+wbGroupName(gid)+"」？里面的词会移到默认词书。",{danger:true,anchor:dg}))return;
+        words.forEach(function(x){if(wbGroupOf(x)===gid)x.group=wbGroups.def;});saveWords();
+        wbGroups.list=wbGroups.list.filter(function(x){return x.id!==gid;});saveWbGroups();
+        if(wbActive===gid){wbActive="all";save("tt_wbactive",wbActive);}
+        renderWordbook();renderWbgManage();return;}
+      if(e.target.closest("#wb-newbook")){
+        var nm2=await ttPrompt("新词书名称，如：雅思核心 / 牛津 B2","",{anchor:document.getElementById("wb-newbook")});
+        if(!nm2||!nm2.trim())return;
+        var ng={id:"g"+uid(),name:nm2.trim(),color:WBCOL[wbGroups.list.length%WBCOL.length]};
+        wbGroups.list.push(ng);saveWbGroups();wbActive=ng.id;save("tt_wbactive",wbActive);
+        renderWordbook();renderWbgManage();return;}
+      var b=e.target.closest(".wb-book");if(!b||b.classList.contains("add"))return;
+      wbActive=b.getAttribute("data-g");save("tt_wbactive",wbActive);renderWordbook();});
     var wbm=document.getElementById("wbg-manage");
     if(wbm)wbm.addEventListener("click",async function(e){
       var df=e.target.closest("[data-def]"),rn=e.target.closest("[data-ren]"),dg=e.target.closest("[data-delg]");
