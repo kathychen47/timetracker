@@ -291,6 +291,14 @@
 
   /* todos */
   .page-h{font-size:19px;font-weight:680;margin:2px 0 16px}
+  /* 划词小窗模式（?mini=1）：只留查词 */
+  body.mini .rail,body.mini #view-dict .page-h,body.mini .dict-tabs{display:none}
+  body.mini main{padding:12px 12px 24px;max-width:none}
+  body.mini .dict-wrap{max-width:none}
+  body.mini .mini-bar{display:flex}
+  .mini-bar{display:none;align-items:center;gap:8px;margin-bottom:10px;font-size:12px;color:var(--muted)}
+  .mini-bar b{color:var(--text);font-size:13px}
+  .mini-bar .grow{flex:1}
   .todo-wrap{max-width:640px;margin:0 auto}
   .todo-add{display:flex;gap:8px;margin-bottom:16px}
   .todo-add input[type=text]{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px}
@@ -2081,6 +2089,10 @@ margin-left: -22px;
     <section class="view" id="view-dict">
       <div class="page-h">词典 · 背单词</div>
       <div class="dict-wrap">
+        <div class="mini-bar">
+          <b>📖 划词查词</b><span id="mini-note"></span><span class="grow"></span>
+          <a href="./" target="_blank" rel="noopener">打开完整应用 ↗</a>
+        </div>
         <div class="seg dict-tabs" id="dict-tabs">
           <button data-dt="look" class="on">查词</button>
           <button data-dt="study">生词本 <span id="wb-count"></span></button>
@@ -2400,6 +2412,13 @@ margin-left: -22px;
           <input type="text" id="wbg-new" placeholder="新分组名，如：雅思" autocomplete="off" style="flex:1;box-sizing:border-box;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text)">
           <button class="btn primary" id="wbg-add" type="button">添加</button>
         </div>
+      </div>
+      <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">在别的网页上划词查词</div>
+        <div class="set-desc" style="margin-bottom:10px">把下面这个按钮<b>拖到浏览器书签栏</b>。以后在任何网页选中一个单词，点书签栏上的它，就会弹出小窗用你的词典查词，并自动存进生词本（跟着云同步）。</div>
+        <a id="bm-link" class="btn primary" style="display:inline-block;text-decoration:none;cursor:grab">📖 查词</a>
+        <button class="btn" id="bm-copy" type="button" style="margin-left:8px">复制代码</button>
+        <div class="set-desc" style="margin-top:8px">手机上没有书签栏，可用「复制代码」新建一个书签把网址替换成它。少数网站（如 GitHub）有安全限制会挡住书签脚本，属正常。</div>
       </div>
     </div>
       </div>
@@ -3669,7 +3688,10 @@ margin-left: -22px;
     return refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});}
   function openDict(){ensureDictInit().then(function(){renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
-  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;}
+  function bookmarkletCode(){var base=location.origin+location.pathname;
+    return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');})();";}
+  function renderBookmarklet(){var a=document.getElementById("bm-link");if(a)a.setAttribute("href",bookmarkletCode());}
+  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
@@ -3921,6 +3943,14 @@ margin-left: -22px;
     var wba=document.getElementById("wbg-add");
     if(wba)wba.addEventListener("click",function(){var i=document.getElementById("wbg-new"),nm=i.value.trim();if(!nm){i.focus();return;}
       wbGroups.list.push({id:"g"+uid(),name:nm});saveWbGroups();i.value="";renderWbgManage();renderWordbook();});
+    var bmc=document.getElementById("bm-copy");
+    if(bmc)bmc.addEventListener("click",function(){var code=bookmarkletCode();
+      var ta=document.createElement("textarea");ta.value=code;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();
+      var ok=false;try{ok=document.execCommand("copy");}catch(e){}document.body.removeChild(ta);
+      if(!ok&&navigator.clipboard)try{navigator.clipboard.writeText(code);ok=true;}catch(e){}
+      bmc.textContent=ok?"已复制 ✓":"复制失败";setTimeout(function(){bmc.textContent="复制代码";},1600);});
+    var bml=document.getElementById("bm-link");
+    if(bml)bml.addEventListener("click",function(e){e.preventDefault();alert("这个按钮是用来「拖到书签栏」的，不是直接点。拖过去之后，在别的网页选中单词再点书签栏上的它。");});
     document.getElementById("flash-close").addEventListener("click",closeFlash);
     document.getElementById("flash-overlay").addEventListener("click",function(e){if(e.target.id==="flash-overlay")closeFlash();});
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
@@ -3928,8 +3958,29 @@ margin-left: -22px;
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
   initLang();
-  // 刷新后停留在上次所在页面
-  (function(){var savedTab=load("tt_tab","calendar");
-    if(savedTab&&savedTab!=="calendar"){var b=document.querySelector('.rail button[data-tab="'+savedTab+'"]');if(b)b.click();}})();
+  // 划词查词入口：?w=单词 [&add=1 自动收藏] [&mini=1 小窗模式]；否则恢复上次所在页面
+  (function(){
+    var qs=null;try{qs=new URLSearchParams(location.search);}catch(e){}
+    var w=qs?(qs.get("w")||"").trim():"";
+    if(w){
+      var prevTab=load("tt_tab","calendar"),mini=qs.get("mini")==="1",auto=qs.get("add")==="1";
+      if(mini)document.body.classList.add("mini");
+      var note=document.getElementById("mini-note");
+      var btn=document.querySelector('.rail button[data-tab="dict"]');if(btn)btn.click();
+      save("tt_tab",prevTab); // 划词窗口不改变主界面默认页
+      ensureDictInit().then(function(){
+        var inp=document.getElementById("dict-q");if(inp)inp.value=w;
+        return doLookup(w);
+      }).then(function(){
+        var found=!!document.querySelector("#dict-result .dict-card");
+        if(auto&&found){var a=document.querySelector("#dict-result .dict-add");
+          if(a&&!a.classList.contains("saved"))a.click();}
+        if(note)note.textContent=found?(auto?"「"+w+"」已加入生词本 ✓":"「"+w+"」"):"没找到「"+w+"」";
+      });
+      return;
+    }
+    var savedTab=load("tt_tab","calendar");
+    if(savedTab&&savedTab!=="calendar"){var b=document.querySelector('.rail button[data-tab="'+savedTab+'"]');if(b)b.click();}
+  })();
 })();
 </script>
