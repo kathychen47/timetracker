@@ -407,6 +407,24 @@
   .rd-textlayer ::selection{background:#6366F1}
   .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
   /* 阅读标注 */
+  .rd-main{display:flex;gap:14px;align-items:flex-start}
+  .rd-main .rd-content{flex:1;min-width:0}
+  .rd-notes{display:none;flex:none;width:280px;max-width:38vw;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;padding:12px;height:calc(100vh - 168px);overflow-y:auto}
+  .rd-main.notes-on .rd-notes{display:block}
+  @media (max-width:820px){.rd-notes{width:230px}}
+  .rn-h{font-size:12.5px;font-weight:650;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+  .rn-item{border:1px solid var(--border);border-radius:10px;padding:9px 10px;margin-bottom:8px;cursor:pointer;background:var(--bg)}
+  .rn-item:hover{border-color:var(--primary)}
+  .rn-item .q{font-size:12.5px;line-height:1.55;color:var(--text);border-left:3px solid var(--ac,var(--primary));padding-left:8px}
+  .rn-item .nt{font-size:13px;line-height:1.6;margin-top:7px;white-space:pre-wrap}
+  .rn-item .mt{display:flex;align-items:center;gap:7px;margin-top:7px;font-size:11px;color:var(--muted)}
+  .rn-item .mt .grow{flex:1}
+  .rn-item .mt button{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:1px 3px}
+  .rn-item .mt button:hover{color:var(--danger)}
+  .rn-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:22px 6px;line-height:1.7}
+  .ann.nt{border-bottom:2px dotted var(--primary);cursor:pointer}
+  .ann.nt::after{content:"📝";font-size:9px;vertical-align:super;margin-left:1px;opacity:.8}
   .ann.hl{background:var(--ac,#ffe58a);border-radius:2px;padding:1px 0}
   .ann.ul{text-decoration:underline;text-decoration-color:var(--primary);text-decoration-thickness:2px;text-underline-offset:3px}
   .ann.bd{font-weight:700}
@@ -2318,11 +2336,15 @@ margin-left: -22px;
           <span class="grow"></span>
           <button class="btn" id="rd-fs-down" title="缩小字号">A−</button>
           <button class="btn" id="rd-fs-up" title="放大字号">A+</button>
+          <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
           <button class="btn" id="rd-prev">上一节</button>
           <span class="rd-pos" id="rd-pos"></span>
           <button class="btn" id="rd-next">下一节</button>
         </div>
-        <div class="rd-content" id="rd-content"></div>
+        <div class="rd-main" id="rd-main">
+          <div class="rd-content" id="rd-content"></div>
+          <aside class="rd-notes" id="rd-notes"></aside>
+        </div>
       </div>
     </section>
   </main>
@@ -4945,6 +4967,7 @@ margin-left: -22px;
       else if(meta.type==="docx")await openDocx(rec.blob);
       else if(meta.type==="html")await openHtmlBook(rec.blob);
       else await openPdfBook(rec.blob);
+      renderNotes();
     }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
 
   async function openTxt(blob){
@@ -5138,6 +5161,53 @@ margin-left: -22px;
       var p=sp.parentNode;while(sp.firstChild)p.insertBefore(sp.firstChild,sp);
       p.removeChild(sp);p.normalize();});
     applyAnnots();}
+  async function addNote(){
+    var sel=getSelection();if(!sel||!sel.rangeCount)return;
+    var rg=sel.getRangeAt(0),txt=String(sel).trim();if(!txt)return;
+    var s=textOffset(rdContent,rg.startContainer,rg.startOffset);
+    var e=textOffset(rdContent,rg.endContainer,rg.endOffset);
+    if(s<0||e<0||e<=s)return;
+    var note=await ttPrompt("给这段加笔记：","",{anchor:rdTools});
+    if(note===null||!note.trim())return;
+    var a={id:"a"+uid(),sc:annScope(),s:s,e:e,t:"nt",c:null,x:txt.slice(0,120),note:note.trim(),ts:Date.now()};
+    curBook.ann=annList().concat([a]);annSave();
+    markOffsets(rdContent,s,e,"nt",null,a.id);
+    sel.removeAllRanges();hideRdTools();renderNotes();
+    if(!document.getElementById("rd-main").classList.contains("notes-on"))toggleNotes(true);}
+  function scopeLabel(sc){
+    if(!sc)return "";
+    if(sc.charAt(0)==="c")return "第 "+(parseInt(sc.slice(1),10)+1)+" 节";
+    if(sc.charAt(0)==="p")return "第 "+sc.slice(1)+" 页";return "";}
+  function renderNotes(){
+    var box=document.getElementById("rd-notes");if(!box)return;
+    var all=annList().slice().sort(function(a,b){return (a.sc||"").localeCompare(b.sc||"")||a.s-b.s;});
+    var notes=all.filter(function(a){return a.note;}),marks=all.filter(function(a){return !a.note;});
+    if(!all.length){box.innerHTML='<div class="rn-h">📝 笔记 · 标注</div><div class="rn-empty">还没有笔记。<br>选中文字 → 点 📝 就能加笔记，<br>点色块可以高亮。</div>';return;}
+    function item(a){
+      return '<div class="rn-item" data-jump="'+a.id+'" style="--ac:'+(a.c||"var(--primary)")+'">'+
+        '<div class="q">'+esc(a.x||"")+'</div>'+
+        (a.note?'<div class="nt">'+esc(a.note)+'</div>':'')+
+        '<div class="mt"><span>'+esc(scopeLabel(a.sc))+'</span><span class="grow"></span>'+
+        (a.note?'<button data-edit="'+a.id+'" title="编辑">✎</button>':'')+
+        '<button data-del="'+a.id+'" title="删除">✕</button></div></div>';}
+    box.innerHTML='<div class="rn-h">📝 笔记 '+notes.length+' · 标注 '+marks.length+'</div>'+
+      notes.map(item).join("")+(marks.length?('<div class="rn-h" style="margin-top:12px">🖍 标注</div>'+marks.map(item).join("")):"");}
+  function toggleNotes(on){
+    var m=document.getElementById("rd-main");if(!m)return;
+    var want=(on===undefined)?!m.classList.contains("notes-on"):!!on;
+    m.classList.toggle("notes-on",want);save("tt_rdnotes",want);
+    var b=document.getElementById("rd-notes-btn");if(b)b.classList.toggle("on",want);
+    if(want)renderNotes();}
+  async function jumpAnnot(id){
+    var a=null;annList().forEach(function(x){if(x.id===id)a=x;});if(!a)return;
+    if(a.sc!==annScope()){
+      if(curBook.type==="epub"&&a.sc.charAt(0)==="c"){await showChapter(parseInt(a.sc.slice(1),10),0);}
+      else if(curBook.type==="pdf"&&a.sc.charAt(0)==="p"){await showPdfPage(parseInt(a.sc.slice(1),10));}
+    }
+    var el=rdContent.querySelector('[data-ann="'+id+'"]');
+    if(el){el.scrollIntoView({block:"center",behavior:"smooth"});
+      el.style.transition="outline .2s";el.style.outline="2px solid var(--primary)";
+      setTimeout(function(){el.style.outline="";},1200);}}
   var rdTools=null;
   function hideRdTools(){if(rdTools)rdTools.style.display="none";}
   function showRdTools(rect){
@@ -5147,13 +5217,15 @@ margin-left: -22px;
         '<span class="sep"></span>'+
         '<button data-t="ul" title="下划线"><u>U</u></button>'+
         '<button data-t="bd" title="加粗"><b>B</b></button>'+
+        '<button data-note title="加笔记">📝</button>'+
         '<button data-clear title="清除标注">🚫</button>';
       document.body.appendChild(rdTools);
       rdTools.addEventListener("mousedown",function(e){e.preventDefault();});
       rdTools.addEventListener("click",function(e){
-        var hl=e.target.closest("[data-hl]"),t=e.target.closest("[data-t]"),cl=e.target.closest("[data-clear]");
+        var hl=e.target.closest("[data-hl]"),t=e.target.closest("[data-t]"),cl=e.target.closest("[data-clear]"),nt=e.target.closest("[data-note]");
         if(hl)addAnnot("hl",hl.getAttribute("data-hl"));
         else if(t)addAnnot(t.getAttribute("data-t"),null);
+        else if(nt)addNote();
         else if(cl)clearAnnotAt();});}
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     rdTools.style.display="flex";
@@ -5325,6 +5397,28 @@ margin-left: -22px;
         var id=dragId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));if(!id)return;
         var fid=t.getAttribute("data-drop");
         bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
+      // 笔记栏
+      document.getElementById("rd-notes-btn").addEventListener("click",function(){toggleNotes();});
+      if(load("tt_rdnotes",false))toggleNotes(true);
+      document.getElementById("rd-notes").addEventListener("click",async function(e){
+        var del=e.target.closest("[data-del]"),ed=e.target.closest("[data-edit]"),jp=e.target.closest("[data-jump]");
+        if(del){e.stopPropagation();var id=del.getAttribute("data-del");
+          if(!await ttConfirm("删除这条标注/笔记？",{danger:true,anchor:del}))return;
+          curBook.ann=annList().filter(function(x){return x.id!==id;});annSave();
+          renderNotes();redrawAnnots();return;}
+        if(ed){e.stopPropagation();var eid=ed.getAttribute("data-edit"),a=null;
+          annList().forEach(function(x){if(x.id===eid)a=x;});if(!a)return;
+          var v=await ttPrompt("编辑笔记：",a.note||"",{anchor:ed});
+          if(v===null)return;a.note=v.trim();annSave();renderNotes();return;}
+        if(jp)jumpAnnot(jp.getAttribute("data-jump"));});
+      // 点正文里的笔记标记 → 跳到右边那条
+      rdContent.addEventListener("click",function(e){
+        var a=e.target.closest(".ann.nt");if(!a)return;
+        toggleNotes(true);
+        var id=a.getAttribute("data-ann");
+        var el=document.querySelector('.rn-item[data-jump="'+id+'"]');
+        if(el){el.scrollIntoView({block:"center",behavior:"smooth"});
+          el.style.borderColor="var(--primary)";setTimeout(function(){el.style.borderColor="";},1200);}});
       var rvBox=document.getElementById("rd-view");
       if(rvBox){rvBox.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-rv")===rdView);});
         rvBox.addEventListener("click",function(e){var b=e.target.closest("[data-rv]");if(!b)return;
