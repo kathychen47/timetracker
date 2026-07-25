@@ -506,6 +506,22 @@
   .wb-item .badge.new{background:var(--primary-soft);color:var(--primary)}
   .wb-item .badge.due{background:#FFF1DC;color:#B4720B}
   .wb-item .badge.done{background:#E7F7EF;color:#2C8F68}
+  .wb-charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  @media (max-width:760px){.wb-charts{grid-template-columns:1fr}}
+  .wbc{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .wbc h4{font-size:12.5px;font-weight:650;margin:0 0 2px;color:var(--text)}
+  .wbc .sub{font-size:11px;color:var(--muted);margin-bottom:10px}
+  .wbc-bars{display:flex;align-items:flex-end;gap:3px;height:78px}
+  .wbc-bars .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:1px;height:100%;position:relative}
+  .wbc-bars .col i{display:block;border-radius:3px 3px 0 0;min-height:0}
+  .wbc-bars .col .b1{background:var(--primary)}
+  .wbc-bars .col .b2{background:#7dd3ae}
+  .wbc-bars .col.today::after{content:"";position:absolute;left:50%;bottom:-6px;width:4px;height:4px;border-radius:50%;background:var(--primary);transform:translateX(-50%)}
+  .wbc-x{display:flex;gap:3px;margin-top:8px}
+  .wbc-x span{flex:1;text-align:center;font-size:9.5px;color:var(--muted);overflow:hidden}
+  .wbc-lg{display:flex;gap:12px;margin-top:9px;font-size:11px;color:var(--muted)}
+  .wbc-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+  .wbc-empty{color:var(--muted);font-size:12px;padding:18px 0;text-align:center}
 
   /* stats */
   .stats-wrap{display:flex;flex-direction:column;gap:16px}
@@ -2125,7 +2141,7 @@ margin-left: -22px;
               <div class="time" id="pomo-time">25:00</div>
               <div class="mode" id="pomo-mode">专注</div>
             </div></div></div>
-            <div class="pomo-hint" id="pomo-hint">拖动圆环设时长（一圈 60 分，可绕多圈，最多 3 小时）</div>
+            <div class="pomo-hint" id="pomo-hint" title="一圈 60 分，可绕多圈，最多 3 小时">拖动圆环设时长 · 一圈 60 分</div>
             <div class="pomo-btns">
               <button class="btn primary" id="pomo-start">开始</button>
               <button class="btn" id="pomo-reset">重置</button>
@@ -2199,6 +2215,7 @@ margin-left: -22px;
           </div>
           <div class="wb-groups" id="wb-groups"></div>
           <div class="wb-stats" id="wb-stats"></div>
+          <div class="wb-charts" id="wb-charts"></div>
           <div id="wb-list"></div>
         </div>
       </div>
@@ -2696,7 +2713,42 @@ margin-left: -22px;
   function subName(pk,sk){var s=subsOf(pk);for(var i=0;i<s.length;i++)if(s[i].key===sk)return s[i].name;return "";}
   function catColor(k){var p=parentObj(k);return p?p.color:"var(--cat-focus)";}
   function catName(k){var p=parentObj(k);return p?p.name:"专注";}
-  function autoCat(title){var t=(title||"").toLowerCase();
+  // ===== 标题 → 分类 记忆：手动设过一次，以后同名/同系列自动归类 =====
+  var catMemo=load("tt_catmemo",{})||{};
+  function memoKey(title){
+    var t=String(title||"").toLowerCase().trim();
+    t=t.replace(/[（(【\[].*?[)）】\]]/g," ");          // 去掉括号里的内容
+    t=t.replace(/\b\d{1,2}[:：]\d{2}\b/g," ");          // 时间
+    t=t.replace(/\d{4}[-/.]\d{1,2}[-/.]\d{1,2}/g," ");  // 日期
+    t=t.replace(/\b(week|wk|no|part|session|lecture|lec|tut|第)\s*\.?\s*\d+\b/g," $1 "); // 期数
+    t=t.replace(/[#＃]\s*\d+/g," ");
+    t=t.replace(/\d+/g," ");                            // 其余数字（第3次/3rd）
+    t=t.replace(/[_\-–—·•|,，、。.]+/g," ");
+    t=t.replace(/\s+/g," ").trim();
+    return t;}
+  function rememberCat(title,cat,sub){
+    var k=memoKey(title);if(!k||!cat)return;
+    catMemo[k]={cat:cat,sub:sub||null,ts:Date.now()};
+    var keys=Object.keys(catMemo);
+    if(keys.length>400){keys.sort(function(a,b){return (catMemo[a].ts||0)-(catMemo[b].ts||0);});
+      keys.slice(0,keys.length-400).forEach(function(k2){delete catMemo[k2];});}
+    save("tt_catmemo",catMemo);}
+  function recallCat(title){
+    var k=memoKey(title);if(!k)return null;
+    var hit=catMemo[k];
+    if(!hit){ // 系列匹配：记过的标题是当前标题的一部分（或反过来），取最长的那条
+      var best=null,bl=0;
+      for(var key in catMemo){
+        if(!key||key.length<3)continue;
+        if((k.indexOf(key)>=0||key.indexOf(k)>=0)&&key.length>bl){best=catMemo[key];bl=key.length;}}
+      hit=best;}
+    if(!hit)return null;
+    if(!parentObj(hit.cat))return null;               // 分类已被删掉
+    var sub=hit.sub&&subsOf(hit.cat).some(function(s){return s.key===hit.sub;})?hit.sub:null;
+    return {cat:hit.cat,sub:sub};}
+  function autoCat(title){
+    var mem=recallCat(title);if(mem)return mem;
+    var t=(title||"").toLowerCase();
     for(var i=0;i<cats.length;i++){var subs=cats[i].subs||[];
       for(var s=0;s<subs.length;s++){var kw=subs[s].kw||[];
         for(var j=0;j<kw.length;j++){if(kw[j]&&t.indexOf(String(kw[j]).toLowerCase())>=0)return{cat:cats[i].key,sub:subs[s].key};}}}
@@ -2805,7 +2857,7 @@ margin-left: -22px;
     return map;
   }
   function evHTML(e,withLabel,lay){var p=evPos(e);
-    var lbl=withLabel?'<div class="lbl">'+(e.gcal?"Google 日历":esc(catName(e.cat))+(e.sub?" · "+esc(subName(e.cat,e.sub)):""))+'</div>':'';
+    var lbl=withLabel?'<div class="lbl">'+esc(catName(e.cat))+(e.sub?" · "+esc(subName(e.cat,e.sub)):"")+'</div>':'';
     var box='top:'+p.top+'px;height:'+p.h+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
@@ -3222,6 +3274,7 @@ margin-left: -22px;
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
+    if(catManual)rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note};
       events.push(obj);save("tt_events",events);
@@ -3606,7 +3659,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -3628,7 +3681,7 @@ margin-left: -22px;
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
-    words=load("tt_words",[])||[];var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
@@ -3765,7 +3818,8 @@ margin-left: -22px;
   }
   function mapGEvent(it){
     var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
-    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:it.summary||"(无标题)",cat:"meeting",sub:null,done:false,gcal:true,note:it.description||""};
+    var ttl=it.summary||"(无标题)",ac=autoCat(ttl);
+    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:ttl,cat:ac.cat,sub:ac.sub,done:false,gcal:true,note:it.description||""};
   }
   var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
   function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -4033,7 +4087,10 @@ margin-left: -22px;
     var box=document.getElementById("wb-list");if(!box)return;updateWbCount();renderWbGroups();
     var startBtn=document.getElementById("wb-start"),hint=document.getElementById("wb-hint"),exp=document.getElementById("wb-export");
     var arr=wbFiltered();if(exp)exp.disabled=!arr.length;
-    if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点右上角的小星星把词收进来。")+'</div>';if(startBtn)startBtn.disabled=true;if(hint)hint.textContent="";return;}
+    if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点右上角的小星星把词收进来。")+'</div>';
+      if(startBtn)startBtn.disabled=true;if(hint)hint.textContent="";
+      var sb0=document.getElementById("wb-stats");if(sb0)sb0.innerHTML="";
+      var cb0=document.getElementById("wb-charts");if(cb0)cb0.innerHTML="";return;}
     if(startBtn)startBtn.disabled=false;
     var plan=srsPlan(),streak=load("tt_streak",{last:"",n:0});
     var stg={new:0,learn:0,review:0,mature:0,done:0};
@@ -4046,6 +4103,7 @@ margin-left: -22px;
       '<div class="wb-st"><div class="k">学习中</div><div class="v">'+(stg.learn+stg.review)+'</div></div>'+
       '<div class="wb-st done"><div class="k">已掌握</div><div class="v">'+(stg.mature+stg.done)+'</div></div>'+
       '<div class="wb-st"><div class="k">今日已学</div><div class="v">'+((plan.st.n||0)+(plan.st.r||0))+'</div></div>';
+    renderWbCharts(arr);
     var STN={"new":["新词","new"],"learn":["学习中",""],"review":["复习中",""],"mature":["已熟","done"],"done":["已掌握","done"]};
     var now=Date.now();
     arr=arr.slice().sort(function(a,b){srsInit(a);srsInit(b);
@@ -4058,6 +4116,37 @@ margin-left: -22px;
       return '<div class="wb-item" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
         '<span class="badge '+(overdue?"due":lab[1])+'">'+lab[0]+'</span>'+
         '<span class="m">'+meta+'</span><button class="del" data-w="'+esc(x.w)+'" title="移除">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
+  function renderWbCharts(arr){
+    var box=document.getElementById("wb-charts");if(!box)return;
+    var hist=load("tt_srshist",{})||{},N=14,today=new Date();
+    // ① 近 14 天学习量
+    var days=[],max=1;
+    for(var i=N-1;i>=0;i--){var d=addDays(today,-i),k=fmt(d),h=hist[k]||{n:0,r:0};
+      days.push({k:k,d:d,n:h.n||0,r:h.r||0});max=Math.max(max,(h.n||0)+(h.r||0));}
+    var totalN=days.reduce(function(a,x){return a+x.n;},0),totalR=days.reduce(function(a,x){return a+x.r;},0);
+    var c1='<div class="wbc"><h4>最近 14 天</h4><div class="sub">共学 '+(totalN+totalR)+' 次（新词 '+totalN+' · 复习 '+totalR+'）</div>'+
+      '<div class="wbc-bars">'+days.map(function(x,idx){
+        var hn=x.n/max*100,hr=x.r/max*100;
+        return '<div class="col'+(idx===N-1?" today":"")+'" title="'+x.k+'：新词 '+x.n+' · 复习 '+x.r+'">'+
+          (x.r?'<i class="b2" style="height:'+hr+'%"></i>':'')+
+          (x.n?'<i class="b1" style="height:'+hn+'%"></i>':'')+'</div>';}).join("")+'</div>'+
+      '<div class="wbc-x">'+days.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div>'+
+      '<div class="wbc-lg"><span><i style="background:var(--primary)"></i>新词</span><span><i style="background:#7dd3ae"></i>复习</span></div></div>';
+    // ② 未来 14 天复习预测（遗忘曲线排出来的）
+    var fut=[],fmax=1,now=Date.now();
+    var overdue=arr.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;}).length;
+    for(var j=0;j<N;j++){var dd=addDays(today,j),s=new Date(dd);s.setHours(0,0,0,0);
+      var e=s.getTime()+DAY,c=0;
+      arr.forEach(function(x){srsInit(x);
+        if(x.mastered||!x.reps)return;
+        if(j===0){if(x.due<e)c++;}else if(x.due>=s.getTime()&&x.due<e)c++;});
+      fut.push({d:dd,c:c});fmax=Math.max(fmax,c);}
+    var c2='<div class="wbc"><h4>未来 14 天要复习</h4><div class="sub">'+(overdue?("现在有 "+overdue+" 个到期"):"按遗忘曲线自动排的")+'</div>'+
+      '<div class="wbc-bars">'+fut.map(function(x,idx){
+        return '<div class="col'+(idx===0?" today":"")+'" title="'+fmt(x.d)+'：'+x.c+' 个">'+
+          (x.c?'<i class="b1" style="height:'+(x.c/fmax*100)+'%;background:'+(idx===0?"#e09a3e":"var(--primary)")+'"></i>':'')+'</div>';}).join("")+'</div>'+
+      '<div class="wbc-x">'+fut.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div></div>';
+    box.innerHTML=c1+c2;}
   function fmtWhen(t){var d=Math.round((t-Date.now())/DAY);
     if(d<=0)return "今天";if(d===1)return "明天";if(d<30)return d+" 天后";
     if(d<365)return Math.round(d/30)+" 个月后";return (d/365).toFixed(1)+" 年后";}
@@ -4127,6 +4216,11 @@ margin-left: -22px;
   function bumpDay(isNew){var st=load("tt_srsday",{d:"",n:0,r:0});
     if(st.d!==todayKey())st={d:todayKey(),n:0,r:0};
     if(isNew)st.n++;else st.r++;save("tt_srsday",st);
+    var h=load("tt_srshist",{})||{},k=todayKey();
+    if(!h[k])h[k]={n:0,r:0};
+    if(isNew)h[k].n++;else h[k].r++;
+    var ks=Object.keys(h);if(ks.length>420){ks.sort();ks.slice(0,ks.length-420).forEach(function(x){delete h[x];});}
+    save("tt_srshist",h);
     var streak=load("tt_streak",{last:"",n:0});
     if(streak.last!==todayKey()){
       var y=fmt(addDays(new Date(),-1));
