@@ -1,0 +1,115 @@
+// 划词查词 · Timetracker —— 后台：词典查询 / 翻译 / 生词队列
+const DB_NAME = "ttdict_ext", DB_VER = 1, STORES = ["oald", "collins"];
+let _db = null;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open(DB_NAME, DB_VER);
+    r.onupgradeneeded = () => {
+      const db = r.result;
+      STORES.forEach(s => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s, { keyPath: "k" }); });
+    };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function db() { if (!_db) _db = await openDB(); return _db; }
+
+function idbGet(store, key) {
+  return new Promise(async res => {
+    try {
+      const d = await db();
+      const rq = d.transaction(store, "readonly").objectStore(store).get(key);
+      rq.onsuccess = () => res(rq.result || null);
+      rq.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function idbCount(store) {
+  return new Promise(async res => {
+    try {
+      const d = await db();
+      const rq = d.transaction(store, "readonly").objectStore(store).count();
+      rq.onsuccess = () => res(rq.result || 0);
+      rq.onerror = () => res(0);
+    } catch (e) { res(0); }
+  });
+}
+
+const isCJK = s => /[一-鿿]/.test(s);
+
+// 简易还原词形：runs/running/ran 这类查不到时试试原形
+function variants(w) {
+  const v = [w];
+  if (w.length > 4 && w.endsWith("ies")) v.push(w.slice(0, -3) + "y");
+  if (w.length > 3 && w.endsWith("es")) v.push(w.slice(0, -2));
+  if (w.length > 2 && w.endsWith("s")) v.push(w.slice(0, -1));
+  if (w.length > 3 && w.endsWith("ed")) { v.push(w.slice(0, -2)); v.push(w.slice(0, -1)); }
+  if (w.length > 4 && w.endsWith("ing")) { v.push(w.slice(0, -3)); v.push(w.slice(0, -3) + "e"); }
+  if (w.length > 4 && w.endsWith("er")) { v.push(w.slice(0, -2)); v.push(w.slice(0, -1)); }
+  if (w.length > 5 && w.endsWith("est")) { v.push(w.slice(0, -3)); v.push(w.slice(0, -2)); }
+  const dbl = w.match(/^(.*?)([bcdfglmnprstz])\2(ing|ed|er|est)$/);
+  if (dbl) v.push(dbl[1] + dbl[2]);
+  return [...new Set(v)];
+}
+
+async function lookup(text) {
+  const raw = (text || "").trim();
+  if (!raw) return { hits: [] };
+  const cjk = isCJK(raw);
+  const order = cjk ? ["collins", "oald"] : ["oald", "collins"];
+  const hits = [];
+  for (const store of order) {
+    let rec = null;
+    for (const cand of variants(raw.toLowerCase())) {
+      rec = await idbGet(store, cand);
+      if (rec) break;
+    }
+    if (rec) hits.push({ store, k: rec.k, disp: rec.disp || rec.k, html: rec.html });
+  }
+  return { hits };
+}
+
+async function translate(text, tl) {
+  const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
+    encodeURIComponent(tl || "zh-CN") + "&dt=t&q=" + encodeURIComponent(text);
+  const r = await fetch(url);
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const j = await r.json();
+  const out = (j[0] || []).map(x => x && x[0]).filter(Boolean).join("");
+  return { text: out, from: j[2] || "" };
+}
+
+async function queueWord(item) {
+  const { ttQueue = [] } = await chrome.storage.local.get("ttQueue");
+  if (!ttQueue.some(x => x.w === item.w)) ttQueue.push(item);
+  await chrome.storage.local.set({ ttQueue });
+  return ttQueue.length;
+}
+
+chrome.runtime.onMessage.addListener((msg, sender, send) => {
+  (async () => {
+    try {
+      if (msg.type === "lookup") send(await lookup(msg.text));
+      else if (msg.type === "translate") {
+        const { ttTargetLang = "zh-CN" } = await chrome.storage.local.get("ttTargetLang");
+        send(await translate(msg.text, msg.tl || ttTargetLang));
+      }
+      else if (msg.type === "save") send({ n: await queueWord(msg.item) });
+      else if (msg.type === "counts") send({ oald: await idbCount("oald"), collins: await idbCount("collins") });
+      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true }));
+      else send({});
+    } catch (e) { send({ error: String(e && e.message || e) }); }
+  })();
+  return true; // 异步响应
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({ id: "tt-lookup", title: "用 Timetracker 查词/翻译：“%s”", contexts: ["selection"] });
+});
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "tt-lookup" && tab && tab.id) {
+    chrome.tabs.sendMessage(tab.id, { type: "showFor", text: info.selectionText });
+  }
+});
+chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());

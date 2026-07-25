@@ -6,3 +6,6 @@ dictionaries/
 
 # 本地配置 / 含敏感信息的笔记，勿公开
 云同步配置.md
+
+# 扩展里用的词典自带样式表（来自商业词典包，勿公开）
+extension/oald.css

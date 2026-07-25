@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>划词查词 · 设置</title>
+<style>
+  body{font:14px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    max-width:640px;margin:0 auto;padding:28px 20px 60px;color:#111;background:#fff}
+  h1{font-size:19px;margin:0 0 4px}
+  .sub{color:#8a8f98;margin-bottom:22px}
+  .box{border:1px solid #e3e5ea;border-radius:12px;padding:16px 18px;margin-bottom:14px}
+  .box h2{font-size:15px;margin:0 0 8px}
+  .muted{color:#8a8f98;font-size:13px}
+  .btn{border:1px solid #e3e5ea;background:#f7f8fa;color:#222;border-radius:9px;padding:8px 14px;font-size:14px;cursor:pointer}
+  .btn.primary{background:#6366F1;color:#fff;border-color:transparent}
+  .btn:hover{border-color:#6366F1}
+  label.row{display:flex;align-items:center;gap:9px;margin:8px 0}
+  select{padding:6px 9px;border:1px solid #e3e5ea;border-radius:8px;font-size:14px}
+  #prog{margin-top:10px;color:#8a8f98;min-height:20px}
+  code{background:#f2f3f5;padding:1px 6px;border-radius:5px;font-size:12.5px}
+  @media (prefers-color-scheme: dark){
+    body{background:#15171c;color:#e8eaed}
+    .box{border-color:#2c3038}
+    .btn{background:#252932;border-color:#343945;color:#d5d8de}
+    code{background:#252932}
+  }
+</style>
+</head>
+<body>
+  <h1>划词查词 · Timetracker</h1>
+  <div class="sub">在任意网页选中单词就地查词，选中句子自动翻译；生词自动进 Timetracker 生词本。</div>
+
+  <div class="box">
+    <h2>① 导入词典</h2>
+    <div class="muted" style="margin-bottom:10px">
+      选择你电脑上的 <code>oald.tsv.gz</code> 和 <code>collins.tsv.gz</code>（可一次多选）。
+      它们在 <code>OneDrive\1_Code\Timetracker\dictionaries\</code>。词典存在扩展本地，只导入一次。
+    </div>
+    <div id="counts" class="muted"></div>
+    <p><label class="btn primary" style="display:inline-block;cursor:pointer">📁 选择词典文件<input type="file" id="file" accept=".gz" multiple hidden></label></p>
+    <div id="prog"></div>
+  </div>
+
+  <div class="box">
+    <h2>② 划词方式</h2>
+    <label class="row"><input type="checkbox" id="enabled"> 启用划词（取消则完全关闭）</label>
+    <label class="row">选中后：
+      <select id="mode">
+        <option value="auto">单词直接出释义，句子先出小按钮（推荐）</option>
+        <option value="instant">一律直接弹出卡片</option>
+        <option value="off">关闭（只用右键菜单）</option>
+      </select>
+    </label>
+    <label class="row">翻译成：
+      <select id="lang">
+        <option value="zh-CN">中文（简体）</option>
+        <option value="zh-TW">中文（繁體）</option>
+        <option value="en">English</option>
+        <option value="ja">日本語</option>
+      </select>
+    </label>
+    <div class="muted">也可以选中文字后 <b>右键 → 用 Timetracker 查词/翻译</b>。按 Esc 关闭卡片。</div>
+  </div>
+
+  <div class="box">
+    <h2>③ 生词怎么进生词本</h2>
+    <div class="muted">
+      在卡片上点 <b>★</b> 收藏 → 先存在扩展里；<b>下次打开 Timetracker 网站时自动并入生词本</b>，然后随网站一起云同步到手机。
+      <div id="queue" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+<script src="options.js"></script>
+</body>
+</html>

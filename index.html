@@ -3960,6 +3960,11 @@ margin-left: -22px;
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
   initLang();renderBookmarklet();
+  // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
+  window.addEventListener("tt-words-merged",function(){
+    words=load("tt_words",[])||[];updateWbCount();
+    if(state.tab==="dict")renderWordbook();
+    schedulePush("tt_words");});
   // 划词查词入口：?w=单词 [&add=1 自动收藏] [&mini=1 小窗模式]；否则恢复上次所在页面
   (function(){
     var qs=null;try{qs=new URLSearchParams(location.search);}catch(e){}
