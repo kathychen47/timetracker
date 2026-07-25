@@ -476,13 +476,36 @@
   .dict-setup b{color:var(--text)}
   .dict-setup .btn{margin:8px 8px 0 0}
   /* flash card */
-  .flash-card{position:relative;background:var(--surface);border-radius:18px;width:min(92vw,520px);max-height:86vh;overflow-y:auto;padding:26px 24px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-  .flash-prog{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px}
-  .flash-word{font-size:30px;font-weight:700;text-align:center;margin-bottom:6px}
-  .flash-def{border-top:1px solid var(--border);margin-top:14px;padding-top:14px}
-  .flash-def.hidden{display:none}
-  .flash-btns{display:flex;gap:10px;margin-top:18px}
-  .flash-btns .btn{flex:1;padding:12px}
+  .flash-card{position:relative;background:var(--surface);border-radius:18px;width:min(94vw,600px);max-height:88vh;overflow-y:auto;padding:22px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .fp-bar{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:2px 0 10px}
+  .fp-bar i{display:block;height:100%;background:var(--primary);border-radius:99px;transition:width .25s}
+  .flash-prog{font-size:12px;color:var(--muted);text-align:center;margin-bottom:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+  .flash-prog b{color:var(--text);font-weight:600}
+  .flash-prog .tagn{color:var(--primary)}
+  .flash-prog .tagr{color:var(--cat-sport)}
+  .flash-word{font-size:32px;font-weight:700;text-align:center;margin-bottom:4px;word-break:break-word}
+  .flash-word .fw-spk{border:1px solid var(--border);background:var(--surface-2);border-radius:9px;font-size:15px;padding:2px 9px;cursor:pointer;vertical-align:middle;margin-left:8px}
+  .flash-tip{text-align:center;color:var(--muted);font-size:12.5px;margin-bottom:10px}
+  .flash-def{border-top:1px solid var(--border);margin-top:12px;padding-top:14px;max-height:44vh;overflow-y:auto}
+  .flash-def.blurred{filter:blur(8px);cursor:pointer;user-select:none;max-height:180px;overflow:hidden}
+  .flash-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .flash-btns .gb{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:11px;
+    padding:10px 6px;cursor:pointer;font-family:inherit;font-size:13.5px;font-weight:600;line-height:1.35;text-align:center}
+  .flash-btns .gb small{display:block;font-weight:400;font-size:11px;color:var(--muted);margin-top:2px}
+  .flash-btns .gb:hover{border-color:currentColor}
+  .flash-btns .g0{color:#e0605e}.flash-btns .g1{color:#e09a3e}
+  .flash-btns .g2{color:#3fae87}.flash-btns .g3{color:#5a8fd8}
+  .flash-extra{display:flex;gap:8px;justify-content:center;margin-top:12px}
+  .flash-extra .btn{font-size:12.5px;padding:6px 12px}
+  .wb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px;margin-bottom:14px}
+  .wb-st{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:9px 11px;text-align:center}
+  .wb-st .k{font-size:11px;color:var(--muted)}
+  .wb-st .v{font-size:19px;font-weight:700;margin-top:2px}
+  .wb-st.due .v{color:#e09a3e}.wb-st.new .v{color:var(--primary)}.wb-st.done .v{color:#3fae87}
+  .wb-item .badge{font-size:10.5px;padding:1px 7px;border-radius:6px;background:var(--surface-2);color:var(--muted);flex:none}
+  .wb-item .badge.new{background:var(--primary-soft);color:var(--primary)}
+  .wb-item .badge.due{background:#FFF1DC;color:#B4720B}
+  .wb-item .badge.done{background:#E7F7EF;color:#2C8F68}
 
   /* stats */
   .stats-wrap{display:flex;flex-direction:column;gap:16px}
@@ -2175,6 +2198,7 @@ margin-left: -22px;
             <span class="wb-hint" id="wb-hint"></span>
           </div>
           <div class="wb-groups" id="wb-groups"></div>
+          <div class="wb-stats" id="wb-stats"></div>
           <div id="wb-list"></div>
         </div>
       </div>
@@ -2224,10 +2248,16 @@ margin-left: -22px;
   <div class="overlay" id="flash-overlay">
     <div class="flash-card">
       <button class="modal-x" id="flash-close" aria-label="关闭">✕</button>
+      <div class="fp-bar"><i id="fp-fill"></i></div>
       <div class="flash-prog" id="flash-prog"></div>
       <div class="flash-word" id="flash-word"></div>
+      <div class="flash-tip" id="flash-tip">点一下 / 按空格 显示释义</div>
       <div class="flash-def" id="flash-def"></div>
       <div class="flash-btns" id="flash-btns"></div>
+      <div class="flash-extra">
+        <button class="btn" id="flash-master" title="不再出现">✓ 已掌握</button>
+        <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2530,6 +2560,19 @@ margin-left: -22px;
         </div>
       </div>
       <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">背单词计划（遗忘曲线）</div>
+        <div class="set-desc" style="margin-bottom:8px">按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。</div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">每天新词上限</div><div class="set-desc">每天最多学多少个没见过的新词。</div></div>
+          <select id="srs-new"><option>10</option><option>15</option><option>20</option><option>30</option><option>50</option><option>80</option><option>100</option></select>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">每天复习上限</div><div class="set-desc">到期需要复习的词，每天最多做多少。</div></div>
+          <select id="srs-rev"><option>50</option><option>100</option><option>150</option><option>200</option><option>300</option><option>999</option></select>
+        </div>
+        <div style="margin-top:8px"><button class="btn" id="srs-reset" type="button">重置全部记忆进度</button></div>
+      </div>
+      <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">生词本分组</div>
         <div class="set-desc" style="margin-bottom:8px">把生词分成不同词库（如 雅思 / 工作 / GRE）。⭐ 是默认组，新词默认加到这里。删除分组时里面的词会移到默认组。</div>
         <div id="wbg-manage"></div>
@@ -2639,7 +2682,12 @@ margin-left: -22px;
     {key:"habit",name:"习惯",color:"var(--cat-habit)",kw:["冥想","早起","喝水","日记","打卡","habit","meditate","journal","water"],subs:[]},
     {key:"life",name:"生活",color:"var(--cat-life)",kw:["午餐","吃饭","晚餐","休息","购物","家务","睡","lunch","dinner","breakfast","rest","break","shopping","sleep","nap"],subs:[]}
   ];
-  var PALETTE=["#ec8b76","#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#9aa1b0"];
+  var PALETTE=[
+    "#ec8b76","#e06c5a","#d9925f","#eeb85f","#e8c95c","#c9b64a",
+    "#8bb04f","#5cbd90","#3fae87","#54bcae","#61c4cf","#5aa9d6",
+    "#5f9bd8","#6f86d6","#7c83e6","#9d8bd8","#b382d9","#c77fd0",
+    "#e57ea0","#e8798a","#d98fa8","#b98a7a","#a68a64","#7d9a8b",
+    "#6b8ca3","#8f8fa8","#9aa1b0","#6d7480"];
   var cats=load("tt_cats",null);if(cats===null){cats=DEFAULT_CATS;save("tt_cats",cats);}
   else{var _kwch=false;DEFAULT_CATS.forEach(function(dc){var ec=cats.filter(function(c){return c.key===dc.key;})[0];if(!ec)return;ec.kw=ec.kw||[];dc.kw.forEach(function(k){if(ec.kw.indexOf(k)<0){ec.kw.push(k);_kwch=true;}});(dc.subs||[]).forEach(function(ds){var es=(ec.subs||[]).filter(function(s){return s.key===ds.key;})[0];if(!es)return;es.kw=es.kw||[];ds.kw.forEach(function(k){if(es.kw.indexOf(k)<0){es.kw.push(k);_kwch=true;}});});});if(_kwch)save("tt_cats",cats);}
   function parentObj(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return cats[i];return null;}
@@ -3826,7 +3874,9 @@ margin-left: -22px;
     var as=document.getElementById("dict-autospeak");if(as)as.checked=!!dictPrefs.autoSpeak;
     var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";
     var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
-    var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;}
+    var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
+    var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
+    var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
@@ -3984,10 +4034,33 @@ margin-left: -22px;
     var startBtn=document.getElementById("wb-start"),hint=document.getElementById("wb-hint"),exp=document.getElementById("wb-export");
     var arr=wbFiltered();if(exp)exp.disabled=!arr.length;
     if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点右上角的小星星把词收进来。")+'</div>';if(startBtn)startBtn.disabled=true;if(hint)hint.textContent="";return;}
-    if(startBtn)startBtn.disabled=false;if(hint)hint.textContent="共 "+arr.length+" 词";
-    arr=arr.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    box.innerHTML=arr.map(function(x){var meta=(x.dict==="collins"?"中→英":"英→中")+(wbActive==="all"?" · "+esc(wbGroupName(wbGroupOf(x))):"");
-      return '<div class="wb-item" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span><span class="m">'+meta+'</span><button class="del" data-w="'+esc(x.w)+'" title="移除">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
+    if(startBtn)startBtn.disabled=false;
+    var plan=srsPlan(),streak=load("tt_streak",{last:"",n:0});
+    var stg={new:0,learn:0,review:0,mature:0,done:0};
+    arr.forEach(function(x){stg[srsStage(x)]++;});
+    if(hint)hint.textContent="共 "+arr.length+" 词"+(streak.n>1?(" · 连续 "+streak.n+" 天 🔥"):"");
+    var sb=document.getElementById("wb-stats");
+    if(sb)sb.innerHTML=
+      '<div class="wb-st due"><div class="k">今日待复习</div><div class="v">'+plan.due.length+'</div></div>'+
+      '<div class="wb-st new"><div class="k">今日新词</div><div class="v">'+plan.fresh.length+'</div></div>'+
+      '<div class="wb-st"><div class="k">学习中</div><div class="v">'+(stg.learn+stg.review)+'</div></div>'+
+      '<div class="wb-st done"><div class="k">已掌握</div><div class="v">'+(stg.mature+stg.done)+'</div></div>'+
+      '<div class="wb-st"><div class="k">今日已学</div><div class="v">'+((plan.st.n||0)+(plan.st.r||0))+'</div></div>';
+    var STN={"new":["新词","new"],"learn":["学习中",""],"review":["复习中",""],"mature":["已熟","done"],"done":["已掌握","done"]};
+    var now=Date.now();
+    arr=arr.slice().sort(function(a,b){srsInit(a);srsInit(b);
+      var ad=(!a.mastered&&a.due<=now)?0:1,bd=(!b.mastered&&b.due<=now)?0:1;
+      if(ad!==bd)return ad-bd;return (b.ts||0)-(a.ts||0);});
+    box.innerHTML=arr.map(function(x){srsInit(x);
+      var st=srsStage(x),lab=STN[st],overdue=(!x.mastered&&x.due<=now);
+      var when=x.mastered?"已掌握":(overdue?"待复习":("下次 "+fmtWhen(x.due)));
+      var meta=(x.dict==="collins"?"中→英":"英→中")+(wbActive==="all"?" · "+esc(wbGroupName(wbGroupOf(x))):"")+" · "+when;
+      return '<div class="wb-item" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
+        '<span class="badge '+(overdue?"due":lab[1])+'">'+lab[0]+'</span>'+
+        '<span class="m">'+meta+'</span><button class="del" data-w="'+esc(x.w)+'" title="移除">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
+  function fmtWhen(t){var d=Math.round((t-Date.now())/DAY);
+    if(d<=0)return "今天";if(d===1)return "明天";if(d<30)return d+" 天后";
+    if(d<365)return Math.round(d/30)+" 个月后";return (d/365).toFixed(1)+" 年后";}
   function exportWb(){var arr=wbFiltered();if(!arr.length){alert("这个分组没有词可导出");return;}
     var rows=[["word","direction","group","added"]].concat(arr.map(function(x){return [x.w,x.dict==="collins"?"zh→en":"en→zh",wbGroupName(wbGroupOf(x)),new Date(x.ts||0).toISOString().slice(0,10)];}));
     var csv="﻿"+rows.map(function(r){return r.map(function(c){c=String(c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",");}).join("\r\n");
@@ -4009,29 +4082,118 @@ margin-left: -22px;
     if(!def.getAttribute("data-loaded")){def.innerHTML='<div class="dict-hint">加载中…</div>';def.innerHTML=await wbDefHTML(item.getAttribute("data-w"));def.setAttribute("data-loaded","1");}
     def.removeAttribute("hidden");item.classList.add("open");}
 
+  // ===== 记忆调度（SM-2 遗忘曲线，Anki 式四级评分）=====
+  var DAY=864e5;
+  function todayKey(){var d=new Date();return fmt(d);}
+  function srsInit(x){if(x.ef===undefined)x.ef=2.5;if(x.iv===undefined)x.iv=0;if(x.reps===undefined)x.reps=0;
+    if(x.lapses===undefined)x.lapses=0;if(x.due===undefined)x.due=x.ts||Date.now();return x;}
+  function srsStage(x){srsInit(x);
+    if(x.mastered)return "done";
+    if(!x.reps)return "new";
+    if(x.iv<21)return x.iv<1?"learn":"review";
+    return "mature";}
+  // 预览下次间隔（天）
+  function srsPreview(x,g){srsInit(x);
+    var ef=x.ef,iv=x.iv;
+    if(g===0)return Math.max(1,Math.round(iv*0.2))||1;
+    if(g===1)return Math.max(1,Math.round((iv||1)*1.2));
+    if(g===2)return !x.reps?1:(x.reps===1?6:Math.max(1,Math.round(iv*ef)));
+    return !x.reps?3:Math.max(2,Math.round((iv||1)*ef*1.3));}
+  function srsGrade(x,g){
+    srsInit(x);
+    var nd;
+    if(g===0){x.ef=Math.max(1.3,x.ef-0.2);x.lapses++;x.reps=0;x.iv=0;nd=10/1440;}
+    else{
+      if(g===1)x.ef=Math.max(1.3,x.ef-0.15);
+      else if(g===3)x.ef=Math.min(3.2,x.ef+0.15);
+      x.iv=srsPreview(x,g);x.reps++;nd=x.iv;
+    }
+    x.due=Date.now()+nd*DAY;
+    x.last=Date.now();
+    return x;}
+  function dueList(){var now=Date.now();
+    return words.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});}
+  function newList(){return words.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});}
+  function srsPlan(){ // 按分组过滤 + 每日上限
+    var pool=wbFiltered(),now=Date.now();
+    var due=pool.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});
+    var fresh=pool.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});
+    var st=load("tt_srsday",{d:"",n:0,r:0});
+    if(st.d!==todayKey())st={d:todayKey(),n:0,r:0};
+    var newLeft=Math.max(0,(dictPrefs.dailyNew||20)-st.n);
+    var revLeft=Math.max(0,(dictPrefs.dailyRev||100)-st.r);
+    return {due:due.slice(0,revLeft),fresh:fresh.slice(0,newLeft),
+      allDue:due.length,allNew:fresh.length,st:st};}
+  function bumpDay(isNew){var st=load("tt_srsday",{d:"",n:0,r:0});
+    if(st.d!==todayKey())st={d:todayKey(),n:0,r:0};
+    if(isNew)st.n++;else st.r++;save("tt_srsday",st);
+    var streak=load("tt_streak",{last:"",n:0});
+    if(streak.last!==todayKey()){
+      var y=fmt(addDays(new Date(),-1));
+      streak.n=(streak.last===y)?(streak.n+1):1;streak.last=todayKey();save("tt_streak",streak);}}
+
   var flashArr=[],flashIdx=0;
+  var flashDone=0,flashRevealed=false;
+  function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
   function startFlash(){
-    flashArr=wbFiltered();if(!flashArr.length)return;flashArr=flashArr.slice();
-    for(var i=flashArr.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=flashArr[i];flashArr[i]=flashArr[j];flashArr[j]=t;}
-    flashIdx=0;document.getElementById("flash-overlay").classList.add("on");showFlash();}
-  function showFlash(){
-    if(flashIdx>=flashArr.length){closeFlash();alert("背完啦，共 "+flashArr.length+" 词 🎉");return;}
-    var x=flashArr[flashIdx],word=x.disp||x.w;
-    document.getElementById("flash-prog").textContent=(flashIdx+1)+" / "+flashArr.length;
-    document.getElementById("flash-word").innerHTML=esc(word)+' <button class="flash-spk" id="flash-spk" title="朗读">🔊</button>';
-    document.getElementById("flash-spk").onclick=function(){pronounce(word,isCJK(word));};
-    var def=document.getElementById("flash-def");def.className="flash-def hidden";def.innerHTML="";
-    document.getElementById("flash-btns").innerHTML='<button class="btn primary" id="flash-reveal">显示释义</button>';
+    var plan=srsPlan();
+    flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
+    if(!flashArr.length){
+      var pool=wbFiltered().filter(function(x){return !x.mastered;});
+      if(!pool.length){alert("这个分组没有可背的词。");return;}
+      if(!confirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？"))return;
+      flashArr=shuffle(pool.slice());}
+    flashIdx=0;flashDone=0;
+    document.getElementById("flash-overlay").classList.add("on");showFlash();}
+  function flashProgress(){
+    var total=flashArr.length,left=total-flashIdx;
+    document.getElementById("fp-fill").style.width=(total?(flashIdx/total*100):0).toFixed(1)+"%";
+    var nn=0,rr=0;
+    for(var i=flashIdx;i<flashArr.length;i++){if(flashArr[i].reps)rr++;else nn++;}
+    document.getElementById("flash-prog").innerHTML=
+      '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
+      ' · 已完成 <b>'+flashDone+'</b>';}
+  async function showFlash(){
+    if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
+      alert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
+    var x=srsInit(flashArr[flashIdx]),word=x.disp||x.w;
+    flashRevealed=false;flashProgress();
+    document.getElementById("flash-word").innerHTML=esc(word)+'<button class="fw-spk" id="flash-spk" title="朗读">🔊</button>';
+    document.getElementById("flash-spk").onclick=function(e){e.stopPropagation();pronounce(word,isCJK(word));};
+    if(dictPrefs.autoSpeak)pronounce(word,isCJK(word));
+    document.getElementById("flash-tip").style.display="";
+    var def=document.getElementById("flash-def");
+    def.className="flash-def blurred";
+    def.innerHTML='<div class="dict-hint">加载释义…</div>';
+    def.innerHTML=await wbDefHTML(x.w);
+    document.getElementById("flash-btns").innerHTML='<button class="gb g2" id="flash-reveal" style="grid-column:1/-1">显示释义 <small>空格</small></button>';
     document.getElementById("flash-reveal").onclick=revealFlash;}
-  async function revealFlash(){
-    var x=flashArr[flashIdx];await ensureDictDB();
-    var store=x.dict||"oald",rec=null;try{rec=await idbGet(store,x.w);}catch(e){}
-    if(!rec){try{rec=await idbGet(store==="oald"?"collins":"oald",x.w);}catch(e){}}
-    var def=document.getElementById("flash-def");def.className="flash-def";
-    def.innerHTML=rec?('<div class="dict-def">'+rec.html+'</div>'):'<div class="dict-hint">（词典未加载，无法显示释义）</div>';
-    document.getElementById("flash-btns").innerHTML='<button class="btn" id="flash-next">下一个 →</button>';
-    document.getElementById("flash-next").onclick=function(){flashIdx++;showFlash();};}
-  function closeFlash(){document.getElementById("flash-overlay").classList.remove("on");}
+  function revealFlash(){
+    if(flashRevealed)return;flashRevealed=true;
+    var x=flashArr[flashIdx];
+    document.getElementById("flash-def").className="flash-def";
+    document.getElementById("flash-tip").style.display="none";
+    var L=[["忘记","g0"],["模糊","g1"],["认识","g2"],["太简单","g3"]];
+    document.getElementById("flash-btns").innerHTML=L.map(function(it,g){
+      var d=(g===0)?"<10分钟":fmtIv(srsPreview(x,g));
+      return '<button class="gb '+it[1]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(g+1)+'</small></button>';}).join("");}
+  function fmtIv(d){if(d<1)return "今天";if(d<30)return d+" 天";
+    if(d<365)return (d/30).toFixed(d<60?1:0)+" 个月";return (d/365).toFixed(1)+" 年";}
+  function gradeFlash(g){
+    if(!flashRevealed)return;
+    var x=flashArr[flashIdx],isNew=!x.reps;
+    srsGrade(x,g);bumpDay(isNew);flashDone++;
+    if(g===0){ // 忘记 → 本轮稍后再出现
+      var again=flashArr.splice(flashIdx,1)[0];
+      var pos=Math.min(flashArr.length,flashIdx+3);
+      flashArr.splice(pos,0,again);
+    }else flashIdx++;
+    saveWords();showFlash();}
+  function masterFlash(){
+    var x=flashArr[flashIdx];if(!x)return;
+    x.mastered=true;x.due=Date.now()+365*DAY;saveWords();
+    flashArr.splice(flashIdx,1);flashDone++;showFlash();}
+  function closeFlash(){document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
@@ -4071,6 +4233,15 @@ margin-left: -22px;
     if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
     var tg=document.getElementById("tr-lang");
     if(tg)tg.addEventListener("change",function(){trLang=tg.value;save("tt_trlang",trLang);});
+    var sn=document.getElementById("srs-new");
+    if(sn)sn.addEventListener("change",function(){dictPrefs.dailyNew=+sn.value||20;saveDictPrefs();renderWordbook();});
+    var sr=document.getElementById("srs-rev");
+    if(sr)sr.addEventListener("change",function(){dictPrefs.dailyRev=+sr.value||100;saveDictPrefs();renderWordbook();});
+    var srst=document.getElementById("srs-reset");
+    if(srst)srst.addEventListener("click",function(){
+      if(!confirm("把所有生词的记忆进度清零（词本身不删）？"))return;
+      words.forEach(function(x){x.ef=2.5;x.iv=0;x.reps=0;x.lapses=0;x.due=Date.now();x.mastered=false;});
+      saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();alert("已重置");});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -4082,6 +4253,22 @@ margin-left: -22px;
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
     document.getElementById("wb-start").addEventListener("click",startFlash);
+    document.getElementById("flash-def").addEventListener("click",function(e){
+      if(!flashRevealed){revealFlash();return;}
+      var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
+      var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+    document.getElementById("flash-btns").addEventListener("click",function(e){
+      var g=e.target.closest("[data-g]");if(g)gradeFlash(+g.getAttribute("data-g"));});
+    document.getElementById("flash-master").addEventListener("click",masterFlash);
+    document.getElementById("flash-skip").addEventListener("click",function(){flashIdx++;showFlash();});
+    document.addEventListener("keydown",function(e){
+      var ov=document.getElementById("flash-overlay");
+      if(!ov||!ov.classList.contains("on"))return;
+      if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+      if(e.key===" "||e.key==="Enter"){e.preventDefault();if(!flashRevealed)revealFlash();return;}
+      if(e.key==="Escape"){closeFlash();return;}
+      if(e.key==="s"||e.key==="S"){var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
+      if(/^[1-4]$/.test(e.key)&&flashRevealed){e.preventDefault();gradeFlash(+e.key-1);}});
     var wbe=document.getElementById("wb-export");if(wbe)wbe.addEventListener("click",exportWb);
     var wbg=document.getElementById("wb-groups");if(wbg)wbg.addEventListener("click",function(e){var b=e.target.closest(".wbg-chip");if(!b)return;wbActive=b.getAttribute("data-g");save("tt_wbactive",wbActive);renderWordbook();});
     var wbm=document.getElementById("wbg-manage");
