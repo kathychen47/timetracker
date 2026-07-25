@@ -5445,7 +5445,7 @@ margin-left: -22px;
       rdHl.textContent="";
       rdHl.style.left=(rect.left/z-2)+"px";rdHl.style.top=(rect.top/z-1)+"px";
       rdHl.style.width=(rect.width/z+4)+"px";rdHl.style.height=(rect.height/z+2)+"px";}
-    rdHl.style.display="";}
+    rdHl.style.display=(style==="pop")?"inline-block":"block";}
   function hideHl(){if(rdHl)rdHl.style.display="none";}
   // 依次尝试候选词（中文 4→1 字），命中就弹卡片
   async function lookupCands(cands,rect){
@@ -5466,7 +5466,7 @@ margin-left: -22px;
   function rdHover(e){
     if(dictPrefs.hlStyle==="off"){hideHl();return;}
     if(rdPop&&rdPop.style.display!=="none"&&rdPop.contains(e.target))return;
-    if(String(getSelection()||"").trim()){hideHl();return;}   // 正在选文字时不干扰
+    if(e.buttons===1){hideHl();return;}                        // 正在拖选时不干扰
     var byKey=trigOn("key")&&keyHeld(e);
     var hit=wordAtPoint(e.clientX,e.clientY);
     if(!hit){hideHl();lastHoverWord="";return;}
