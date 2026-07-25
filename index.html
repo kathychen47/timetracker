@@ -2685,6 +2685,10 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">Google 事件计入统计（自动打勾）</div><div class="set-desc">开启后，从 Google 日历同步过来的事件会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。</div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-count"><span class="track"></span></label>
+        </div>
+        <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">新建事件默认加入 Google 日历</div><div class="set-desc">勾选后新建的事件会自动同步到 Google，不用每次手动勾。</div></div>
           <label class="switch"><input type="checkbox" id="set-gcal-default"><span class="sw-track"></span></label>
         </div>
@@ -3077,7 +3081,7 @@ margin-left: -22px;
   var state={view:"week",cursor:new Date(),tab:"calendar",catFilter:null};
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
-  var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false);
+  var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false),gcalCount=load("tt_gcalcount",false);
 
   if(events===null){
     var mon=startOfWeek(new Date());
@@ -3831,8 +3835,14 @@ margin-left: -22px;
   function statShift(dir){var c=statState.cursor,m=statState.mode;
     if(m==="day")statState.cursor=addDays(c,dir);else if(m==="week")statState.cursor=addDays(c,dir*7);
     else if(m==="month")statState.cursor=addMonths(c,dir);else if(m==="year")statState.cursor=new Date(c.getFullYear()+dir,c.getMonth(),c.getDate());}
+  function statPool(){   // 是否把 Google 日历的事件也算进来（去重）
+    if(!gcalCount||!gcalEvents.length)return events;
+    var gids={},sig={};
+    events.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
+    return events.concat(gcalEvents.filter(function(e){
+      return !gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
   function statEvents(p){var sf=fmt(p.start),ef=fmt(p.end);
-    return events.filter(function(e){if(e.date<sf||e.date>ef)return false;
+    return statPool().filter(function(e){if(e.date<sf||e.date>ef)return false;
       if(statState.cat!=="__all"&&e.cat!==statState.cat)return false;
       if(statState.sub!=="__all"&&(e.sub||null)!==statState.sub)return false;return true;});}
   function statBuckets(p){var arr=[],i,d;
@@ -3957,7 +3967,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
   document.querySelector(".set-nav").addEventListener("click",function(e){var b=e.target.closest("[data-pane]");if(!b)return;var p=b.getAttribute("data-pane");
     document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
     document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});
@@ -4000,6 +4010,7 @@ margin-left: -22px;
     gcalDefault=document.getElementById("set-gcal-default").checked;
     var newSbUrl=document.getElementById("set-sb-url").value.trim(),newSbKey=document.getElementById("set-sb-key").value.trim(),sbChanged=(newSbUrl!==sbUrl||newSbKey!==sbKey);
     sbUrl=newSbUrl;sbKey=newSbKey;save("tt_sburl",sbUrl);save("tt_sbkey",sbKey);
+    gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);fetchGcal();
     save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_aiprovider",aiProvider);save("tt_ollamaurl",ollamaUrl);save("tt_ollamamodel",ollamaModel);save("tt_gcaldefault",gcalDefault);
     if(sbChanged&&sbUrl&&sbKey)initSupabase();
     closeSettings();});
@@ -4008,7 +4019,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -4197,7 +4208,7 @@ margin-left: -22px;
   function mapGEvent(it){
     var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
     var ttl=it.summary||"(无标题)",ac=autoCat(ttl);
-    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:ttl,cat:ac.cat,sub:ac.sub,done:false,gcal:true,note:it.description||""};
+    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:ttl,cat:ac.cat,sub:ac.sub,done:!!gcalCount,gcal:true,note:it.description||""};
   }
   var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
   function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -4858,7 +4869,7 @@ margin-left: -22px;
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;flashStart=Date.now();
+    flashIdx=0;flashDone=0;flashStart=Date.now();startClock();
     document.getElementById("flash-overlay").classList.add("on");showFlash();}
   function flashProgress(){
     var total=flashArr.length,left=total-flashIdx;
@@ -4867,7 +4878,16 @@ margin-left: -22px;
     for(var i=flashIdx;i<flashArr.length;i++){if(flashArr[i].reps)rr++;else nn++;}
     document.getElementById("flash-prog").innerHTML=
       '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
-      ' · 已完成 <b>'+flashDone+'</b>';}
+      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtDur(flashStart?Date.now()-flashStart:0)+'</span>';}
+  function fmtDur(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}
+  var flashTick=null;
+  function startClock(){
+    if(flashTick)clearInterval(flashTick);
+    flashTick=setInterval(function(){
+      var el=document.getElementById("flash-clock");
+      if(!el||!flashStart){return;}
+      el.textContent=fmtDur(Date.now()-flashStart);},1000);}
+  function stopClock(){if(flashTick){clearInterval(flashTick);flashTick=null;}}
   async function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
       ttAlert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
@@ -4908,7 +4928,7 @@ margin-left: -22px;
     var x=flashArr[flashIdx];if(!x)return;
     x.mastered=true;x.due=Date.now()+365*DAY;saveWords();
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
-  function closeFlash(){endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
+  function closeFlash(){stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
