@@ -4010,7 +4010,11 @@ margin-left: -22px;
       "用户会用中文或英文说一句话，你判断ONE动作并只输出一个 JSON 对象：字段 action 为 \"create_event\"|\"create_todo\"|\"add_income\"|\"add_word\"|\"answer\"；"+
       "create_event 还要 title、date(YYYY-MM-DD)、start(HH:MM)、end(HH:MM)、category(从大类挑名字或留空)；"+
       "create_todo 还要 title、可选 due(YYYY-MM-DD)、可选 priority(high|mid|low)；"+
-      "add_income（记一笔收入/工资/发票，用于报税）还要 amount(数字)、date(YYYY-MM-DD，没说就用今天)、gst_included(true/false，说了含GST才true)、可选 payer、可选 note；"+
+      "add_income（记一笔收入/工资/发票，用于报税）还要 amount(数字)、date(YYYY-MM-DD，没说就用今天)、gst_included(true/false)、可选 payer、可选 note。"+
+      "重要规则：amount 一律填【实际到账/开票的那个金额】，不要自己减掉任何税费——App 会自动按累进税率算 PAYE 所得税和 ACC 并扣除。"+
+      "gst_included 只表示这笔钱里是否含 GST：用户说「含GST/含税/inc GST/GST included」就填 true；说「不含GST/excl GST」或没提就填 false。"+
+      "用户说「包含GST、ACC和税」这类话，意思也是 amount 是含 GST 的总额、其余由 App 扣，仍然只需 gst_included=true。"+
+      "如果用户给的是【到手/税后】金额，请在 reply 里提醒他这里应该填税前实收金额。"+
       "add_word（把单词加进生词本）还要 word；"+
       "所有情况都要 reply(和用户同语言的简短确认或回答)。"+
       "参考：本周已安排约 "+(Math.round(wkMin/6)/10)+" 小时，未完成待办 "+pend+" 条。只输出 JSON，不要解释。";
@@ -4068,10 +4072,13 @@ margin-left: -22px;
         payer:o.payer||"",note:o.note||""};
       taxRecs.push(inc);saveTax();
       taxYear=taxYearOf(d);if(state.tab==="tax")renderTax();
-      var rt=txRates(taxYearOf(d)),gp=rt.gstRate/100;
-      var gstAmt=inc.gstIncluded?(amt*gp/(1+gp)):0;
-      aiMsg("✅ "+esc(o.reply||"已记入税务")+"<br><span style='color:var(--muted);font-size:12px'>"+d+" · "+txMoney(amt)+
-        (inc.gstIncluded?("（含 GST "+txMoney(gstAmt)+"）"):"")+(inc.payer?" · "+esc(inc.payer):"")+"</span>","ok");
+      var row=null;txCompute().forEach(function(c){if(c.id===inc.id)row=c;});
+      var brk=row?('<br><span style="color:var(--muted);font-size:12px">'+
+        '税前收入 '+txMoney(row.inc)+(row.gstAmt?('　GST −'+txMoney(row.gstAmt)):"")+
+        '　PAYE −'+txMoney(row.mTax)+'　ACC −'+txMoney(row.mAcc)+
+        '　<b style="color:'+TXC.income+'">到手 '+txMoney(row.net)+'</b></span>'):"";
+      aiMsg("✅ "+esc(o.reply||"已记入税务")+"<br><span style='color:var(--muted);font-size:12px'>"+d+" · 实收 "+txMoney(amt)+
+        (inc.gstIncluded?"（含 GST）":"")+(inc.payer?" · "+esc(inc.payer):"")+"</span>"+brk,"ok");
     }else if(o.action==="add_word"){
       var w=String(o.word||"").trim().toLowerCase();
       if(!w){aiMsg("没听清是哪个单词","err");return;}
