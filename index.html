@@ -57,6 +57,10 @@
   .rail button.on{background:var(--primary-soft);color:var(--primary)}
   .rail button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
   .rail .grow{flex:1}
+  .rail button[draggable=true]{cursor:grab}
+  .rail button.dragging{opacity:.4;cursor:grabbing}
+  .rail button.drop-before{box-shadow:0 -2px 0 var(--primary)}
+  .rail button.drop-after{box-shadow:0 2px 0 var(--primary)}
 
   main{flex:1;min-width:0;max-width:1460px;margin:0 auto;padding:18px 18px 60px;width:100%}
   .view{display:none}.view.on{display:block}
@@ -3093,6 +3097,40 @@ margin-left: -22px;
   window.addEventListener("resize",applyZoom);
   document.getElementById("set-zoom").addEventListener("change",function(){zoomPref=this.value;save("tt_zoom",zoomPref);applyZoom();});
   document.getElementById("set-lang").addEventListener("change",function(){save("tt_lang",this.value);location.reload();});
+
+  // ---------- 左侧导航：拖动排序 ----------
+  (function(){
+    var rail=document.querySelector(".rail");if(!rail)return;
+    var grow=rail.querySelector(".grow");
+    function items(){return [].slice.call(rail.querySelectorAll("button[data-tab],#ai-btn"));}
+    function keyOf(b){return b.getAttribute("data-tab")||b.id;}
+    // 按保存的顺序重排
+    var order=load("tt_railorder",null);
+    if(order&&order.length){
+      var map={};items().forEach(function(b){map[keyOf(b)]=b;});
+      order.forEach(function(k){if(map[k])rail.insertBefore(map[k],grow);});
+      items().forEach(function(b){if(order.indexOf(keyOf(b))<0)rail.insertBefore(b,grow);});}
+    function saveOrder(){save("tt_railorder",items().map(keyOf));}
+    items().forEach(function(b){b.draggable=true;});
+    var dragEl=null;
+    rail.addEventListener("dragstart",function(e){
+      var b=e.target.closest("button[data-tab],#ai-btn");if(!b){e.preventDefault();return;}
+      dragEl=b;b.classList.add("dragging");
+      try{e.dataTransfer.effectAllowed="move";e.dataTransfer.setData("text/plain",keyOf(b));}catch(err){}});
+    rail.addEventListener("dragend",function(){
+      if(dragEl)dragEl.classList.remove("dragging");dragEl=null;
+      rail.querySelectorAll(".drop-before,.drop-after").forEach(function(x){x.classList.remove("drop-before","drop-after");});
+      saveOrder();});
+    rail.addEventListener("dragover",function(e){
+      if(!dragEl)return;e.preventDefault();
+      var over=e.target.closest("button[data-tab],#ai-btn");
+      rail.querySelectorAll(".drop-before,.drop-after").forEach(function(x){x.classList.remove("drop-before","drop-after");});
+      if(!over||over===dragEl)return;
+      var r=over.getBoundingClientRect(),after=(e.clientY-r.top)>r.height/2;
+      over.classList.add(after?"drop-after":"drop-before");
+      rail.insertBefore(dragEl,after?over.nextSibling:over);});
+    rail.addEventListener("drop",function(e){if(dragEl){e.preventDefault();saveOrder();}});
+  })();
 
   // ---------- rail nav ----------
   document.querySelector(".rail").addEventListener("click",function(e){
