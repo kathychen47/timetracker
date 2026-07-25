@@ -2817,6 +2817,10 @@ margin-left: -22px;
             <option value="ai">我的 AI（更准）</option>
           </select>
         </div>
+        <div class="set-item" style="margin-bottom:10px">
+          <label class="do-name" style="cursor:pointer"><input type="checkbox" id="ann-tr"> 高亮 / 划线后自动翻译并存成笔记</label>
+          <div class="set-desc" style="margin-top:4px">在书里高亮或划线一段话，自动用<b>下面选的引擎</b>翻译，结果直接存进右侧笔记栏（卡片上带 🌐 译 标记，可以再编辑）。</div>
+        </div>
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">翻译成</div></div>
           <select id="tr-lang">
@@ -4236,6 +4240,7 @@ margin-left: -22px;
     if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
     if(dictPrefs.logCal===undefined)dictPrefs.logCal=true;
     if(dictPrefs.logGcal===undefined)dictPrefs.logGcal=false;
+    if(dictPrefs.annTranslate===undefined)dictPrefs.annTranslate=false;
     if(!dictPrefs.popMode)dictPrefs.popMode="pin";
     if(!dictPrefs.hotkey)dictPrefs.hotkey="alt";
     if(!dictPrefs.hlStyle)dictPrefs.hlStyle="pop";
@@ -4315,6 +4320,7 @@ margin-left: -22px;
     var hs=document.getElementById("dict-hlstyle");if(hs)hs.value=dictPrefs.hlStyle||"pop";
     var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
     var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
+    var at=document.getElementById("ann-tr");if(at)at.checked=!!dictPrefs.annTranslate;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
     var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);
     var sh=document.getElementById("srs-hide");if(sh)sh.checked=!!dictPrefs.hideMastered;
@@ -5411,10 +5417,18 @@ margin-left: -22px;
     var s=textOffset(rdContent,rg.startContainer,rg.startOffset);
     var e=textOffset(rdContent,rg.endContainer,rg.endOffset);
     if(s<0||e<0||e<=s)return;
-    var a={id:"a"+uid(),sc:annScope(),s:s,e:e,t:type,c:color||null,x:txt.slice(0,60),ts:Date.now()};
+    var a={id:"a"+uid(),sc:annScope(),s:s,e:e,t:type,c:color||null,x:txt.slice(0,200),ts:Date.now()};
     curBook.ann=annList().concat([a]);annSave();
     markOffsets(rdContent,s,e,type,color,a.id);
-    sel.removeAllRanges();hideRdTools();}
+    sel.removeAllRanges();hideRdTools();
+    if(dictPrefs.annTranslate){                     // 自动翻译并存成笔记
+      a.note="翻译中…";a.auto=true;renderNotes();
+      translateText(txt).then(function(res){
+        a.note=res.text;a.auto=true;annSave();renderNotes();
+        if(!document.getElementById("rd-main").classList.contains("notes-on"))toggleNotes(true);
+      },function(err){
+        a.note="（翻译失败："+String(err&&err.message||err)+"）";annSave();renderNotes();});
+    }else renderNotes();}
   function clearAnnotAt(){
     var sel=getSelection();if(!sel||!sel.rangeCount)return;
     var rg=sel.getRangeAt(0);
@@ -5467,7 +5481,8 @@ margin-left: -22px;
       return '<div class="rn-item t-'+a.t+'" data-jump="'+a.id+'" style="--ac:'+(a.c||"var(--primary)")+'">'+
         '<div class="q">'+esc(a.x||"")+'</div>'+
         (a.note?'<div class="nt">'+esc(a.note)+'</div>':'')+
-        '<div class="mt"><span class="tag">'+(TN[a.t]||"标注")+'</span><span>'+esc(scopeLabel(a.sc))+'</span><span class="grow"></span>'+
+        '<div class="mt"><span class="tag">'+(TN[a.t]||"标注")+'</span>'+(a.auto?'<span class="tag">🌐 译</span>':'')+
+        '<span>'+esc(scopeLabel(a.sc))+'</span><span class="grow"></span>'+
         (a.note?'<button data-edit="'+a.id+'" title="编辑">✎</button>':'')+
         '<button data-del="'+a.id+'" title="删除">✕</button></div></div>';}
     box.innerHTML='<div class="rn-h">📝 笔记 '+notes.length+' · 标注 '+marks.length+'</div>'+
