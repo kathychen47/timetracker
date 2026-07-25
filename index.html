@@ -406,6 +406,17 @@
   .rd-textlayer > span{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;cursor:text}
   .rd-textlayer ::selection{background:#6366F1}
   .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
+  /* 阅读标注 */
+  .ann.hl{background:var(--ac,#ffe58a);border-radius:2px;padding:1px 0}
+  .ann.ul{text-decoration:underline;text-decoration-color:var(--primary);text-decoration-thickness:2px;text-underline-offset:3px}
+  .ann.bd{font-weight:700}
+  #rd-tools{position:fixed;z-index:61;display:none;align-items:center;gap:5px;background:var(--surface);
+    border:1px solid var(--border);border-radius:11px;box-shadow:0 8px 26px rgba(0,0,0,.2);padding:6px 8px}
+  #rd-tools button{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:7px;
+    width:28px;height:28px;cursor:pointer;font-size:13px;display:grid;place-items:center;padding:0}
+  #rd-tools button:hover{border-color:var(--primary)}
+  #rd-tools .ct{border:1px solid rgba(0,0,0,.12)}
+  #rd-tools .sep{width:1px;height:18px;background:var(--border);margin:0 2px}
   #rd-hl{position:fixed;z-index:59;background:rgba(99,102,241,.22);background:color-mix(in srgb,var(--primary) 24%,transparent);
     outline:1px solid rgba(99,102,241,.35);border-radius:4px;pointer-events:none;display:none}
   #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
@@ -4938,7 +4949,7 @@ margin-left: -22px;
 
   async function openTxt(blob){
     var text=await blob.text();
-    rdContent.innerHTML="<pre></pre>";rdContent.querySelector("pre").textContent=text;
+    rdContent.innerHTML="<pre></pre>";rdContent.querySelector("pre").textContent=text;applyAnnots();
     rdPosEl.textContent="—";
     rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
 
@@ -4949,7 +4960,7 @@ margin-left: -22px;
     try{res=await mammoth.convertToHtml({arrayBuffer:buf},{convertImage:mammoth.images.imgElement(function(img){
       return img.read("base64").then(function(b64){return {src:"data:"+img.contentType+";base64,"+b64};});})});}
     catch(e){throw new Error("这个文件读不出来（老式 .doc 需要先另存为 .docx）");}
-    rdContent.innerHTML=res.value||'<div class="rd-empty">文档是空的</div>';
+    rdContent.innerHTML=res.value||'<div class="rd-empty">文档是空的</div>';applyAnnots();
     rdPosEl.textContent="—";
     rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
 
@@ -4958,7 +4969,7 @@ margin-left: -22px;
     var doc=new DOMParser().parseFromString(html,"text/html");
     doc.querySelectorAll("script,style,link,iframe,object,embed").forEach(function(x){x.remove();});
     doc.querySelectorAll("a").forEach(function(a){a.removeAttribute("href");a.style.color="inherit";});
-    rdContent.innerHTML=doc.body?doc.body.innerHTML:esc(html);
+    rdContent.innerHTML=doc.body?doc.body.innerHTML:esc(html);applyAnnots();
     rdPosEl.textContent="—";
     rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
 
@@ -5008,7 +5019,7 @@ margin-left: -22px;
       if(!f){el.remove();continue;}
       try{var b=await f.async("blob");var u=URL.createObjectURL(b);curEpub.urls.push(u);el.setAttribute("src",u);}catch(e){el.remove();}}
     doc.querySelectorAll("a").forEach(function(a){a.removeAttribute("href");a.style.color="inherit";});
-    rdContent.innerHTML=doc.body?doc.body.innerHTML:html;
+    rdContent.innerHTML=doc.body?doc.body.innerHTML:html;applyAnnots();
     rdPosEl.textContent=(n+1)+" / "+curEpub.spine.length;
     rdContent.scrollTop=top||0;
     savePos({ch:n,top:top||0});}
@@ -5063,6 +5074,93 @@ margin-left: -22px;
     rdPop.style.display="";placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
     if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,2600);}}
+  // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
+  var ANNC=["#ffe58a","#b7f0c8","#bcd9ff","#ffc9d8"];
+  function annScope(){ // 当前"页/节"的标识
+    if(!curBook)return "0";
+    if(curBook.type==="epub")return "c"+((curEpub&&curEpub.ch)||0);
+    if(curBook.type==="pdf")return "p"+((curPdf&&curPdf.page)||1);
+    return "0";}
+  function annList(){return (curBook&&curBook.ann)||[];}
+  function annSave(){if(curBook)bPut("meta",curBook);}
+  function textOffset(root,node,off){
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,acc=0;
+    while((n=w.nextNode())){if(n===node)return acc+off;acc+=n.textContent.length;}
+    return -1;}
+  function markOffsets(root,s,e,type,color,id){
+    var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,acc=0,todo=[];
+    while((n=w.nextNode())){
+      if(n.parentNode&&n.parentNode.closest&&n.parentNode.closest(".rd-textlayer"))continue;
+      var len=n.textContent.length,a=acc,b=acc+len;acc=b;
+      if(b<=s||a>=e||!len)continue;
+      todo.push({node:n,from:Math.max(0,s-a),to:Math.min(len,e-a)});}
+    todo.forEach(function(t){
+      try{
+        var node=t.node,mid=(t.from>0)?node.splitText(t.from):node;
+        if(t.to-t.from<mid.textContent.length)mid.splitText(t.to-t.from);
+        var sp=document.createElement("span");
+        sp.className="ann "+type;sp.setAttribute("data-ann",id);
+        if(color)sp.style.setProperty("--ac",color);
+        mid.parentNode.insertBefore(sp,mid);sp.appendChild(mid);
+      }catch(err){}});}
+  function applyAnnots(){
+    if(!rdContent||!curBook)return;
+    var sc=annScope();
+    annList().filter(function(a){return a.sc===sc;})
+      .sort(function(x,y){return y.s-x.s;})   // 从后往前套，避免偏移错乱
+      .forEach(function(a){markOffsets(rdContent,a.s,a.e,a.t,a.c,a.id);});}
+  function addAnnot(type,color){
+    var sel=getSelection();if(!sel||!sel.rangeCount)return;
+    var rg=sel.getRangeAt(0);var txt=String(sel).trim();if(!txt)return;
+    var s=textOffset(rdContent,rg.startContainer,rg.startOffset);
+    var e=textOffset(rdContent,rg.endContainer,rg.endOffset);
+    if(s<0||e<0||e<=s)return;
+    var a={id:"a"+uid(),sc:annScope(),s:s,e:e,t:type,c:color||null,x:txt.slice(0,60),ts:Date.now()};
+    curBook.ann=annList().concat([a]);annSave();
+    markOffsets(rdContent,s,e,type,color,a.id);
+    sel.removeAllRanges();hideRdTools();}
+  function clearAnnotAt(){
+    var sel=getSelection();if(!sel||!sel.rangeCount)return;
+    var rg=sel.getRangeAt(0);
+    var s=textOffset(rdContent,rg.startContainer,rg.startOffset);
+    var e=textOffset(rdContent,rg.endContainer,rg.endOffset);
+    if(s<0||e<0)return;if(e===s)e=s+1;
+    var sc=annScope(),keep=[],removed=0;
+    annList().forEach(function(a){
+      if(a.sc===sc&&a.s<e&&a.e>s){removed++;}else keep.push(a);});
+    if(!removed)return;
+    curBook.ann=keep;annSave();
+    sel.removeAllRanges();hideRdTools();
+    redrawAnnots();}
+  function redrawAnnots(){ // 清掉现有 span 再重画
+    if(!rdContent)return;
+    rdContent.querySelectorAll("span.ann").forEach(function(sp){
+      var p=sp.parentNode;while(sp.firstChild)p.insertBefore(sp.firstChild,sp);
+      p.removeChild(sp);p.normalize();});
+    applyAnnots();}
+  var rdTools=null;
+  function hideRdTools(){if(rdTools)rdTools.style.display="none";}
+  function showRdTools(rect){
+    if(!rdTools){
+      rdTools=document.createElement("div");rdTools.id="rd-tools";
+      rdTools.innerHTML=ANNC.map(function(c){return '<button class="ct" data-hl="'+c+'" style="background:'+c+'" title="高亮"></button>';}).join("")+
+        '<span class="sep"></span>'+
+        '<button data-t="ul" title="下划线"><u>U</u></button>'+
+        '<button data-t="bd" title="加粗"><b>B</b></button>'+
+        '<button data-clear title="清除标注">🚫</button>';
+      document.body.appendChild(rdTools);
+      rdTools.addEventListener("mousedown",function(e){e.preventDefault();});
+      rdTools.addEventListener("click",function(e){
+        var hl=e.target.closest("[data-hl]"),t=e.target.closest("[data-t]"),cl=e.target.closest("[data-clear]");
+        if(hl)addAnnot("hl",hl.getAttribute("data-hl"));
+        else if(t)addAnnot(t.getAttribute("data-t"),null);
+        else if(cl)clearAnnotAt();});}
+    var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+    rdTools.style.display="flex";
+    var w=rdTools.offsetWidth||230,vw=innerWidth/z;
+    rdTools.style.left=Math.max(8,Math.min(rect.left/z,vw-w-10))+"px";
+    rdTools.style.top=Math.max(8,rect.top/z-46)+"px";}
+
   // 取鼠标位置下的那个词 + 它的矩形（用于半透明高亮）
   function wordAtPoint(x,y){
     var node=null,off=0;
@@ -5131,7 +5229,7 @@ margin-left: -22px;
   function rdClickWord(e){
     var hit=wordAtPoint(e.clientX,e.clientY);
     if(!hit){hideHl();                              // 点在空白处 → 关掉卡片
-      if(!String(getSelection()||"").trim())hideRdPop();return;}
+      if(!String(getSelection()||"").trim()){hideRdPop();hideRdTools();}return;}
     if(!trigOn("click"))return;
     if(String(getSelection()||"").trim())return;    // 正在选文字就不打扰
     showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
@@ -5141,10 +5239,11 @@ margin-left: -22px;
     e.preventDefault();showHl(hit.rect);lookupCands(hit.cands,hit.rect);}
   function rdSelHandler(){
     var s=(getSelection()?String(getSelection()):"").trim();
-    if(!s||s.length>1200)return;
+    if(!s||s.length>1200){hideRdTools();return;}
     var sel=getSelection();if(!sel.rangeCount)return;
     var rect=sel.getRangeAt(0).getBoundingClientRect();
     if(!rect||(!rect.width&&!rect.height))return;
+    if(curBook&&curBook.type!=="pdf")showRdTools(rect);   // 选中就出标注工具条
     if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
     else showRdTrans(s,rect);}   // 选中整句 → 任何模式都翻译
   function placeRdPop(rect){
@@ -5267,7 +5366,7 @@ margin-left: -22px;
       rdContent.addEventListener("click",rdClickWord);
       rdContent.addEventListener("contextmenu",rdContextWord);
       rdContent.addEventListener("mouseleave",function(){hideHl();if(hoverTimer)clearTimeout(hoverTimer);});
-      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();hideHl();});
+      rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();hideHl();hideRdTools();});
       rdPop.addEventListener("mouseenter",function(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
       rdPop.addEventListener("mouseleave",rdPopArm);
       document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
