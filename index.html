@@ -338,7 +338,17 @@
   .rd-sub{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:8px}
   .rd-import{display:flex;align-items:center;gap:12px;margin-bottom:16px}
   .rd-note{color:var(--muted);font-size:13px}
+  .rd-folders{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px}
+  .rd-fchip{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:999px;
+    padding:6px 13px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .rd-fchip.on{background:var(--primary-soft);color:var(--primary);border-color:transparent;font-weight:600}
+  .rd-fchip.drop{border-color:var(--primary);border-style:dashed;background:var(--primary-soft)}
+  .rd-fchip .e{background:transparent;border:none;color:inherit;cursor:pointer;opacity:.55;font-size:11px;padding:0}
+  .rd-fchip .e:hover{opacity:1}
   .rd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .rd-book[draggable=true]{cursor:grab}
+  .rd-book.dragging{opacity:.45}
+  .rd-book .f{position:absolute;top:6px;left:6px;font-size:10.5px;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:1px 6px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd-book{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:transform .12s}
   .rd-book:hover{transform:translateY(-2px);border-color:var(--primary)}
   .rd-cover{height:78px;border-radius:9px;display:grid;place-items:center;font-size:28px;margin-bottom:10px;background:var(--surface-2)}
@@ -2169,8 +2179,10 @@ margin-left: -22px;
         <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / Word / TXT 等，选中单词即可查词</span></div>
         <div class="rd-import">
           <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
+          <button class="btn" id="rd-newfolder">＋ 新建文件夹</button>
           <span class="rd-note" id="rd-note"></span>
         </div>
+        <div class="rd-folders" id="rd-folders"></div>
         <div class="rd-grid" id="rd-grid"></div>
       </div>
 
@@ -4056,6 +4068,8 @@ margin-left: -22px;
 
   // ---------- 看书（PDF / EPUB / TXT，边读边查词） ----------
   var BDB=null,curBook=null,curEpub=null,curPdf=null,rdFs=+load("tt_rdfs",17)||17;
+  var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all";
+  function saveFolders(){save("tt_rdfolders",rdFolders);}
   function bdbOpen(){return new Promise(function(res,rej){
     var r=indexedDB.open("ttbooks",1);
     r.onupgradeneeded=function(){var db=r.result;
@@ -4105,19 +4119,32 @@ margin-left: -22px;
       var id="b"+uid();
       try{
         await bPut("blob",{id:id,blob:f});
-        await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null});
+        await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null,folder:(rdFolder&&rdFolder!=="all")?rdFolder:""});
       }catch(e){rdNote("导入失败："+String(e&&e.message||e));return;}}
     rdNote("✓ 导入完成");renderShelf();}
 
+  function folderName(id){for(var i=0;i<rdFolders.length;i++)if(rdFolders[i].id===id)return rdFolders[i].name;return "";}
+  function renderFolders(all){
+    var el=document.getElementById("rd-folders");if(!el)return;
+    var cnt=function(fid){return all.filter(function(b){return (b.folder||"")===fid;}).length;};
+    var html='<button class="rd-fchip'+(rdFolder==="all"?" on":"")+'" data-f="all">📚 全部 '+all.length+'</button>';
+    html+='<button class="rd-fchip'+(rdFolder===""?" on":"")+'" data-f="" data-drop="">未分类 '+cnt("")+'</button>';
+    html+=rdFolders.map(function(f){return '<button class="rd-fchip'+(rdFolder===f.id?" on":"")+'" data-f="'+f.id+'" data-drop="'+f.id+'">📁 '+esc(f.name)+' '+cnt(f.id)+
+      ' <span class="e" data-ren="'+f.id+'" title="重命名">✎</span><span class="e" data-delf="'+f.id+'" title="删除文件夹">✕</span></button>';}).join("");
+    el.innerHTML=html;}
   async function renderShelf(){
     var g=document.getElementById("rd-grid");if(!g)return;
-    var list=await bAll();
-    list.sort(function(a,b){return (b.added||0)-(a.added||0);});
-    if(!list.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown / HTML。</div>';return;}
+    var all=await bAll();
+    all.sort(function(a,b){return (b.added||0)-(a.added||0);});
+    renderFolders(all);
+    var list=(rdFolder==="all")?all:all.filter(function(b){return (b.folder||"")===rdFolder;});
+    if(!all.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown / HTML。</div>';return;}
+    if(!list.length){g.innerHTML='<div class="rd-empty">这个文件夹还没有书。把书拖到上面的文件夹标签上即可归类。</div>';return;}
     var icon={pdf:"📕",epub:"📗",txt:"📄",docx:"📘",html:"🌐"};
     g.innerHTML=list.map(function(b){
       var p=b.pos?(b.type==="pdf"?("第 "+(b.pos.page||1)+" 页"):(b.type==="epub"?("第 "+((b.pos.ch||0)+1)+" 节"):"读过")):"未读";
-      return '<div class="rd-book" data-id="'+b.id+'"><button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
+      var fn=(rdFolder==="all"&&b.folder)?('<span class="f">'+esc(folderName(b.folder))+'</span>'):"";
+      return '<div class="rd-book" draggable="true" data-id="'+b.id+'">'+fn+'<button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
         '<div class="rd-cover">'+(icon[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
         '<div class="s">'+fmtSize(b.size||0)+' · '+p+'</div></div>';}).join("");}
 
@@ -4307,6 +4334,46 @@ margin-left: -22px;
         var del=e.target.closest("[data-del]");
         if(del){e.stopPropagation();if(!confirm("删除这本书？"))return;bDel(del.getAttribute("data-del")).then(renderShelf);return;}
         var b=e.target.closest(".rd-book");if(b)openBook(b.getAttribute("data-id"));});
+      // 新建文件夹
+      document.getElementById("rd-newfolder").addEventListener("click",function(){
+        var nm=prompt("文件夹名称，如：小说 / 论文 / 教材");if(!nm||!nm.trim())return;
+        rdFolders.push({id:"f"+uid(),name:nm.trim()});saveFolders();renderShelf();});
+      // 文件夹：切换 / 重命名 / 删除
+      document.getElementById("rd-folders").addEventListener("click",function(e){
+        var ren=e.target.closest("[data-ren]"),delf=e.target.closest("[data-delf]");
+        if(ren){e.stopPropagation();var id=ren.getAttribute("data-ren"),f=null;
+          rdFolders.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
+          var nm=prompt("重命名文件夹：",f.name);if(!nm||!nm.trim())return;
+          f.name=nm.trim();saveFolders();renderShelf();return;}
+        if(delf){e.stopPropagation();var fid=delf.getAttribute("data-delf");
+          if(!confirm("删除文件夹「"+folderName(fid)+"」？里面的书不会删，会变成未分类。"))return;
+          bAll().then(function(all){
+            var jobs=all.filter(function(b){return b.folder===fid;}).map(function(b){b.folder="";return bPut("meta",b);});
+            return Promise.all(jobs);}).then(function(){
+            rdFolders=rdFolders.filter(function(x){return x.id!==fid;});saveFolders();
+            if(rdFolder===fid){rdFolder="all";save("tt_rdfolder",rdFolder);}
+            renderShelf();});
+          return;}
+        var chip=e.target.closest("[data-f]");
+        if(chip){rdFolder=chip.getAttribute("data-f");save("tt_rdfolder",rdFolder);renderShelf();}});
+      // 拖书到文件夹标签上归类
+      var dragId=null;
+      document.getElementById("rd-grid").addEventListener("dragstart",function(e){
+        var b=e.target.closest(".rd-book");if(!b)return;
+        dragId=b.getAttribute("data-id");b.classList.add("dragging");
+        try{e.dataTransfer.setData("text/plain",dragId);e.dataTransfer.effectAllowed="move";}catch(err){}});
+      document.getElementById("rd-grid").addEventListener("dragend",function(e){
+        var b=e.target.closest(".rd-book");if(b)b.classList.remove("dragging");dragId=null;});
+      var fbox=document.getElementById("rd-folders");
+      fbox.addEventListener("dragover",function(e){
+        var t=e.target.closest("[data-drop]");if(!t||!dragId)return;
+        e.preventDefault();try{e.dataTransfer.dropEffect="move";}catch(err){}t.classList.add("drop");});
+      fbox.addEventListener("dragleave",function(e){var t=e.target.closest("[data-drop]");if(t)t.classList.remove("drop");});
+      fbox.addEventListener("drop",function(e){
+        var t=e.target.closest("[data-drop]");if(!t)return;e.preventDefault();t.classList.remove("drop");
+        var id=dragId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));if(!id)return;
+        var fid=t.getAttribute("data-drop");
+        bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
       document.getElementById("rd-back").addEventListener("click",showShelf);
       document.getElementById("rd-prev").addEventListener("click",rdPrev);
       document.getElementById("rd-next").addEventListener("click",rdNext);
