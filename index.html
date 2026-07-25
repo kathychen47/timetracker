@@ -522,6 +522,56 @@
     border-radius:14px;padding:12px;height:calc(100vh - 168px);overflow-y:auto}
   .rd-main.notes-on .rd-notes{display:block}
   @media (max-width:820px){.rd-notes{width:230px}}
+  /* ===== 双语对照（译文栏） ===== */
+  .rd-trans{display:none;flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);
+    border-radius:14px;height:calc(100vh - 168px);overflow:hidden;flex-direction:column}
+  .rd-main.bi-on .rd-trans{display:flex}
+  .rd-main.bi-on .rd-scrub{display:none}
+  .tr-top{display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--border);flex:none;flex-wrap:wrap}
+  .tr-title{font-size:12.5px;font-weight:650;color:var(--muted);flex:none}
+  .tr-top .grow{flex:1}
+  .tr-top .btn{padding:4px 9px;font-size:12px}
+  .tr-top select{padding:4px 6px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px}
+  #tr-style button{padding:4px 8px;font-size:11.5px}
+  .tr-eng{font-size:11px;color:var(--muted);flex:none}
+  .tr-prog{display:flex;align-items:center;gap:8px;padding:7px 11px;border-bottom:1px solid var(--border);flex:none;font-size:11.5px;color:var(--muted)}
+  .tr-prog .bar{flex:1;height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+  .tr-prog .bar i{display:block;height:100%;background:var(--primary);width:0;transition:width .2s}
+  .tr-body{flex:1;min-height:0;overflow:auto;padding:14px}
+  .tr-body::-webkit-scrollbar{width:10px}
+  .tr-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+  .tr-empty{color:var(--muted);font-size:13px;text-align:center;padding:38px 10px;line-height:1.9}
+  .tr-page{position:relative;margin:0 auto;background:var(--bg);border-radius:6px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+  .tr-page .tb{position:absolute;line-height:1.35;color:var(--text);white-space:pre-wrap;word-break:break-word;
+    letter-spacing:.01em;cursor:default}
+  .tr-page .tb.hd{font-weight:700}
+  .tr-page .tb:hover{background:var(--primary-soft);border-radius:4px;outline:1px solid color-mix(in srgb,var(--primary) 35%,transparent)}
+  .tr-flow{font-size:var(--rdfs,17px);line-height:1.85;max-width:44em;margin:0 auto}
+  .tr-flow p{margin:0 0 .85em}
+  .tr-flow p.li{padding-left:1.1em;text-indent:-.7em}
+  .tr-flow h3{font-size:1.12em;margin:1.1em 0 .5em;line-height:1.45}
+  .tr-flow .src{color:var(--muted);font-size:.86em;display:block;margin-top:.15em}
+  .tr-wait{color:var(--muted);font-size:12.5px;padding:8px 2px}
+  /* ===== 沉浸式阅读 ===== */
+  #rd-zen-exit{display:none;position:fixed;right:14px;top:12px;z-index:70;width:34px;height:34px;border-radius:10px;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;place-items:center;
+    font-size:15px;opacity:.35;transition:opacity .2s}
+  #rd-zen-exit:hover{opacity:1;color:var(--text)}
+  body.zen #rd-zen-exit{display:grid}
+  body.zen .rail{display:none}
+  body.zen main{max-width:none;padding:0}
+  body.zen .rd-ocr-note{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:65;margin:0;
+    box-shadow:0 4px 18px rgba(0,0,0,.18);max-width:70vw}
+  body.zen .rd-bar{position:fixed;left:0;right:0;top:0;z-index:60;margin:0;padding:9px 16px;
+    background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.12);
+    transform:translateY(-108%);transition:transform .22s ease}
+  body.zen.zbar .rd-bar{transform:none}
+  body.zen .rd-main{gap:0}
+  body.zen .rd-content,body.zen .rd-toc,body.zen .rd-notes,body.zen .rd-trans{height:100vh;border-radius:0;border:none}
+  body.zen .rd-toc,body.zen .rd-notes{border-right:1px solid var(--border)}
+  body.zen .rd-notes{border-right:none;border-left:1px solid var(--border)}
+  body.zen .rd-content{padding:34px 30px}
+  body.zen .rd-content>:not(.rd-page){max-width:46em;margin-left:auto;margin-right:auto}
   .rn-h{font-size:12.5px;font-weight:650;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:6px}
   .rn-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;position:sticky;top:-12px;background:var(--surface);padding:4px 0;z-index:2}
   .rn-title{font-size:12.5px;font-weight:650;color:var(--muted);flex:1;min-width:0}
@@ -2565,15 +2615,37 @@ margin-left: -22px;
             <button class="btn" id="rd-ocr-btn" title="识别这一页的文字（扫描版用）">🔍 OCR</button>
             <select id="rd-ocr-lang" title="识别语言"><option value="eng">英文</option><option value="chi_sim">中文</option><option value="both">中英</option></select>
           </span>
+          <button class="btn" id="rd-bi-btn" title="左原文右译文（整页翻译，保留排版）">🌐 对照</button>
           <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
+          <button class="btn" id="rd-zen-btn" title="沉浸式阅读（隐藏所有按钮，全屏看书）">⛶ 沉浸</button>
         </div>
         <div class="rd-ocr-note" id="rd-ocr-note" style="display:none"></div>
         <div class="rd-main" id="rd-main">
           <aside class="rd-toc" id="rd-toc"></aside>
           <div class="rd-content" id="rd-content"></div>
+          <aside class="rd-trans" id="rd-trans">
+            <div class="tr-top">
+              <span class="tr-title">译文</span>
+              <select id="tr-lang" title="翻译成"></select>
+              <div class="seg" id="tr-style" title="排版方式">
+                <button data-ts="layout" class="on" title="按原书位置摆放译文">保留排版</button>
+                <button data-ts="flow" title="从上到下的纯文字">纯文字</button>
+              </div>
+              <button class="btn" id="tr-redo" title="重新翻译这一页">⟳</button>
+              <button class="btn" id="tr-all" title="把整本书都翻好存起来">📚 整本</button>
+              <span class="grow"></span>
+              <button class="rn-x" id="tr-close" title="关闭对照">✕</button>
+            </div>
+            <div class="tr-prog" id="tr-prog" style="display:none">
+              <div class="bar"><i></i></div><span class="t"></span>
+              <button class="btn" id="tr-stop">停</button>
+            </div>
+            <div class="tr-body" id="tr-body"></div>
+          </aside>
           <div class="rd-scrub" id="rd-scrub"><div class="thumb" id="rd-thumb"></div><div class="tip" id="rd-scrub-tip"></div></div>
           <aside class="rd-notes" id="rd-notes"></aside>
         </div>
+        <button id="rd-zen-exit" title="退出沉浸式（Esc）">⤢</button>
       </div>
     </section>
   </main>
@@ -5347,10 +5419,11 @@ margin-left: -22px;
   var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all",rdView=load("tt_rdview","grid");
   function saveFolders(){save("tt_rdfolders",rdFolders);}
   function bdbOpen(){return new Promise(function(res,rej){
-    var r=indexedDB.open("ttbooks",1);
+    var r=indexedDB.open("ttbooks",2);
     r.onupgradeneeded=function(){var db=r.result;
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});};
+      if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("trans"))db.createObjectStore("trans",{keyPath:"k"});};
     r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
   function ensureBDB(){return BDB?Promise.resolve(BDB):bdbOpen().then(function(d){BDB=d;return d;});}
   function bPut(store,val){return ensureBDB().then(function(d){return new Promise(function(res,rej){
@@ -5364,8 +5437,20 @@ margin-left: -22px;
     rq.onsuccess=function(){var c=rq.result;if(c){out.push(c.value);c.continue();}else res(out);};
     rq.onerror=function(){res(out);};});});}
   function bDel(id){return ensureBDB().then(function(d){return new Promise(function(res){
-    var tx=d.transaction(["meta","blob"],"readwrite");
+    var tx=d.transaction(["meta","blob","trans"],"readwrite");
     tx.objectStore("meta").delete(id);tx.objectStore("blob").delete(id);
+    try{tx.objectStore("trans").delete(IDBKeyRange.bound(id+"#",id+"#￿"));}catch(e){}
+    tx.oncomplete=function(){res();};tx.onerror=function(){res();};});});}
+  // 译文缓存（一页/一节一条，key = 书id#p页码 或 书id#c章号）
+  function tGet(k){return ensureBDB().then(function(d){return new Promise(function(res){
+    var rq=d.transaction("trans","readonly").objectStore("trans").get(k);
+    rq.onsuccess=function(){res(rq.result||null);};rq.onerror=function(){res(null);};});});}
+  function tPut(k,v){return ensureBDB().then(function(d){return new Promise(function(res){
+    var tx=d.transaction("trans","readwrite");tx.objectStore("trans").put({k:k,v:v,ts:Date.now()});
+    tx.oncomplete=function(){res();};tx.onerror=function(){res();};});});}
+  function tDelBook(id){return ensureBDB().then(function(d){return new Promise(function(res){
+    var tx=d.transaction("trans","readwrite");
+    try{tx.objectStore("trans").delete(IDBKeyRange.bound(id+"#",id+"#￿"));}catch(e){}
     tx.oncomplete=function(){res();};tx.onerror=function(){res();};});});}
 
   function loadScript(src){return new Promise(function(res,rej){
@@ -5491,7 +5576,8 @@ margin-left: -22px;
   }
 
   function showShelf(){document.getElementById("rd-shelf").style.display="";document.getElementById("rd-read").style.display="none";
-    hideRdPop();curEpub=null;curPdf=null;curBook=null;save("tt_rdbook","");renderShelf();}
+    hideRdPop();toggleZen(false);bookTrRun=false;trProg(-1);
+    curEpub=null;curPdf=null;curBook=null;save("tt_rdbook","");renderShelf();}
 
   var rdContent=null,rdPosEl=null,rdTitleEl=null;
   function applyRdFs(){if(rdContent)rdContent.style.setProperty("--rdfs",rdFs+"px");}
@@ -5516,7 +5602,7 @@ margin-left: -22px;
       else if(meta.type==="docx")await openDocx(rec.blob);
       else if(meta.type==="html")await openHtmlBook(rec.blob);
       else await openPdfBook(rec.blob);
-      renderNotes();
+      renderNotes();biUpdate();
       if(document.getElementById("rd-main").classList.contains("toc-on"))buildToc();
     }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
 
@@ -5628,7 +5714,7 @@ margin-left: -22px;
     rdContent.innerHTML=doc.body?doc.body.innerHTML:html;applyAnnots();
     rdPosEl.textContent="/ "+curEpub.spine.length;setGoVal(n+1);
     rdContent.scrollTop=top||0;
-    savePos({ch:n,top:top||0});}
+    savePos({ch:n,top:top||0});biUpdate();}
 
   // ===== OCR（扫描版 PDF：识别成可选中的文字层）=====
   var ocrWorker=null,ocrBusy=false;
@@ -5685,7 +5771,9 @@ margin-left: -22px;
       var res=await wk.recognize(canvas);
       var ws=((res&&res.data&&res.data.words)||[]).filter(function(w){return w.text&&w.text.trim();})
         .map(function(w){return [w.text,w.bbox.x0,w.bbox.y0,w.bbox.x1,w.bbox.y1];});
-      curBook.ocr=curBook.ocr||{};curBook.ocr[n]=ws;bPut("meta",curBook);
+      curBook.ocr=curBook.ocr||{};curBook.ocr[n]=ws;
+      curBook.ocrW=curBook.ocrW||{};curBook.ocrW[n]=canvas.width;   // 记下画布宽，译文才好按原位置摆
+      bPut("meta",curBook);
       applyOcrLayer(wrap,ws,Math.min(3,window.devicePixelRatio||1));
       ocrNote("✓ 第 "+n+" 页识别出 "+ws.length+" 个词，现在可以划词查词了");
       setTimeout(function(){ocrNote("");},4000);
@@ -5820,7 +5908,7 @@ margin-left: -22px;
       pdfjsLib.renderTextLayer({textContentSource:tc,textContent:tc,container:layer,viewport:vp,textDivs:[]});}catch(e){}
     await drawPdfAnnots(page,vp,wrap);
     afterPageReady(wrap,n,dpr);
-    savePos({page:n});}
+    savePos({page:n});biUpdate();}
 
   // ===== 滚动模式：PDF 连续渲染（按需加载）=====
   var pdfIO=null;
@@ -5832,7 +5920,7 @@ margin-left: -22px;
     var top=rdContent.scrollTop+40,best=1;
     [].slice.call(rdContent.children).forEach(function(el){
       if(el.offsetTop<=top)best=+el.getAttribute("data-p")||best;});
-    if(best!==curPdf.page){curPdf.page=best;schedulePos();}
+    if(best!==curPdf.page){curPdf.page=best;schedulePos();biUpdate();}
     rdPosEl.textContent="/ "+curPdf.n;setGoVal(curPdf.page);}
   async function renderPdfScroll(startPage){
     if(!curPdf)return;
@@ -6061,6 +6149,305 @@ margin-left: -22px;
       if(rdMode()==="scroll"){var t=rdContent.querySelector('[data-p="'+Math.min(curPdf.n,curPdf.page+1)+'"]');if(t)rdContent.scrollTop=t.offsetTop-8;}
       else showPdfPage(curPdf.page+1);
     }else if(curEpub)showChapter(curEpub.ch+1,0);}
+
+  // ===== 双语对照 / 整本翻译 =====
+  var biOn=false,trStyle=load("tt_trstyle","layout"),biSeq=0,bookTrRun=false,biPending=null;
+  function trBodyEl(){return document.getElementById("tr-body");}
+  function sleepMs(ms){return new Promise(function(r){setTimeout(r,ms);});}
+  function seqRun(arr,fn){
+    var i=0;
+    return new Promise(function(res,rej){
+      (function step(){
+        if(i>=arr.length)return res();
+        Promise.resolve(fn(arr[i],i)).then(function(){i++;step();},rej);})();});}
+  // —— 批量翻译：Google 一次请求多段（空行分隔），对不上就退化成逐段 ——
+  function trJoined(texts,tl){
+    return gTranslate(texts.join("\n\n"),tl).then(function(out){
+      var parts=String(out).split(/\n{2,}/);
+      if(parts.length!==texts.length)throw new Error("分段对不上");
+      return parts.map(function(s){return s.trim();});});}
+  function trGoogle(texts,tl,onp){
+    var chunks=[],cur=[],len=0;
+    texts.forEach(function(t,i){
+      if(cur.length&&(len+t.length>1400||cur.length>=12)){chunks.push(cur);cur=[];len=0;}
+      cur.push(i);len+=t.length+2;});
+    if(cur.length)chunks.push(cur);
+    var out=new Array(texts.length),done=0;
+    return seqRun(chunks,function(idxs){
+      return trJoined(idxs.map(function(i){return texts[i];}),tl).then(function(res){
+        idxs.forEach(function(i,k){out[i]=res[k];});
+      },function(){                                   // 退化：一段一段来
+        return seqRun(idxs,function(i){
+          return gTranslate(texts[i],tl).then(function(t){out[i]=t;},function(){out[i]="";});});
+      }).then(function(){done+=idxs.length;if(onp)onp(done,texts.length);
+        return chunks.length>1?sleepMs(120):null;});
+    }).then(function(){
+      if(out.every(function(x){return !x;}))throw new Error("一段都没翻出来");
+      return out;});}
+  function trAIChunk(texts,tl){
+    var name=LANGN[tl]||tl;
+    var prompt="把下面每一段翻译成"+name+"。严格逐段输出，每段一行并保留 <<序号>> 前缀，不要合并、不要解释、不要输出原文。\n\n"+
+      texts.map(function(t,i){return "<<"+(i+1)+">> "+t;}).join("\n");
+    var p=(aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt);
+    return p.then(function(t){
+      var out=new Array(texts.length),any=false;
+      String(t).split(/\n+/).forEach(function(ln){
+        var m=ln.match(/^\s*<<\s*(\d+)\s*>>\s*(.*)$/);
+        if(!m)return;
+        var i=+m[1]-1;
+        if(i>=0&&i<texts.length){out[i]=m[2].trim();any=true;}});
+      if(!any)throw new Error("AI 没按格式返回");
+      for(var i=0;i<out.length;i++)if(out[i]===undefined)out[i]="";
+      return out;});}
+  function trAI(texts,tl,onp){
+    var chunks=[],cur=[],len=0;
+    texts.forEach(function(t,i){
+      if(cur.length&&(len+t.length>2200||cur.length>=10)){chunks.push(cur);cur=[];len=0;}
+      cur.push(i);len+=t.length;});
+    if(cur.length)chunks.push(cur);
+    var out=new Array(texts.length),done=0;
+    return seqRun(chunks,function(idxs){
+      return trAIChunk(idxs.map(function(i){return texts[i];}),tl).then(function(res){
+        idxs.forEach(function(i,k){out[i]=res[k];});
+        done+=idxs.length;if(onp)onp(done,texts.length);});
+    }).then(function(){return out;});}
+  function translateBlocks(texts,onp){
+    if(!texts.length)return Promise.resolve([]);
+    var tl=trLang;
+    if(trEngine==="ai")return trAI(texts,tl,onp).catch(function(){return trGoogle(texts,tl,onp);});
+    return trGoogle(texts,tl,onp);}
+  // —— 把散落的文字碎片拼成"行"，再拼成"段落"（保留标题/分栏/缩进）——
+  function groupBlocks(raw,pageW){
+    if(!raw||!raw.length)return [];
+    raw.sort(function(a,b){return (a.y-b.y)||(a.x-b.x);});
+    var lines=[];
+    raw.forEach(function(r){
+      var L=lines.length?lines[lines.length-1]:null;
+      if(L&&Math.abs(r.y-L.y)<=Math.max(1.5,L.fs*0.45)&&r.x>=L.x0-1&&(r.x-L.x1)<L.fs*6){
+        var gap=r.x-L.x1;
+        L.t+=(gap>L.fs*0.22?" ":"")+r.s;
+        L.x0=Math.min(L.x0,r.x);L.x1=Math.max(L.x1,r.x+r.w);
+        L.fs=Math.max(L.fs,r.fs);L.bold=L.bold&&r.b;
+      }else lines.push({y:r.y,x0:r.x,x1:r.x+r.w,fs:r.fs,t:r.s,bold:r.b});});
+    if(!lines.length)return [];
+    var fss=lines.map(function(l){return l.fs;}).sort(function(a,b){return a-b;});
+    var med=fss[Math.floor(fss.length/2)]||10;
+    var mid=(pageW||600)/2,leftN=0,rightN=0,crossN=0;
+    lines.forEach(function(l){
+      if(l.x1<mid+pageW*0.02)leftN++;
+      else if(l.x0>mid-pageW*0.02)rightN++;
+      else crossN++;});
+    var twoCol=(leftN>lines.length*0.3&&rightN>lines.length*0.3&&crossN<lines.length*0.25);
+    if(twoCol)lines.sort(function(a,b){
+      var ca=(a.x0<mid?0:1),cb=(b.x0<mid?0:1);
+      return (ca-cb)||(a.y-b.y)||(a.x0-b.x0);});
+    var out=[];
+    lines.forEach(function(l){
+      var t=String(l.t).replace(/\s+/g," ").trim();
+      if(!t)return;
+      var P=out.length?out[out.length-1]:null;
+      var ov=P?(Math.min(P.x1,l.x1)-Math.max(P.x0,l.x0)):0;
+      var sameCol=!!P&&ov>Math.min(P.x1-P.x0,l.x1-l.x0)*0.3;
+      var sameSize=!!P&&Math.abs(l.fs-P.fs)<=Math.max(0.7,P.fs*0.13);
+      var gap=P?(l.y-P.y1):0;
+      var indent=!!P&&(l.x0-P.x0)>P.fs*1.2;
+      var isHead=(l.fs>=med*1.16)||(l.bold&&t.length<70);
+      if(!P||!sameCol||!sameSize||gap>P.fs*1.9||gap< -P.fs*0.4||indent||isHead||P.hd)
+        out.push({x0:l.x0,x1:l.x1,y0:l.y-l.fs*0.95,y1:l.y+l.fs*0.28,fs:l.fs,t:t,hd:isHead});
+      else{
+        var prev=P.t;
+        if(/[A-Za-z]-$/.test(prev))P.t=prev.slice(0,-1)+t;              // 行末断词的连字符接回去
+        else P.t=prev+(/[\u4e00-\u9fff]$/.test(prev)?"":" ")+t;
+        P.x0=Math.min(P.x0,l.x0);P.x1=Math.max(P.x1,l.x1);P.y1=l.y+l.fs*0.28;}});
+    return out.filter(function(b){                                     // 丢掉页码、公式碎片这类
+      return /[A-Za-z\u4e00-\u9fff]/.test(b.t)&&b.t.replace(/[^A-Za-z\u4e00-\u9fff]/g,"").length>=2;});}
+  async function pdfRawItems(page){
+    var vp=page.getViewport({scale:1});
+    var tc=await page.getTextContent();
+    var raw=[];
+    (tc.items||[]).forEach(function(it){
+      if(!it.str||!it.str.trim())return;
+      var m=pdfjsLib.Util.transform(vp.transform,it.transform);
+      var fs=Math.hypot(m[2],m[3])||Math.abs(m[3])||10;
+      raw.push({x:m[4],y:m[5],w:it.width||0,fs:fs,s:it.str,
+        b:/bold|black|heavy|semib/i.test(it.fontName||"")});});
+    return {raw:raw,w:vp.width,h:vp.height};}
+  function ocrRawItems(n,pageW){                                        // 扫描页：拿 OCR 结果当文字
+    var ws=(curBook&&curBook.ocr&&curBook.ocr[n])||null;
+    if(!ws||!ws.length)return null;
+    var cw=(curBook.ocrW&&curBook.ocrW[n])||0;
+    if(!cw){var mx=0;ws.forEach(function(w){mx=Math.max(mx,w[3]);});cw=mx/0.92;}
+    var s=pageW/Math.max(1,cw);
+    return ws.map(function(w){
+      return {x:w[1]*s,y:w[4]*s,w:(w[3]-w[1])*s,fs:Math.max(4,(w[4]-w[2])*s),s:w[0],b:false};});}
+  async function pdfPageTrans(n,onp){
+    var page=await curPdf.doc.getPage(n);
+    var r=await pdfRawItems(page);
+    var raw=r.raw;
+    if(raw.length<3){var o=ocrRawItems(n,r.w);if(o&&o.length)raw=o;}
+    var blocks=groupBlocks(raw,r.w);
+    if(!blocks.length)return {w:r.w,h:r.h,b:[]};
+    var tr=await translateBlocks(blocks.map(function(b){return b.t;}),onp);
+    var rd=function(x){return Math.round(x*10)/10;};
+    return {w:rd(r.w),h:rd(r.h),b:blocks.map(function(b,i){
+      return [rd(b.x0),rd(b.y0),rd(b.x1-b.x0),rd(b.y1-b.y0),rd(b.fs),b.hd?1:0,b.t,tr[i]||""];})};}
+  // —— EPUB / Word / TXT / Markdown：按块级元素翻，保留标题和分段 ——
+  var FLOWSEL="p,li,h1,h2,h3,h4,h5,h6,blockquote,dd,dt,figcaption,td,th,pre";
+  function flowBlocks(){
+    if(!rdContent)return [];
+    var els=[].slice.call(rdContent.querySelectorAll(FLOWSEL)).filter(function(el){
+      return !el.querySelector(FLOWSEL)&&(el.textContent||"").trim().length>1;});
+    var out=[];
+    if(els.length===1&&els[0].tagName==="PRE"){                         // 纯 txt：按空行切段
+      var txt=els[0].textContent||"";
+      (/\n\s*\n/.test(txt)?txt.split(/\n\s*\n/):txt.split(/\n/)).forEach(function(p){
+        p=p.replace(/\s+/g," ").trim();if(p)out.push({tag:"p",t:p});});
+      return out;}
+    els.forEach(function(el){
+      var t=(el.textContent||"").replace(/\s+/g," ").trim();
+      if(!t)return;
+      var tag=el.tagName.toLowerCase();
+      if(!/^(h[1-6]|li)$/.test(tag))tag="p";
+      out.push({tag:tag,t:t});});
+    return out;}
+  async function flowTrans(onp){
+    var bs=flowBlocks(),cut=0;
+    if(bs.length>300){cut=bs.length-300;bs=bs.slice(0,300);}
+    if(!bs.length)return {flow:1,b:[]};
+    var tr=await translateBlocks(bs.map(function(b){return b.t;}),onp);
+    return {flow:1,cut:cut,b:bs.map(function(b,i){return [b.tag,b.t,tr[i]||""];})};}
+  function transKey(n){
+    if(!curBook)return "";
+    var base=curBook.id+"#";
+    if(curBook.type==="pdf")base+="p"+(n||(curPdf&&curPdf.page)||1);
+    else if(curBook.type==="epub")base+="c"+((curEpub&&curEpub.ch)||0);
+    else base+="doc";
+    return base+"@"+trLang;}
+  function trDoneMap(){
+    if(!curBook)return {};
+    if(curBook.trLang!==trLang){curBook.trLang=trLang;curBook.trDone={};}
+    curBook.trDone=curBook.trDone||{};
+    return curBook.trDone;}
+  function renderTrans(v){
+    var body=trBodyEl();if(!body)return;
+    if(!v||!v.b||!v.b.length){
+      body.innerHTML='<div class="tr-empty">这一页没找到可翻译的文字。<br>要是扫描件，先点上面「🔍 OCR」识别，再点 ⟳ 重译。</div>';return;}
+    if(v.flow){
+      body.innerHTML='<div class="tr-flow">'+v.b.map(function(b){
+        var src=esc(b[1]||""),tr=esc(b[2]||"");
+        if(/^h[1-6]$/.test(b[0]))return '<h3 title="'+src+'">'+tr+'</h3>';
+        if(b[0]==="li")return '<p class="li" title="'+src+'">· '+tr+'</p>';
+        return '<p title="'+src+'">'+tr+'</p>';}).join("")+
+        (v.cut?'<p class="src">（这一节太长，先翻了前 300 段，还剩 '+v.cut+' 段）</p>':"")+'</div>';
+      return;}
+    if(trStyle==="flow"){
+      body.innerHTML='<div class="tr-flow">'+v.b.map(function(b){
+        return b[5]?('<h3 title="'+esc(b[6])+'">'+esc(b[7]||"")+'</h3>')
+                   :('<p title="'+esc(b[6])+'">'+esc(b[7]||"")+'</p>');}).join("")+'</div>';
+      return;}
+    var W=Math.max(180,body.clientWidth-16),s=W/(v.w||600);
+    body.innerHTML='<div class="tr-page" style="width:'+Math.round(v.w*s)+'px;height:'+Math.round(v.h*s)+'px">'+
+      v.b.map(function(b,i){
+        return '<div class="tb'+(b[5]?" hd":"")+'" data-i="'+i+'" title="'+esc(b[6]||"")+'" style="left:'+
+          (b[0]*s).toFixed(1)+'px;top:'+(b[1]*s).toFixed(1)+'px;width:'+Math.max(12,b[2]*s).toFixed(1)+
+          'px;font-size:'+Math.max(7,b[4]*s*0.96).toFixed(1)+'px">'+esc(b[7]||"")+'</div>';}).join("")+'</div>';
+    var boxes=body.querySelectorAll(".tb");                              // 放不下就自动缩字号
+    v.b.forEach(function(b,i){
+      var el=boxes[i];if(!el)return;
+      var lim=Math.max(b[3]*s*1.3,b[4]*s*1.7),guard=0;
+      while(el.scrollHeight>lim&&guard++<9){
+        var f=parseFloat(el.style.fontSize)||10;
+        if(f<=6.5)break;
+        el.style.fontSize=(f*0.9).toFixed(1)+"px";}});}
+  function biUpdate(force){
+    if(!biOn||!curBook)return;
+    if(biPending)clearTimeout(biPending);
+    biPending=setTimeout(function(){biRun(force);},force?0:200);}
+  async function biRun(force){
+    if(!biOn||!curBook)return;
+    var seq=++biSeq,key=transKey(),body=trBodyEl();
+    if(!force){
+      var c=await tGet(key);
+      if(seq!==biSeq)return;
+      if(c&&c.v){renderTrans(c.v);return;}}
+    var eng=(trEngine==="ai")?(aiProvider==="ollama"?("本地 "+(ollamaModel||"AI")):("Gemini")):"Google 翻译";
+    if(body)body.innerHTML='<div class="tr-wait">翻译中…（'+esc(eng)+' → '+esc(LANGN[trLang]||trLang)+'）</div>';
+    try{
+      var v=curPdf?await pdfPageTrans(curPdf.page||1):await flowTrans();
+      if(seq!==biSeq)return;
+      await tPut(key,v);
+      if(curPdf){trDoneMap()[curPdf.page||1]=1;bPut("meta",curBook);}
+      renderTrans(v);
+    }catch(e){
+      if(seq!==biSeq)return;
+      if(body)body.innerHTML='<div class="tr-empty">翻译失败：'+esc(String(e&&e.message||e))+
+        '<br>Google 免费接口偶尔会限流，等几秒点 ⟳ 重试，<br>也可以在设置里把翻译引擎换成 AI。</div>';}}
+  function toggleBi(on){
+    var m=document.getElementById("rd-main");if(!m)return;
+    var want=(on===undefined)?!m.classList.contains("bi-on"):!!on;
+    m.classList.toggle("bi-on",want);biOn=want;save("tt_rdbi",want);
+    var b=document.getElementById("rd-bi-btn");if(b)b.classList.toggle("on",want);
+    if(want&&m.classList.contains("notes-on"))toggleNotes(false);
+    relayoutPdf();
+    if(want)biUpdate();else{bookTrRun=false;trProg(-1);}}
+  function trProg(done,total){
+    var el=document.getElementById("tr-prog");if(!el)return;
+    if(done<0){el.style.display="none";return;}
+    el.style.display="flex";
+    el.querySelector(".bar i").style.width=(total?Math.round(done/total*100):0)+"%";
+    el.querySelector(".t").textContent=done+" / "+total+" 页";}
+  async function startBookTrans(anchor){
+    if(!curBook)return;
+    if(!curPdf){ttAlert("「整本」目前只支持 PDF；EPUB / Word / TXT 是翻到哪一节就自动翻哪一节。");return;}
+    if(bookTrRun){bookTrRun=false;return;}
+    var done=trDoneMap(),todo=[];
+    for(var i=1;i<=curPdf.n;i++)if(!done[i])todo.push(i);
+    if(!todo.length){ttAlert("这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）");return;}
+    var mins=Math.max(1,Math.ceil(todo.length*(trEngine==="ai"?3:1.7)/60));
+    if(!await ttConfirm("把整本翻完？还剩 "+todo.length+" 页，大约 "+mins+" 分钟。\n中途可以随时点「停」，翻好的页会存下来，下次从没翻的那页接着来。",{anchor:anchor}))return;
+    bookTrRun=true;
+    var btn=document.getElementById("tr-all");if(btn)btn.textContent="翻译中";
+    var fails=0,k=0;
+    trProg(0,todo.length);
+    while(k<todo.length&&bookTrRun){
+      var p=todo[k];
+      try{
+        var v=await pdfPageTrans(p);
+        await tPut(curBook.id+"#p"+p+"@"+trLang,v);
+        trDoneMap()[p]=1;
+        if(k%5===4)await bPut("meta",curBook);
+        fails=0;
+        if(p===(curPdf.page||1))biUpdate(true);
+      }catch(e){
+        fails++;
+        if(fails>=4){ttAlert("翻译中断了（多半是 Google 免费接口限流）。已经翻好 "+k+" 页，过几分钟再点「📚 整本」会从没翻的那页接着来。");break;}
+        await sleepMs(4000);continue;}                                   // 同一页退一步重试
+      k++;trProg(k,todo.length);
+      await sleepMs(trEngine==="ai"?120:260);}
+    await bPut("meta",curBook);
+    bookTrRun=false;trProg(-1);
+    if(btn)btn.textContent="📚 整本";}
+
+  // ===== 沉浸式阅读（隐藏所有按钮，全屏看书）=====
+  var zenOn=false,zenT=null;
+  function showZenBar(){if(zenT){clearTimeout(zenT);zenT=null;}document.body.classList.add("zbar");}
+  function hideZenBarSoon(ms){
+    if(zenT)clearTimeout(zenT);
+    zenT=setTimeout(function(){document.body.classList.remove("zbar");},ms||900);}
+  function toggleZen(on){
+    var want=(on===undefined)?!zenOn:!!on;
+    if(want===zenOn)return;
+    zenOn=want;document.body.classList.toggle("zen",want);
+    var b=document.getElementById("rd-zen-btn");if(b)b.classList.toggle("on",want);
+    save("tt_rdzen",want);
+    if(want){
+      showZenBar();hideZenBarSoon(1800);
+      try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)
+        document.documentElement.requestFullscreen().catch(function(){});}catch(e){}
+    }else{
+      document.body.classList.remove("zbar");
+      try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
+    setTimeout(function(){relayoutPdf();updateScrub();biUpdate();},80);}
 
   // 阅读中划词
   var rdPop=null,rdPopWord=null,rdPopTimer=null,rdPopHover=false;
@@ -6557,9 +6944,41 @@ margin-left: -22px;
         var id=dragId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));if(!id)return;
         var fid=t.getAttribute("data-drop");
         bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
+      // 双语对照
+      document.getElementById("rd-bi-btn").addEventListener("click",function(){toggleBi();});
+      document.getElementById("tr-close").addEventListener("click",function(){toggleBi(false);});
+      document.getElementById("tr-redo").addEventListener("click",function(){biUpdate(true);});
+      document.getElementById("tr-all").addEventListener("click",function(){startBookTrans(this);});
+      document.getElementById("tr-stop").addEventListener("click",function(){bookTrRun=false;trProg(-1);});
+      var tsBox=document.getElementById("tr-style");
+      tsBox.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-ts")===trStyle);});
+      tsBox.addEventListener("click",function(e){
+        var b=e.target.closest("[data-ts]");if(!b)return;
+        trStyle=b.getAttribute("data-ts");save("tt_trstyle",trStyle);
+        tsBox.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+        biUpdate();});
+      var tlSel=document.getElementById("tr-lang");
+      tlSel.innerHTML=Object.keys(LANGN).map(function(k){return '<option value="'+k+'">'+esc(LANGN[k])+'</option>';}).join("");
+      tlSel.value=trLang;
+      tlSel.addEventListener("change",function(){trLang=this.value;save("tt_trlang",trLang);biUpdate();});
+      // 沉浸式阅读
+      document.getElementById("rd-zen-btn").addEventListener("click",function(){toggleZen();});
+      document.getElementById("rd-zen-exit").addEventListener("click",function(){toggleZen(false);});
+      document.addEventListener("mousemove",function(e){
+        if(!zenOn)return;
+        if(e.clientY<=42)showZenBar();
+        else if(e.clientY>150&&document.body.classList.contains("zbar"))hideZenBarSoon(600);});
+      var zbarEl=document.querySelector("#rd-read .rd-bar");
+      if(zbarEl){
+        zbarEl.addEventListener("mouseenter",function(){if(zenOn)showZenBar();});
+        zbarEl.addEventListener("mouseleave",function(){if(zenOn)hideZenBarSoon(700);});}
+      document.addEventListener("fullscreenchange",function(){
+        if(zenOn&&!document.fullscreenElement)toggleZen(false);});
       // 笔记栏
       document.getElementById("rd-notes-btn").addEventListener("click",function(){toggleNotes();});
       if(load("tt_rdnotes",false))toggleNotes(true);
+      if(load("tt_rdbi",false))toggleBi(true);
+      if(load("tt_rdzen",false))toggleZen(true);
       document.getElementById("rd-notes").addEventListener("click",async function(e){
         if(e.target.closest("#rn-close")){toggleNotes(false);return;}
         var pd=e.target.closest("[data-pdone]");
@@ -6596,7 +7015,7 @@ margin-left: -22px;
         else if(!a)clearLink();});
       rdContent.addEventListener("mouseleave",clearLink);
       rdContent.addEventListener("scroll",clearLink);
-      window.addEventListener("resize",function(){clearLink();relayoutPdf();});
+      window.addEventListener("resize",function(){clearLink();relayoutPdf();biUpdate();});
       // 点 PDF 原文批注 → 打开笔记栏并定位
       rdContent.addEventListener("click",function(e){
         var pa=e.target.closest(".pa");if(!pa)return;
@@ -6714,7 +7133,7 @@ margin-left: -22px;
       document.addEventListener("mousedown",function(e){
         if(rdPop&&rdPop.style.display!=="none"&&!rdPop.contains(e.target)&&!rdContent.contains(e.target))hideRdPop();});
       document.addEventListener("keydown",function(e){
-        if(e.key==="Escape")hideRdPop();
+        if(e.key==="Escape"){hideRdPop();if(zenOn)toggleZen(false);}
         if(state.tab!=="reader"||document.getElementById("rd-read").style.display==="none")return;
         if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
         if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
