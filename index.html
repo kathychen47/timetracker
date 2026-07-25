@@ -485,6 +485,7 @@
   .toc-add{display:block;width:100%;border:1px dashed var(--border);background:transparent;color:var(--primary);
     border-radius:9px;padding:7px;font-size:12.5px;cursor:pointer;font-family:inherit;margin-bottom:10px}
   .toc-add:hover{border-color:var(--primary);background:var(--primary-soft)}
+  .toc-scan{font-size:11.5px;color:var(--muted);margin:-4px 0 8px;padding-left:4px}
   .toc-h{font-size:11px;color:var(--muted);margin:8px 0 4px;padding-left:4px}
   .toc-i.mine .del{opacity:0;color:var(--muted);font-size:11px;padding:0 3px}
   .toc-i.mine:hover .del{opacity:1}
@@ -5893,8 +5894,8 @@ margin-left: -22px;
               tocData.push({t:it.title||"（无标题）",d:depth,page:pg});
               if(it.items&&it.items.length)await walk(it.items,depth+1);}};
           await walk(out,0);}
-        if(!tocData.length)                       // 没有书签就按页列
-          for(var p=1;p<=curPdf.n;p++)tocData.push({t:"第 "+p+" 页",d:0,page:p});
+        if(!tocData.length&&curBook.autoToc&&curBook.autoToc.length)
+          tocData=curBook.autoToc.slice();        // 用上次自动识别的结果（没有就留空，让用户点扫描）
       }else if(curEpub){
         curEpub.spine.forEach(function(href,i){
           var nm=decodeURIComponent(String(href).split("/").pop().replace(/\.[^.]+$/,""));
@@ -5902,6 +5903,53 @@ margin-left: -22px;
       }
     }catch(e){}
     renderToc();}
+  // 从正文自动认标题（PDF 没内置书签时用：字号比正文大 + 章节号格式）
+  var autoTocRunning=false;
+  async function autoToc(){
+    if(!curPdf||autoTocRunning)return;
+    autoTocRunning=true;
+    var found=[],box=document.getElementById("rd-toc");
+    var note=function(t){var e=document.getElementById("toc-scan");if(e)e.textContent=t;};
+    try{
+      for(var p=1;p<=curPdf.n;p++){
+        if(p%10===1)note("扫描中… "+p+" / "+curPdf.n+"（已找到 "+found.length+" 条）");
+        var pg=await curPdf.doc.getPage(p);
+        var tc=await pg.getTextContent();
+        var lines={},sizes=[];
+        (tc.items||[]).forEach(function(it){
+          if(!it.str||!it.str.trim())return;
+          var h=Math.abs((it.transform&&it.transform[3])||it.height||0);
+          if(!h)return;
+          var y=Math.round((it.transform[5]||0)/2)*2;      // 同一行合并
+          if(!lines[y])lines[y]={h:h,parts:[],x:it.transform[4]||0};
+          lines[y].parts.push(it.str);
+          lines[y].h=Math.max(lines[y].h,h);
+          sizes.push(h);});
+        if(!sizes.length)continue;
+        sizes.sort(function(a,b){return a-b;});
+        var med=sizes[Math.floor(sizes.length/2)];
+        Object.keys(lines).forEach(function(y){
+          var L=lines[y],t=L.parts.join(" ").replace(/\s+/g," ").trim();
+          if(t.length<3||t.length>90)return;
+          var numbered=/^(\d+(\.\d+){0,3})\s+[A-Za-z一-鿿]/.test(t);
+          var chapter=/^(chapter|part|appendix|第\s*[0-9一二三四五六七八九十]+\s*[章节篇])\b/i.test(t);
+          var bigger=L.h>=med*1.18;
+          if(!(chapter||(numbered&&L.h>=med*1.02)||(bigger&&t.length<60)))return;
+          if(/^\d+$/.test(t)||/\.{4,}\s*\d+$/.test(t))return;   // 纯页码 / 目录页的点线
+          var depth=numbered?((t.match(/^(\d+(\.\d+){0,3})/)[1].split(".").length)-1):0;
+          found.push({t:t,d:Math.min(3,depth),page:p,h:L.h,y:+y});});
+        if(p%25===0)await new Promise(function(r){setTimeout(r,0);});   // 让出主线程
+      }
+      // 同页同标题去重，按页+位置排序
+      var seen={},out=[];
+      found.sort(function(a,b){return a.page-b.page||b.y-a.y;});
+      found.forEach(function(f){var k=f.page+"|"+f.t;if(seen[k])return;seen[k]=1;out.push({t:f.t,d:f.d,page:f.page});});
+      curBook.autoToc=out;bPut("meta",curBook);
+      tocData=out.slice();
+      note("");renderToc();
+      if(!out.length)ttAlert("没认出标题，可能这本书排版比较特殊——可以用「＋ 把当前页加进目录」自己加");
+    }catch(e){note("扫描失败："+String(e&&e.message||e));}
+    autoTocRunning=false;}
   function myMarks(){return (curBook&&curBook.marks)||[];}
   async function addMark(anchor){
     if(!curBook)return;
@@ -5918,13 +5966,14 @@ margin-left: -22px;
     var cur=curPdf?curPdf.page:(curEpub?curEpub.ch:0);
     var head='<div class="rn-top"><span class="rn-title">☰ 目录 '+((tocData||[]).length+mine.length)+'</span>'+
       '<button class="rn-x" id="toc-close" title="隐藏">✕</button></div>'+
-      '<button class="toc-add" id="toc-add">＋ 把当前页加进目录</button>';
+      '<button class="toc-add" id="toc-add">＋ 把当前页加进目录</button>'+
+      (curPdf?'<button class="toc-add" id="toc-scan-btn">🔎 从正文自动识别标题</button><div class="toc-scan" id="toc-scan"></div>':"");
     var mineHtml=mine.length?('<div class="toc-h">⭐ 我加的</div>'+mine.map(function(m){
       var on=curPdf?(m.page===cur):(m.ch===cur);
       return '<button class="toc-i mine'+(on?" on":"")+'" data-mark="'+m.id+'">'+
         '<span class="t">'+esc(m.t)+'</span><span class="pg">'+(m.page||((m.ch||0)+1))+'</span>'+
         '<span class="del" data-delmark="'+m.id+'" title="删除">✕</span></button>';}).join("")):"";
-    var auto=(!tocData||!tocData.length)?'<div class="rn-empty">这本书没有内置目录<br>用上面的按钮自己加</div>'
+    var auto=(!tocData||!tocData.length)?'<div class="rn-empty">这本书没有内置目录<br>点上面「🔎 自动识别标题」试试，<br>或自己加书签</div>'
       :('<div class="toc-h">'+(mine.length?"书里的目录":"")+'</div>'+tocData.map(function(t,i){
         var on=curPdf?(t.page&&t.page===cur):(t.ch===cur);
         return '<button class="toc-i'+(on?" on":"")+'" data-toc="'+i+'" style="padding-left:'+(10+t.d*12)+'px">'+
@@ -6621,6 +6670,7 @@ margin-left: -22px;
         ocrPage(curPdf.page||1);});
       document.getElementById("rd-toc").addEventListener("click",function(e){
         if(e.target.closest("#toc-close")){toggleToc(false);return;}
+        if(e.target.closest("#toc-scan-btn")){autoToc();return;}
         if(e.target.closest("#toc-add")){addMark(document.getElementById("toc-add"));return;}
         var dm=e.target.closest("[data-delmark]");
         if(dm){e.stopPropagation();var mid=dm.getAttribute("data-delmark");
