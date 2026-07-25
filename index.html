@@ -446,6 +446,18 @@
   .rd-textlayer{position:absolute;inset:0;overflow:hidden;opacity:.25;line-height:1}
   .rd-textlayer > span{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;cursor:text}
   .rd-textlayer ::selection{background:#6366F1}
+  /* PDF 自带批注层 */
+  .pdf-annots{position:absolute;inset:0;pointer-events:none}
+  .pdf-annots .pa{position:absolute;pointer-events:auto;cursor:pointer;border-radius:2px}
+  .pdf-annots .pa.mark{background:color-mix(in srgb,var(--pc) 38%,transparent);
+    box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--pc) 55%,transparent)}
+  .pdf-annots .pa.note{background:var(--pc);border-radius:5px;font-size:11px;line-height:1.5;
+    display:grid;place-items:center;box-shadow:0 1px 4px rgba(0,0,0,.25)}
+  .pdf-annots .pa:hover{outline:2px solid var(--primary);outline-offset:1px}
+  .pdf-annots .pa.done{opacity:.32;filter:grayscale(.6)}
+  .rn-item.pdfann.done{opacity:.55}
+  .rn-item.pdfann.done .nt{text-decoration:line-through;text-decoration-color:var(--muted)}
+  .pa-chk{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted);cursor:pointer;margin-bottom:5px}
   .rd-empty{color:var(--muted);padding:40px 0;text-align:center}
   /* 阅读标注 */
   .rd-main{display:flex;gap:14px;align-items:flex-start}
@@ -5424,12 +5436,63 @@ margin-left: -22px;
     rdContent.scrollTop=top||0;
     savePos({ch:n,top:top||0});}
 
+  // ===== PDF 自带批注（别人加的高亮/评论）=====
+  var PDFSKIP={Popup:1,Link:1,Widget:1};
+  function annColor(c){return (c&&c.length>=3)?("rgb("+c[0]+","+c[1]+","+c[2]+")"):"#ffe58a";}
+  function pdfDone(){return (curBook&&curBook.pdfDone)||{};}
+  function pdfNotes(){return (curBook&&curBook.pdfNotes)||[];}
+  async function scanPdfAnnots(){
+    if(!curPdf||!curBook)return;
+    if(curBook.pdfScanned&&pdfNotes().length!==undefined&&curBook.pdfScanned===curPdf.n)return;
+    var out=[];
+    for(var p=1;p<=curPdf.n;p++){
+      try{
+        var pg=await curPdf.doc.getPage(p);
+        var as=await pg.getAnnotations({intent:"display"});
+        as.forEach(function(a){
+          if(PDFSKIP[a.subtype])return;
+          var txt=(a.contents||"").trim();
+          var hasMark=/Highlight|Underline|StrikeOut|Squiggly|Square|Circle|FreeText|Text|Ink/.test(a.subtype||"");
+          if(!txt&&!hasMark)return;
+          out.push({id:"p"+p+"_"+(a.id||out.length),page:p,sub:a.subtype||"Note",
+            author:(a.titleObj&&a.titleObj.str)||a.title||"",
+            text:txt,color:annColor(a.color),
+            rect:a.rect?a.rect.slice():null});});
+      }catch(e){}}
+    curBook.pdfNotes=out;curBook.pdfScanned=curPdf.n;bPut("meta",curBook);
+    renderNotes();}
+  async function drawPdfAnnots(page,vp,wrap){
+    try{
+      var as=await page.getAnnotations({intent:"display"});
+      var layer=document.createElement("div");layer.className="pdf-annots";
+      layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
+      var done=pdfDone();
+      as.forEach(function(a){
+        if(PDFSKIP[a.subtype]||!a.rect)return;
+        var r=pdfjsLib.Util.normalizeRect(a.rect);
+        var v=vp.convertToViewportRectangle(r);
+        var x=Math.min(v[0],v[2]),y=Math.min(v[1],v[3]),w=Math.abs(v[2]-v[0]),h=Math.abs(v[3]-v[1]);
+        var id="p"+curPdf.page+"_"+(a.id||"");
+        var isNote=/^(Text|FreeText)$/.test(a.subtype||"");
+        var el=document.createElement("div");
+        el.className="pa "+(isNote?"note":"mark")+(done[id]?" done":"");
+        el.setAttribute("data-pa",id);
+        el.style.left=x+"px";el.style.top=y+"px";
+        el.style.width=Math.max(isNote?18:6,w)+"px";el.style.height=Math.max(isNote?18:6,h)+"px";
+        el.style.setProperty("--pc",annColor(a.color));
+        if(a.contents)el.title=((a.titleObj&&a.titleObj.str)?(a.titleObj.str+"："):"")+a.contents;
+        if(isNote)el.textContent="📝";
+        layer.appendChild(el);});
+      if(layer.children.length)wrap.appendChild(layer);
+    }catch(e){}}
+
   async function openPdfBook(blob){
     await ensurePdfjs();
     var buf=await blob.arrayBuffer();
     var pdf=await pdfjsLib.getDocument({data:buf}).promise;
     curPdf={doc:pdf,page:1,n:pdf.numPages};
-    await showPdfPage((curBook.pos&&curBook.pos.page)||1);}
+    await showPdfPage((curBook.pos&&curBook.pos.page)||1);
+    scanPdfAnnots();}
 
   async function showPdfPage(n){
     if(!curPdf)return;
@@ -5450,6 +5513,7 @@ margin-left: -22px;
     await page.render({canvasContext:canvas.getContext("2d"),viewport:vp}).promise;
     try{var tc=await page.getTextContent();
       pdfjsLib.renderTextLayer({textContentSource:tc,textContent:tc,container:layer,viewport:vp,textDivs:[]});}catch(e){}
+    await drawPdfAnnots(page,vp,wrap);
     savePos({page:n});}
 
   function rdPrev(){if(curPdf)showPdfPage(curPdf.page-1);else if(curEpub)showChapter(curEpub.ch-1,0);}
@@ -5608,8 +5672,31 @@ margin-left: -22px;
     ["ul","bd","nt"].forEach(function(t){var n=cnt("t:"+t);
       if(n)html+=chip("t:"+t,({ul:"<u>U</u>",bd:"<b>B</b>",nt:"📝"}[t])+" "+n);});
     return html+'</div>';}
+  function renderPdfNotes(box){
+    var list=pdfNotes(),done=pdfDone();
+    var f=rdNF,shown=list.filter(function(a){
+      if(f==="pdf-todo")return !done[a.id];
+      if(f==="pdf-done")return !!done[a.id];
+      if(f.indexOf("au:")===0)return (a.author||"未署名")===f.slice(3);
+      return true;});
+    var authors={},todo=0;
+    list.forEach(function(a){authors[a.author||"未署名"]=(authors[a.author||"未署名"]||0)+1;if(!done[a.id])todo++;});
+    var chip=function(k,l){return '<button class="rn-f'+(rdNF===k?" on":"")+'" data-f="'+k+'">'+l+'</button>';};
+    var head='<div class="rn-top"><span class="rn-title">📄 原文批注 '+list.length+'（待处理 '+todo+'）</span>'+
+      '<button class="rn-x" id="rn-close" title="隐藏">✕</button></div><div class="rn-filters">'+
+      chip("all","全部 "+list.length)+chip("pdf-todo","待处理 "+todo)+chip("pdf-done","已完成 "+(list.length-todo));
+    Object.keys(authors).forEach(function(au){head+=chip("au:"+au,esc(au)+" "+authors[au]);});
+    head+='</div>';
+    box.innerHTML=head+(shown.length?shown.map(function(a){
+      return '<div class="rn-item pdfann'+(done[a.id]?" done":"")+'" data-page="'+a.page+'" data-pa="'+a.id+'" style="--ac:'+a.color+'">'+
+        '<label class="pa-chk"><input type="checkbox" data-pdone="'+a.id+'"'+(done[a.id]?" checked":"")+'> 已处理</label>'+
+        (a.text?'<div class="nt">'+esc(a.text)+'</div>':'<div class="nt" style="color:var(--muted)">（只有标记，无文字）</div>')+
+        '<div class="mt"><span class="tag">'+esc(a.sub)+'</span>'+(a.author?('<span>'+esc(a.author)+'</span>'):'')+
+        '<span>第 '+a.page+' 页</span><span class="grow"></span></div></div>';}).join("")
+      :'<div class="rn-empty">这个筛选下没有内容</div>');}
   function renderNotes(){
     var box=document.getElementById("rd-notes");if(!box)return;
+    if(curBook&&curBook.type==="pdf")return renderPdfNotes(box);
     var all=annList().slice().sort(function(a,b){return (a.sc||"").localeCompare(b.sc||"")||a.s-b.s;});
     if(!all.length){box.innerHTML='<div class="rn-top"><span class="rn-title">📝 笔记 · 标注</span><button class="rn-x" id="rn-close" title="隐藏">✕</button></div><div class="rn-empty">还没有笔记。<br>选中文字 → 点 📝 加笔记，<br>点色块高亮。</div>';return;}
     var shown=all.filter(annMatch);
@@ -5909,6 +5996,18 @@ margin-left: -22px;
       if(load("tt_rdnotes",false))toggleNotes(true);
       document.getElementById("rd-notes").addEventListener("click",async function(e){
         if(e.target.closest("#rn-close")){toggleNotes(false);return;}
+        var pd=e.target.closest("[data-pdone]");
+        if(pd){var pid=pd.getAttribute("data-pdone");
+          curBook.pdfDone=curBook.pdfDone||{};
+          if(pd.checked)curBook.pdfDone[pid]=true;else delete curBook.pdfDone[pid];
+          bPut("meta",curBook);renderNotes();
+          var mk=rdContent.querySelector('[data-pa="'+pid+'"]');if(mk)mk.classList.toggle("done",pd.checked);
+          return;}
+        var pj=e.target.closest(".pdfann");
+        if(pj&&!e.target.closest(".pa-chk")){
+          var pg=+pj.getAttribute("data-page");
+          if(curPdf&&pg&&pg!==curPdf.page)showPdfPage(pg);
+          return;}
         var ff=e.target.closest("[data-f]");
         if(ff){rdNF=ff.getAttribute("data-f");save("tt_rdnotefilter",rdNF);renderNotes();return;}
         var del=e.target.closest("[data-del]"),ed=e.target.closest("[data-edit]"),jp=e.target.closest("[data-jump]");
@@ -5932,6 +6031,13 @@ margin-left: -22px;
       rdContent.addEventListener("mouseleave",clearLink);
       rdContent.addEventListener("scroll",clearLink);
       window.addEventListener("resize",clearLink);
+      // 点 PDF 原文批注 → 打开笔记栏并定位
+      rdContent.addEventListener("click",function(e){
+        var pa=e.target.closest(".pa");if(!pa)return;
+        toggleNotes(true);
+        var el=document.querySelector('.rn-item[data-pa="'+pa.getAttribute("data-pa")+'"]');
+        if(el){el.scrollIntoView({block:"center",behavior:"smooth"});
+          el.style.borderColor="var(--primary)";setTimeout(function(){el.style.borderColor="";},1200);}});
       // 点正文里的笔记标记 → 跳到右边那条
       rdContent.addEventListener("click",function(e){
         var a=e.target.closest(".ann.nt");if(!a)return;
