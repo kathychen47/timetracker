@@ -351,7 +351,12 @@
   .rd-book .f{position:absolute;top:6px;left:6px;font-size:10.5px;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:1px 6px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd-book{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:transform .12s}
   .rd-book:hover{transform:translateY(-2px);border-color:var(--primary)}
-  .rd-cover{height:78px;border-radius:9px;display:grid;place-items:center;font-size:28px;margin-bottom:10px;background:var(--surface-2)}
+  .rd-cover{height:132px;border-radius:9px;display:grid;place-items:center;font-size:28px;margin-bottom:10px;
+    background:var(--surface-2);overflow:hidden;position:relative}
+  .rd-cover img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+  .rd-cover .txt{width:100%;height:100%;padding:9px 10px;box-sizing:border-box;overflow:hidden;
+    font-size:6.5px;line-height:1.5;color:var(--text);opacity:.62;text-align:left;white-space:pre-wrap;word-break:break-word;background:var(--surface)}
+  .rd-cover .em{position:absolute;right:5px;bottom:4px;font-size:15px;opacity:.85;text-shadow:0 1px 3px rgba(0,0,0,.25)}
   .rd-book .n{font-size:13.5px;font-weight:600;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   .rd-book .s{font-size:11.5px;color:var(--muted);margin-top:5px}
   .rd-book .x{position:absolute;top:6px;right:6px;border:none;background:var(--surface-2);color:var(--muted);border-radius:7px;
@@ -4732,11 +4737,64 @@ margin-left: -22px;
     html+=rdFolders.map(function(f){return '<button class="rd-fchip'+(rdFolder===f.id?" on":"")+'" data-f="'+f.id+'" data-drop="'+f.id+'">📁 '+esc(f.name)+' '+cnt(f.id)+
       ' <span class="e" data-ren="'+f.id+'" title="重命名">✎</span><span class="e" data-delf="'+f.id+'" title="删除文件夹">✕</span></button>';}).join("");
     el.innerHTML=html;}
-  async function renderShelf(){
+  // 生成封面：PDF=首页缩略图 / EPUB=封面图 / 文本=首段预览
+  async function makeCover(meta,blob){
+    try{
+      if(meta.type==="pdf"){
+        await ensurePdfjs();
+        var pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+        var page=await pdf.getPage(1),base=page.getViewport({scale:1});
+        var scale=Math.min(1.4,300/base.width),vp=page.getViewport({scale:scale});
+        var cv=document.createElement("canvas");cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);
+        await page.render({canvasContext:cv.getContext("2d"),viewport:vp}).promise;
+        return {kind:"img",data:cv.toDataURL("image/jpeg",0.72)};
+      }
+      if(meta.type==="epub"){
+        await ensureJSZip();
+        var zip=await JSZip.loadAsync(blob);
+        var names=Object.keys(zip.files);
+        // 先找文件名像封面的图片
+        var cand=names.filter(function(n){return /\.(jpe?g|png|gif|webp)$/i.test(n)&&/cover/i.test(n);})[0];
+        if(!cand){ // 否则取 OPF 里 meta name=cover 指向的项，再不行取最大的图片
+          var imgs=names.filter(function(n){return /\.(jpe?g|png|webp)$/i.test(n);});
+          imgs.sort(function(a,b){return (zip.files[b]._data?zip.files[b]._data.uncompressedSize||0:0)-(zip.files[a]._data?zip.files[a]._data.uncompressedSize||0:0);});
+          cand=imgs[0];}
+        if(cand){
+          var b=await zip.file(cand).async("blob");
+          if(b.size<1.5e6){var du=await new Promise(function(res){var fr=new FileReader();fr.onload=function(){res(fr.result);};fr.onerror=function(){res(null);};fr.readAsDataURL(b);});
+            if(du)return {kind:"img",data:du};}}
+        return null;
+      }
+      if(meta.type==="txt"){
+        var t=(await blob.slice(0,4000).text()).replace(/\s+\n/g,"\n").trim();
+        return {kind:"txt",data:t.slice(0,600)};
+      }
+      if(meta.type==="docx"){
+        await ensureMammoth();
+        var r=await mammoth.extractRawText({arrayBuffer:await blob.arrayBuffer()});
+        return {kind:"txt",data:(r.value||"").trim().slice(0,600)};
+      }
+      if(meta.type==="html"){
+        var h=await blob.text();
+        var doc=new DOMParser().parseFromString(h,"text/html");
+        return {kind:"txt",data:(doc.body?doc.body.textContent:"").trim().slice(0,600)};
+      }
+    }catch(e){}
+    return null;}
+  async function ensureCovers(list){
+    for(var i=0;i<list.length;i++){var m=list[i];
+      if(m.cover||m.coverTried)continue;
+      var rec=await bGet("blob",m.id);if(!rec||!rec.blob){m.coverTried=true;await bPut("meta",m);continue;}
+      var cv=await makeCover(m,rec.blob);
+      m.cover=cv;m.coverTried=true;await bPut("meta",m);
+      renderShelfFrom(list);}
+  }
+  function coverHTML(b,icon){
+    if(b.cover&&b.cover.kind==="img")return '<img src="'+b.cover.data+'" alt=""><span class="em">'+icon+'</span>';
+    if(b.cover&&b.cover.kind==="txt")return '<div class="txt">'+esc(b.cover.data)+'</div><span class="em">'+icon+'</span>';
+    return icon;}
+  function renderShelfFrom(all){
     var g=document.getElementById("rd-grid");if(!g)return;
-    var all=await bAll();
-    all.sort(function(a,b){return (b.added||0)-(a.added||0);});
-    renderFolders(all);
     var list=(rdFolder==="all")?all:all.filter(function(b){return (b.folder||"")===rdFolder;});
     if(!all.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown / HTML。</div>';return;}
     if(!list.length){g.innerHTML='<div class="rd-empty">这个文件夹还没有书。把书拖到上面的文件夹标签上即可归类。</div>';return;}
@@ -4745,8 +4803,16 @@ margin-left: -22px;
       var p=b.pos?(b.type==="pdf"?("第 "+(b.pos.page||1)+" 页"):(b.type==="epub"?("第 "+((b.pos.ch||0)+1)+" 节"):"读过")):"未读";
       var fn=(rdFolder==="all"&&b.folder)?('<span class="f">'+esc(folderName(b.folder))+'</span>'):"";
       return '<div class="rd-book" draggable="true" data-id="'+b.id+'">'+fn+'<button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
-        '<div class="rd-cover">'+(icon[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
+        '<div class="rd-cover">'+coverHTML(b,icon[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
         '<div class="s">'+fmtSize(b.size||0)+' · '+p+'</div></div>';}).join("");}
+  async function renderShelf(){
+    var g=document.getElementById("rd-grid");if(!g)return;
+    var all=await bAll();
+    all.sort(function(a,b){return (b.added||0)-(a.added||0);});
+    renderFolders(all);
+    renderShelfFrom(all);
+    ensureCovers(all);   // 后台逐本生成封面，好一本刷一本
+  }
 
   function showShelf(){document.getElementById("rd-shelf").style.display="";document.getElementById("rd-read").style.display="none";
     hideRdPop();curEpub=null;curPdf=null;curBook=null;renderShelf();}
