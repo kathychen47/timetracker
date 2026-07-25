@@ -3949,7 +3949,7 @@ margin-left: -22px;
     var box=document.getElementById("wb-list");if(!box)return;updateWbCount();renderWbGroups();
     var startBtn=document.getElementById("wb-start"),hint=document.getElementById("wb-hint"),exp=document.getElementById("wb-export");
     var arr=wbFiltered();if(exp)exp.disabled=!arr.length;
-    if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点「★ 加入生词本」把词收进来。")+'</div>';if(startBtn)startBtn.disabled=true;if(hint)hint.textContent="";return;}
+    if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点右上角的小星星把词收进来。")+'</div>';if(startBtn)startBtn.disabled=true;if(hint)hint.textContent="";return;}
     if(startBtn)startBtn.disabled=false;if(hint)hint.textContent="共 "+arr.length+" 词";
     arr=arr.slice().sort(function(a,b){return (b.ts||0)-(a.ts||0);});
     box.innerHTML=arr.map(function(x){var meta=(x.dict==="collins"?"中→英":"英→中")+(wbActive==="all"?" · "+esc(wbGroupName(wbGroupOf(x))):"");
