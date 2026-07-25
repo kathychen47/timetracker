@@ -5780,7 +5780,7 @@ margin-left: -22px;
       canvas.style.width=Math.floor(vp.width)+"px";canvas.style.height=Math.floor(vp.height)+"px";
       var layer=document.createElement("div");layer.className="rd-textlayer";layer.style.setProperty("--scale-factor",scale);
       layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
-      wrap.innerHTML="";wrap.appendChild(canvas);wrap.appendChild(layer);
+      wrap.innerHTML="";wrap.classList.remove("ph");wrap.appendChild(canvas);wrap.appendChild(layer);
       wrap.style.height="";
       await page.render({canvasContext:canvas.getContext("2d"),viewport:vp,
         transform:dpr!==1?[dpr,0,0,dpr,0,0]:null}).promise;
