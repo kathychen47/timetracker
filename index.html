@@ -5447,25 +5447,60 @@ margin-left: -22px;
   function annColor(c){return (c&&c.length>=3)?("rgb("+c[0]+","+c[1]+","+c[2]+")"):"#ffe58a";}
   function pdfDone(){return (curBook&&curBook.pdfDone)||{};}
   function pdfNotes(){return (curBook&&curBook.pdfNotes)||[];}
+  // 取出被这个标注盖住的原文（高亮/下划线常常没有评论文字）
+  function quoteUnder(a,items){
+    try{
+      if(!items||!items.length)return "";
+      if(!/Highlight|Underline|StrikeOut|Squiggly/.test(a.subtype||""))return "";
+      var boxes=[];
+      var qp=a.quadPoints;
+      if(qp&&qp.length){
+        qp.forEach(function(q){
+          if(q&&q.length&&typeof q[0]==="object"){        // [{x,y}×4]
+            var xs=q.map(function(pt){return pt.x;}),ys=q.map(function(pt){return pt.y;});
+            boxes.push([Math.min.apply(null,xs),Math.min.apply(null,ys),Math.max.apply(null,xs),Math.max.apply(null,ys)]);
+          }else if(typeof q==="number"){/*扁平数组稍后处理*/}});
+        if(!boxes.length&&typeof qp[0]==="number"){
+          for(var i=0;i+7<qp.length;i+=8){
+            var xs2=[qp[i],qp[i+2],qp[i+4],qp[i+6]],ys2=[qp[i+1],qp[i+3],qp[i+5],qp[i+7]];
+            boxes.push([Math.min.apply(null,xs2),Math.min.apply(null,ys2),Math.max.apply(null,xs2),Math.max.apply(null,ys2)]);}}}
+      if(!boxes.length&&a.rect){var r=a.rect;
+        boxes.push([Math.min(r[0],r[2]),Math.min(r[1],r[3]),Math.max(r[0],r[2]),Math.max(r[1],r[3])]);}
+      if(!boxes.length)return "";
+      var hits=[];
+      items.forEach(function(it){
+        if(!it.transform||!it.str||!it.str.trim())return;
+        var x=it.transform[4],y=it.transform[5],w=it.width||0,h=it.height||10;
+        var cx=x+w/2,cy=y+h/2;
+        for(var b=0;b<boxes.length;b++){var bx=boxes[b];
+          if(cx>=bx[0]-1&&cx<=bx[2]+1&&cy>=bx[1]-1&&cy<=bx[3]+1){hits.push({y:y,x:x,s:it.str});return;}}});
+      if(!hits.length)return "";
+      hits.sort(function(m,n){return (n.y-m.y)||(m.x-n.x);});
+      return hits.map(function(h){return h.s;}).join(" ").replace(/\s+/g," ").trim().slice(0,300);
+    }catch(e){return "";}}
   async function scanPdfAnnots(){
     if(!curPdf||!curBook)return;
-    if(curBook.pdfScanned&&pdfNotes().length!==undefined&&curBook.pdfScanned===curPdf.n)return;
+    if(curBook.pdfScanV===2&&curBook.pdfScanned===curPdf.n)return;   // v2：带评论文字+原文摘录
     var out=[];
     for(var p=1;p<=curPdf.n;p++){
       try{
         var pg=await curPdf.doc.getPage(p);
         var as=await pg.getAnnotations({intent:"display"});
+        if(!as.length)continue;
+        var items=[];
+        try{items=(await pg.getTextContent()).items||[];}catch(e){}
         as.forEach(function(a){
           if(PDFSKIP[a.subtype])return;
-          var txt=(a.contents||"").trim();
+          // 新版 pdf.js 的批注文字在 contentsObj.str
+          var txt=((a.contentsObj&&a.contentsObj.str)||a.contents||"").trim();
           var hasMark=/Highlight|Underline|StrikeOut|Squiggly|Square|Circle|FreeText|Text|Ink/.test(a.subtype||"");
           if(!txt&&!hasMark)return;
           out.push({id:"p"+p+"_"+(a.id||out.length),page:p,sub:a.subtype||"Note",
             author:(a.titleObj&&a.titleObj.str)||a.title||"",
-            text:txt,color:annColor(a.color),
+            text:txt,quote:quoteUnder(a,items),color:annColor(a.color),
             rect:a.rect?a.rect.slice():null});});
       }catch(e){}}
-    curBook.pdfNotes=out;curBook.pdfScanned=curPdf.n;bPut("meta",curBook);
+    curBook.pdfNotes=out;curBook.pdfScanned=curPdf.n;curBook.pdfScanV=2;bPut("meta",curBook);
     renderNotes();}
   async function drawPdfAnnots(page,vp,wrap){
     try{
@@ -5762,7 +5797,8 @@ margin-left: -22px;
     box.innerHTML=head+(shown.length?shown.map(function(a){
       return '<div class="rn-item pdfann'+(done[a.id]?" done":"")+'" data-page="'+a.page+'" data-pa="'+a.id+'" style="--ac:'+a.color+'">'+
         '<label class="pa-chk"><input type="checkbox" data-pdone="'+a.id+'"'+(done[a.id]?" checked":"")+'> 已处理</label>'+
-        (a.text?'<div class="nt">'+esc(a.text)+'</div>':'<div class="nt" style="color:var(--muted)">（只有标记，无文字）</div>')+
+        (a.quote?'<div class="q">'+esc(a.quote)+'</div>':'')+
+        (a.text?'<div class="nt">'+esc(a.text)+'</div>':(a.quote?'':'<div class="nt" style="color:var(--muted)">（只有标记，无文字）</div>'))+
         '<div class="mt"><span class="tag">'+esc(a.sub)+'</span>'+(a.author?('<span>'+esc(a.author)+'</span>'):'')+
         '<span>第 '+a.page+' 页</span><span class="grow"></span></div></div>';}).join("")
       :'<div class="rn-empty">这个筛选下没有内容</div>');}
