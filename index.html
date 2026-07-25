@@ -682,6 +682,14 @@
   .wbc-lg{display:flex;gap:12px;margin-top:9px;font-size:11px;color:var(--muted)}
   .wbc-lg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:4px;vertical-align:-1px}
   .wbc-empty{color:var(--muted);font-size:12px;padding:18px 0;text-align:center}
+  .wbc-note{font-size:11.5px;color:var(--muted);margin-top:8px;line-height:1.6}
+  .wb-eff{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:4px}
+  .wb-eff .ef{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:9px 11px}
+  .wb-eff .ef .k{font-size:11px;color:var(--muted)}
+  .wb-eff .ef .v{font-size:20px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+  .wb-eff .ef .v small{font-size:11px;font-weight:500;color:var(--muted)}
+  .wb-eff .ef .d{font-size:10.5px;margin-top:2px}
+  .wb-eff .ef .d.up{color:#2C8F68}.wb-eff .ef .d.down{color:#C2643F}
   .wt-row{margin-bottom:14px}
   .wt-row label.t{display:block;font-size:13.5px;font-weight:600;margin-bottom:6px}
   .wt-row textarea{width:100%;box-sizing:border-box;min-height:120px;padding:10px 12px;border:1px solid var(--border);
@@ -4584,10 +4592,12 @@ margin-left: -22px;
     for(var i=N-1;i>=0;i--){var d=addDays(today,-i),k=fmt(d),h=hist[k]||{n:0,r:0};
       days.push({k:k,d:d,n:h.n||0,r:h.r||0});max=Math.max(max,(h.n||0)+(h.r||0));}
     var totalN=days.reduce(function(a,x){return a+x.n;},0),totalR=days.reduce(function(a,x){return a+x.r;},0);
-    var c1='<div class="wbc"><h4>最近 14 天</h4><div class="sub">共学 '+(totalN+totalR)+' 次（新词 '+totalN+' · 复习 '+totalR+'）</div>'+
+    var c1='<div class="wbc"><h4>最近 14 天</h4><div class="sub">共学 '+(totalN+totalR)+' 次(新词 '+totalN+' · 复习 '+totalR+')'+
+      (function(){var mm=0;days.forEach(function(d){mm+=(hist[d.k]||{}).m||0;});return mm?("，"+mm+" 分钟"):"";})()+'</div>'+
       '<div class="wbc-bars">'+days.map(function(x,idx){
         var hn=x.n/max*100,hr=x.r/max*100;
-        return '<div class="col'+(idx===N-1?" today":"")+'" title="'+x.k+'：新词 '+x.n+' · 复习 '+x.r+'">'+
+        var mm=(hist[x.k]||{}).m||0;
+        return '<div class="col'+(idx===N-1?" today":"")+'" title="'+x.k+'：新词 '+x.n+' · 复习 '+x.r+(mm?(' · '+mm+' 分钟'):'')+'">'+
           (x.r?'<i class="b2" style="height:'+hr+'%"></i>':'')+
           (x.n?'<i class="b1" style="height:'+hn+'%"></i>':'')+'</div>';}).join("")+'</div>'+
       '<div class="wbc-x">'+days.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div>'+
@@ -4606,7 +4616,27 @@ margin-left: -22px;
         return '<div class="col'+(idx===0?" today":"")+'" title="'+fmt(x.d)+'：'+x.c+' 个">'+
           (x.c?'<i class="b1" style="height:'+(x.c/fmax*100)+'%;background:'+(idx===0?"#e09a3e":"var(--primary)")+'"></i>':'')+'</div>';}).join("")+'</div>'+
       '<div class="wbc-x">'+fut.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div></div>';
-    box.innerHTML=c1+c2;}
+    // ③ 效率分析
+    var actDays=Object.keys(hist).filter(function(k){var h=hist[k];return (h.n||0)+(h.r||0)>0;});
+    var sumW=0,sumM=0,best=null;
+    actDays.forEach(function(k){var h=hist[k],w=(h.n||0)+(h.r||0),mm=h.m||0;
+      sumW+=w;sumM+=mm;
+      if(mm>=1&&(!best||w/mm>best.rate))best={k:k,rate:w/mm,w:w,m:mm};});
+    var days14=0,mins14=0,w14=0;
+    days.forEach(function(d){var w=d.n+d.r;if(w){days14++;w14+=w;mins14+=(hist[d.k]||{}).m||0;}});
+    var spd=sumM?(sumW/sumM):0,spd14=mins14?(w14/mins14):0;
+    var c3='<div class="wbc" style="grid-column:1/-1"><h4>效率分析</h4><div class="sub">'+
+      (sumM?("累计 "+sumM+" 分钟 · "+sumW+" 词"):"还没有计时数据，背一轮就有了")+'</div>'+
+      '<div class="wb-eff">'+
+      '<div class="ef"><div class="k">平均速度</div><div class="v">'+(spd?spd.toFixed(1):"—")+'<small> 词/分</small></div></div>'+
+      '<div class="ef"><div class="k">近 14 天速度</div><div class="v">'+(spd14?spd14.toFixed(1):"—")+'<small> 词/分</small></div>'+
+        (spd&&spd14?('<div class="d '+(spd14>=spd?"up":"down")+'">'+(spd14>=spd?"↑":"↓")+' '+Math.abs(Math.round((spd14/spd-1)*100))+'% 对比总体</div>'):"")+'</div>'+
+      '<div class="ef"><div class="k">日均词量</div><div class="v">'+(days14?Math.round(w14/days14):"—")+'<small> 词</small></div></div>'+
+      '<div class="ef"><div class="k">日均时长</div><div class="v">'+(days14?Math.round(mins14/days14):"—")+'<small> 分</small></div></div>'+
+      '</div>'+
+      (best?('<div class="wbc-note">效率最高的一天：'+best.k+'　'+best.w+' 词 / '+best.m+' 分（'+best.rate.toFixed(1)+' 词/分）</div>'):"")+
+      '<div class="wbc-note">已坚持 '+actDays.length+' 天　·　近 14 天有 '+days14+' 天在背</div></div>';
+    box.innerHTML=c1+c2+c3;}
   function fmtWhen(t){var d=Math.round((t-Date.now())/DAY);
     if(d<=0)return "今天";if(d===1)return "明天";if(d<30)return d+" 天后";
     if(d<365)return Math.round(d/30)+" 个月后";return (d/365).toFixed(1)+" 年后";}
