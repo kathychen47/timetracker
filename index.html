@@ -4924,6 +4924,8 @@ margin-left: -22px;
     if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
     var tg=document.getElementById("tr-lang");
     if(tg)tg.addEventListener("change",function(){trLang=tg.value;save("tt_trlang",trLang);});
+    var at=document.getElementById("ann-tr");
+    if(at)at.addEventListener("change",function(){dictPrefs.annTranslate=at.checked;saveDictPrefs();});
     var sn=document.getElementById("srs-new");
     if(sn)sn.addEventListener("change",function(){dictPrefs.dailyNew=+sn.value||20;saveDictPrefs();renderWordbook();});
     var sr=document.getElementById("srs-rev");
