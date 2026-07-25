@@ -375,6 +375,12 @@
   .tx-in{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit}
   .tx-note{font-size:12px;color:var(--muted);line-height:1.7}
 
+  .rec-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--border);
+    background:var(--surface);border-radius:10px;padding:10px 13px;margin-bottom:7px;cursor:pointer;font-family:inherit;font-size:13.5px;color:var(--text)}
+  .rec-item:hover{border-color:var(--primary);background:var(--surface-2)}
+  .rec-item .l{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rec-item .p{flex:none;font-size:11.5px;color:var(--muted)}
+
   /* 自定义确认框 */
   #tt-pop{position:fixed;z-index:200;width:min(320px,88vw);background:var(--surface);border:1px solid var(--border);
     border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22);padding:14px 15px 12px;display:none;font-size:13.5px;line-height:1.65}
@@ -2655,6 +2661,7 @@ margin-left: -22px;
     <h3>设置</h3>
     <div class="set-shell">
       <div class="set-nav">
+        <button class="set-nav-i" type="button" data-pane="recent">🕘 最近常用</button>
         <button class="set-nav-i on" type="button" data-pane="account">👤 账号</button>
         <button class="set-nav-i" type="button" data-pane="ai">✨ AI 助手</button>
         <button class="set-nav-i" type="button" data-pane="gcal">📅 Google 日历</button>
@@ -2665,6 +2672,12 @@ margin-left: -22px;
         <button class="set-nav-i" type="button" data-pane="general">🌐 通用</button>
       </div>
       <div class="set-panes">
+    <div class="set-pane" data-pane="recent">
+      <div class="set-sec-h">🕘 最近常用</div>
+      <div class="set-desc" style="margin-bottom:12px">你最近改过的设置会排在这里，点一下直接跳过去。</div>
+      <div id="recent-list"></div>
+    </div>
+
     <div class="set-pane on" data-pane="account">
       <div class="set-sec-h">👤 账号 · 登录</div>
       <div class="set-item">
@@ -4016,7 +4029,46 @@ margin-left: -22px;
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
   document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
+  // ---------- 设置：最近常用 ----------
+  var recentSet=load("tt_recentset",[])||[];
+  function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
+  function labelOf(el){
+    var row=el.closest(".set-row"),item=el.closest(".set-item");
+    var t=row&&row.querySelector(".set-row-t");
+    if(t)return t.textContent.trim();
+    var lb=el.closest("label");
+    if(lb&&lb.textContent.trim())return lb.textContent.trim().slice(0,28);
+    if(item){var h=item.querySelector(".set-sec-h");if(h)return h.textContent.trim();}
+    return el.id||"设置";}
+  function noteRecent(el){
+    var pane=paneOf(el);if(!pane||pane==="recent")return;
+    var id=el.id||"";if(!id)return;
+    var rec={id:id,pane:pane,label:labelOf(el),ts:Date.now()};
+    recentSet=recentSet.filter(function(x){return x.id!==id;});
+    recentSet.unshift(rec);if(recentSet.length>8)recentSet.length=8;
+    save("tt_recentset",recentSet);}
+  var PANEN={account:"👤 账号",ai:"✨ AI 助手",gcal:"📅 Google 日历",cloud:"☁️ 云同步",appear:"🎨 外观",cats:"🏷️ 分类",dict:"📖 词典",general:"🌐 通用"};
+  function renderRecent(){
+    var box=document.getElementById("recent-list");if(!box)return;
+    if(!recentSet.length){box.innerHTML='<div class="set-desc">还没有记录。改过的设置会自动出现在这里。</div>';return;}
+    box.innerHTML=recentSet.map(function(r){
+      return '<button class="rec-item" data-goto="'+r.pane+'" data-el="'+r.id+'">'+
+        '<span class="l">'+esc(r.label)+'</span><span class="p">'+(PANEN[r.pane]||r.pane)+'</span></button>';}).join("");}
+  document.querySelector(".set-panes").addEventListener("change",function(e){
+    var el=e.target;if(el&&(el.tagName==="SELECT"||el.tagName==="INPUT"))noteRecent(el);});
+  document.getElementById("recent-list").addEventListener("click",function(e){
+    var b=e.target.closest("[data-goto]");if(!b)return;
+    var pane=b.getAttribute("data-goto"),elId=b.getAttribute("data-el");
+    var nav=document.querySelector('.set-nav-i[data-pane="'+pane+'"]');if(nav)nav.click();
+    setTimeout(function(){
+      var t=document.getElementById(elId);if(!t)return;
+      var row=t.closest(".set-row")||t.closest(".set-item")||t;
+      row.scrollIntoView({block:"center",behavior:"smooth"});
+      row.style.transition="background .25s";row.style.background="var(--primary-soft)";
+      setTimeout(function(){row.style.background="";},1400);
+      if(t.focus)try{t.focus({preventScroll:true});}catch(err){}},60);});
   document.querySelector(".set-nav").addEventListener("click",function(e){var b=e.target.closest("[data-pane]");if(!b)return;var p=b.getAttribute("data-pane");
+    if(p==="recent")renderRecent();
     document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
     document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});
     if(p==="dict")openDictSettings();
@@ -5549,7 +5601,7 @@ margin-left: -22px;
     var page=await curPdf.doc.getPage(n);
     var avail=Math.max(320,rdContent.clientWidth-64);
     var base=page.getViewport({scale:1});
-    var scale=Math.min(2.2,avail/base.width);
+    var scale=Math.min(4,avail/base.width);
     var vp=page.getViewport({scale:scale});
     var wrap=document.createElement("div");wrap.className="rd-page";
     var dpr=Math.min(3,window.devicePixelRatio||1);      // 高分屏按像素比渲染，才不糊
@@ -5584,7 +5636,7 @@ margin-left: -22px;
     rdContent.innerHTML="";
     if(pdfIO){pdfIO.disconnect();pdfIO=null;}
     var p1=await curPdf.doc.getPage(1),base=p1.getViewport({scale:1});
-    var avail=Math.max(320,rdContent.clientWidth-64),scale=Math.min(2.2,avail/base.width);
+    var avail=Math.max(320,rdContent.clientWidth-64),scale=Math.min(4,avail/base.width);
     var vp1=p1.getViewport({scale:scale});
     for(var i=1;i<=curPdf.n;i++){
       var ph=document.createElement("div");ph.className="rd-page ph";
