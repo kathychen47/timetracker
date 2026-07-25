@@ -382,6 +382,9 @@
   .rd-pop-hd .btn{padding:3px 9px;font-size:12px}
   .rd-pop-hd .btn.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
   .rd-pop-bd{padding:10px 12px 14px}
+  .rd-tr{font-size:15.5px;line-height:1.75;white-space:pre-wrap}
+  .rd-tr-src{margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);color:var(--muted);font-size:13px;line-height:1.6;white-space:pre-wrap}
+  .rd-tr-by{margin-top:7px;color:var(--muted);font-size:11.5px}
 
   /* dictionary · vocab */
   .dict-wrap{max-width:720px;margin:0 auto}
@@ -2507,6 +2510,26 @@ margin-left: -22px;
         </div>
       </div>
       <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">整句翻译</div>
+        <div class="set-desc" style="margin-bottom:8px">看书时选中<b>一整句</b>（或在查词框输入一句话）就会翻译。单词仍走词典。</div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">翻译引擎</div><div class="set-desc">Google 免费不用配置；用自己的 AI 通常更准更自然（本地 Ollama 免费无限量）。</div></div>
+          <select id="tr-engine">
+            <option value="google">Google 翻译（免费·免配置）</option>
+            <option value="ai">我的 AI（更准，用 ✨AI助手 里配的 Gemini / 本地 Ollama）</option>
+          </select>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">翻译成</div></div>
+          <select id="tr-lang">
+            <option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option>
+            <option value="en">English</option><option value="ja">日本語</option>
+            <option value="ko">한국어</option><option value="fr">français</option>
+            <option value="de">Deutsch</option><option value="es">español</option>
+          </select>
+        </div>
+      </div>
+      <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">生词本分组</div>
         <div class="set-desc" style="margin-bottom:8px">把生词分成不同词库（如 雅思 / 工作 / GRE）。⭐ 是默认组，新词默认加到这里。删除分组时里面的词会移到默认组。</div>
         <div id="wbg-manage"></div>
@@ -3801,7 +3824,9 @@ margin-left: -22px;
   function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();
     var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;
     var as=document.getElementById("dict-autospeak");if(as)as.checked=!!dictPrefs.autoSpeak;
-    var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";}
+    var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";
+    var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
+    var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
@@ -3907,6 +3932,15 @@ margin-left: -22px;
       if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:(wbActive!=="all"?wbActive:wbGroups.def)});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
     if(!html){
+      // 输入的是词组/句子 —— 直接给翻译
+      var multi=isCJK(q)?(q.length>4):(q.trim().split(/\s+/).length>1);
+      if(multi){
+        box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
+        try{var tres=await translateText(q);
+          box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tres.by)+'</span></div>'+
+            '<div class="rd-tr">'+esc(tres.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div></div>';
+        }catch(e){box.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎。</div>';}
+        return;}
       if(!dictCounts.oald&&!dictCounts.collins){box.innerHTML='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';return;}
       var sug=await fuzzySuggest(q);
       var dym=sug.length?'<div class="dym">'+sug.map(function(s){return '<span class="dym-i" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'</span>';}).join("")+'</div>':'';
@@ -4033,6 +4067,10 @@ margin-left: -22px;
     if(as)as.addEventListener("change",function(){dictPrefs.autoSpeak=as.checked;saveDictPrefs();});
     var pm=document.getElementById("dict-popmode");
     if(pm)pm.addEventListener("change",function(){dictPrefs.popMode=pm.value;saveDictPrefs();});
+    var te=document.getElementById("tr-engine");
+    if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
+    var tg=document.getElementById("tr-lang");
+    if(tg)tg.addEventListener("change",function(){trLang=tg.value;save("tt_trlang",trLang);});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -4071,6 +4109,43 @@ margin-left: -22px;
     document.getElementById("flash-close").addEventListener("click",closeFlash);
     document.getElementById("flash-overlay").addEventListener("click",function(e){if(e.target.id==="flash-overlay")closeFlash();});
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
+
+  // ---------- 翻译（整句） ----------
+  var trEngine=load("tt_trengine","google"),trLang=load("tt_trlang","zh-CN");
+  var LANGN={"zh-CN":"简体中文","zh-TW":"繁體中文","en":"English","ja":"日本語","ko":"한국어","fr":"français","de":"Deutsch","es":"español"};
+  function gTranslate(text,tl){
+    var url="https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl="+encodeURIComponent(tl||"zh-CN")+"&dt=t&q="+encodeURIComponent(text);
+    return fetch(url).then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+      .then(function(j){var out=(j[0]||[]).map(function(x){return x&&x[0];}).filter(Boolean).join("");
+        if(!out)throw new Error("没有译文");return out;});}
+  function geminiText(prompt){
+    if(!apiKey)return Promise.reject(new Error("还没填 Gemini API Key"));
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+apiModel+":generateContent?key="+encodeURIComponent(apiKey),
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{temperature:0.2}})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(j.error)throw new Error(j.error.message||"Gemini 出错");
+        var c=j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0];
+        if(!c||!c.text)throw new Error("没返回内容");
+        return c.text.trim();});}
+  function ollamaText(prompt){
+    var url=(ollamaUrl||"http://localhost:11434").replace(/\/+$/,"")+"/api/generate";
+    return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:ollamaModel||"qwen3:8b",prompt:prompt,stream:false,think:false,options:{temperature:0.2}})})
+      .then(function(r){return r.json();})
+      .then(function(j){
+        if(j.error)throw new Error(String(j.error));
+        var t=(j.response||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim();
+        if(!t)throw new Error("没返回内容");return t;});}
+  function translateText(text){
+    var tl=trLang,name=LANGN[tl]||tl;
+    if(trEngine==="ai"){
+      var prompt="请把下面的内容准确、自然地翻译成"+name+"。只输出译文本身，不要解释、不要重复原文、不要加引号或前缀。\n\n"+text;
+      var p=(aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt);
+      return p.then(function(t){return {text:t,by:(aiProvider==="ollama"?("本地 "+(ollamaModel||"Ollama")):("Gemini "+apiModel))};},
+        function(e){return gTranslate(text,tl).then(function(t){return {text:t,by:"Google（AI 不可用："+(e&&e.message||e)+"）"};});});}
+    return gTranslate(text,tl).then(function(t){return {text:t,by:"Google 翻译"};});}
 
   // ---------- 看书（PDF / EPUB / TXT，边读边查词） ----------
   var BDB=null,curBook=null,curEpub=null,curPdf=null,rdFs=+load("tt_rdfs",17)||17;
@@ -4303,26 +4378,41 @@ margin-left: -22px;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
-    star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
+    star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
     if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
-    rdPop.style.display="";
+    rdPop.style.display="";placeRdPop(rect);
+    bd.innerHTML=await wbDefHTML(rdPopWord.w);
+    if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,2600);}}
+  function rdSelHandler(){
+    var s=(getSelection()?String(getSelection()):"").trim();
+    if(!s||s.length>1200)return;
+    var sel=getSelection();if(!sel.rangeCount)return;
+    var rect=sel.getRangeAt(0).getBoundingClientRect();
+    if(!rect||(!rect.width&&!rect.height))return;
+    if(rdLooksLikeWord(s))showRdPop(s,rect);else showRdTrans(s,rect);}
+  function placeRdPop(rect){
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
     var left=Math.max(8,Math.min(rect.left/z,vw-w-12));
     var top=rect.bottom/z+8;
     if(top>vh-160)top=Math.max(8,rect.top/z-Math.min(rdPop.offsetHeight||280,vh*0.5)-8);
-    rdPop.style.left=left+"px";rdPop.style.top=top+"px";
-    bd.innerHTML=await wbDefHTML(rdPopWord.w);
-    if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,2600);}}
-  function rdSelHandler(){
-    var s=(getSelection()?String(getSelection()):"").trim();
-    if(!s||s.length>60){return;}
-    if(!rdLooksLikeWord(s))return;
-    var sel=getSelection();if(!sel.rangeCount)return;
-    var rect=sel.getRangeAt(0).getBoundingClientRect();
-    if(!rect||(!rect.width&&!rect.height))return;
-    showRdPop(s,rect);}
+    rdPop.style.left=left+"px";rdPop.style.top=top+"px";}
+  function showRdTrans(text,rect){
+    if(!rdPop)return;
+    rdPopWord=null;
+    document.getElementById("rd-pop-w").textContent="翻译";
+    var star=document.getElementById("rd-pop-star");star.style.display="none";
+    var bd=document.getElementById("rd-pop-bd");
+    bd.innerHTML='<div class="dict-hint">翻译中…</div>';
+    rdPop.style.display="";placeRdPop(rect);
+    translateText(text).then(function(res){
+      bd.innerHTML='<div class="rd-tr">'+esc(res.text)+'</div>'+
+        '<div class="rd-tr-src">'+esc(text)+'</div>'+
+        '<div class="rd-tr-by">'+esc(res.by)+'</div>';
+      if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,4000);}
+    },function(e){
+      bd.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎试试。</div>';});}
 
   var readerInit=false;
   function openReader(){
