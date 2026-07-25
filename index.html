@@ -2387,6 +2387,7 @@ margin-left: -22px;
           <span class="grow"></span>
           <select id="tax-year"></select>
           <button class="btn primary" id="tax-add">+ 记一笔</button>
+          <button class="btn" id="tax-import">📥 导入</button>
           <button class="btn" id="tax-export">⬇️ 导出</button>
         </div>
         <div id="tax-body"></div>
@@ -5830,6 +5831,49 @@ margin-left: -22px;
       else taxRecs.push(Object.assign({id:uid()},o));
       saveTax();taxYear=taxYearOf(d);wbtClose();renderTax();});}
 
+  function importTax(){
+    var b=wbtOpen("📥 导入收入记录",
+      '<div class="wt-row"><label class="t">选文件（.json / .csv）</label><input type="file" id="tx-imp-file" accept=".json,.csv,.txt"></div>'+
+      '<div class="wt-row"><label class="t">或直接粘贴内容</label><textarea id="tx-imp-text" placeholder=\'JSON: [{"date":"2025-04-01","gross":4076,"gstIncluded":false}]\n或 CSV: date,gross,gst_included,payer,note\'></textarea></div>'+
+      '<button class="btn primary" id="tx-imp-do">导入</button>'+
+      '<span class="tx-note" id="tx-imp-msg" style="margin-left:10px"></span>'+
+      '<div class="tx-note" style="margin-top:10px">按 <b>日期+金额</b> 去重，重复的会跳过，可以放心多导几次。数据只存在你自己的账号里。</div>');
+    b.querySelector("#tx-imp-file").addEventListener("change",function(e){
+      var f=e.target.files&&e.target.files[0];if(!f)return;
+      f.text().then(function(t){b.querySelector("#tx-imp-text").value=t;
+        b.querySelector("#tx-imp-msg").textContent="已读入文件，点「导入」";});});
+    b.querySelector("#tx-imp-do").addEventListener("click",function(){
+      var raw=(b.querySelector("#tx-imp-text").value||"").trim(),list=[];
+      if(!raw){b.querySelector("#tx-imp-msg").textContent="没有内容";return;}
+      try{
+        if(raw.charAt(0)==="["||raw.charAt(0)==="{"){
+          var j=JSON.parse(raw);list=(j.records||j).map(function(r){
+            return {date:String(r.date||"").slice(0,10),gross:parseFloat(r.gross),
+              gstIncluded:!!(r.gstIncluded||r.gst_included==="yes"||r.gst_included===true),
+              payer:r.payer||"",note:r.note||""};});
+        }else{
+          raw.replace(/^﻿/,"").split(/\r?\n/).forEach(function(ln,i){
+            if(!ln.trim())return;
+            var c=ln.split(",");
+            if(i===0&&/date/i.test(c[0]))return;                 // 表头
+            var d=(c[0]||"").trim().replace(/^"|"$/g,"");
+            var g=parseFloat((c[1]||"").replace(/[^0-9.\-]/g,""));
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||isNaN(g))return;
+            list.push({date:d,gross:g,gstIncluded:/^(yes|true|1)$/i.test((c[2]||"").trim().replace(/^"|"$/g,"")),
+              payer:(c[3]||"").trim().replace(/^"|"$/g,""),note:(c[4]||"").trim().replace(/^"|"$/g,"")});});
+        }
+      }catch(err){b.querySelector("#tx-imp-msg").textContent="解析失败："+String(err&&err.message||err);return;}
+      list=list.filter(function(r){return r.date&&!isNaN(r.gross)&&r.gross>0;});
+      if(!list.length){b.querySelector("#tx-imp-msg").textContent="没读到有效记录";return;}
+      var added=0,skip=0;
+      list.forEach(function(r){
+        var dup=taxRecs.some(function(x){return x.date===r.date&&Math.abs(x.gross-r.gross)<0.01;});
+        if(dup){skip++;return;}
+        taxRecs.push(Object.assign({id:uid()},r));added++;});
+      if(added)saveTax();
+      b.querySelector("#tx-imp-msg").textContent="✓ 导入 "+added+" 笔"+(skip?("，跳过重复 "+skip):"");
+      var ys=txYears();if(ys.length)taxYear=ys[ys.length-1];
+      renderTax();});}
   function exportTax(){
     var rows=txRows();if(!rows.length){ttAlert("这个税年没有可导出的记录");return;}
     var head=["date","gross","gst_included","income","paye","acc","gst","net","payer","note"];
@@ -5851,6 +5895,7 @@ margin-left: -22px;
       document.getElementById("tax-year").addEventListener("change",function(){
         taxYear=this.value===""?null:+this.value;renderTax();});
       document.getElementById("tax-add").addEventListener("click",function(){taxForm(null);});
+      document.getElementById("tax-import").addEventListener("click",importTax);
       document.getElementById("tax-export").addEventListener("click",exportTax);
       document.getElementById("tax-body").addEventListener("click",async function(e){
         var ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-del]");

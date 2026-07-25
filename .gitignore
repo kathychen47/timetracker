@@ -9,3 +9,6 @@ dictionaries/
 
 # 扩展里用的词典自带样式表（来自商业词典包，勿公开）
 extension/oald.css
+
+# 私人数据（收入等），只在本地，勿公开
+private/
