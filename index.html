@@ -334,6 +334,19 @@
   .ti .tact{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;flex:none;font-size:14px;line-height:1}
   .ti .tact:hover{background:var(--surface-2)}
 
+  /* 自定义确认框 */
+  #tt-pop{position:fixed;z-index:200;width:min(320px,88vw);background:var(--surface);border:1px solid var(--border);
+    border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22);padding:14px 15px 12px;display:none;font-size:13.5px;line-height:1.65}
+  #tt-pop.on{display:block;animation:ttpop .13s ease-out}
+  @keyframes ttpop{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  #tt-pop .tt-msg{color:var(--text)}
+  #tt-pop .tt-in{width:100%;box-sizing:border-box;margin-top:10px;padding:8px 11px;border:1px solid var(--border);
+    border-radius:9px;background:var(--bg);color:var(--text);font-size:14px;font-family:inherit}
+  #tt-pop .tt-in:focus{outline:none;border-color:var(--primary)}
+  #tt-pop .tt-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+  #tt-pop .tt-btns .btn{padding:6px 14px;font-size:13px}
+  #tt-pop .tt-ok.danger{background:var(--danger);border-color:transparent;color:#fff}
+
   /* reader */
   .rd-sub{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:8px}
   .rd-import{display:flex;align-items:center;gap:12px;margin-bottom:16px}
@@ -346,6 +359,19 @@
   .rd-fchip .e{background:transparent;border:none;color:inherit;cursor:pointer;opacity:.55;font-size:11px;padding:0}
   .rd-fchip .e:hover{opacity:1}
   .rd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  /* 列表视图 */
+  .rd-grid.list{display:block}
+  .rd-grid.list .rd-book{display:flex;align-items:center;gap:12px;padding:9px 12px;margin-bottom:6px;border-radius:10px}
+  .rd-grid.list .rd-book:hover{transform:none}
+  .rd-grid.list .rd-cover{height:34px;width:26px;flex:none;margin:0;font-size:16px;border-radius:5px}
+  .rd-grid.list .rd-cover .txt,.rd-grid.list .rd-cover .em{display:none}
+  .rd-grid.list .n{flex:1;min-width:0;-webkit-line-clamp:1;font-size:14px}
+  .rd-grid.list .s{margin-top:0;font-size:12px;flex:none;color:var(--muted)}
+  .rd-grid.list .ext{flex:none;font-size:10.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);
+    background:var(--surface-2);border-radius:5px;padding:2px 7px;text-transform:uppercase}
+  .rd-grid.list .f{position:static;max-width:none}
+  .rd-grid.list .x{position:static;opacity:.5;order:9}
+  .rd-grid.list .rd-book:hover .x{opacity:1}
   .rd-book[draggable=true]{cursor:grab}
   .rd-book.dragging{opacity:.45}
   .rd-book .f{position:absolute;top:6px;left:6px;font-size:10.5px;color:var(--muted);background:var(--surface-2);border-radius:6px;padding:1px 6px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2259,6 +2285,10 @@ margin-left: -22px;
         <div class="rd-import">
           <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
           <button class="btn" id="rd-newfolder">＋ 新建文件夹</button>
+          <div class="seg" id="rd-view" style="margin-left:auto">
+            <button data-rv="grid" class="on" title="封面视图">▦</button>
+            <button data-rv="list" title="列表视图">☰</button>
+          </div>
           <span class="rd-note" id="rd-note"></span>
         </div>
         <div class="rd-folders" id="rd-folders"></div>
@@ -2702,6 +2732,60 @@ margin-left: -22px;
   function startOfWeek(d){var x=new Date(d);var day=(x.getDay()+6)%7;return addDays(x,-day);}
   function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+  // ===== 自定义小弹窗（贴着点击位置弹，替代浏览器原生 confirm/prompt/alert）=====
+  var ttPopEl=null,ttPopResolve=null,ttPopAnchor=null;
+  function ttPopBuild(){
+    if(ttPopEl)return ttPopEl;
+    ttPopEl=document.createElement("div");ttPopEl.id="tt-pop";
+    ttPopEl.innerHTML='<div class="tt-msg"></div><input class="tt-in" type="text"><div class="tt-btns">'+
+      '<button class="btn tt-cancel" type="button">取消</button><button class="btn primary tt-ok" type="button">确定</button></div>';
+    document.body.appendChild(ttPopEl);
+    ttPopEl.querySelector(".tt-cancel").addEventListener("click",function(){ttPopDone(null);});
+    ttPopEl.querySelector(".tt-ok").addEventListener("click",function(){
+      var inp=ttPopEl.querySelector(".tt-in");
+      ttPopDone(inp.style.display==="none"?true:(inp.value||""));});
+    ttPopEl.querySelector(".tt-in").addEventListener("keydown",function(e){
+      if(e.key==="Enter"){e.preventDefault();ttPopDone(this.value||"");}
+      if(e.key==="Escape"){e.preventDefault();ttPopDone(null);}});
+    document.addEventListener("mousedown",function(e){
+      if(ttPopEl&&ttPopEl.classList.contains("on")&&!ttPopEl.contains(e.target))ttPopDone(null);},true);
+    document.addEventListener("keydown",function(e){
+      if(ttPopEl&&ttPopEl.classList.contains("on")&&e.key==="Escape")ttPopDone(null);});
+    return ttPopEl;}
+  function ttPopDone(v){
+    if(!ttPopEl)return;ttPopEl.classList.remove("on");
+    var r=ttPopResolve;ttPopResolve=null;if(r)r(v);}
+  function ttPopPlace(){
+    if(!ttPopEl)return;
+    var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+    var w=ttPopEl.offsetWidth||280,h=ttPopEl.offsetHeight||120,vw=innerWidth/z,vh=innerHeight/z;
+    var l,t;
+    if(ttPopAnchor&&ttPopAnchor.getBoundingClientRect){
+      var r=ttPopAnchor.getBoundingClientRect();
+      l=Math.max(10,Math.min(r.left/z,vw-w-12));
+      t=r.bottom/z+8;
+      if(t+h>vh-10)t=Math.max(10,r.top/z-h-8);
+    }else{l=(vw-w)/2;t=Math.max(20,vh*0.3);}
+    ttPopEl.style.left=l+"px";ttPopEl.style.top=t+"px";}
+  function ttPopShow(msg,opts){
+    opts=opts||{};ttPopBuild();
+    if(ttPopResolve)ttPopDone(null);
+    ttPopAnchor=opts.anchor||window.__ttLastClick||null;
+    ttPopEl.querySelector(".tt-msg").innerHTML=String(msg).replace(/</g,"&lt;").replace(/\n/g,"<br>");
+    var inp=ttPopEl.querySelector(".tt-in"),cancel=ttPopEl.querySelector(".tt-cancel"),ok=ttPopEl.querySelector(".tt-ok");
+    if(opts.type==="prompt"){inp.style.display="";inp.value=opts.def||"";}else inp.style.display="none";
+    cancel.style.display=(opts.type==="alert")?"none":"";
+    ok.textContent=opts.okText||(opts.type==="alert"?"知道了":"确定");
+    ok.classList.toggle("danger",!!opts.danger);
+    ttPopEl.classList.add("on");ttPopPlace();
+    if(opts.type==="prompt")setTimeout(function(){inp.focus();inp.select();},30);
+    return new Promise(function(res){ttPopResolve=res;});}
+  function ttConfirm(msg,opts){return ttPopShow(msg,Object.assign({type:"confirm"},opts||{})).then(function(v){return v===true;});}
+  function ttPrompt(msg,def,opts){return ttPopShow(msg,Object.assign({type:"prompt",def:def},opts||{})).then(function(v){return v===null?null:String(v);});}
+  function ttAlert(msg,opts){return ttPopShow(msg,Object.assign({type:"alert"},opts||{}));}
+  document.addEventListener("click",function(e){
+    if(e.target&&e.target.closest&&!e.target.closest("#tt-pop"))window.__ttLastClick=e.target;},true);
   var WD=["一","二","三","四","五","六","日"];
 
   // ---------- i18n (界面中/英) ----------
@@ -3275,17 +3359,17 @@ margin-left: -22px;
     }else{var subs=subsOf(selCat);
       manageBox.innerHTML=subs.length?subs.map(function(s){return '<div class="cm"><i style="background:'+catColor(selCat)+'"></i>'+esc(s.name)+'<button type="button" data-dels="'+s.key+'">删除</button></div>';}).join(""):'<div class="cm-empty">「'+esc(catName(selCat))+'」下还没有小类</div>';}
   }
-  manageBox.addEventListener("click",function(e){
+  manageBox.addEventListener("click",async function(e){
     var dp=e.target.closest("[data-delp]"),ds=e.target.closest("[data-dels]");
     if(dp){var k=dp.getAttribute("data-delp");
-      if(cats.length<=1){alert("至少保留一个大类");return;}
+      if(cats.length<=1){ttAlert("至少保留一个大类");return;}
       var cobj=parentObj(k);
-      if(!confirm("删除大类「"+(cobj?cobj.name:"")+"」？用了它的事件不会被删除，只会显示为默认颜色。"))return;
+      if(!await ttConfirm("删除大类「"+(cobj?cobj.name:"")+"」？用了它的事件不会被删除，只会显示为默认颜色。",{danger:true,anchor:dp}))return;
       cats=cats.filter(function(c){return c.key!==k;});save("tt_cats",cats);
       if(selCat===k){selCat=cats[0].key;selSub=null;}renderParents();renderSubs();renderManage();}
     else if(ds){var sk=ds.getAttribute("data-dels");var p=parentObj(selCat);var sobj=null;
       if(p)(p.subs||[]).forEach(function(x){if(x.key===sk)sobj=x;});
-      if(!confirm("删除小类「"+(sobj?sobj.name:"")+"」？"))return;
+      if(!await ttConfirm("删除小类「"+(sobj?sobj.name:"")+"」？",{danger:true,anchor:ds}))return;
       if(p){p.subs=(p.subs||[]).filter(function(x){return x.key!==sk;});save("tt_cats",cats);}
       if(selSub===sk)selSub=null;renderSubs();renderManage();}
   });
@@ -3350,14 +3434,14 @@ margin-left: -22px;
     if(gToken)gcalSync(obj,want);
     closeModal();renderCal();
   });
-  delBtn.addEventListener("click",function(){
+  delBtn.addEventListener("click",async function(){
     if(adoptGid){                                // 删除的是纯 Google 事件（本地还没有副本）
-      if(!confirm("从 Google 日历删除「"+(fTitle.value.trim()||"该事件")+"」？会同步删除你 Google 账号里的这个事件。"))return;
+      if(!await ttConfirm("从 Google 日历删除「"+(fTitle.value.trim()||"该事件")+"」？会同步删除你 Google 账号里的这个事件。",{danger:true,anchor:delBtn}))return;
       var gid=adoptGid;gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+gid;});
       closeModal();renderCal();if(gToken)gcalDeleteById(gid);return;
     }
     var old=events.filter(function(e){return e.id===editingId;})[0];
-    if(old&&old.gid&&!confirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。"))return;
+    if(old&&old.gid&&!await ttConfirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。",{danger:true,anchor:delBtn}))return;
     events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);
     if(gToken&&old&&old.gid)gcalDeleteById(old.gid);
     closeModal();renderCal();});
@@ -3526,7 +3610,7 @@ margin-left: -22px;
     h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>';
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];var cn=catName(e.cat)+(e.sub?" › "+subName(e.cat,e.sub):"");h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+'</td><td>'+esc(cn)+'</td><td>'+evMinutes(e)+'分</td></tr>';});
     return h+'</tbody></table></div>';}
-  function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){alert("此环境不支持直接下载，请改用「复制文本」");}}
+  function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){ttAlert("此环境不支持直接下载，请改用「复制文本」");}}
   function copyText(txt,btn){function ok(){if(btn){var o=btn.textContent;btn.textContent="已复制";setTimeout(function(){btn.textContent=o;},1400);}}
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,fb);}else fb();
     function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.top="-999px";document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand("copy");ok();}catch(e){}document.body.removeChild(ta);}}
@@ -3692,15 +3776,15 @@ margin-left: -22px;
     var add=document.getElementById("cs-addcat");if(add)add.addEventListener("click",function(){
       var i=document.getElementById("cs-newcat"),nm=i.value.trim();if(!nm){i.focus();return;}
       cats.push({key:"c"+uid(),name:nm,color:csColor,kw:[nm],subs:[]});i.value="";afterCatChange();});
-    box.addEventListener("click",function(e){
+    box.addEventListener("click",async function(e){
       var dc=e.target.closest("[data-delcat]"),dsb=e.target.closest("[data-delsub]"),asb=e.target.closest("[data-addsub]");
-      if(dc){var k=dc.getAttribute("data-delcat");if(cats.length<=1){alert("至少保留一个大类");return;}var c=parentObj(k);
-        if(!confirm("删除大类「"+(c?c.name:"")+"」？用过它的事件不会被删，只会变默认色。"))return;
+      if(dc){var k=dc.getAttribute("data-delcat");if(cats.length<=1){ttAlert("至少保留一个大类");return;}var c=parentObj(k);
+        if(!await ttConfirm("删除大类「"+(c?c.name:"")+"」？用过它的事件不会被删，只会变默认色。",{danger:true,anchor:dc}))return;
         cats=cats.filter(function(x){return x.key!==k;});afterCatChange();return;}
       if(dsb){var pr=dsb.getAttribute("data-delsub").split("|"),p=parentObj(pr[0]);
-        if(p){if(!confirm("删除这个小类？"))return;p.subs=(p.subs||[]).filter(function(x){return x.key!==pr[1];});afterCatChange();}return;}
+        if(p){if(!await ttConfirm("删除这个小类？",{danger:true,anchor:dsb}))return;p.subs=(p.subs||[]).filter(function(x){return x.key!==pr[1];});afterCatChange();}return;}
       if(asb){var p2=parentObj(asb.getAttribute("data-addsub"));if(!p2)return;
-        var nm=prompt("在「"+p2.name+"」下新建小类，名称：");if(!nm||!nm.trim())return;
+        var nm=await ttPrompt("在「"+p2.name+"」下新建小类，名称：","",{anchor:asb});if(!nm||!nm.trim())return;
         p2.subs=p2.subs||[];p2.subs.push({key:"s"+uid(),name:nm.trim(),kw:[nm.trim()]});afterCatChange();return;}
     });})();
   function closeSettings(){settingsOverlay.classList.remove("on");}
@@ -3758,9 +3842,9 @@ margin-left: -22px;
     SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();if(r.data.session.provider_token)adoptProviderToken(r.data.session.provider_token);pullCloud();}else updateSbUI();});}
   function adoptProviderToken(tok){if(!tok)return;gToken=tok;save("tt_gcal","1");save("tt_gtok",{t:tok,exp:Date.now()+3540*1000});try{onGcalConnected();}catch(e){}try{updateSbUI();}catch(e){}}
   function cloudAuthClick(){
-    if(!sbUrl||!sbKey){alert("先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录");return;}
+    if(!sbUrl||!sbKey){ttAlert("先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录");return;}
     if(!SB)initSupabase();
-    if(!SB){alert("Supabase 还没加载好（或网址不对），稍等几秒或检查网址");return;}
+    if(!SB){ttAlert("Supabase 还没加载好（或网址不对），稍等几秒或检查网址");return;}
     if(sbUser){SB.auth.signOut().then(function(){sbUser=null;gToken=null;save("tt_gtok",null);updateSbUI();try{updateGcalUI();}catch(e){}});}
     else{SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:{access_type:"offline"},redirectTo:location.href.split("#")[0].split("?")[0]}});}}
   document.getElementById("set-sb-auth").addEventListener("click",cloudAuthClick);
@@ -4222,7 +4306,7 @@ margin-left: -22px;
   function fmtWhen(t){var d=Math.round((t-Date.now())/DAY);
     if(d<=0)return "今天";if(d===1)return "明天";if(d<30)return d+" 天后";
     if(d<365)return Math.round(d/30)+" 个月后";return (d/365).toFixed(1)+" 年后";}
-  function exportWb(){var arr=wbFiltered();if(!arr.length){alert("这个分组没有词可导出");return;}
+  function exportWb(){var arr=wbFiltered();if(!arr.length){ttAlert("这个分组没有词可导出");return;}
     var rows=[["word","direction","group","added"]].concat(arr.map(function(x){return [x.w,x.dict==="collins"?"zh→en":"en→zh",wbGroupName(wbGroupOf(x)),new Date(x.ts||0).toISOString().slice(0,10)];}));
     var csv="﻿"+rows.map(function(r){return r.map(function(c){c=String(c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",");}).join("\r\n");
     dlFile("vocab_"+(wbActive==="all"?"all":wbGroupName(wbActive))+".csv",csv,"text/csv");}
@@ -4339,9 +4423,9 @@ margin-left: -22px;
   function groupOptions(){return wbGroups.list.map(function(g){
     return '<option value="'+g.id+'"'+((wbActive!=="all"&&wbActive===g.id)||(wbActive==="all"&&g.id===wbGroups.def)?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
     '<option value="__new">＋ 新建分组…</option>';}
-  function resolveGroup(sel){
+  async function resolveGroup(sel){
     if(sel!=="__new")return sel;
-    var nm=prompt("新分组名称：");if(!nm||!nm.trim())return null;
+    var nm=await ttPrompt("新分组名称：","");if(!nm||!nm.trim())return null;
     var g={id:"g"+uid(),name:nm.trim()};wbGroups.list.push(g);saveWbGroups();return g.id;}
   function addWords(list,gid){ // list: [{w,disp}]
     var added=0,skip=0;
@@ -4366,12 +4450,12 @@ margin-left: -22px;
       var f=e.target.files&&e.target.files[0];if(!f)return;
       f.text().then(function(t){b.querySelector("#wt-text").value=t;
         b.querySelector("#wt-msg").textContent="已读入文件，点「导入」";});});
-    b.querySelector("#wt-do").addEventListener("click",function(){
+    b.querySelector("#wt-do").addEventListener("click",async function(){
       var raw=b.querySelector("#wt-text").value||"";
       var list=raw.split(/\r?\n/).map(function(l){
         var w=l.split(/[,\t;]/)[0].trim();return w?{w:w.toLowerCase(),disp:w}:null;}).filter(Boolean);
       if(!list.length){b.querySelector("#wt-msg").textContent="没读到单词";return;}
-      var gid=resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
+      var gid=await resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
       var r=addWords(list,gid);
       b.querySelector("#wt-msg").textContent="✓ 导入 "+r.added+" 个"+(r.skip?("，跳过重复 "+r.skip):"");
       renderWordbook();});}
@@ -4394,7 +4478,7 @@ margin-left: -22px;
       b.querySelector("#wt-lv").addEventListener("click",function(e){
         var lb=e.target.closest("label");if(!lb)return;
         setTimeout(function(){lb.classList.toggle("on",lb.querySelector("input").checked);},0);});
-      b.querySelector("#wt-do").addEventListener("click",function(){
+      b.querySelector("#wt-do").addEventListener("click",async function(){
         var lvs=[].slice.call(b.querySelectorAll("#wt-lv input:checked")).map(function(i){return i.value;});
         if(!lvs.length){b.querySelector("#wt-msg").textContent="先选至少一个等级";return;}
         var n=+b.querySelector("#wt-n").value||100,skip=b.querySelector("#wt-skip").checked;
@@ -4402,7 +4486,7 @@ margin-left: -22px;
         if(skip)pool=pool.filter(function(w){return !isSaved(w);});
         shuffle(pool);pool=pool.slice(0,n);
         if(!pool.length){b.querySelector("#wt-msg").textContent="没有可加的词（可能都已在生词本里）";return;}
-        var gid=resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
+        var gid=await resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
         var r=addWords(pool.map(function(w){return {w:w,disp:w};}),gid);
         b.querySelector("#wt-msg").textContent="✓ 加入 "+r.added+" 个词";
         renderWordbook();});
@@ -4457,13 +4541,13 @@ margin-left: -22px;
 
   var flashDone=0,flashRevealed=false;
   function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
-  function startFlash(){
+  async function startFlash(){
     var plan=srsPlan();
     flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
     if(!flashArr.length){
       var pool=wbFiltered().filter(function(x){return !x.mastered;});
-      if(!pool.length){alert("这个分组没有可背的词。");return;}
-      if(!confirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？"))return;
+      if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
+      if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
     flashIdx=0;flashDone=0;
     document.getElementById("flash-overlay").classList.add("on");showFlash();}
@@ -4477,7 +4561,7 @@ margin-left: -22px;
       ' · 已完成 <b>'+flashDone+'</b>';}
   async function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
-      alert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
+      ttAlert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
     var x=srsInit(flashArr[flashIdx]),word=x.disp||x.w;
     flashRevealed=false;flashProgress();
     document.getElementById("flash-word").innerHTML=esc(word)+'<button class="fw-spk" id="flash-spk" title="朗读">🔊</button>';
@@ -4569,10 +4653,10 @@ margin-left: -22px;
     var sh=document.getElementById("srs-hide");
     if(sh)sh.addEventListener("change",function(){dictPrefs.hideMastered=sh.checked;saveDictPrefs();renderWordbook();});
     var srst=document.getElementById("srs-reset");
-    if(srst)srst.addEventListener("click",function(){
-      if(!confirm("把所有生词的记忆进度清零（词本身不删）？"))return;
+    if(srst)srst.addEventListener("click",async function(){
+      if(!await ttConfirm("把所有生词的记忆进度清零（词本身不删）？",{danger:true,anchor:srst}))return;
       words.forEach(function(x){x.ef=2.5;x.iv=0;x.reps=0;x.lapses=0;x.due=Date.now();x.mastered=false;});
-      saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();alert("已重置");});
+      saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();ttAlert("已重置");});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -4609,12 +4693,12 @@ margin-left: -22px;
     if(wto)wto.addEventListener("click",function(e){if(e.target===wto)wbtClose();});
     var wbg=document.getElementById("wb-groups");if(wbg)wbg.addEventListener("click",function(e){var b=e.target.closest(".wbg-chip");if(!b)return;wbActive=b.getAttribute("data-g");save("tt_wbactive",wbActive);renderWordbook();});
     var wbm=document.getElementById("wbg-manage");
-    if(wbm)wbm.addEventListener("click",function(e){
+    if(wbm)wbm.addEventListener("click",async function(e){
       var df=e.target.closest("[data-def]"),rn=e.target.closest("[data-ren]"),dg=e.target.closest("[data-delg]");
       if(df){wbGroups.def=df.getAttribute("data-def");saveWbGroups();renderWbgManage();renderWordbook();return;}
-      if(rn){var id=rn.getAttribute("data-ren"),g=null;wbGroups.list.forEach(function(x){if(x.id===id)g=x;});if(!g)return;var nm=prompt("重命名分组：",g.name);if(!nm||!nm.trim())return;g.name=nm.trim();saveWbGroups();renderWbgManage();renderWordbook();return;}
-      if(dg){var gid=dg.getAttribute("data-delg");if(gid===wbGroups.def){alert("默认组不能删，先把别的组设为默认（点 ☆）");return;}
-        if(!confirm("删除分组「"+wbGroupName(gid)+"」？里面的词会移到默认组。"))return;
+      if(rn){var id=rn.getAttribute("data-ren"),g=null;wbGroups.list.forEach(function(x){if(x.id===id)g=x;});if(!g)return;var nm=await ttPrompt("重命名分组：",g.name,{anchor:rn});if(!nm||!nm.trim())return;g.name=nm.trim();saveWbGroups();renderWbgManage();renderWordbook();return;}
+      if(dg){var gid=dg.getAttribute("data-delg");if(gid===wbGroups.def){ttAlert("默认组不能删，先把别的组设为默认（点 ☆）");return;}
+        if(!await ttConfirm("删除分组「"+wbGroupName(gid)+"」？里面的词会移到默认组。",{danger:true,anchor:dg}))return;
         words.forEach(function(x){if(wbGroupOf(x)===gid)x.group=wbGroups.def;});saveWords();
         wbGroups.list=wbGroups.list.filter(function(x){return x.id!==gid;});saveWbGroups();
         if(wbActive===gid){wbActive="all";save("tt_wbactive",wbActive);}
@@ -4629,7 +4713,7 @@ margin-left: -22px;
       if(!ok&&navigator.clipboard)try{navigator.clipboard.writeText(code);ok=true;}catch(e){}
       bmc.textContent=ok?"已复制 ✓":"复制失败";setTimeout(function(){bmc.textContent="复制代码";},1600);});
     var bml=document.getElementById("bm-link");
-    if(bml)bml.addEventListener("click",function(e){e.preventDefault();alert("这个按钮是用来「拖到书签栏」的，不是直接点。拖过去之后，在别的网页选中单词再点书签栏上的它。");});
+    if(bml)bml.addEventListener("click",function(e){e.preventDefault();ttAlert("这个按钮是用来「拖到书签栏」的，不是直接点。拖过去之后，在别的网页选中单词再点书签栏上的它。");});
     document.getElementById("flash-close").addEventListener("click",closeFlash);
     document.getElementById("flash-overlay").addEventListener("click",function(e){if(e.target.id==="flash-overlay")closeFlash();});
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
@@ -4673,7 +4757,7 @@ margin-left: -22px;
 
   // ---------- 看书（PDF / EPUB / TXT，边读边查词） ----------
   var BDB=null,curBook=null,curEpub=null,curPdf=null,rdFs=+load("tt_rdfs",17)||17;
-  var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all";
+  var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all",rdView=load("tt_rdview","grid");
   function saveFolders(){save("tt_rdfolders",rdFolders);}
   function bdbOpen(){return new Promise(function(res,rej){
     var r=indexedDB.open("ttbooks",1);
@@ -4795,6 +4879,7 @@ margin-left: -22px;
     return icon;}
   function renderShelfFrom(all){
     var g=document.getElementById("rd-grid");if(!g)return;
+    g.classList.toggle("list",rdView==="list");
     var list=(rdFolder==="all")?all:all.filter(function(b){return (b.folder||"")===rdFolder;});
     if(!all.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown / HTML。</div>';return;}
     if(!list.length){g.innerHTML='<div class="rd-empty">这个文件夹还没有书。把书拖到上面的文件夹标签上即可归类。</div>';return;}
@@ -4802,9 +4887,13 @@ margin-left: -22px;
     g.innerHTML=list.map(function(b){
       var p=b.pos?(b.type==="pdf"?("第 "+(b.pos.page||1)+" 页"):(b.type==="epub"?("第 "+((b.pos.ch||0)+1)+" 节"):"读过")):"未读";
       var fn=(rdFolder==="all"&&b.folder)?('<span class="f">'+esc(folderName(b.folder))+'</span>'):"";
-      return '<div class="rd-book" draggable="true" data-id="'+b.id+'">'+fn+'<button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
+      var when=b.added?new Date(b.added).toLocaleDateString():"";
+      var ext=(rdView==="list")?'<span class="ext">'+esc(b.type)+'</span>':"";
+      var info=(rdView==="list")?(fmtSize(b.size||0)+' · '+p+(when?' · '+when:'')):(fmtSize(b.size||0)+' · '+p);
+      return '<div class="rd-book" draggable="true" data-id="'+b.id+'">'+fn+
         '<div class="rd-cover">'+coverHTML(b,icon[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
-        '<div class="s">'+fmtSize(b.size||0)+' · '+p+'</div></div>';}).join("");}
+        ext+'<div class="s">'+info+'</div>'+
+        '<button class="x" data-del="'+b.id+'" title="删除">✕</button></div>';}).join("");}
   async function renderShelf(){
     var g=document.getElementById("rd-grid");if(!g)return;
     var all=await bAll();
@@ -4829,7 +4918,7 @@ margin-left: -22px;
 
   async function openBook(id){
     var meta=await bGet("meta",id);if(!meta)return;
-    var rec=await bGet("blob",id);if(!rec||!rec.blob){alert("这本书的文件丢了，建议删掉重新导入");return;}
+    var rec=await bGet("blob",id);if(!rec||!rec.blob){ttAlert("这本书的文件丢了，建议删掉重新导入");return;}
     curBook=meta;
     document.getElementById("rd-shelf").style.display="none";
     document.getElementById("rd-read").style.display="";
@@ -5085,23 +5174,23 @@ margin-left: -22px;
       applyRdFs();
       document.getElementById("rd-file").addEventListener("change",function(e){
         if(e.target.files&&e.target.files.length)importBooks([].slice.call(e.target.files));e.target.value="";});
-      document.getElementById("rd-grid").addEventListener("click",function(e){
+      document.getElementById("rd-grid").addEventListener("click",async function(e){
         var del=e.target.closest("[data-del]");
-        if(del){e.stopPropagation();if(!confirm("删除这本书？"))return;bDel(del.getAttribute("data-del")).then(renderShelf);return;}
+        if(del){e.stopPropagation();if(!await ttConfirm("删除这本书？",{danger:true,anchor:del}))return;bDel(del.getAttribute("data-del")).then(renderShelf);return;}
         var b=e.target.closest(".rd-book");if(b)openBook(b.getAttribute("data-id"));});
       // 新建文件夹
-      document.getElementById("rd-newfolder").addEventListener("click",function(){
-        var nm=prompt("文件夹名称，如：小说 / 论文 / 教材");if(!nm||!nm.trim())return;
+      document.getElementById("rd-newfolder").addEventListener("click",async function(){
+        var nm=await ttPrompt("文件夹名称，如：小说 / 论文 / 教材","",{anchor:document.getElementById("rd-newfolder")});if(!nm||!nm.trim())return;
         rdFolders.push({id:"f"+uid(),name:nm.trim()});saveFolders();renderShelf();});
       // 文件夹：切换 / 重命名 / 删除
-      document.getElementById("rd-folders").addEventListener("click",function(e){
+      document.getElementById("rd-folders").addEventListener("click",async function(e){
         var ren=e.target.closest("[data-ren]"),delf=e.target.closest("[data-delf]");
         if(ren){e.stopPropagation();var id=ren.getAttribute("data-ren"),f=null;
           rdFolders.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
-          var nm=prompt("重命名文件夹：",f.name);if(!nm||!nm.trim())return;
+          var nm=await ttPrompt("重命名文件夹：",f.name,{anchor:ren});if(!nm||!nm.trim())return;
           f.name=nm.trim();saveFolders();renderShelf();return;}
         if(delf){e.stopPropagation();var fid=delf.getAttribute("data-delf");
-          if(!confirm("删除文件夹「"+folderName(fid)+"」？里面的书不会删，会变成未分类。"))return;
+          if(!await ttConfirm("删除文件夹「"+folderName(fid)+"」？里面的书不会删，会变成未分类。",{danger:true,anchor:delf}))return;
           bAll().then(function(all){
             var jobs=all.filter(function(b){return b.folder===fid;}).map(function(b){b.folder="";return bPut("meta",b);});
             return Promise.all(jobs);}).then(function(){
@@ -5129,6 +5218,12 @@ margin-left: -22px;
         var id=dragId||(e.dataTransfer&&e.dataTransfer.getData("text/plain"));if(!id)return;
         var fid=t.getAttribute("data-drop");
         bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
+      var rvBox=document.getElementById("rd-view");
+      if(rvBox){rvBox.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-rv")===rdView);});
+        rvBox.addEventListener("click",function(e){var b=e.target.closest("[data-rv]");if(!b)return;
+          rdView=b.getAttribute("data-rv");save("tt_rdview",rdView);
+          rvBox.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+          renderShelf();});}
       document.getElementById("rd-back").addEventListener("click",showShelf);
       document.getElementById("rd-prev").addEventListener("click",rdPrev);
       document.getElementById("rd-next").addEventListener("click",rdNext);
