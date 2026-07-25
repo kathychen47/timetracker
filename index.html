@@ -334,6 +334,43 @@
   .ti .tact{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;flex:none;font-size:14px;line-height:1}
   .ti .tact:hover{background:var(--surface-2)}
 
+  /* 税务 */
+  .tax-wrap{max-width:940px;margin:0 auto}
+  .tax-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:16px}
+  .tax-bar .grow{flex:1}
+  .tax-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px}
+  .tax-bar .btn{padding:7px 13px;font-size:13px}
+  .tx-tbl{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);margin-bottom:14px}
+  .tx-tbl h4{margin:0;font-size:13px;font-weight:650;padding:10px 14px;background:var(--surface-2);color:var(--muted)}
+  .tx-tbl table{width:100%;border-collapse:collapse;font-size:13px}
+  .tx-tbl th{text-align:left;padding:8px 12px;color:var(--muted);font-weight:500;font-size:11px;background:var(--bg)}
+  .tx-tbl td{padding:8px 12px;border-top:1px solid var(--border);color:var(--text);white-space:nowrap}
+  .tx-tbl td.num,.tx-tbl th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .tx-tbl tr:hover td{background:var(--surface-2)}
+  .tx-tbl .act{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:2px 4px}
+  .tx-tbl .act:hover{color:var(--primary)}
+  .tx-tbl .act.del:hover{color:var(--danger)}
+  .tx-scroll{max-height:52vh;overflow:auto}
+  .tx-gst{font-size:10px;background:var(--surface-2);border-radius:5px;padding:1px 6px;color:var(--muted);margin-left:6px}
+  .tx-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:11px;margin-bottom:16px}
+  .tx-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+  .tx-card .k{font-size:11.5px;color:var(--muted)}
+  .tx-card .v{font-size:21px;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
+  .tx-legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--muted)}
+  .tx-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+  .tx-chart{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .tx-chart h4{margin:0 0 12px;font-size:13px;font-weight:650;color:var(--text)}
+  .tx-bars{display:flex;align-items:flex-end;gap:6px;height:170px}
+  .tx-bars .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:3px;min-width:0}
+  .tx-bars .stack{width:74%;max-width:34px;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden}
+  .tx-bars .stack i{display:block;min-height:0}
+  .tx-bars .lb{font-size:10px;color:var(--muted);white-space:nowrap}
+  .tx-donut{width:150px;height:150px;border-radius:50%;flex:none}
+  .tx-donut-wrap{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .tx-empty{color:var(--muted);text-align:center;padding:40px 0;font-size:13.5px;line-height:1.8}
+  .tx-in{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit}
+  .tx-note{font-size:12px;color:var(--muted);line-height:1.7}
+
   /* 自定义确认框 */
   #tt-pop{position:fixed;z-index:200;width:min(320px,88vw);background:var(--surface);border:1px solid var(--border);
     border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22);padding:14px 15px 12px;display:none;font-size:13.5px;line-height:1.65}
@@ -2183,6 +2220,7 @@ margin-left: -22px;
     <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg></button>
     <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg></button>
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
+    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"></path></svg></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
     <div class="grow"></div>
@@ -2332,6 +2370,26 @@ margin-left: -22px;
           <div class="wb-charts" id="wb-charts"></div>
           <div id="wb-list"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- TAX -->
+    <section class="view" id="view-tax">
+      <div class="page-h">税务 <span class="rd-sub">新西兰 · 收入 / PAYE / ACC / GST</span></div>
+      <div class="tax-wrap">
+        <div class="tax-bar">
+          <div class="seg" id="tax-tabs">
+            <button data-tt="rec" class="on">收入记录</button>
+            <button data-tt="sum">汇总</button>
+            <button data-tt="chart">图表</button>
+            <button data-tt="rate">税率设置</button>
+          </div>
+          <span class="grow"></span>
+          <select id="tax-year"></select>
+          <button class="btn primary" id="tax-add">+ 记一笔</button>
+          <button class="btn" id="tax-export">⬇️ 导出</button>
+        </div>
+        <div id="tax-body"></div>
       </div>
     </section>
 
@@ -3033,11 +3091,12 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
-    ["calendar","todo","stats","dict","reader"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo")renderTodos();
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
+    if(tab==="tax")openTax();
   });
 
   // ---------- calendar core ----------
@@ -3873,7 +3932,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -3895,7 +3954,7 @@ margin-left: -22px;
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
-    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
@@ -5587,6 +5646,221 @@ margin-left: -22px;
     }
     if(!curBook)renderShelf();
     ensureDictInit();}
+
+  // ---------- 税务（新西兰：PAYE / ACC / GST） ----------
+  var TX_BRACKETS=[{min:0,max:15600,rate:10.5},{min:15600,max:53500,rate:17.5},{min:53500,max:78100,rate:30},{min:78100,max:180000,rate:33},{min:180000,max:null,rate:39}];
+  var TX_DEFAULTS={2025:{brackets:TX_BRACKETS,accRate:3.25,accMax:152790,gstRate:15},
+                   2026:{brackets:TX_BRACKETS,accRate:3.33,accMax:156641,gstRate:15}};
+  var TXC={income:"#1D9E75",tax:"#378ADD",acc:"#D85A30",gst:"#BA7517",total:"#c44"};
+  var taxRecs=load("tt_taxrec",[])||[],taxRates=load("tt_taxrates",{})||{};
+  var taxTab="rec",taxYear=null;
+  function txMoney(n){return "$"+Math.round(n).toLocaleString();}
+  function taxOn(income,bk){var t=0;
+    for(var i=0;i<bk.length;i++){var b=bk[i];if(income<=b.min)break;
+      var cap=(b.max===null||b.max===undefined)?Infinity:b.max;
+      t+=(Math.min(income,cap)-b.min)*(b.rate/100);}
+    return t;}
+  function taxYearOf(ds){var d=parse(ds);return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1;}
+  function tyLabel(y){return y+"/"+(y+1);}
+  function txRates(ty){
+    if(taxRates[ty])return taxRates[ty];
+    if(TX_DEFAULTS[ty])return TX_DEFAULTS[ty];
+    var prev=Object.keys(taxRates).map(Number).filter(function(y){return y<ty;}).sort(function(a,b){return a-b;}).pop();
+    if(prev&&taxRates[prev])return taxRates[prev];
+    var dp=Object.keys(TX_DEFAULTS).map(Number).filter(function(y){return y<ty;}).sort(function(a,b){return a-b;}).pop();
+    return dp?TX_DEFAULTS[dp]:TX_DEFAULTS[2025];}
+  function txCompute(){ // 按税年累进计算每笔的税/ACC/GST
+    var sorted=taxRecs.slice().sort(function(a,b){return a.date.localeCompare(b.date);});
+    var ys={};
+    return sorted.map(function(r){
+      var ty=taxYearOf(r.date),rt=txRates(ty),accPct=rt.accRate/100,gstPct=rt.gstRate/100;
+      if(!ys[ty])ys[ty]={cumInc:0,cumTaxP:0,cumAcc:0,cumGst:0};
+      var st=ys[ty];
+      var gstAmt=r.gstIncluded?(r.gross*gstPct/(1+gstPct)):0;
+      var inc=r.gross-gstAmt;
+      st.cumInc+=inc;
+      var cumTaxNow=taxOn(st.cumInc,rt.brackets),mTax=cumTaxNow-st.cumTaxP;st.cumTaxP=cumTaxNow;
+      var mAcc=Math.min(inc,Math.max(0,rt.accMax-(st.cumInc-inc)))*accPct;st.cumAcc+=mAcc;
+      st.cumGst+=gstAmt;
+      return Object.assign({},r,{ty:ty,inc:inc,gstAmt:gstAmt,mTax:mTax,mAcc:mAcc,
+        net:inc-mTax-mAcc,due:mTax+mAcc+gstAmt,
+        cumInc:st.cumInc,cumTax:st.cumTaxP,cumAcc:st.cumAcc,cumGst:st.cumGst,cumNet:st.cumInc-st.cumTaxP-st.cumAcc});});}
+  function txYears(){var s={};taxRecs.forEach(function(r){s[taxYearOf(r.date)]=1;});
+    return Object.keys(s).map(Number).sort(function(a,b){return a-b;});}
+  function txRows(){var all=txCompute();
+    return (taxYear===null)?all:all.filter(function(c){return c.ty===taxYear;});}
+  function txTotals(rows){
+    if(!rows.length)return null;var l=rows[rows.length-1];
+    return {gross:rows.reduce(function(s,r){return s+r.gross;},0),income:l.cumInc,tax:l.cumTax,acc:l.cumAcc,gst:l.cumGst,
+      net:l.cumNet,eff:l.cumInc>0?(l.cumTax/l.cumInc*100):0};}
+  function txMonths(rows){var m={};rows.forEach(function(r){var d=parse(r.date);m[d.getFullYear()+"-"+d.getMonth()]=1;});
+    return Object.keys(m).length||1;}
+  function saveTax(){save("tt_taxrec",taxRecs);}
+
+  function renderTaxYearSel(){
+    var sel=document.getElementById("tax-year");if(!sel)return;
+    var ys=txYears();
+    if(taxYear===null&&ys.length)taxYear=ys[ys.length-1];
+    sel.innerHTML='<option value="">全部税年</option>'+ys.map(function(y){
+      return '<option value="'+y+'"'+(y===taxYear?" selected":"")+'>'+tyLabel(y)+' 税年</option>';}).join("");}
+
+  function renderTax(){
+    var box=document.getElementById("tax-body");if(!box)return;
+    renderTaxYearSel();
+    var rows=txRows(),T=txTotals(rows);
+    if(taxTab==="rec")return renderTaxRecs(box,rows);
+    if(!T&&taxTab!=="rate"){box.innerHTML='<div class="tx-empty">这个税年还没有记录。<br>点右上角「+ 记一笔」添加收入。</div>';return;}
+    if(taxTab==="sum")return renderTaxSum(box,rows,T);
+    if(taxTab==="chart")return renderTaxChart(box,rows,T);
+    if(taxTab==="rate")return renderTaxRates(box);}
+
+  function renderTaxRecs(box,rows){
+    if(!rows.length){box.innerHTML='<div class="tx-empty">还没有收入记录。<br>点右上角「+ 记一笔」开始，或用「⬇️ 导出」备份。</div>';return;}
+    var r2=rows.slice().reverse();
+    box.innerHTML='<div class="tx-tbl"><h4>收入记录 · '+rows.length+' 笔</h4><div class="tx-scroll"><table>'+
+      '<thead><tr><th>日期</th><th class="num">实收</th><th class="num">税前收入</th><th class="num">PAYE</th><th class="num">ACC</th><th class="num">GST</th><th class="num">到手</th><th>付款方</th><th></th></tr></thead><tbody>'+
+      r2.map(function(c){
+        return '<tr data-id="'+c.id+'"><td>'+esc(c.date)+(c.gstIncluded?'<span class="tx-gst">含GST</span>':'')+'</td>'+
+          '<td class="num">'+txMoney(c.gross)+'</td><td class="num">'+txMoney(c.inc)+'</td>'+
+          '<td class="num" style="color:'+TXC.tax+'">'+txMoney(c.mTax)+'</td>'+
+          '<td class="num" style="color:'+TXC.acc+'">'+txMoney(c.mAcc)+'</td>'+
+          '<td class="num" style="color:'+TXC.gst+'">'+(c.gstAmt?txMoney(c.gstAmt):"—")+'</td>'+
+          '<td class="num" style="color:'+TXC.income+';font-weight:600">'+txMoney(c.net)+'</td>'+
+          '<td>'+esc(c.payer||"")+(c.note?'<span class="tx-gst">'+esc(c.note)+'</span>':'')+'</td>'+
+          '<td style="text-align:right"><button class="act" data-edit="'+c.id+'">✎</button><button class="act del" data-del="'+c.id+'">✕</button></td></tr>';}).join("")+
+      '</tbody></table></div></div>';}
+
+  function renderTaxSum(box,rows,T){
+    var mc=txMonths(rows),rt=txRates(taxYear===null?(txYears().pop()||2025):taxYear);
+    var cards=[["总收入（税前）",txMoney(T.income),"var(--text)"],["实际税率",T.eff.toFixed(2)+"%",TXC.tax],
+      ["PAYE 所得税",txMoney(T.tax),TXC.tax],["ACC 保险费",txMoney(T.acc),TXC.acc],
+      ["GST 总额",txMoney(T.gst),TXC.gst],["应付合计",txMoney(T.tax+T.acc+T.gst),TXC.total],
+      ["到手收入",txMoney(T.net),TXC.income],["记录月数",mc+" 个月","var(--muted)"]];
+    var avg=[["月均收入",T.income],["月均 PAYE",T.tax],["月均 ACC",T.acc],["月均 GST",T.gst],
+      ["月均应付",T.tax+T.acc+T.gst],["月均到手",T.net]];
+    var bk=rt.brackets.filter(function(b){return T.income>b.min;}).map(function(b){
+      var cap=(b.max===null||b.max===undefined)?Infinity:b.max,t=Math.min(T.income,cap)-b.min;
+      return '<tr><td>'+(b.max===null||b.max===undefined?("$"+b.min.toLocaleString()+"+"):("$"+b.min.toLocaleString()+" ~ $"+b.max.toLocaleString()))+'</td>'+
+        '<td>'+b.rate+'%</td><td class="num">'+txMoney(t)+'</td><td class="num" style="color:'+TXC.tax+'">'+txMoney(t*b.rate/100)+'</td></tr>';}).join("");
+    box.innerHTML='<div class="tx-cards">'+cards.map(function(c){
+        return '<div class="tx-card"><div class="k">'+c[0]+'</div><div class="v" style="color:'+c[2]+'">'+c[1]+'</div></div>';}).join("")+'</div>'+
+      '<div class="tx-tbl"><h4>每月平均</h4><table><tbody>'+avg.map(function(a){
+        return '<tr><td>'+a[0]+'</td><td class="num">'+txMoney(a[1]/mc)+'</td></tr>';}).join("")+'</tbody></table></div>'+
+      '<div class="tx-tbl"><h4>PAYE 税率区间明细</h4><table><thead><tr><th>区间</th><th>税率</th><th class="num">应税额</th><th class="num">税额</th></tr></thead><tbody>'+bk+'</tbody></table></div>';}
+
+  function renderTaxChart(box,rows,T){
+    var byM={};rows.forEach(function(c){var d=parse(c.date),k=d.getFullYear()+"-"+pad(d.getMonth()+1);
+      if(!byM[k])byM[k]={net:0,tax:0,acc:0,gst:0,gross:0};
+      var m=byM[k];m.net+=c.net;m.tax+=c.mTax;m.acc+=c.mAcc;m.gst+=c.gstAmt;m.gross+=c.gross;});
+    var slots=[];
+    if(taxYear!==null){for(var i=0;i<12;i++){var mo=((3+i)%12)+1,yr=mo>=4?taxYear:taxYear+1;
+      var k=yr+"-"+pad(mo),d=byM[k];slots.push({lb:mo+"月",d:d||null});}}
+    else Object.keys(byM).sort().forEach(function(k){slots.push({lb:(+k.split("-")[1])+"月",d:byM[k]});});
+    var max=1;slots.forEach(function(s){if(s.d)max=Math.max(max,s.d.gross);});
+    var bars=slots.map(function(s){
+      var seg="";
+      if(s.d){var h=function(v){return (v/max*100)+"%";};
+        seg='<i style="height:'+h(s.d.net)+';background:'+TXC.income+'"></i>'+
+            '<i style="height:'+h(s.d.tax)+';background:'+TXC.tax+'"></i>'+
+            '<i style="height:'+h(s.d.acc)+';background:'+TXC.acc+'"></i>'+
+            '<i style="height:'+h(s.d.gst)+';background:'+TXC.gst+'"></i>';}
+      var tip=s.d?(s.lb+"：实收 "+txMoney(s.d.gross)+" · 到手 "+txMoney(s.d.net)):s.lb+"：无记录";
+      return '<div class="c" title="'+esc(tip)+'"><div class="stack">'+seg+'</div><span class="lb">'+s.lb+'</span></div>';}).join("");
+    var parts=[["到手",T.net,TXC.income],["PAYE",T.tax,TXC.tax],["ACC",T.acc,TXC.acc],["GST",T.gst,TXC.gst]].filter(function(p){return p[1]>0;});
+    var sum=parts.reduce(function(a,p){return a+p[1];},0)||1,acc=0,stops=[];
+    parts.forEach(function(p){var a=acc/sum*100;acc+=p[1];stops.push(p[2]+" "+a.toFixed(2)+"% "+(acc/sum*100).toFixed(2)+"%");});
+    var lg=function(arr){return '<div class="tx-legend">'+arr.map(function(p){
+      return '<span><i style="background:'+p[2]+'"></i>'+p[0]+(p[1]!==undefined?" "+txMoney(p[1]):"")+'</span>';}).join("")+'</div>';};
+    box.innerHTML='<div class="tx-chart"><h4>每月构成（实收 = 到手 + PAYE + ACC + GST）</h4>'+
+      '<div class="tx-bars">'+bars+'</div>'+lg([["到手",undefined,TXC.income],["PAYE",undefined,TXC.tax],["ACC",undefined,TXC.acc],["GST",undefined,TXC.gst]])+'</div>'+
+      '<div class="tx-chart"><h4>总额去向</h4><div class="tx-donut-wrap">'+
+      '<div class="tx-donut" style="background:conic-gradient('+stops.join(",")+');-webkit-mask:radial-gradient(circle,transparent 52%,#000 53%);mask:radial-gradient(circle,transparent 52%,#000 53%)"></div>'+
+      '<div>'+lg(parts.map(function(p){return [p[0],p[1],p[2]];}))+
+      '<div class="tx-note" style="margin-top:10px">实收合计 '+txMoney(T.gross)+'　·　实际税率 '+T.eff.toFixed(2)+'%</div></div></div></div>';}
+
+  function renderTaxRates(box){
+    var ty=(taxYear===null)?(txYears().pop()||new Date().getFullYear()):taxYear;
+    var rt=txRates(ty),bk=JSON.parse(JSON.stringify(rt.brackets));
+    box.innerHTML='<div class="tx-note" style="background:var(--surface-2);border-radius:10px;padding:11px 14px;margin-bottom:14px">'+
+      '正在编辑 <b style="color:'+TXC.income+'">'+tyLabel(ty)+'</b> 税年的税率。新税年会自动继承上一年设置。</div>'+
+      '<div class="tx-tbl"><h4>PAYE 所得税税率</h4><table><thead><tr><th>下限 ($)</th><th>上限 ($)</th><th>税率 (%)</th></tr></thead><tbody>'+
+      bk.map(function(b,i){
+        return '<tr><td><input class="tx-in" type="number" data-bk="'+i+'" data-f="min" value="'+b.min+'"'+(i===0?" disabled":"")+' style="width:120px"></td>'+
+          '<td><input class="tx-in" type="number" data-bk="'+i+'" data-f="max" value="'+(b.max===null?"":b.max)+'" placeholder="无上限" style="width:120px"></td>'+
+          '<td><input class="tx-in" type="number" step="0.1" data-bk="'+i+'" data-f="rate" value="'+b.rate+'" style="width:90px"></td></tr>';}).join("")+
+      '</tbody></table></div>'+
+      '<div class="tx-tbl"><h4>ACC / GST</h4><table><tbody>'+
+      '<tr><td>ACC 费率 (%)</td><td class="num"><input class="tx-in" type="number" step="0.01" id="tx-acc" value="'+rt.accRate+'" style="width:120px"></td></tr>'+
+      '<tr><td>ACC 收入上限 ($)</td><td class="num"><input class="tx-in" type="number" id="tx-accmax" value="'+rt.accMax+'" style="width:140px"></td></tr>'+
+      '<tr><td>GST 税率 (%)</td><td class="num"><input class="tx-in" type="number" step="0.1" id="tx-gst" value="'+rt.gstRate+'" style="width:120px"></td></tr>'+
+      '</tbody></table></div>'+
+      '<div style="display:flex;gap:9px"><button class="btn primary" id="tx-save-rates">保存税率</button>'+
+      '<button class="btn" id="tx-reset-rates">恢复默认</button><span class="tx-note" id="tx-rate-msg" style="align-self:center"></span></div>';
+    box.querySelector("#tx-save-rates").addEventListener("click",function(){
+      var nb=bk.map(function(b,i){
+        var g=function(f){return box.querySelector('[data-bk="'+i+'"][data-f="'+f+'"]');};
+        var mx=g("max").value.trim();
+        return {min:+g("min").value||0,max:mx===""?null:+mx,rate:+g("rate").value||0};});
+      for(var i=1;i<nb.length;i++)nb[i].min=(nb[i-1].max===null?nb[i].min:nb[i-1].max);
+      taxRates[ty]={brackets:nb,accRate:+box.querySelector("#tx-acc").value||0,
+        accMax:+box.querySelector("#tx-accmax").value||0,gstRate:+box.querySelector("#tx-gst").value||0};
+      save("tt_taxrates",taxRates);
+      box.querySelector("#tx-rate-msg").textContent="已保存 ✓";renderTax();});
+    box.querySelector("#tx-reset-rates").addEventListener("click",async function(){
+      if(!await ttConfirm("恢复 "+tyLabel(ty)+" 税年的默认税率？",{anchor:this}))return;
+      delete taxRates[ty];save("tt_taxrates",taxRates);renderTax();});}
+
+  async function taxForm(rec){
+    var isEdit=!!rec;
+    var b=wbtOpen(isEdit?"编辑收入":"记一笔收入",
+      '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" id="tx-f-date" value="'+(rec?rec.date:fmt(new Date()))+'"></div>'+
+      '<div class="wt-row"><label class="t">金额（实收）</label><input class="tx-in" type="number" step="0.01" id="tx-f-gross" value="'+(rec?rec.gross:"")+'" placeholder="4600.00"></div>'+
+      '<div class="wt-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px">'+
+      '<input type="checkbox" id="tx-f-gst"'+(rec&&rec.gstIncluded?" checked":"")+'> 这笔金额<b>含 GST</b>（会自动扣出 GST 部分）</label></div>'+
+      '<div class="wt-row"><label class="t">付款方（可选）</label><input class="tx-in" type="text" id="tx-f-payer" value="'+esc(rec?(rec.payer||""):"")+'"></div>'+
+      '<div class="wt-row"><label class="t">备注（可选）</label><input class="tx-in" type="text" id="tx-f-note" value="'+esc(rec?(rec.note||""):"")+'"></div>'+
+      '<button class="btn primary" id="tx-f-save">'+(isEdit?"保存":"添加")+'</button>'+
+      '<span class="tx-note" id="tx-f-msg" style="margin-left:10px"></span>');
+    b.querySelector("#tx-f-save").addEventListener("click",function(){
+      var d=b.querySelector("#tx-f-date").value,g=parseFloat(b.querySelector("#tx-f-gross").value);
+      if(!d||isNaN(g)||g<=0){b.querySelector("#tx-f-msg").textContent="日期和金额要填对";return;}
+      var o={date:d,gross:g,gstIncluded:b.querySelector("#tx-f-gst").checked,
+        payer:b.querySelector("#tx-f-payer").value.trim(),note:b.querySelector("#tx-f-note").value.trim()};
+      if(isEdit)taxRecs=taxRecs.map(function(x){return x.id===rec.id?Object.assign({},x,o):x;});
+      else taxRecs.push(Object.assign({id:uid()},o));
+      saveTax();taxYear=taxYearOf(d);wbtClose();renderTax();});}
+
+  function exportTax(){
+    var rows=txRows();if(!rows.length){ttAlert("这个税年没有可导出的记录");return;}
+    var head=["date","gross","gst_included","income","paye","acc","gst","net","payer","note"];
+    var lines=[head.join(",")].concat(rows.map(function(c){
+      return [c.date,c.gross.toFixed(2),c.gstIncluded?"yes":"no",c.inc.toFixed(2),c.mTax.toFixed(2),
+        c.mAcc.toFixed(2),c.gstAmt.toFixed(2),c.net.toFixed(2),
+        '"'+String(c.payer||"").replace(/"/g,'""')+'"','"'+String(c.note||"").replace(/"/g,'""')+'"'].join(",");}));
+    dlFile("tax_"+(taxYear===null?"all":tyLabel(taxYear).replace("/","-"))+".csv","﻿"+lines.join("\r\n"),"text/csv");}
+
+  var taxInit=false;
+  function openTax(){
+    if(!taxInit){
+      taxInit=true;
+      document.getElementById("tax-tabs").addEventListener("click",function(e){
+        var b=e.target.closest("[data-tt]");if(!b)return;
+        taxTab=b.getAttribute("data-tt");
+        this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+        renderTax();});
+      document.getElementById("tax-year").addEventListener("change",function(){
+        taxYear=this.value===""?null:+this.value;renderTax();});
+      document.getElementById("tax-add").addEventListener("click",function(){taxForm(null);});
+      document.getElementById("tax-export").addEventListener("click",exportTax);
+      document.getElementById("tax-body").addEventListener("click",async function(e){
+        var ed=e.target.closest("[data-edit]"),dl=e.target.closest("[data-del]");
+        if(ed){var id=ed.getAttribute("data-edit"),r=null;
+          taxRecs.forEach(function(x){if(String(x.id)===id)r=x;});if(r)taxForm(r);return;}
+        if(dl){var did=dl.getAttribute("data-del");
+          if(!await ttConfirm("删除这笔记录？",{danger:true,anchor:dl}))return;
+          taxRecs=taxRecs.filter(function(x){return String(x.id)!==did;});saveTax();renderTax();}});
+    }
+    renderTax();}
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
