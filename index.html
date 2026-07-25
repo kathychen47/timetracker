@@ -415,7 +415,11 @@
   .dict-src{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.03em}
   .dict-add{border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:9px;padding:5px 11px;font-size:13px;cursor:pointer;white-space:nowrap;flex:none}
   .dict-add:hover{color:var(--primary);border-color:var(--primary)}
-  .dict-add.saved{background:var(--primary-soft);color:var(--primary);border-color:transparent}
+  .dict-add.saved{background:#FFF6DA;color:#B7860B;border-color:transparent}
+  .star-ico{width:17px;height:17px;vertical-align:-4px;fill:none;stroke:#E9AE12;stroke-width:1.8;
+    stroke-linejoin:round;stroke-linecap:round;transition:transform .15s}
+  .star-ico.on{fill:#FFC93C;stroke:#EAA800}
+  .dict-add:hover .star-ico,.rd-pop-hd .btn:hover .star-ico{transform:scale(1.14) rotate(-6deg)}
   .dict-spk{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:9px;padding:4px 10px;font-size:14px;cursor:pointer;flex:none}
   .dict-spk:hover{border-color:var(--primary)}
   .dict-acc{flex:none}
@@ -2207,7 +2211,7 @@ margin-left: -22px;
     <div class="rd-pop-hd">
       <span class="rd-pop-w" id="rd-pop-w"></span>
       <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
-      <button class="btn" id="rd-pop-star" title="加入生词本">☆</button>
+      <button class="btn" id="rd-pop-star" title="加入生词本"><svg class="star-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg></button>
       <button class="btn" id="rd-pop-x" title="关闭">✕</button>
     </div>
     <div class="rd-pop-bd" id="rd-pop-bd"></div>
@@ -3917,13 +3921,15 @@ margin-left: -22px;
       '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
       '<div class="dict-actions">'+
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
-      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'★ 已收藏':'☆ 加入生词本')+'</button></div></div>'+
+      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+starSVG(saved)+' '+(saved?'已收藏':'加入生词本')+'</button></div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
   function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
     el.innerHTML=dictPrefs.order.map(function(store,i){var en=dictPrefs.enabled[store]!==false;
       return '<div class="do-row"><label class="do-name"><input type="checkbox" class="do-en" data-store="'+store+'"'+(en?" checked":"")+'> '+srcName(store)+'</label>'+
         '<span class="do-btns"><button class="do-mv" data-dir="-1" data-i="'+i+'"'+(i===0?" disabled":"")+'>↑</button><button class="do-mv" data-dir="1" data-i="'+i+'"'+(i===dictPrefs.order.length-1?" disabled":"")+'>↓</button></span></div>';}).join("");}
 
+  function starSVG(filled){return '<svg class="star-ico'+(filled?" on":"")+'" viewBox="0 0 24 24" aria-hidden="true">'+
+    '<path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg>';}
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
   function toggleWord(w,disp,store){
     var idx=-1;for(var i=0;i<words.length;i++)if(words[i].w===w){idx=i;break;}
@@ -4297,7 +4303,7 @@ margin-left: -22px;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
-    star.classList.toggle("on",saved);star.textContent=saved?"★":"☆";star.title=saved?"已收藏（点取消）":"加入生词本";
+    star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
     if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
     rdPop.style.display="";
@@ -4388,7 +4394,7 @@ margin-left: -22px;
       document.getElementById("rd-pop-star").addEventListener("click",function(){
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
-        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.textContent=saved?"★":"☆";st.title=saved?"已收藏（点取消）":"加入生词本";});
+        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";});
       document.getElementById("rd-pop-bd").addEventListener("click",function(e){
         var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
         var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
