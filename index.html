@@ -415,6 +415,11 @@
   .rd-pop-hd .btn{padding:3px 9px;font-size:12px}
   .rd-pop-hd .btn.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
   .rd-pop-bd{padding:10px 12px 14px}
+  @media (hover:none){
+    #rd-pop{width:min(94vw,520px);max-height:58vh;-webkit-overflow-scrolling:touch}
+    .rd-pop-hd .btn{padding:7px 13px;font-size:14px}
+    .rd-content{height:calc(100vh - 200px)}
+  }
   .rd-tr{font-size:15.5px;line-height:1.75;white-space:pre-wrap}
   .rd-tr-src{margin-top:9px;padding-top:9px;border-top:1px dashed var(--border);color:var(--muted);font-size:13px;line-height:1.6;white-space:pre-wrap}
   .rd-tr-by{margin-top:7px;color:var(--muted);font-size:11.5px}
@@ -5233,6 +5238,31 @@ margin-left: -22px;
       document.getElementById("rd-fs-up").addEventListener("click",function(){rdFs=Math.min(30,rdFs+1);save("tt_rdfs",rdFs);applyRdFs();});
       document.getElementById("rd-fs-down").addEventListener("click",function(){rdFs=Math.max(12,rdFs-1);save("tt_rdfs",rdFs);applyRdFs();});
       rdContent.addEventListener("mouseup",function(){setTimeout(rdSelHandler,10);});
+      // —— 触屏（iPad/手机）：点一下查词；长按选中后自动查/翻译 ——
+      var touchMoved=false,tStart=null;
+      rdContent.addEventListener("touchstart",function(e){touchMoved=false;
+        var t=e.touches&&e.touches[0];tStart=t?{x:t.clientX,y:t.clientY}:null;},{passive:true});
+      rdContent.addEventListener("touchmove",function(e){
+        var t=e.touches&&e.touches[0];
+        if(t&&tStart&&(Math.abs(t.clientX-tStart.x)>8||Math.abs(t.clientY-tStart.y)>8))touchMoved=true;},{passive:true});
+      rdContent.addEventListener("touchend",function(e){
+        setTimeout(function(){
+          var sel=String(getSelection()||"").trim();
+          if(sel){rdSelHandler();return;}                    // 长按选中 → 查词/翻译
+          if(touchMoved||!tStart)return;                     // 滑动翻页不算点击
+          if(!trigOn("click")&&!trigOn("select"))return;
+          var hit=wordAtPoint(tStart.x,tStart.y);
+          if(!hit){hideHl();hideRdPop();return;}
+          showHl(hit.rect);lookupCands(hit.cands,hit.rect);
+        },80);},{passive:true});
+      // iOS 长按选词不一定触发 mouseup，靠 selectionchange 兜底
+      var selTimer=null;
+      document.addEventListener("selectionchange",function(){
+        if(state.tab!=="reader")return;
+        var s=getSelection();if(!s||!s.rangeCount)return;
+        if(!rdContent.contains(s.anchorNode))return;
+        if(selTimer)clearTimeout(selTimer);
+        selTimer=setTimeout(function(){if(String(getSelection()||"").trim())rdSelHandler();},600);});
       rdContent.addEventListener("mousemove",rdHover);
       rdContent.addEventListener("click",rdClickWord);
       rdContent.addEventListener("contextmenu",rdContextWord);
