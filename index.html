@@ -472,7 +472,7 @@
   .rd-content .md hr{border:none;border-top:1px solid var(--border);margin:1.4em 0}
   .rd-content .md ul,.rd-content .md ol{margin:.6em 0 .6em 1.4em}
   .rd-content canvas{max-width:100%;display:block;margin:0 auto 14px;box-shadow:0 2px 12px rgba(0,0,0,.1)}
-  .rd-page{position:relative;margin:0 auto 16px;width:fit-content}
+  .rd-page{position:relative;margin:0 auto 16px;width:fit-content;max-width:100%}
   .rd-page.ph{background:var(--surface-2);border-radius:6px}
   .pg-no{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11px;
     font-variant-numeric:tabular-nums;border-radius:6px;padding:2px 8px;pointer-events:none;z-index:3}
@@ -5831,7 +5831,8 @@ margin-left: -22px;
     var want=(on===undefined)?!m.classList.contains("toc-on"):!!on;
     m.classList.toggle("toc-on",want);save("tt_rdtoc",want);
     var b=document.getElementById("rd-toc-btn");if(b)b.classList.toggle("on",want);
-    if(want){if(!tocData)buildToc();else renderToc();}}
+    if(want){if(!tocData)buildToc();else renderToc();}
+    relayoutPdf();}
   function setGoVal(n){
     var i=document.getElementById("rd-go");
     if(i&&document.activeElement!==i)i.value=n;
@@ -5879,6 +5880,15 @@ margin-left: -22px;
       var r=sc.getBoundingClientRect(),y=Math.max(0,Math.min(1,(e.clientY-r.top)/(r.height||1)));
       tip.style.display="";tip.style.top=Math.max(0,y*r.height-10)+"px";tip.textContent=scrubLabel(y);});
     sc.addEventListener("mouseleave",function(){if(!dragging)tip.style.display="none";});}
+  // 容器宽度变了（开关目录/笔记栏、窗口缩放）→ PDF 要按新宽度重画，否则画面和标注层错位
+  var relayoutT=null;
+  function relayoutPdf(){
+    if(!curPdf||!curBook||curBook.type!=="pdf")return;
+    if(relayoutT)clearTimeout(relayoutT);
+    relayoutT=setTimeout(function(){
+      var p=curPdf.page||1;
+      if(rdMode()==="scroll")renderPdfScroll(p);else showPdfPage(p);
+      setTimeout(updateScrub,80);},160);}
   function rdMode(){return load("tt_rdmode","page");}
   async function applyRdMode(){
     var m=rdMode();
@@ -6137,7 +6147,8 @@ margin-left: -22px;
     var want=(on===undefined)?!m.classList.contains("notes-on"):!!on;
     m.classList.toggle("notes-on",want);save("tt_rdnotes",want);
     var b=document.getElementById("rd-notes-btn");if(b)b.classList.toggle("on",want);
-    if(want)renderNotes();}
+    if(want)renderNotes();
+    relayoutPdf();}
   async function jumpAnnot(id){
     var a=null;annList().forEach(function(x){if(x.id===id)a=x;});if(!a)return;
     if(a.sc!==annScope()){
@@ -6432,7 +6443,7 @@ margin-left: -22px;
         else if(!a)clearLink();});
       rdContent.addEventListener("mouseleave",clearLink);
       rdContent.addEventListener("scroll",clearLink);
-      window.addEventListener("resize",clearLink);
+      window.addEventListener("resize",function(){clearLink();relayoutPdf();});
       // 点 PDF 原文批注 → 打开笔记栏并定位
       rdContent.addEventListener("click",function(e){
         var pa=e.target.closest(".pa");if(!pa)return;
