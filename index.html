@@ -2166,9 +2166,9 @@ margin-left: -22px;
     <!-- READER -->
     <section class="view" id="view-reader">
       <div id="rd-shelf">
-        <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / TXT，选中单词即可查词</span></div>
+        <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / Word / TXT 等，选中单词即可查词</span></div>
         <div class="rd-import">
-          <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.txt" multiple hidden></label>
+          <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
           <span class="rd-note" id="rd-note"></span>
         </div>
         <div class="rd-grid" id="rd-grid"></div>
@@ -2195,7 +2195,7 @@ margin-left: -22px;
     <div class="rd-pop-hd">
       <span class="rd-pop-w" id="rd-pop-w"></span>
       <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
-      <button class="btn" id="rd-pop-star" title="加入生词本">★</button>
+      <button class="btn" id="rd-pop-star" title="加入生词本">☆</button>
       <button class="btn" id="rd-pop-x" title="关闭">✕</button>
     </div>
     <div class="rd-pop-bd" id="rd-pop-bd"></div>
@@ -2480,6 +2480,15 @@ margin-left: -22px;
       <div class="set-item">
         <label class="do-name" style="cursor:pointer"><input type="checkbox" id="dict-autoadd"> 查词后自动加入生词本</label>
         <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。</div>
+        <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="dict-autospeak"> 查词后自动发音</label>
+        <div class="set-desc" style="margin-top:4px">查词、以及看书时划词，出结果就自动朗读（口音在查词页的「英/美」切换）。</div>
+        <div class="set-row" style="margin-top:12px">
+          <div class="set-row-txt"><div class="set-row-t">看书划词卡片</div><div class="set-desc">读书时选中单词弹出的释义卡片，什么时候收起。</div></div>
+          <select id="dict-popmode">
+            <option value="pin">固定不动（点 ✕ 或按 Esc 关）</option>
+            <option value="hover">鼠标移开就消失</option>
+          </select>
+        </div>
       </div>
       <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">生词本分组</div>
@@ -3708,7 +3717,9 @@ margin-left: -22px;
   (function(){if(!dictPrefs.order||dictPrefs.order.length<2)dictPrefs.order=["oald","collins"];
     if(!dictPrefs.enabled)dictPrefs.enabled={oald:true,collins:true};
     if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};
-    if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;})();
+    if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;
+    if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
+    if(!dictPrefs.popMode)dictPrefs.popMode="pin";})();
   function saveDictPrefs(){save("tt_dictprefs",dictPrefs);}
   function saveWords(){save("tt_words",words);}
   function isCJK(s){return /[一-鿿]/.test(s);}
@@ -3771,7 +3782,10 @@ margin-left: -22px;
   function bookmarkletCode(){var base=location.origin+location.pathname;
     return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;var p=window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');if(p)p.focus();else alert('\\u5f39\\u7a97\\u88ab\\u62e6\\u622a\\uff0c\\u8bf7\\u5141\\u8bb8\\u5f39\\u7a97');})();";}
   function renderBookmarklet(){var a=document.getElementById("bm-link");if(a)a.setAttribute("href",bookmarkletCode());}
-  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;}
+  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();
+    var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;
+    var as=document.getElementById("dict-autospeak");if(as)as.checked=!!dictPrefs.autoSpeak;
+    var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
 
   function renderDictSetup(){
@@ -3872,6 +3886,7 @@ margin-left: -22px;
       if(dictPrefs.enabled[store]===false)continue;
       var rec=null;try{rec=await idbGet(store,key);}catch(e){}
       if(rec)matches.push([store,rec]);}
+    if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
       if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:(wbActive!=="all"?wbActive:wbGroups.def)});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
@@ -3890,7 +3905,7 @@ margin-left: -22px;
       '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
       '<div class="dict-actions">'+
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
-      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'✓ 已收藏':'★ 加入生词本')+'</button></div></div>'+
+      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+(saved?'★ 已收藏':'☆ 加入生词本')+'</button></div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
   function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
     el.innerHTML=dictPrefs.order.map(function(store,i){var en=dictPrefs.enabled[store]!==false;
@@ -3996,6 +4011,10 @@ margin-left: -22px;
       order.addEventListener("change",function(e){var cb=e.target.closest(".do-en");if(!cb)return;dictPrefs.enabled[cb.getAttribute("data-store")]=cb.checked;saveDictPrefs();refreshLookup();});}
     var aa=document.getElementById("dict-autoadd");
     if(aa)aa.addEventListener("change",function(){dictPrefs.autoAdd=aa.checked;saveDictPrefs();});
+    var as=document.getElementById("dict-autospeak");
+    if(as)as.addEventListener("change",function(){dictPrefs.autoSpeak=as.checked;saveDictPrefs();});
+    var pm=document.getElementById("dict-popmode");
+    if(pm)pm.addEventListener("change",function(){dictPrefs.popMode=pm.value;saveDictPrefs();});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -4068,8 +4087,15 @@ margin-left: -22px;
       pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";});}
 
   var rdNote=function(t){var e=document.getElementById("rd-note");if(e)e.textContent=t||"";};
-  function bookType(name){var n=name.toLowerCase();
-    return n.endsWith(".pdf")?"pdf":(n.endsWith(".epub")?"epub":(n.endsWith(".txt")?"txt":null));}
+  function ensureMammoth(){return window.mammoth?Promise.resolve():loadScript("https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js");}
+  var TXT_EXT=["txt","md","markdown","csv","log","srt","vtt","json","xml","rtf"];
+  function bookType(name){var n=name.toLowerCase(),e=(n.split(".").pop()||"");
+    if(e==="pdf")return "pdf";
+    if(e==="epub")return "epub";
+    if(e==="docx"||e==="doc")return "docx";
+    if(e==="html"||e==="htm")return "html";
+    if(TXT_EXT.indexOf(e)>=0)return "txt";
+    return null;}
   function fmtSize(b){return b>1048576?(b/1048576).toFixed(1)+" MB":Math.round(b/1024)+" KB";}
 
   async function importBooks(files){
@@ -4087,8 +4113,8 @@ margin-left: -22px;
     var g=document.getElementById("rd-grid");if(!g)return;
     var list=await bAll();
     list.sort(function(a,b){return (b.added||0)-(a.added||0);});
-    if(!list.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / TXT。</div>';return;}
-    var icon={pdf:"📕",epub:"📗",txt:"📄"};
+    if(!list.length){g.innerHTML='<div class="rd-empty">书架是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown / HTML。</div>';return;}
+    var icon={pdf:"📕",epub:"📗",txt:"📄",docx:"📘",html:"🌐"};
     g.innerHTML=list.map(function(b){
       var p=b.pos?(b.type==="pdf"?("第 "+(b.pos.page||1)+" 页"):(b.type==="epub"?("第 "+((b.pos.ch||0)+1)+" 节"):"读过")):"未读";
       return '<div class="rd-book" data-id="'+b.id+'"><button class="x" data-del="'+b.id+'" title="删除">✕</button>'+
@@ -4118,12 +4144,34 @@ margin-left: -22px;
     try{
       if(meta.type==="txt")await openTxt(rec.blob);
       else if(meta.type==="epub")await openEpubBook(rec.blob);
+      else if(meta.type==="docx")await openDocx(rec.blob);
+      else if(meta.type==="html")await openHtmlBook(rec.blob);
       else await openPdfBook(rec.blob);
     }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
 
   async function openTxt(blob){
     var text=await blob.text();
     rdContent.innerHTML="<pre></pre>";rdContent.querySelector("pre").textContent=text;
+    rdPosEl.textContent="—";
+    rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
+
+  async function openDocx(blob){
+    await ensureMammoth();
+    var buf=await blob.arrayBuffer();
+    var res;
+    try{res=await mammoth.convertToHtml({arrayBuffer:buf},{convertImage:mammoth.images.imgElement(function(img){
+      return img.read("base64").then(function(b64){return {src:"data:"+img.contentType+";base64,"+b64};});})});}
+    catch(e){throw new Error("这个文件读不出来（老式 .doc 需要先另存为 .docx）");}
+    rdContent.innerHTML=res.value||'<div class="rd-empty">文档是空的</div>';
+    rdPosEl.textContent="—";
+    rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
+
+  async function openHtmlBook(blob){
+    var html=await blob.text();
+    var doc=new DOMParser().parseFromString(html,"text/html");
+    doc.querySelectorAll("script,style,link,iframe,object,embed").forEach(function(x){x.remove();});
+    doc.querySelectorAll("a").forEach(function(a){a.removeAttribute("href");a.style.color="inherit";});
+    rdContent.innerHTML=doc.body?doc.body.innerHTML:esc(html);
     rdPosEl.textContent="—";
     rdContent.scrollTop=(curBook.pos&&curBook.pos.top)||0;}
 
@@ -4210,8 +4258,11 @@ margin-left: -22px;
   function rdNext(){if(curPdf)showPdfPage(curPdf.page+1);else if(curEpub)showChapter(curEpub.ch+1,0);}
 
   // 阅读中划词
-  var rdPop=null,rdPopWord=null;
-  function hideRdPop(){if(rdPop)rdPop.style.display="none";rdPopWord=null;}
+  var rdPop=null,rdPopWord=null,rdPopTimer=null;
+  function hideRdPop(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}if(rdPop)rdPop.style.display="none";rdPopWord=null;}
+  function rdPopArm(){ // 「鼠标移开就消失」模式：离开卡片后收起
+    if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
+    if(dictPrefs.popMode==="hover")rdPopTimer=setTimeout(hideRdPop,600);}
   function rdLooksLikeWord(s){s=s.trim();
     return isCJK(s)?(s.length<=4):(/^[A-Za-z][A-Za-z'’-]*$/.test(s));}
   async function showRdPop(text,rect){
@@ -4219,7 +4270,8 @@ margin-left: -22px;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
-    star.classList.toggle("on",saved);star.textContent=saved?"✓ 已收藏":"★";
+    star.classList.toggle("on",saved);star.textContent=saved?"★":"☆";star.title=saved?"已收藏（点取消）":"加入生词本";
+    if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
     rdPop.style.display="";
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
@@ -4228,7 +4280,8 @@ margin-left: -22px;
     var top=rect.bottom/z+8;
     if(top>vh-160)top=Math.max(8,rect.top/z-Math.min(rdPop.offsetHeight||280,vh*0.5)-8);
     rdPop.style.left=left+"px";rdPop.style.top=top+"px";
-    bd.innerHTML=await wbDefHTML(rdPopWord.w);}
+    bd.innerHTML=await wbDefHTML(rdPopWord.w);
+    if(dictPrefs.popMode==="hover"){if(rdPopTimer)clearTimeout(rdPopTimer);rdPopTimer=setTimeout(hideRdPop,2600);}}
   function rdSelHandler(){
     var s=(getSelection()?String(getSelection()):"").trim();
     if(!s||s.length>60){return;}
@@ -4261,12 +4314,14 @@ margin-left: -22px;
       document.getElementById("rd-fs-down").addEventListener("click",function(){rdFs=Math.max(12,rdFs-1);save("tt_rdfs",rdFs);applyRdFs();});
       rdContent.addEventListener("mouseup",function(){setTimeout(rdSelHandler,10);});
       rdContent.addEventListener("scroll",function(){schedulePos();hideRdPop();});
+      rdPop.addEventListener("mouseenter",function(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
+      rdPop.addEventListener("mouseleave",rdPopArm);
       document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
       document.getElementById("rd-pop-spk").addEventListener("click",function(){if(rdPopWord)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));});
       document.getElementById("rd-pop-star").addEventListener("click",function(){
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
-        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.textContent=saved?"✓ 已收藏":"★";});
+        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.textContent=saved?"★":"☆";st.title=saved?"已收藏（点取消）":"加入生词本";});
       document.getElementById("rd-pop-bd").addEventListener("click",function(e){
         var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
         var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
