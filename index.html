@@ -479,6 +479,16 @@
   .rd-page.ph .pg-no{position:absolute;left:50%;top:50%;right:auto;bottom:auto;transform:translate(-50%,-50%);
     background:var(--surface);color:var(--muted);font-size:13px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
   #rd-mode button{padding:5px 9px;font-size:12px}
+  .rd-ocr{display:inline-flex;align-items:center;gap:4px}
+  .rd-ocr select{padding:5px 7px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:12px}
+  .rd-ocr-note{font-size:12px;color:var(--muted);background:var(--surface-2);border-radius:9px;padding:7px 12px;margin-bottom:10px}
+  .toc-add{display:block;width:100%;border:1px dashed var(--border);background:transparent;color:var(--primary);
+    border-radius:9px;padding:7px;font-size:12.5px;cursor:pointer;font-family:inherit;margin-bottom:10px}
+  .toc-add:hover{border-color:var(--primary);background:var(--primary-soft)}
+  .toc-h{font-size:11px;color:var(--muted);margin:8px 0 4px;padding-left:4px}
+  .toc-i.mine .del{opacity:0;color:var(--muted);font-size:11px;padding:0 3px}
+  .toc-i.mine:hover .del{opacity:1}
+  .toc-i.mine .del:hover{color:var(--danger)}
   .rd-textlayer{position:absolute;inset:0;overflow:hidden;line-height:1}
   .rd-textlayer > span{color:transparent;position:absolute;white-space:pre;transform-origin:0 0;cursor:text}
   .rd-textlayer ::selection{background:rgba(99,102,241,.45)}
@@ -2550,8 +2560,13 @@ margin-left: -22px;
             <button data-rm="page" class="on">📄 翻页</button>
             <button data-rm="scroll">📜 滚动</button>
           </div>
+          <span class="rd-ocr">
+            <button class="btn" id="rd-ocr-btn" title="识别这一页的文字（扫描版用）">🔍 OCR</button>
+            <select id="rd-ocr-lang" title="识别语言"><option value="eng">英文</option><option value="chi_sim">中文</option><option value="both">中英</option></select>
+          </span>
           <button class="btn" id="rd-notes-btn" title="笔记/标注列表">📝 笔记</button>
         </div>
+        <div class="rd-ocr-note" id="rd-ocr-note" style="display:none"></div>
         <div class="rd-main" id="rd-main">
           <aside class="rd-toc" id="rd-toc"></aside>
           <div class="rd-content" id="rd-content"></div>
@@ -5614,6 +5629,75 @@ margin-left: -22px;
     rdContent.scrollTop=top||0;
     savePos({ch:n,top:top||0});}
 
+  // ===== OCR（扫描版 PDF：识别成可选中的文字层）=====
+  var ocrWorker=null,ocrBusy=false;
+  var OCRLANGS={eng:"英文",chi_sim:"中文",both:"中英"};
+  function ocrLang(){return load("tt_ocrlang","eng");}
+  function ensureTesseract(){
+    return window.Tesseract?Promise.resolve()
+      :loadScript("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");}
+  async function getOcrWorker(onProg){
+    var lang=ocrLang(),code=(lang==="both")?"eng+chi_sim":lang;
+    if(ocrWorker&&ocrWorker.__lang===code)return ocrWorker;
+    if(ocrWorker){try{await ocrWorker.terminate();}catch(e){}ocrWorker=null;}
+    await ensureTesseract();
+    if(onProg)onProg("下载识别模型…（首次较慢）");
+    ocrWorker=await Tesseract.createWorker(code,1,{logger:function(m){
+      if(onProg&&m.status)onProg(m.status==="recognizing text"
+        ?("识别中 "+Math.round((m.progress||0)*100)+"%")
+        :(m.status.indexOf("loading")>=0||m.status.indexOf("initial")>=0?"准备模型…":m.status));}});
+    ocrWorker.__lang=code;
+    return ocrWorker;}
+  function ocrCache(){return (curBook&&curBook.ocr)||{};}
+  function applyOcrLayer(wrap,words,dpr){
+    var layer=wrap.querySelector(".rd-textlayer");if(!layer)return;
+    layer.innerHTML="";
+    var frag=document.createDocumentFragment(),spans=[];
+    words.forEach(function(w){
+      var t=w[0];if(!t||!t.trim())return;
+      var x=w[1]/dpr,y=w[2]/dpr,ww=(w[3]-w[1])/dpr,hh=(w[4]-w[2])/dpr;
+      if(ww<=0||hh<=0)return;
+      var s=document.createElement("span");
+      s.textContent=t;
+      s.style.cssText="left:"+x+"px;top:"+y+"px;font-size:"+hh.toFixed(2)+"px;";
+      frag.appendChild(s);spans.push([s,ww]);});
+    layer.appendChild(frag);
+    spans.forEach(function(p){                       // 横向拉伸到和原图宽度一致
+      var actual=p[0].getBoundingClientRect().width;
+      if(actual>0)p[0].style.transform="scaleX("+(p[1]/actual)+")";});
+    layer.setAttribute("data-ocr","1");}
+  function pageHasText(wrap){
+    var l=wrap&&wrap.querySelector(".rd-textlayer");
+    if(!l)return true;
+    if(l.getAttribute("data-ocr"))return true;
+    return (l.textContent||"").trim().length>8;}
+  async function ocrPage(n,silent){
+    if(!curPdf||ocrBusy)return;
+    var wrap=rdContent.querySelector('[data-p="'+n+'"]');
+    var canvas=wrap&&wrap.querySelector("canvas");
+    if(!canvas){if(!silent)ttAlert("这一页还没渲染出来，等一下再试");return;}
+    var cache=ocrCache();
+    if(cache[n]){applyOcrLayer(wrap,cache[n],Math.min(3,window.devicePixelRatio||1));return;}
+    ocrBusy=true;ocrNote("准备识别第 "+n+" 页…");
+    try{
+      var wk=await getOcrWorker(ocrNote);
+      var res=await wk.recognize(canvas);
+      var ws=((res&&res.data&&res.data.words)||[]).filter(function(w){return w.text&&w.text.trim();})
+        .map(function(w){return [w.text,w.bbox.x0,w.bbox.y0,w.bbox.x1,w.bbox.y1];});
+      curBook.ocr=curBook.ocr||{};curBook.ocr[n]=ws;bPut("meta",curBook);
+      applyOcrLayer(wrap,ws,Math.min(3,window.devicePixelRatio||1));
+      ocrNote("✓ 第 "+n+" 页识别出 "+ws.length+" 个词，现在可以划词查词了");
+      setTimeout(function(){ocrNote("");},4000);
+    }catch(e){ocrNote("识别失败："+String(e&&e.message||e));}
+    ocrBusy=false;}
+  function afterPageReady(wrap,n,dpr){
+    var cache=ocrCache();
+    if(cache[n]){applyOcrLayer(wrap,cache[n],dpr);return;}
+    if(!pageHasText(wrap))ocrNote("这一页没有文字层（扫描版）——点右上角「🔍 OCR」可识别成可选中的文字");}
+  function ocrNote(t){
+    var el=document.getElementById("rd-ocr-note");
+    if(el){el.textContent=t||"";el.style.display=t?"":"none";}}
+
   // ===== PDF 自带批注（别人加的高亮/评论）=====
   var PDFSKIP={Popup:1,Link:1,Widget:1};
   function annColor(c){return (c&&c.length>=3)?("rgb("+c[0]+","+c[1]+","+c[2]+")"):"#ffe58a";}
@@ -5727,12 +5811,14 @@ margin-left: -22px;
     var layer=document.createElement("div");layer.className="rd-textlayer";layer.style.setProperty("--scale-factor",scale);
     layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
     wrap.appendChild(canvas);wrap.appendChild(layer);
+    wrap.setAttribute("data-p",n);
     rdContent.innerHTML="";rdContent.appendChild(wrap);rdContent.scrollTop=0;addPageNo(wrap,n);
     await page.render({canvasContext:canvas.getContext("2d"),viewport:vp,
       transform:dpr!==1?[dpr,0,0,dpr,0,0]:null}).promise;
     try{var tc=await page.getTextContent();
       pdfjsLib.renderTextLayer({textContentSource:tc,textContent:tc,container:layer,viewport:vp,textDivs:[]});}catch(e){}
     await drawPdfAnnots(page,vp,wrap);
+    afterPageReady(wrap,n,dpr);
     savePos({page:n});}
 
   // ===== 滚动模式：PDF 连续渲染（按需加载）=====
@@ -5787,7 +5873,7 @@ margin-left: -22px;
       try{var tc=await page.getTextContent();
         pdfjsLib.renderTextLayer({textContentSource:tc,textContent:tc,container:layer,viewport:vp,textDivs:[]});}catch(e){}
       var save=curPdf.page;curPdf.page=n;await drawPdfAnnots(page,vp,wrap);curPdf.page=save;
-      addPageNo(wrap,n);
+      addPageNo(wrap,n);afterPageReady(wrap,n,dpr);
     }catch(e){}}
   // ===== 目录 =====
   var tocData=null;
@@ -5816,16 +5902,34 @@ margin-left: -22px;
       }
     }catch(e){}
     renderToc();}
+  function myMarks(){return (curBook&&curBook.marks)||[];}
+  async function addMark(anchor){
+    if(!curBook)return;
+    var here=curPdf?curPdf.page:(curEpub?(curEpub.ch+1):1);
+    var t=await ttPrompt("给"+(curPdf?("第 "+here+" 页"):("第 "+here+" 节"))+"加一个目录条目，标题：","",{anchor:anchor});
+    if(!t||!t.trim())return;
+    var m={id:"m"+uid(),t:t.trim()};
+    if(curPdf)m.page=here;else m.ch=curEpub.ch;
+    curBook.marks=myMarks().concat([m]);bPut("meta",curBook);
+    renderToc();}
   function renderToc(){
     var box=document.getElementById("rd-toc");if(!box)return;
-    if(!tocData||!tocData.length){box.innerHTML='<div class="rn-empty">这本书没有目录</div>';return;}
+    var mine=myMarks().slice().sort(function(a,b){return (a.page||a.ch||0)-(b.page||b.ch||0);});
     var cur=curPdf?curPdf.page:(curEpub?curEpub.ch:0);
-    box.innerHTML='<div class="rn-top"><span class="rn-title">☰ 目录 '+tocData.length+'</span>'+
+    var head='<div class="rn-top"><span class="rn-title">☰ 目录 '+((tocData||[]).length+mine.length)+'</span>'+
       '<button class="rn-x" id="toc-close" title="隐藏">✕</button></div>'+
-      tocData.map(function(t,i){
+      '<button class="toc-add" id="toc-add">＋ 把当前页加进目录</button>';
+    var mineHtml=mine.length?('<div class="toc-h">⭐ 我加的</div>'+mine.map(function(m){
+      var on=curPdf?(m.page===cur):(m.ch===cur);
+      return '<button class="toc-i mine'+(on?" on":"")+'" data-mark="'+m.id+'">'+
+        '<span class="t">'+esc(m.t)+'</span><span class="pg">'+(m.page||((m.ch||0)+1))+'</span>'+
+        '<span class="del" data-delmark="'+m.id+'" title="删除">✕</span></button>';}).join("")):"";
+    var auto=(!tocData||!tocData.length)?'<div class="rn-empty">这本书没有内置目录<br>用上面的按钮自己加</div>'
+      :('<div class="toc-h">'+(mine.length?"书里的目录":"")+'</div>'+tocData.map(function(t,i){
         var on=curPdf?(t.page&&t.page===cur):(t.ch===cur);
         return '<button class="toc-i'+(on?" on":"")+'" data-toc="'+i+'" style="padding-left:'+(10+t.d*12)+'px">'+
-          '<span class="t">'+esc(t.t)+'</span>'+(t.page?('<span class="pg">'+t.page+'</span>'):"")+'</button>';}).join("");}
+          '<span class="t">'+esc(t.t)+'</span>'+(t.page?('<span class="pg">'+t.page+'</span>'):"")+'</button>';}).join(""));
+    box.innerHTML=head+mineHtml+auto;}
   function toggleToc(on){
     var m=document.getElementById("rd-main");if(!m)return;
     var want=(on===undefined)?!m.classList.contains("toc-on"):!!on;
@@ -6509,8 +6613,21 @@ margin-left: -22px;
           showChapter(curEpub.ch+1,0).then(function(){curEpub.loading=false;});}});
       bindScrub();
       document.getElementById("rd-toc-btn").addEventListener("click",function(){toggleToc();});
+      var ocrSel=document.getElementById("rd-ocr-lang");
+      if(ocrSel){ocrSel.value=ocrLang();
+        ocrSel.addEventListener("change",function(){save("tt_ocrlang",this.value);});}
+      document.getElementById("rd-ocr-btn").addEventListener("click",function(){
+        if(!curPdf){ttAlert("OCR 只用于 PDF");return;}
+        ocrPage(curPdf.page||1);});
       document.getElementById("rd-toc").addEventListener("click",function(e){
         if(e.target.closest("#toc-close")){toggleToc(false);return;}
+        if(e.target.closest("#toc-add")){addMark(document.getElementById("toc-add"));return;}
+        var dm=e.target.closest("[data-delmark]");
+        if(dm){e.stopPropagation();var mid=dm.getAttribute("data-delmark");
+          curBook.marks=myMarks().filter(function(x){return x.id!==mid;});bPut("meta",curBook);renderToc();return;}
+        var mk=e.target.closest("[data-mark]");
+        if(mk){var m=null;myMarks().forEach(function(x){if(x.id===mk.getAttribute("data-mark"))m=x;});
+          if(m){if(m.page)gotoPage(m.page);else if(m.ch!==undefined)showChapter(m.ch,0);renderToc();}return;}
         var b2=e.target.closest("[data-toc]");if(!b2)return;
         var t=tocData[+b2.getAttribute("data-toc")];if(!t)return;
         if(t.page)gotoPage(t.page);else if(t.ch!==undefined)showChapter(t.ch,0);
