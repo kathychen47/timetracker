@@ -2843,7 +2843,7 @@ margin-left: -22px;
 <div class="overlay" id="ai-overlay">
   <div class="modal" style="max-width:480px">
     <h3>AI 助手</h3>
-    <div class="ai-hint">试试：「明天下午3点开会1小时」「加个待办 周五交报告」「这周专注了多久」</div>
+    <div class="ai-hint">试试：「明天下午3点开会1小时」「加个待办 周五交报告」「记一笔收入 4600 含GST」「把 serendipity 加进生词本」「这周专注了多久」</div>
     <div class="ai-io">
       <textarea id="ai-input" rows="2" placeholder="用一句话告诉我…（Enter 发送，Shift+Enter 换行）"></textarea>
       <button class="btn primary" id="ai-send">发送</button>
@@ -4007,9 +4007,11 @@ margin-left: -22px;
     var pend=todos.filter(function(t){return !t.done;}).length;
     var sys="你是个人时间管理 App 的助手。今天 "+fmt(today)+"（周"+WD[(today.getDay()+6)%7]+"）。"+
       "可用大类："+cats.map(function(c){return c.name;}).join("、")+"。"+
-      "用户会用中文或英文说一句话，你判断ONE动作并只输出一个 JSON 对象：字段 action 为 \"create_event\"|\"create_todo\"|\"answer\"；"+
+      "用户会用中文或英文说一句话，你判断ONE动作并只输出一个 JSON 对象：字段 action 为 \"create_event\"|\"create_todo\"|\"add_income\"|\"add_word\"|\"answer\"；"+
       "create_event 还要 title、date(YYYY-MM-DD)、start(HH:MM)、end(HH:MM)、category(从大类挑名字或留空)；"+
       "create_todo 还要 title、可选 due(YYYY-MM-DD)、可选 priority(high|mid|low)；"+
+      "add_income（记一笔收入/工资/发票，用于报税）还要 amount(数字)、date(YYYY-MM-DD，没说就用今天)、gst_included(true/false，说了含GST才true)、可选 payer、可选 note；"+
+      "add_word（把单词加进生词本）还要 word；"+
       "所有情况都要 reply(和用户同语言的简短确认或回答)。"+
       "参考：本周已安排约 "+(Math.round(wkMin/6)/10)+" 小时，未完成待办 "+pend+" 条。只输出 JSON，不要解释。";
     if(aiProvider==="ollama")ollamaSend(sys,text);else geminiSend(sys,text);
@@ -4058,6 +4060,26 @@ margin-left: -22px;
       var td={id:uid(),title:o.title||orig,prio:(o.priority==="high"||o.priority==="low")?o.priority:"mid",due:o.due||"",done:false};
       todos.push(td);save("tt_todos",todos);renderTodos();
       aiMsg("✅ "+esc(o.reply||"已加入待办")+"<br><span style='color:var(--muted);font-size:12px'>"+esc(td.title)+(td.due?" · 截止 "+td.due:"")+"</span>","ok");
+    }else if(o.action==="add_income"){
+      var amt=parseFloat(o.amount);
+      if(isNaN(amt)||amt<=0){aiMsg("没听清金额，换句话说说？例如「记一笔收入 4600，含GST」","err");return;}
+      var d=/^\d{4}-\d{2}-\d{2}$/.test(o.date||"")?o.date:fmt(new Date());
+      var inc={id:uid(),date:d,gross:amt,gstIncluded:!!(o.gst_included===true||o.gst_included==="true"),
+        payer:o.payer||"",note:o.note||""};
+      taxRecs.push(inc);saveTax();
+      taxYear=taxYearOf(d);if(state.tab==="tax")renderTax();
+      var rt=txRates(taxYearOf(d)),gp=rt.gstRate/100;
+      var gstAmt=inc.gstIncluded?(amt*gp/(1+gp)):0;
+      aiMsg("✅ "+esc(o.reply||"已记入税务")+"<br><span style='color:var(--muted);font-size:12px'>"+d+" · "+txMoney(amt)+
+        (inc.gstIncluded?("（含 GST "+txMoney(gstAmt)+"）"):"")+(inc.payer?" · "+esc(inc.payer):"")+"</span>","ok");
+    }else if(o.action==="add_word"){
+      var w=String(o.word||"").trim().toLowerCase();
+      if(!w){aiMsg("没听清是哪个单词","err");return;}
+      if(isSaved(w))aiMsg("这个词已经在生词本里了：<b>"+esc(w)+"</b>","ok");
+      else{words.push({w:w,disp:String(o.word).trim(),dict:isCJK(w)?"collins":"oald",ts:Date.now(),
+          group:(wbActive!=="all"?wbActive:wbGroups.def),ef:2.5,iv:0,reps:0,lapses:0,due:Date.now()});
+        saveWords();updateWbCount();if(state.tab==="dict")renderWordbook();
+        aiMsg("✅ "+esc(o.reply||"已加入生词本")+"<br><span style='color:var(--muted);font-size:12px'>"+esc(w)+"</span>","ok");}
     }else{
       aiMsg(esc(o.reply||"（无回答）"),"ok");
     }
