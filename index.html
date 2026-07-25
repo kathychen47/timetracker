@@ -422,6 +422,16 @@
   .rn-item .mt .grow{flex:1}
   .rn-item .mt button{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:12px;padding:1px 3px}
   .rn-item .mt button:hover{color:var(--danger)}
+  .rn-item .mt .tag{background:var(--surface-2);border-radius:5px;padding:1px 6px}
+  /* 卡片样式跟随标注类型 */
+  .rn-item.t-hl .q{background:color-mix(in srgb,var(--ac) 45%,transparent);border-radius:3px;padding:2px 8px}
+  .rn-item.t-hl .mt .tag{background:color-mix(in srgb,var(--ac) 55%,transparent);color:#5b4a12}
+  .rn-item.t-ul .q{text-decoration:underline;text-decoration-color:var(--primary);text-decoration-thickness:2px;text-underline-offset:3px}
+  .rn-item.t-bd .q{font-weight:700}
+  .rn-item.t-nt .q{border-left-style:dotted}
+  .rn-item.lit{border-color:var(--ac,var(--primary));box-shadow:0 0 0 2px color-mix(in srgb,var(--ac,var(--primary)) 25%,transparent)}
+  .ann.lit{outline:2px solid var(--primary);outline-offset:1px;border-radius:2px}
+  #rd-link{position:fixed;left:0;top:0;pointer-events:none;z-index:58;display:none;overflow:visible}
   .rn-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:22px 6px;line-height:1.7}
   .ann.nt{border-bottom:2px dotted var(--primary);cursor:pointer}
   .ann.nt::after{content:"📝";font-size:9px;vertical-align:super;margin-left:1px;opacity:.8}
@@ -5167,11 +5177,17 @@ margin-left: -22px;
     var s=textOffset(rdContent,rg.startContainer,rg.startOffset);
     var e=textOffset(rdContent,rg.endContainer,rg.endOffset);
     if(s<0||e<0||e<=s)return;
-    var note=await ttPrompt("给这段加笔记：","",{anchor:rdTools});
+    // 选区已经有标注（高亮/下划线/加粗）→ 笔记直接挂到它上面，样式跟着它
+    var sc=annScope(),host=null;
+    annList().forEach(function(x){if(x.sc===sc&&x.s<e&&x.e>s&&(!host||(x.e-x.s)>(host.e-host.s)))host=x;});
+    var note=await ttPrompt(host?("给这段"+({hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"}[host.t]||"标注")+"加笔记：")
+                                :"给这段加笔记：",(host&&host.note)||"",{anchor:rdTools});
     if(note===null||!note.trim())return;
-    var a={id:"a"+uid(),sc:annScope(),s:s,e:e,t:"nt",c:null,x:txt.slice(0,120),note:note.trim(),ts:Date.now()};
-    curBook.ann=annList().concat([a]);annSave();
-    markOffsets(rdContent,s,e,"nt",null,a.id);
+    if(host){host.note=note.trim();annSave();}
+    else{
+      var a={id:"a"+uid(),sc:sc,s:s,e:e,t:"nt",c:null,x:txt.slice(0,120),note:note.trim(),ts:Date.now()};
+      curBook.ann=annList().concat([a]);annSave();
+      markOffsets(rdContent,s,e,"nt",null,a.id);}
     sel.removeAllRanges();hideRdTools();renderNotes();
     if(!document.getElementById("rd-main").classList.contains("notes-on"))toggleNotes(true);}
   function scopeLabel(sc){
@@ -5183,15 +5199,47 @@ margin-left: -22px;
     var all=annList().slice().sort(function(a,b){return (a.sc||"").localeCompare(b.sc||"")||a.s-b.s;});
     var notes=all.filter(function(a){return a.note;}),marks=all.filter(function(a){return !a.note;});
     if(!all.length){box.innerHTML='<div class="rn-h">📝 笔记 · 标注</div><div class="rn-empty">还没有笔记。<br>选中文字 → 点 📝 就能加笔记，<br>点色块可以高亮。</div>';return;}
+    var TN={hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"};
     function item(a){
-      return '<div class="rn-item" data-jump="'+a.id+'" style="--ac:'+(a.c||"var(--primary)")+'">'+
+      return '<div class="rn-item t-'+a.t+'" data-jump="'+a.id+'" style="--ac:'+(a.c||"var(--primary)")+'">'+
         '<div class="q">'+esc(a.x||"")+'</div>'+
         (a.note?'<div class="nt">'+esc(a.note)+'</div>':'')+
-        '<div class="mt"><span>'+esc(scopeLabel(a.sc))+'</span><span class="grow"></span>'+
+        '<div class="mt"><span class="tag">'+(TN[a.t]||"标注")+'</span><span>'+esc(scopeLabel(a.sc))+'</span><span class="grow"></span>'+
         (a.note?'<button data-edit="'+a.id+'" title="编辑">✎</button>':'')+
         '<button data-del="'+a.id+'" title="删除">✕</button></div></div>';}
     box.innerHTML='<div class="rn-h">📝 笔记 '+notes.length+' · 标注 '+marks.length+'</div>'+
       notes.map(item).join("")+(marks.length?('<div class="rn-h" style="margin-top:12px">🖍 标注</div>'+marks.map(item).join("")):"");}
+  // 从原文指向笔记卡片的连线
+  var rdLink=null;
+  function linkSvg(){
+    if(!rdLink){
+      rdLink=document.createElementNS("http://www.w3.org/2000/svg","svg");
+      rdLink.id="rd-link";rdLink.setAttribute("width","100%");rdLink.setAttribute("height","100%");
+      rdLink.innerHTML='<path fill="none" stroke-width="2" stroke-linecap="round"></path><circle r="3.5"></circle>';
+      document.body.appendChild(rdLink);}
+    return rdLink;}
+  function clearLink(){if(rdLink)rdLink.style.display="none";
+    document.querySelectorAll(".rn-item.lit").forEach(function(x){x.classList.remove("lit");});
+    if(rdContent)rdContent.querySelectorAll(".ann.lit").forEach(function(x){x.classList.remove("lit");});}
+  function drawLink(id){
+    var el=rdContent&&rdContent.querySelector('[data-ann="'+id+'"]');
+    var card=document.querySelector('.rn-item[data-jump="'+id+'"]');
+    if(!card)return clearLink();
+    card.classList.add("lit");
+    var svg=linkSvg(),path=svg.querySelector("path"),dot=svg.querySelector("circle");
+    var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
+    var cr=card.getBoundingClientRect(),color=getComputedStyle(card).getPropertyValue("--ac")||"#6366F1";
+    svg.style.display="";svg.setAttribute("viewBox","0 0 "+(innerWidth/z)+" "+(innerHeight/z));
+    svg.style.width=(innerWidth/z)+"px";svg.style.height=(innerHeight/z)+"px";
+    path.setAttribute("stroke",color.trim()||"#6366F1");dot.setAttribute("fill",color.trim()||"#6366F1");
+    if(!el){ // 那段不在当前视野/当前章：只点亮卡片
+      path.setAttribute("d","");dot.setAttribute("r","0");return;}
+    el.classList.add("lit");
+    var er=el.getBoundingClientRect();
+    var x1=er.right/z,y1=(er.top+er.height/2)/z,x2=cr.left/z,y2=(cr.top+18)/z;
+    var mx=(x1+x2)/2;
+    path.setAttribute("d","M"+x1+","+y1+" C"+mx+","+y1+" "+mx+","+y2+" "+x2+","+y2);
+    dot.setAttribute("r","3.5");dot.setAttribute("cx",x1);dot.setAttribute("cy",y1);}
   function toggleNotes(on){
     var m=document.getElementById("rd-main");if(!m)return;
     var want=(on===undefined)?!m.classList.contains("notes-on"):!!on;
@@ -5411,6 +5459,17 @@ margin-left: -22px;
           var v=await ttPrompt("编辑笔记：",a.note||"",{anchor:ed});
           if(v===null)return;a.note=v.trim();annSave();renderNotes();return;}
         if(jp)jumpAnnot(jp.getAttribute("data-jump"));});
+      // 悬停：原文 ↔ 笔记卡片 互相指过去
+      document.getElementById("rd-notes").addEventListener("mouseover",function(e){
+        var it=e.target.closest(".rn-item");if(it)drawLink(it.getAttribute("data-jump"));});
+      document.getElementById("rd-notes").addEventListener("mouseleave",clearLink);
+      rdContent.addEventListener("mouseover",function(e){
+        var a=e.target.closest(".ann");
+        if(a&&document.getElementById("rd-main").classList.contains("notes-on"))drawLink(a.getAttribute("data-ann"));
+        else if(!a)clearLink();});
+      rdContent.addEventListener("mouseleave",clearLink);
+      rdContent.addEventListener("scroll",clearLink);
+      window.addEventListener("resize",clearLink);
       // 点正文里的笔记标记 → 跳到右边那条
       rdContent.addEventListener("click",function(e){
         var a=e.target.closest(".ann.nt");if(!a)return;
