@@ -2704,6 +2704,7 @@ margin-left: -22px;
           <span class="grow"></span>
           <button class="btn primary" id="food-add">+ 新菜谱</button>
           <button class="btn" id="food-order-add">🧾 点一单</button>
+          <button class="btn" id="food-import" title="导入菜谱文件（.json）">📥</button>
           <button class="btn" id="food-export" title="导出全部菜谱为 Markdown">⬇️</button>
         </div>
         <div id="food-body"></div>
@@ -2839,6 +2840,22 @@ margin-left: -22px;
         <button class="btn" id="rc-cancel">取消</button>
         <button class="btn primary" id="rc-save">保存</button>
       </div>
+    </div>
+  </div>
+  <!-- 菜谱导入/导出 -->
+  <div class="overlay" id="rcimp-overlay">
+    <div class="modal" style="max-width:600px">
+      <h3>导入菜谱</h3>
+      <div class="sh-note" style="margin-bottom:10px">选一个 <code>.json</code> 菜谱文件，或者把 JSON 直接粘到下面。重名的菜会跳过，不会覆盖你已有的。</div>
+      <div class="sh-row">
+        <label class="btn" style="cursor:pointer">📁 选文件<input type="file" id="rcimp-file" accept=".json,application/json" hidden></label>
+        <button class="btn" id="rcimp-out">⬇️ 导出全部为 JSON（备份）</button>
+      </div>
+      <div class="field" style="margin-top:12px"><textarea id="rcimp-text" style="min-height:130px" placeholder='粘贴 JSON，例如 [{"name":"番茄牛腩","ing":["牛腩 500g"],"steps":["焯水"]}]'></textarea></div>
+      <div class="sh-note" id="rcimp-note"></div>
+      <div class="modal-actions"><div class="grow"></div>
+        <button class="btn" id="rcimp-cancel">取消</button>
+        <button class="btn primary" id="rcimp-go">导入</button></div>
     </div>
   </div>
   <!-- 菜谱详情 -->
@@ -8095,6 +8112,42 @@ margin-left: -22px;
       if((r.steps||[]).length){out.push("**做法**","");r.steps.forEach(function(x,i){out.push((i+1)+". "+x);});out.push("");}
       if(r.note)out.push("> "+r.note,"");});
     downloadFile("我的菜谱 "+nbStamp()+".md",out.join("\n"),"text/markdown;charset=utf-8");}
+  // ---- 导入 / 导出（.json）----
+  function rcNormalize(o){
+    if(!o||typeof o!=="object")return null;
+    var name=String(o.name||o.title||"").trim();
+    if(!name)return null;
+    var arr=function(x){
+      if(Array.isArray(x))return x.map(function(s){return String(s).trim();}).filter(Boolean);
+      if(typeof x==="string")return x.split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
+      return [];};
+    return {id:"r"+uid(),name:name,
+      rate:Math.max(0,Math.min(5,+o.rate||0)),
+      time:String(o.time||"").trim(),serves:String(o.serves||"").trim(),
+      tags:arr(o.tags).slice(0,8),
+      ing:arr(o.ing||o.ingredients),
+      steps:arr(o.steps),
+      note:String(o.note||"").trim(),
+      photo:(typeof o.photo==="string"&&o.photo.indexOf("data:image")===0)?o.photo:"",
+      ts:+o.ts||Date.now()};}
+  function rcImportPayload(txt){
+    var data;
+    try{data=JSON.parse(txt);}catch(e){throw new Error("这不是合法的 JSON");}
+    var list=Array.isArray(data)?data:(Array.isArray(data.recipes)?data.recipes:[data]);
+    var have={};recipes.forEach(function(r){have[(r.name||"").trim()]=1;});
+    var added=0,skipped=0;
+    list.forEach(function(o){
+      var r=rcNormalize(o);
+      if(!r)return;
+      if(have[r.name]){skipped++;return;}
+      have[r.name]=1;recipes.push(r);added++;});
+    if(added)saveRecipes();
+    return {added:added,skipped:skipped,total:list.length};}
+  function openRcImport(){
+    document.getElementById("rcimp-text").value="";
+    document.getElementById("rcimp-note").textContent="";
+    document.getElementById("rcimp-overlay").classList.add("on");}
+  function closeRcImport(){document.getElementById("rcimp-overlay").classList.remove("on");}
   var foodInit=false;
   function openFood(){
     if(!foodInit){
@@ -8110,6 +8163,30 @@ margin-left: -22px;
       document.getElementById("food-add").addEventListener("click",function(){openRecipeEdit(null);});
       document.getElementById("food-order-add").addEventListener("click",function(){addOrder(null,this);});
       document.getElementById("food-export").addEventListener("click",foodExportMD);
+      document.getElementById("food-import").addEventListener("click",openRcImport);
+      document.getElementById("rcimp-cancel").addEventListener("click",closeRcImport);
+      document.getElementById("rcimp-overlay").addEventListener("click",function(e){if(e.target.id==="rcimp-overlay")closeRcImport();});
+      document.getElementById("rcimp-file").addEventListener("change",function(){
+        var f=this.files&&this.files[0];if(!f)return;
+        var note=document.getElementById("rcimp-note");
+        var fr=new FileReader();
+        fr.onload=function(){document.getElementById("rcimp-text").value=String(fr.result||"");
+          note.textContent="读到了 "+f.name+"，点「导入」确认";};
+        fr.onerror=function(){note.textContent="文件读不出来";};
+        fr.readAsText(f);});
+      document.getElementById("rcimp-go").addEventListener("click",function(){
+        var note=document.getElementById("rcimp-note");
+        var txt=(document.getElementById("rcimp-text").value||"").trim();
+        if(!txt){note.textContent="先选个文件，或者把 JSON 粘进来";return;}
+        try{
+          var r=rcImportPayload(txt);
+          note.textContent="导入 "+r.added+" 道"+(r.skipped?("，跳过 "+r.skipped+" 道重名的"):"");
+          foodTab="lib";save("tt_foodtab",foodTab);renderFood();
+          setTimeout(closeRcImport,900);
+        }catch(err){note.textContent="导入失败："+String(err&&err.message||err);}});
+      document.getElementById("rcimp-out").addEventListener("click",function(){
+        if(!recipes.length){document.getElementById("rcimp-note").textContent="还没有菜谱可导出";return;}
+        downloadFile("我的菜谱 "+nbStamp()+".json",JSON.stringify(recipes,null,1),"application/json;charset=utf-8");});
       // 列表交互
       document.getElementById("food-body").addEventListener("click",async function(e){
         var dl=e.target.closest("[data-rcdel]");
@@ -8201,7 +8278,8 @@ margin-left: -22px;
       document.addEventListener("keydown",function(e){
         if(e.key!=="Escape")return;
         if(document.getElementById("rc-overlay").classList.contains("on"))closeRecipeEdit();
-        else if(document.getElementById("rcv-overlay").classList.contains("on"))closeRecipeView();});
+        else if(document.getElementById("rcv-overlay").classList.contains("on"))closeRecipeView();
+        else if(document.getElementById("rcimp-overlay").classList.contains("on"))closeRcImport();});
     }
     renderFood();
     if(shareOn&&SB&&sbUser&&foodTab==="share")shareDown();}
