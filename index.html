@@ -4173,14 +4173,23 @@ margin-left: -22px;
     return "rgb("+Math.round(r*(1-amt))+","+Math.round(g*(1-amt))+","+Math.round(b*(1-amt))+")";}
   function lapShade(n){var base=getComputedStyle(document.documentElement).getPropertyValue("--cat-focus");
     return n<=1?(base.trim()||"#ec8b76"):darken(base,Math.min(0.55,(n-1)*0.2));}
+  var UPMAX=MAXMIN*60;                                    // 正计时上限 3 小时（和表盘能拖到的上限一致）
+  var pomoSetBox=document.querySelector(".pomo-set"),noteUntil=0;
+  function hintText(){return timerMode==="up"?"正计时 · 一圈 60 分，最多 3 小时":"拖动圆环设时长 · 一圈 60 分";}
   function drawPomo(){
     var tk=(pomoTask.value||"").trim();
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
-    if(pomoHint)pomoHint.style.visibility=idleDial?"visible":"hidden";
-    if(timerMode==="up"){var m=Math.floor(pElapsed/60),s=pElapsed%60;pTime.textContent=pad(m)+":"+pad(s);
+    if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
+    if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
+      if(!noting)pomoHint.textContent=hintText();
+      pomoHint.style.visibility=(noting||idleDial||(timerMode==="up"&&!pTimer&&!pElapsed))?"visible":"hidden";}
+    if(timerMode==="up"){var e2=Math.min(pElapsed,UPMAX),m=Math.floor(e2/60),s=e2%60;pTime.textContent=pad(m)+":"+pad(s);
       pMode.textContent="计时中"+(tk?" · "+tk:"");ring.classList.remove("brk");
-      ring.style.background="";var up=Math.min(100,pElapsed/((+setFocus.value||25)*60)*100);ring.style.setProperty("--p",up.toFixed(1));
+      var mins=e2/60,lap=Math.min(Math.floor(mins/60)+1,MAXMIN/60),cp=(e2>=UPMAX)?100:(mins%60)/60*100; // 一圈 60 分，第二三圈颜色变深
+      var cur=lapShade(lap),rest=lap>=2?lapShade(lap-1):"var(--surface-2)";
+      ring.style.background="conic-gradient("+cur+" 0 "+cp.toFixed(1)+"%,"+rest+" "+cp.toFixed(1)+"% 100%)";
+      ring.style.setProperty("--p",cp.toFixed(1));
     }else{var mm=Math.floor(pLeft/60),ss=pLeft%60;pTime.textContent=pad(mm)+":"+pad(ss);
       pMode.textContent=(pMode2==="focus"?("专注"+(tk?" · "+tk:"")):"休息");ring.classList.toggle("brk",pMode2==="break");
       if(idleDial){var min=Math.max(1,Math.round(pTotal/60)),curLap=Math.ceil(min/60),cp=(((min-1)%60)+1)/60*100;
@@ -4220,7 +4229,9 @@ margin-left: -22px;
     document.title="("+pad(Math.floor(s/60))+":"+pad(s%60)+") "+(pMode2==="break"?"休息":"专注");}
   function pomoTick(){
     var now=Date.now();
-    if(timerMode==="up"){pElapsed=pBase+Math.max(0,Math.round((now-pStartAt)/1000));drawPomo();pomoTitle();return;}
+    if(timerMode==="up"){pElapsed=pBase+Math.max(0,Math.round((now-pStartAt)/1000));
+      if(pElapsed>=UPMAX){pElapsed=UPMAX;finishUp(upHitMs());pomoNote("正计时到 3 小时上限，已自动结束并记好了 ✓");return;}
+      drawPomo();pomoTitle();return;}
     pLeft=Math.max(0,Math.round((pEndAt-now)/1000));
     if(pLeft<=0){onComplete();return;}
     drawPomo();pomoTitle();}
@@ -4239,7 +4250,8 @@ margin-left: -22px;
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     save("tt_pomorun",null);drawPomo();}
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
-  function finishUp(){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(pElapsed);}pElapsed=0;pBase=0;save("tt_pomorun",null);drawPomo();}
+  function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
+  function finishUp(endMs){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}pElapsed=0;pBase=0;save("tt_pomorun",null);drawPomo();}
   function onComplete(endMs){stopTimer();try{beep();}catch(e){}
     if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
@@ -4258,6 +4270,9 @@ margin-left: -22px;
     if(timerMode==="up"){
       pBase=+r.base||0;pStartAt=+r.startAt||Date.now();
       pElapsed=pBase+Math.max(0,Math.round((Date.now()-pStartAt)/1000));
+      if(pElapsed>=UPMAX){                                    // 离开期间已经超过 3 小时 → 按到点那一刻结算
+        pElapsed=UPMAX;finishUp(upHitMs());
+        pomoNote("正计时到了 3 小时上限，已按当时的时间结束并记好了 ✓");return;}
       pTimer=setInterval(pomoTick,500);startBtn.textContent="暂停";pomoTick();
       pomoNote("正计时接着走：离开这段时间也算进去了");
       return;}
@@ -4274,8 +4289,9 @@ margin-left: -22px;
       }else{onComplete(+r.endAt);pomoNote("休息时间已经结束啦");}}}
   function pomoNote(t){
     var el=document.getElementById("pomo-hint");if(!el)return;
+    noteUntil=Date.now()+6000;
     el.textContent=t;el.style.visibility="visible";el.style.color="var(--primary)";
-    setTimeout(function(){el.style.color="";el.textContent="拖动圆环设时长 · 一圈 60 分";drawPomo();},6000);}
+    setTimeout(function(){noteUntil=0;el.style.color="";el.textContent=hintText();drawPomo();},6000);}
   startBtn.addEventListener("click",function(){if(pTimer)stopTimer();else startTimer();});
   document.getElementById("pomo-reset").addEventListener("click",resetPomo);
   skipBtn.addEventListener("click",function(){if(timerMode==="up")finishUp();else{pLeft=0;pEndAt=Date.now();if(pTimer)pomoTick();else onComplete();}});
