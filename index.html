@@ -157,7 +157,7 @@
   .ring-knob{position:absolute;top:7px;left:50%;width:15px;height:15px;border-radius:50%;background:var(--surface);
     border:2.5px solid var(--cat-focus);transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.3)}
   .ring.brk .ring-knob{border-color:var(--cat-sport)}
-  .ring .in{width:140px;height:140px;border-radius:50%;background:var(--surface);display:grid;place-items:center;position:relative;z-index:1}
+  .ring .in{width:140px;height:140px;border-radius:50%;background:var(--surface);display:grid;place-items:center;position:relative;z-index:1;text-align:center}
   .ring .in .time{font-size:31px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:1px}
   .ring .in .mode{font-size:12px;color:var(--muted);margin-top:2px;max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 6px}
   .pomo-side .dash-card2{display:flex;flex-direction:column;gap:11px}
@@ -1079,6 +1079,12 @@
   .cs-subdel{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 1px;line-height:1}
   .cs-subdel:hover{color:var(--danger)}
   .cs-addsub{cursor:pointer;color:var(--primary);border:1px dashed var(--border);background:transparent}
+  .cs-subkw{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:0 1px;line-height:1}
+  .cs-subkw:hover{color:var(--primary)}
+  .cs-kws{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+  .cs-kwl{font-size:11.5px;color:var(--muted);flex:none}
+  .cs-kw{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:7px;padding:2px 8px;font-size:12px;color:var(--muted)}
+  .cs-addkw{cursor:pointer;color:var(--primary);border-style:dashed}
   .cs-colors{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
   .cs-colors .sw{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-colors .sw.on{border-color:var(--text)}
@@ -3188,7 +3194,7 @@ margin-left: -22px;
 
     <div class="set-pane" data-pane="cats">
       <div class="set-sec-h">🏷️ 分类</div>
-      <div class="set-desc" style="margin-bottom:12px">管理你自己的大类 / 小类和配色。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。</div>
+      <div class="set-desc" style="margin-bottom:12px">管理你自己的大类 / 小类和配色。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。<br>「关键词」：新建事件或番茄钟的标题里出现这些词，就自动归到这个分类（小类的关键词优先）。小类的关键词点它旁边的 🏷 改。</div>
       <div id="cat-settings"></div>
       <div class="set-item" style="margin-top:12px">
         <div style="font-weight:600;font-size:13px;margin-bottom:8px">＋ 新建大类</div>
@@ -3466,7 +3472,10 @@ margin-left: -22px;
     "#e57ea0","#e8798a","#d98fa8","#b98a7a","#a68a64","#7d9a8b",
     "#6b8ca3","#8f8fa8","#9aa1b0","#6d7480"];
   var cats=load("tt_cats",null);if(cats===null){cats=DEFAULT_CATS;save("tt_cats",cats);}
-  else{var _kwch=false;DEFAULT_CATS.forEach(function(dc){var ec=cats.filter(function(c){return c.key===dc.key;})[0];if(!ec)return;ec.kw=ec.kw||[];dc.kw.forEach(function(k){if(ec.kw.indexOf(k)<0){ec.kw.push(k);_kwch=true;}});(dc.subs||[]).forEach(function(ds){var es=(ec.subs||[]).filter(function(s){return s.key===ds.key;})[0];if(!es)return;es.kw=es.kw||[];ds.kw.forEach(function(k){if(es.kw.indexOf(k)<0){es.kw.push(k);_kwch=true;}});});});if(_kwch)save("tt_cats",cats);}
+  // 内置分类补上新版加的关键词；但你自己编辑过关键词的（kwEdited）就别再往回塞，否则删掉的词下次打开又冒出来
+  else{var _kwch=false;DEFAULT_CATS.forEach(function(dc){var ec=cats.filter(function(c){return c.key===dc.key;})[0];if(!ec)return;
+    if(!ec.kwEdited){ec.kw=ec.kw||[];dc.kw.forEach(function(k){if(ec.kw.indexOf(k)<0){ec.kw.push(k);_kwch=true;}});}
+    (dc.subs||[]).forEach(function(ds){var es=(ec.subs||[]).filter(function(s){return s.key===ds.key;})[0];if(!es||es.kwEdited)return;es.kw=es.kw||[];ds.kw.forEach(function(k){if(es.kw.indexOf(k)<0){es.kw.push(k);_kwch=true;}});});});if(_kwch)save("tt_cats",cats);}
   function parentObj(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return cats[i];return null;}
   function catIndex(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return i;return 99;}
   function subsOf(k){var p=parentObj(k);return p&&p.subs?p.subs:[];}
@@ -4124,7 +4133,8 @@ margin-left: -22px;
   var pomoManual=false;
   function markPomoAuto(on){
     pomoCat.classList.toggle("auto",!!on);pomoSub.classList.toggle("auto",!!(on&&pomoSub.value));
-    var tip=on?"根据任务名自动归的类，可以自己改":"";pomoCat.title=tip;pomoSub.title=tip;}
+    var tip=on?"根据任务名自动归的类，可以自己改":"没认出这个任务名 —— 你自己选一次并点开始，下次就会自动归到这类（也可以在 设置 › 分类 里给它加关键词）";
+    pomoCat.title=tip;pomoSub.title=tip;}
   function autoPomoCat(){
     var t=(pomoTask.value||"").trim();
     if(!t){pomoManual=false;markPomoAuto(false);return;}   // 清空任务名 → 自动识别重新生效
@@ -4245,6 +4255,8 @@ margin-left: -22px;
     if(timerMode==="up"){pStartAt=now;pBase=pElapsed;}
     else pEndAt=now+pLeft*1000;
     pTimer=setInterval(pomoTick,500);
+    var _t=(pomoTask.value||"").trim();
+    if(pomoManual&&_t)rememberCat(_t,pomoCat.value,pomoSub.value||null);   // 你手选了分类就开始 → 当场记住，下次打同样的任务名自动认出来
     startBtn.textContent="暂停";savePomoRun();savePomoLast();pomoTick();}
   function resetPomo(){stopTimer();pBase=0;pomoManual=false;autoPomoCat();
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
@@ -4589,11 +4601,17 @@ margin-left: -22px;
   function renderCatColors(){var el=document.getElementById("cs-colors");if(!el)return;
     el.innerHTML=PALETTE.map(function(c){return '<span class="sw'+(c===csColor?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></span>';}).join("");}
   function renderCatSettings(){var box=document.getElementById("cat-settings");if(!box)return;
-    box.innerHTML=cats.map(function(c){var subs=c.subs||[];
+    box.innerHTML=cats.map(function(c){var subs=c.subs||[],kw=c.kw||[];
       return '<div class="cs-cat"><div class="cs-cat-h"><i style="background:'+c.color+'"></i><b>'+esc(c.name)+'</b>'+
         '<button class="cs-del" type="button" data-delcat="'+c.key+'">删除</button></div>'+
-        '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+c.color+'"></i>'+esc(s.name)+'<button class="cs-subdel" type="button" data-delsub="'+c.key+'|'+s.key+'" title="删除">✕</button></span>';}).join("")+
-        '<span class="cs-sub cs-addsub" data-addsub="'+c.key+'">＋ 小类</span></div></div>';}).join("");}
+        '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+c.color+'"></i>'+esc(s.name)+
+          '<button class="cs-subkw" type="button" data-kwsub="'+c.key+'|'+s.key+'" title="这个小类的关键词">🏷</button>'+
+          '<button class="cs-subdel" type="button" data-delsub="'+c.key+'|'+s.key+'" title="删除">✕</button></span>';}).join("")+
+        '<span class="cs-sub cs-addsub" data-addsub="'+c.key+'">＋ 小类</span></div>'+
+        '<div class="cs-kws"><span class="cs-kwl">关键词</span>'+
+        kw.map(function(w,i){return '<span class="cs-kw">'+esc(w)+'<button class="cs-subdel" type="button" data-delkw="'+c.key+'|'+i+'" title="删除">✕</button></span>';}).join("")+
+        '<span class="cs-kw cs-addkw" data-addkw="'+c.key+'">＋ 词</span></div></div>';}).join("");}
+  function kwSplit(s){return String(s||"").split(/[\s,，、;；]+/).map(function(x){return x.trim();}).filter(Boolean);}
   function afterCatChange(){renderCatSettings();save("tt_cats",cats);try{renderParents();renderSubs();}catch(e){}try{refreshCatSelects();}catch(e){}renderCal();renderDashboard();if(state.tab==="todo")renderTodos();}
   (function(){var box=document.getElementById("cat-settings");if(!box)return;
     renderCatColors();renderCatSettings();
@@ -4611,6 +4629,21 @@ margin-left: -22px;
       if(asb){var p2=parentObj(asb.getAttribute("data-addsub"));if(!p2)return;
         var nm=await ttPrompt("在「"+p2.name+"」下新建小类，名称：","",{anchor:asb});if(!nm||!nm.trim())return;
         p2.subs=p2.subs||[];p2.subs.push({key:"s"+uid(),name:nm.trim(),kw:[nm.trim()]});afterCatChange();return;}
+      // 关键词：任务/事件标题里出现这些词，就自动归到这个分类（小类优先于大类）
+      var dkw=e.target.closest("[data-delkw]"),akw=e.target.closest("[data-addkw]"),kws=e.target.closest("[data-kwsub]");
+      if(dkw){var kp=dkw.getAttribute("data-delkw").split("|"),kc=parentObj(kp[0]);
+        if(kc){kc.kw=(kc.kw||[]).filter(function(_,i){return i!==+kp[1];});kc.kwEdited=true;afterCatChange();}return;}
+      if(akw){var ac=parentObj(akw.getAttribute("data-addkw"));if(!ac)return;
+        var w=await ttPrompt("打的标题里出现这些词，就自动归到「"+ac.name+"」（多个用空格或逗号分开）：","",{anchor:akw});
+        var list=kwSplit(w);if(!list.length)return;
+        ac.kw=ac.kw||[];list.forEach(function(x){if(ac.kw.indexOf(x)<0)ac.kw.push(x);});ac.kwEdited=true;afterCatChange();return;}
+      if(kws){var sp=kws.getAttribute("data-kwsub").split("|"),sc=parentObj(sp[0]),so=null;
+        if(sc)(sc.subs||[]).forEach(function(x){if(x.key===sp[1])so=x;});
+        if(!so)return;
+        var cur=(so.kw||[]).join(" ");
+        var nw=await ttPrompt("「"+so.name+"」的关键词（空格或逗号分开，清空则不自动匹配）：",cur,{anchor:kws});
+        if(nw===null||nw===undefined)return;
+        so.kw=kwSplit(nw);so.kwEdited=true;afterCatChange();return;}
     });})();
   function closeSettings(){settingsOverlay.classList.remove("on");}
   document.getElementById("set-cancel").addEventListener("click",closeSettings);
