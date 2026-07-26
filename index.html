@@ -729,6 +729,8 @@
   .dym-i{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;cursor:pointer;color:var(--primary);font-size:14px}
   .dym-i:hover{background:var(--primary-soft)}
   .dict-hint{color:var(--muted);font-size:14px;padding:20px 4px;text-align:center}
+  .dict-hint.via{padding:2px 2px 8px;text-align:left;font-size:12.5px}
+  .dict-hint.via b{color:var(--primary)}
   .dict-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px;margin-bottom:12px}
   .dict-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
   .dict-fold{border:none;background:transparent;color:var(--muted);font:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;padding:0;min-width:0}
@@ -4787,16 +4789,55 @@ margin-left: -22px;
     if(!list||!list.length){el.innerHTML="";return;}
     el.innerHTML=list.map(function(s){return '<div class="sg" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'<span class="m">'+(s.store==="collins"?"中→英":"英→中")+'</span></div>';}).join("");}
 
+  // 词形还原：grunted→grunt、boxes→box、studied→study、running→run…
+  function wordVariants(w){
+    var v=[w];
+    if(w.length>4&&/ied$/.test(w))v.push(w.slice(0,-3)+"y");
+    if(w.length>4&&/ies$/.test(w))v.push(w.slice(0,-3)+"y");
+    if(w.length>3&&/es$/.test(w)){v.push(w.slice(0,-2));v.push(w.slice(0,-1));}
+    if(w.length>2&&/s$/.test(w)&&!/ss$/.test(w))v.push(w.slice(0,-1));
+    if(w.length>3&&/ed$/.test(w)){v.push(w.slice(0,-2));v.push(w.slice(0,-1));}
+    if(w.length>4&&/ing$/.test(w)){v.push(w.slice(0,-3));v.push(w.slice(0,-3)+"e");}
+    if(w.length>4&&/er$/.test(w)){v.push(w.slice(0,-2));v.push(w.slice(0,-1));}
+    if(w.length>5&&/est$/.test(w)){v.push(w.slice(0,-3));v.push(w.slice(0,-2));}
+    var dbl=w.match(/^(.*?)([bcdfglmnprstz])\2(ing|ed|er|est)$/);   // running→run, stopped→stop
+    if(dbl)v.push(dbl[1]+dbl[2]);
+    var out=[],seen={};
+    v.forEach(function(x){if(x&&x.length>1&&!seen[x]){seen[x]=1;out.push(x);}});
+    return out;}
+  // 词典里的转向条目：整条内容就是 "@@@LINK=grunt"，要跟过去取真正的词条
+  function linkTarget(html){
+    var m=String(html||"").match(/@@@LINK=([^\r\n<]+)/);
+    return m?m[1].trim().toLowerCase():"";}
+  // 统一入口：原词 → 词形还原 → 跟随转向，都查不到才返回 null
+  async function dictFind(store,key){
+    var cands=wordVariants(key),tried={};
+    for(var i=0;i<cands.length;i++){
+      var k=cands[i];
+      if(tried[k])continue;tried[k]=1;
+      var rec=null;try{rec=await idbGet(store,k);}catch(e){}
+      if(!rec)continue;
+      var hops=0;
+      while(rec&&hops<4){                       // 转向可能套好几层
+        var t=linkTarget(rec.html);
+        if(!t)break;
+        var next=null;try{next=await idbGet(store,t);}catch(e){}
+        if(!next){rec=null;break;}              // 指过去的词也没有 → 当作查不到，走翻译兜底
+        rec=next;hops++;}
+      if(rec&&!linkTarget(rec.html))return {rec:rec,base:rec.k,changed:(rec.k||"")!==key};}
+    return null;}
+  function viaHTML(q,base){
+    return '<div class="dict-hint via">“'+esc(q)+'” 按原形 <b>'+esc(base)+'</b> 查到：</div>';}
   async function doLookup(q){
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
     renderSugg([]);
     if(!q){box.innerHTML="";return;}
     await ensureDictDB();
-    var key=q.toLowerCase(),matches=[];
+    var key=q.toLowerCase(),matches=[],viaBase="";
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];
       if(dictPrefs.enabled[store]===false)continue;
-      var rec=null;try{rec=await idbGet(store,key);}catch(e){}
-      if(rec)matches.push([store,rec]);}
+      var hit=null;try{hit=await dictFind(store,key);}catch(e){}
+      if(hit){matches.push([store,hit.rec]);if(hit.changed&&!viaBase)viaBase=hit.base;}}
     if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
       if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
@@ -4822,7 +4863,7 @@ margin-left: -22px;
           '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';}
       catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
       return;}
-    box.innerHTML=html;}
+    box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+html;}
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
 
   function dictCardHTML(store,rec){
@@ -4993,14 +5034,17 @@ margin-left: -22px;
     x.note=v.trim();saveWords();
     if(state.tab==="dict")renderWordbook();
     return true;}
-  async function wbDefHTML(w){await ensureDictDB();var key=(w||"").toLowerCase(),html=wordNoteHTML(key);
+  async function wbDefHTML(w){await ensureDictDB();var key=(w||"").toLowerCase(),html=wordNoteHTML(key),via="",cards="";
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];if(dictPrefs.enabled[store]===false)continue;
-      var rec=null;try{rec=await idbGet(store,key);}catch(e){}
+      var hit=null;try{hit=await dictFind(store,key);}catch(e){}
+      var rec=hit?hit.rec:null;
+      if(hit&&hit.changed&&!via)via=viaHTML(key,hit.base);
       if(rec){var say=store==="oald"?(rec.disp||rec.k):rec.k;
-        html+='<div class="dict-card" data-store="'+store+'"><div class="dict-card-top"><span class="dict-src">'+srcName(store)+'</span>'+
+        cards+='<div class="dict-card" data-store="'+store+'"><div class="dict-card-top"><span class="dict-src">'+srcName(store)+'</span>'+
           '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button></div>'+
           '<div class="dict-def">'+rec.html+'</div></div>';}}
-    return html||'<div class="dict-hint">词典未加载或查不到（去 ⚙️设置 → 📖词典 加载）。</div>';}
+    var out=html+(cards?(via+cards):"");
+    return out||'<div class="dict-hint">词典未加载或查不到（去 ⚙️设置 → 📖词典 加载）。</div>';}
   async function toggleWbItem(item){if(!item)return;var def=item.querySelector(".wb-def");if(!def)return;
     if(!def.hasAttribute("hidden")){def.setAttribute("hidden","");item.classList.remove("open");return;}
     if(!def.getAttribute("data-loaded")){

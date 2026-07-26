@@ -53,6 +53,12 @@ function variants(w) {
   return [...new Set(v)];
 }
 
+// 词典里的转向条目：内容就是 "@@@LINK=grunt"，要跟过去取真正的词条
+function linkTarget(html) {
+  const m = String(html || "").match(/@@@LINK=([^\r\n<]+)/);
+  return m ? m[1].trim().toLowerCase() : "";
+}
+
 async function lookup(text) {
   const raw = (text || "").trim();
   if (!raw) return { hits: [] };
@@ -63,7 +69,17 @@ async function lookup(text) {
     let rec = null;
     for (const cand of variants(raw.toLowerCase())) {
       rec = await idbGet(store, cand);
-      if (rec) break;
+      if (!rec) continue;
+      let hops = 0;
+      while (rec && hops < 4) {                 // 转向可能套好几层
+        const t = linkTarget(rec.html);
+        if (!t) break;
+        const next = await idbGet(store, t);
+        if (!next) { rec = null; break; }       // 指过去的词也没有 → 当作查不到
+        rec = next; hops++;
+      }
+      if (rec && !linkTarget(rec.html)) break;
+      rec = null;
     }
     if (rec) hits.push({ store, k: rec.k, disp: rec.disp || rec.k, html: rec.html });
   }
