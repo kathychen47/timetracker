@@ -4106,9 +4106,9 @@ margin-left: -22px;
     pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("");
     pomoSub.style.display="";pomoSub.disabled=!subs.length;}
   fillPomoSubs();pomoCat.addEventListener("change",fillPomoSubs);pomoTask.addEventListener("input",drawPomo);
-  function logFocusToCalendar(focusSec){
+  function logFocusToCalendar(focusSec,endMs){
     if(!pomoToCal.checked)return;var task=(pomoTask.value||"").trim()||"专注";
-    var end=new Date(),start=new Date(end.getTime()-focusSec*1000);
+    var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
     events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pomoCat.value,sub:(pomoSub.value||null),done:false});
     save("tt_events",events);if(state.tab==="calendar")renderCal();
   }
@@ -4155,21 +4155,83 @@ margin-left: -22px;
   ring.addEventListener("touchstart",function(e){if(timerMode!=="down"||pTimer)return;ringDrag=true;dialRevs=0;dialPrevAng=null;ringSetFromEvent(e);e.preventDefault();},{passive:false});
   document.addEventListener("touchmove",function(e){if(ringDrag){ringSetFromEvent(e);e.preventDefault();}},{passive:false});
   document.addEventListener("touchend",function(){if(ringDrag){ringDrag=false;drawPomo();}});
-  function stopTimer(){if(pTimer){clearInterval(pTimer);pTimer=null;}startBtn.textContent="开始";}
-  function startTimer(){if(pTimer)return;pTimer=setInterval(function(){if(timerMode==="up"){pElapsed++;drawPomo();}else{pLeft--;if(pLeft<=0){onComplete();}drawPomo();}},1000);startBtn.textContent="暂停";}
-  function resetPomo(){stopTimer();if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();}
-  function logDone(sec){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec);}
-  function finishUp(){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(pElapsed);}pElapsed=0;drawPomo();}
-  function onComplete(){stopTimer();try{beep();}catch(e){}
-    if(pMode2==="focus"){logDone(pTotal);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
-    else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}}
+  // 计时靠"墙上时钟"而不是每秒减一：切到后台被浏览器降频也不会走慢；关掉网页也能接着算
+  var pEndAt=0,pStartAt=0,pBase=0,pTitleOld=null;
+  function savePomoRun(){
+    if(!pTimer){save("tt_pomorun",null);return;}
+    save("tt_pomorun",{mode:timerMode,p2:pMode2,endAt:pEndAt,startAt:pStartAt,base:pBase,total:pTotal,
+      task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",tocal:!!pomoToCal.checked,at:Date.now()});}
+  function pomoTitle(){
+    if(!pTimer){if(pTitleOld!==null){document.title=pTitleOld;pTitleOld=null;}return;}
+    if(pTitleOld===null)pTitleOld=document.title;
+    var s=(timerMode==="up")?pElapsed:pLeft;
+    document.title="("+pad(Math.floor(s/60))+":"+pad(s%60)+") "+(pMode2==="break"?"休息":"专注");}
+  function pomoTick(){
+    var now=Date.now();
+    if(timerMode==="up"){pElapsed=pBase+Math.max(0,Math.round((now-pStartAt)/1000));drawPomo();pomoTitle();return;}
+    pLeft=Math.max(0,Math.round((pEndAt-now)/1000));
+    if(pLeft<=0){onComplete();return;}
+    drawPomo();pomoTitle();}
+  function stopTimer(){
+    if(pTimer){clearInterval(pTimer);pTimer=null;
+      if(timerMode==="up")pBase=pElapsed;}                       // 暂停：把已走的时间记下来
+    startBtn.textContent="开始";savePomoRun();pomoTitle();}
+  function startTimer(){
+    if(pTimer)return;
+    var now=Date.now();
+    if(timerMode==="up"){pStartAt=now;pBase=pElapsed;}
+    else pEndAt=now+pLeft*1000;
+    pTimer=setInterval(pomoTick,500);
+    startBtn.textContent="暂停";savePomoRun();pomoTick();}
+  function resetPomo(){stopTimer();pBase=0;
+    if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
+    save("tt_pomorun",null);drawPomo();}
+  function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
+  function finishUp(){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(pElapsed);}pElapsed=0;pBase=0;save("tt_pomorun",null);drawPomo();}
+  function onComplete(endMs){stopTimer();try{beep();}catch(e){}
+    if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
+    else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
+    save("tt_pomorun",null);drawPomo();}
+  // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）
+  function restorePomoRun(){
+    var r=load("tt_pomorun",null);
+    if(!r||!r.mode)return;
+    timerMode=r.mode;pMode2=r.p2||"focus";pTotal=+r.total||pTotal;
+    document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
+    skipBtn.textContent=(timerMode==="up"?"结束":"跳过");
+    if(r.task)pomoTask.value=r.task;
+    if(r.cat)pomoCat.value=r.cat;
+    if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
+    pomoToCal.checked=(r.tocal!==false);
+    if(timerMode==="up"){
+      pBase=+r.base||0;pStartAt=+r.startAt||Date.now();
+      pElapsed=pBase+Math.max(0,Math.round((Date.now()-pStartAt)/1000));
+      pTimer=setInterval(pomoTick,500);startBtn.textContent="暂停";pomoTick();
+      pomoNote("正计时接着走：离开这段时间也算进去了");
+      return;}
+    var left=Math.round(((+r.endAt||0)-Date.now())/1000);
+    if(left>0){
+      pEndAt=+r.endAt;pLeft=left;
+      pTimer=setInterval(pomoTick,500);startBtn.textContent="暂停";pomoTick();
+      pomoNote("番茄钟接着走，还剩 "+Math.ceil(left/60)+" 分钟");
+    }else{
+      pLeft=0;drawPomo();
+      if(pMode2==="focus"){                       // 离开期间已经走完了 → 按当时的时间补记
+        onComplete(+r.endAt);
+        pomoNote("你离开时那个番茄钟已经完成，已按当时的时间记进日历 ✓");
+      }else{onComplete(+r.endAt);pomoNote("休息时间已经结束啦");}}}
+  function pomoNote(t){
+    var el=document.getElementById("pomo-hint");if(!el)return;
+    el.textContent=t;el.style.visibility="visible";el.style.color="var(--primary)";
+    setTimeout(function(){el.style.color="";el.textContent="拖动圆环设时长 · 一圈 60 分";drawPomo();},6000);}
   startBtn.addEventListener("click",function(){if(pTimer)stopTimer();else startTimer();});
   document.getElementById("pomo-reset").addEventListener("click",resetPomo);
-  skipBtn.addEventListener("click",function(){if(timerMode==="up")finishUp();else pLeft=1;});
+  skipBtn.addEventListener("click",function(){if(timerMode==="up")finishUp();else{pLeft=0;pEndAt=Date.now();if(pTimer)pomoTick();else onComplete();}});
   document.getElementById("pomo-mode-seg").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;var tm=b.getAttribute("data-tm");if(tm===timerMode)return;
     stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
     skipBtn.textContent=(tm==="up"?"结束":"跳过");
+    pBase=0;save("tt_pomorun",null);
     if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();});
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
@@ -8769,6 +8831,7 @@ margin-left: -22px;
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
+  try{restorePomoRun();}catch(e){}
   initLang();renderBookmarklet();
   // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
   window.addEventListener("tt-words-merged",function(){
