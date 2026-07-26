@@ -4109,7 +4109,17 @@ margin-left: -22px;
   function fillPomoSubs(){var subs=subsOf(pomoCat.value);
     pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("");
     pomoSub.style.display="";pomoSub.disabled=!subs.length;}
-  fillPomoSubs();pomoCat.addEventListener("change",fillPomoSubs);pomoTask.addEventListener("input",drawPomo);
+  // 记住上次专注用的分类，下次打开自动填上（分类被删了就退回默认）
+  function savePomoLast(){save("tt_pomolast",{cat:pomoCat.value||"",sub:pomoSub.value||""});}
+  function applyPomoLast(){
+    var r=load("tt_pomolast",null);if(!r||!r.cat)return;
+    if(!cats.some(function(c){return c.key===r.cat;}))return;
+    pomoCat.value=r.cat;fillPomoSubs();
+    if(r.sub&&subsOf(r.cat).some(function(s){return s.key===r.sub;}))pomoSub.value=r.sub;}
+  fillPomoSubs();applyPomoLast();
+  pomoCat.addEventListener("change",function(){fillPomoSubs();savePomoLast();});
+  pomoSub.addEventListener("change",savePomoLast);
+  pomoTask.addEventListener("input",drawPomo);
   // 大类/小类改了（设置里管理、事件弹窗里新建删除、云端拉取）之后，这些下拉要重建，否则一直是打开页面那一刻的旧列表
   function refreshCatSelects(){
     var has=function(k){return cats.some(function(c){return c.key===k;});};
@@ -4204,7 +4214,7 @@ margin-left: -22px;
     if(timerMode==="up"){pStartAt=now;pBase=pElapsed;}
     else pEndAt=now+pLeft*1000;
     pTimer=setInterval(pomoTick,500);
-    startBtn.textContent="暂停";savePomoRun();pomoTick();}
+    startBtn.textContent="暂停";savePomoRun();savePomoLast();pomoTick();}
   function resetPomo(){stopTimer();pBase=0;
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     save("tt_pomorun",null);drawPomo();}
@@ -4583,7 +4593,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_notes","tt_recipes","tt_orders","tt_shareon"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
