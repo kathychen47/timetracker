@@ -585,6 +585,37 @@
   .rc-scaler .btn{padding:3px 9px;font-size:12px}
   .rc-scaler .rcv-u{margin-right:4px}
   .rc-list .rc-tag{font-size:10.5px}
+  /* 菜谱详情：好读的版式 */
+  .rcv-hero{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:-2px 0 15px}
+  .rcv-chip{display:inline-flex;align-items:center;gap:5px;background:var(--surface-2);border-radius:999px;
+    padding:4px 11px;font-size:12.5px;color:var(--muted)}
+  .rcv-chip b{color:var(--text);font-weight:650}
+  .ing-h{font-size:11.5px;color:var(--muted);letter-spacing:.08em;margin:13px 0 3px}
+  .ing-h:first-child{margin-top:2px}
+  .ing-row{display:flex;align-items:baseline;gap:10px;padding:7px 3px;border-bottom:1px dashed var(--border)}
+  .ing-row:last-child{border-bottom:none}
+  .ing-n{flex:1;min-width:0;font-size:14px}
+  .ing-n small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px;line-height:1.55}
+  .ing-a{flex:none;font-size:14px;font-weight:650;font-variant-numeric:tabular-nums}
+  .ing-a.scaled{color:var(--primary)}
+  .ing-a.none{font-weight:400;color:var(--muted);font-size:13px}
+  .step{display:flex;gap:11px;padding:11px 13px;border-radius:12px;background:var(--surface-2);
+    margin-bottom:9px;cursor:pointer;transition:opacity .15s}
+  .step:hover{box-shadow:inset 0 0 0 1px var(--border)}
+  .step.done{opacity:.42}
+  .step.done .step-t{text-decoration:line-through;text-decoration-color:var(--muted)}
+  .step-n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--primary);color:var(--primary-ink);
+    display:grid;place-items:center;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+  .step.done .step-n{background:var(--muted)}
+  .step-b{flex:1;min-width:0}
+  .step-t{font-size:14px;line-height:1.78}
+  .step-t b.n{color:var(--primary);font-weight:700;font-variant-numeric:tabular-nums}
+  .step-t .ig{background:linear-gradient(transparent 62%,color-mix(in srgb,var(--primary) 24%,transparent) 0);font-weight:600}
+  .step-i{float:right;font-size:13px;margin-left:8px;opacity:.7}
+  .rcv-tip{border-left:3px solid var(--primary);background:var(--primary-soft);border-radius:0 10px 10px 0;
+    padding:10px 13px;margin:10px 0;font-size:13px;line-height:1.85}
+  .rcv-tip h5{margin:0 0 4px;font-size:12.5px;color:var(--primary);font-weight:700}
+  .rcv-hint{font-size:11.5px;color:var(--muted);margin:-4px 0 10px}
   /* 点单 */
   .od-item{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--border);
     border-radius:12px;background:var(--surface);margin-bottom:9px}
@@ -8063,12 +8094,73 @@ margin-left: -22px;
       note.textContent="整理好了，检查一下再保存 ✓";
     }catch(e){note.textContent="整理失败："+String(e&&e.message||e)+"（可到设置里换 AI 引擎）";}}
   // ---- 详情（含等比换算）----
-  var rcViewing=null,rcvFactor=1,rcvBase=0;
+  var rcViewing=null,rcvFactor=1,rcvBase=0,rcvDone={};
+  // 把 "鸡胸肉 500g" 拆成 名称 / 用量 / 括号里的小注
+  function ingParts(line){
+    var s=String(line||"").trim(),sub="";
+    var m=s.match(/[（(]([^）)]*)[）)]\s*$/);
+    if(m){sub=m[1];s=s.slice(0,m.index).trim();}
+    var q=qtyOf(s);
+    if(q){
+      var name=s.slice(0,q.i).trim().replace(/[:：]$/,"");
+      var amt=s.slice(q.i).trim();
+      if(!name){name=amt;amt="";}
+      return {name:name,amt:amt,sub:sub};}
+    var m2=s.match(/^(.*?)\s*(适量|少许|随意|按口味|全部)$/);
+    if(m2&&m2[1])return {name:m2[1].trim(),amt:m2[2],sub:sub};
+    return {name:s,amt:"",sub:sub};}
+  var SEASON=/淀粉|盐|糖|胡椒|味精|鸡精|小苏打|酱油|生抽|老抽|蚝油|醋|料酒|香油|食用油|橄榄油|孜然|辣椒粉|花椒|八角|香叶|桂皮|芝麻|番茄酱|蜂蜜|黄油/;
   function rcvIngHTML(){
     var r=rcViewing;if(!r)return "";
-    return (r.ing||[]).map(function(x){
-      var s=scaleLine(x,rcvFactor);
-      return "<li>"+esc(s)+(rcvFactor!==1&&s!==x?'<span class="rc-tag" style="margin-left:6px">原 '+esc(x)+'</span>':"")+"</li>";}).join("");}
+    var rows=(r.ing||[]).map(function(x){
+      var s=scaleLine(x,rcvFactor),p=ingParts(s);
+      p.changed=(s!==x);p.season=SEASON.test(p.name);
+      return p;});
+    var main=rows.filter(function(p){return !p.season;}),sea=rows.filter(function(p){return p.season;});
+    var row=function(p){
+      return '<div class="ing-row"><div class="ing-n">'+esc(p.name)+
+        (p.sub?('<small>'+esc(p.sub)+'</small>'):"")+'</div>'+
+        '<div class="ing-a'+(p.amt?(p.changed?" scaled":""):" none")+'">'+esc(p.amt||"适量")+'</div></div>';};
+    if(main.length&&sea.length)
+      return '<div class="ing-h">主料</div>'+main.map(row).join("")+'<div class="ing-h">调料</div>'+sea.map(row).join("");
+    return rows.map(row).join("");}
+  // 步骤里把「数字+单位」和「食材名」标出来，一遍扫完，不会互相嵌套
+  function rxEsc(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+  function hlStep(text,names){
+    var t=esc(text);
+    var alt=names.filter(Boolean).sort(function(a,b){return b.length-a.length;})
+      .map(function(n){return n.length===1?(rxEsc(n)+"(?![水片末丝汁泥蓉粉])"):rxEsc(n);}).join("|");
+    var num="\\d+(?:\\.\\d+)?(?:\\s*/\\s*\\d+)?\\s*(?:g|kg|ml|l|克|千克|毫升|升|分钟|小时|秒|下|次|个|片|段|颗|瓣|勺|杯|成|℃|度)?";
+    var re=new RegExp((alt?"("+alt+")|":"()")+"("+num+")","g");
+    return t.replace(re,function(m0,ing,n){
+      if(ing)return '<span class="ig">'+ing+'</span>';
+      if(/^\d+(\.\d+)?$/.test(n)&&n.length>3)return n;      // 纯长数字（像年份）不标
+      return '<b class="n">'+n+'</b>';});}
+  var STEP_ICON=[[/冷冻|冰箱|冰水/,"🧊"],[/切|拍碎|剁|去掉筋膜/,"🔪"],[/烧水|煮|小火|关火|锅底/,"🔥"],
+    [/绞肉机|搅|打\s*\d|拌/,"🌀"],[/腌|浸泡|泡\s*\d/,"⏳"],[/加入|放入|倒入|下锅/,"🥣"],
+    [/捞出|盛出|出锅|装盘/,"🍽️"],[/冲洗|清洗|撇去|擦干/,"💧"]];
+  function stepIcon(t){
+    for(var i=0;i<STEP_ICON.length;i++)if(STEP_ICON[i][0].test(t))return STEP_ICON[i][1];
+    return "";}
+  function rcvStepsHTML(){
+    var r=rcViewing;if(!r||!(r.steps||[]).length)return "";
+    var names=(r.ing||[]).map(function(x){return ingParts(x).name;});
+    return r.steps.map(function(s,i){
+      var ic=stepIcon(s);
+      return '<div class="step'+(rcvDone[i]?" done":"")+'" data-step="'+i+'">'+
+        '<div class="step-n">'+(i+1)+'</div>'+
+        '<div class="step-b"><div class="step-t">'+(ic?('<span class="step-i">'+ic+'</span>'):"")+
+        hlStep(s,names)+'</div></div></div>';}).join("");}
+  function rcvNoteHTML(note){
+    if(!note)return "";
+    var txt=String(note).trim();
+    if(txt.indexOf("【")<0)return '<div class="rc-lines">'+esc(txt)+'</div>';
+    var out="",parts=txt.split(/【([^】]+)】/);
+    if(parts[0]&&parts[0].trim())out+='<div class="rc-lines">'+esc(parts[0].trim())+'</div>';
+    for(var i=1;i<parts.length;i+=2){
+      var body=(parts[i+1]||"").trim();
+      out+='<div class="rcv-tip"><h5>'+esc(parts[i])+'</h5>'+esc(body).replace(/\n/g,"<br>")+'</div>';}
+    return out;}
   function rcvScalerHTML(){
     var r=rcViewing,ing=(r.ing||[]);
     var idx=[];
@@ -8095,18 +8187,23 @@ margin-left: -22px;
     document.getElementById("rcv-pub").style.display=mine?"":"none";
     document.getElementById("rcv-copy").style.display=mine?"none":"";
     if(mine)document.getElementById("rcv-pub").textContent=isPublished(r.name)?"🌐 取消公开":"🌐 发布";
+    rcvDone={};
     document.getElementById("rcv-title").textContent=r.name||"菜谱";
     document.getElementById("rcv-body").innerHTML=
       (r.photo?('<img class="rc-hero" src="'+esc(r.photo)+'" alt="">'):"")+
-      '<div class="rc-m">'+(r.rate?stars(r.rate):"")+
-      (r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
-      (r.serves?('<span class="rc-tag">👥 '+esc(r.serves)+' 人份</span>'):"")+
-      (cnt?('<span class="rc-tag">做过 '+cnt+' 次</span>'):"")+
-      (r.tags||[]).map(function(t){return '<span class="rc-tag">'+esc(t)+'</span>';}).join("")+'</div>'+
-      ((r.ing||[]).length?('<div class="rc-sec">食材</div><div id="rcv-scaler">'+rcvScalerHTML()+'</div>'+
-        '<ul class="rc-list" id="rcv-ing">'+rcvIngHTML()+'</ul>'):"")+
-      ((r.steps||[]).length?('<div class="rc-sec">做法</div><ol class="rc-list">'+r.steps.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+'</ol>'):"")+
-      (r.note?('<div class="rc-sec">备注</div><div class="rc-lines">'+esc(r.note)+'</div>'):"");
+      '<div class="rcv-hero">'+
+      (r.rate?('<span class="rcv-chip">'+stars(r.rate)+'</span>'):"")+
+      (r.time?('<span class="rcv-chip">⏱ <b>'+esc(r.time)+'</b></span>'):"")+
+      (r.serves?('<span class="rcv-chip">🍽️ <b>'+esc(r.serves)+'</b></span>'):"")+
+      (cnt?('<span class="rcv-chip">👩‍🍳 做过 <b>'+cnt+'</b> 次</span>'):"")+
+      ((r.ing||[]).length?('<span class="rcv-chip">🧺 <b>'+r.ing.length+'</b> 样材料</span>'):"")+
+      ((r.steps||[]).length?('<span class="rcv-chip">📋 <b>'+r.steps.length+'</b> 步</span>'):"")+
+      (r.tags||[]).map(function(t){return '<span class="rcv-chip">'+esc(t)+'</span>';}).join("")+'</div>'+
+      ((r.ing||[]).length?('<div class="rc-sec">🧺 食材</div><div id="rcv-scaler">'+rcvScalerHTML()+'</div>'+
+        '<div id="rcv-ing">'+rcvIngHTML()+'</div>'):"")+
+      ((r.steps||[]).length?('<div class="rc-sec">📋 做法</div><div class="rcv-hint">点一下步骤可以划掉，边做边勾</div>'+
+        '<div id="rcv-steps">'+rcvStepsHTML()+'</div>'):"")+
+      (r.note?('<div class="rc-sec">💡 备注</div>'+rcvNoteHTML(r.note)):"");
     document.getElementById("rcv-overlay").classList.add("on");}
   function closeRecipeView(){document.getElementById("rcv-overlay").classList.remove("on");rcViewing=null;rcvFactor=1;}
   // ---- 点单 ----
@@ -8368,7 +8465,10 @@ margin-left: -22px;
       document.getElementById("rcv-body").addEventListener("click",function(e){
         var mb=e.target.closest("[data-mul]");
         if(mb){rcvFactor=parseFloat(mb.getAttribute("data-mul"))||1;rcvRefresh();return;}
-        if(e.target.closest("#rcv-reset")){rcvFactor=1;rcvRefresh();return;}});
+        if(e.target.closest("#rcv-reset")){rcvFactor=1;rcvRefresh();return;}
+        var st=e.target.closest("[data-step]");
+        if(st){var k=+st.getAttribute("data-step");
+          rcvDone[k]=!rcvDone[k];st.classList.toggle("done",!!rcvDone[k]);return;}});
       document.getElementById("rcv-body").addEventListener("input",function(e){
         if(!e.target.closest("#rcv-have")||!rcViewing)return;
         var base=(rcViewing.ing||[])[rcvBase],q=base?qtyOf(base):null;
