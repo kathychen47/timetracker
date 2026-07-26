@@ -2865,6 +2865,8 @@ margin-left: -22px;
       <div id="rcv-body"></div>
       <div class="modal-actions">
         <button class="btn" id="rcv-edit">✎ 编辑</button>
+        <button class="btn" id="rcv-pub">🌐 发布</button>
+        <button class="btn" id="rcv-copy" style="display:none">复制到我的菜谱</button>
         <div class="grow"></div>
         <button class="btn" id="rcv-close">关闭</button>
         <button class="btn primary" id="rcv-order">🧾 点这道</button>
@@ -7855,9 +7857,21 @@ margin-left: -22px;
     return ((r.name||"")+" "+(r.tags||[]).join(" ")+" "+(r.ing||[]).join(" ")+" "+(r.note||"")).toLowerCase().indexOf(q)>=0;}
   // ---- 菜谱库 ----
   function renderFoodLib(box){
+    var mineNames={};recipes.forEach(function(r){mineNames[(r.name||"").trim()]=1;});
+    var pubOnly=pubRecipes.filter(function(r){return !mineNames[(r.name||"").trim()]&&foodMatch(r);});
     var list=recipes.filter(foodMatch).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
-    if(!recipes.length){box.innerHTML='<div class="tx-empty">还没有菜谱。<br>点右上角「+ 新菜谱」记一道你觉得好吃的，<br>也可以整段粘贴进去让 AI 帮你拆成食材和步骤。</div>';return;}
-    if(!list.length){box.innerHTML='<div class="tx-empty">没找到匹配的菜。</div>';return;}
+    var pubHTML=pubOnly.length?('<div class="od-h" style="margin-top:'+(list.length?"22px":"0")+'">🌐 公共菜谱 '+pubOnly.length+
+        ' 道<span style="font-weight:400">　（存在 GitHub 上，谁都能看）</span>'+
+        '<button class="btn" id="pub-refresh" style="margin-left:8px;padding:2px 9px;font-size:12px">刷新</button></div>'+
+      '<div class="rc-grid">'+pubOnly.map(function(r,i){
+        return '<div class="rc-card" data-pub="'+i+'">'+
+          '<div class="rc-ph">'+(r.photo?('<img src="'+esc(r.photo)+'" alt="">'):"🍽️")+'</div>'+
+          '<div class="rc-b"><div class="rc-n">'+esc(r.name||"未命名")+'</div>'+
+          '<div class="rc-m"><span class="rc-tag" style="background:var(--primary-soft);color:var(--primary)">🌐 公共</span>'+
+          (r.rate?stars(r.rate):"")+(r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
+          '</div></div></div>';}).join("")+'</div>'):"";
+    if(!recipes.length&&!pubOnly.length){box.innerHTML='<div class="tx-empty">还没有菜谱。<br>点右上角「+ 新菜谱」记一道你觉得好吃的，<br>也可以整段粘贴进去让 AI 帮你拆成食材和步骤。</div>';return;}
+    if(!list.length){box.innerHTML=(pubOnly.length?pubHTML:'<div class="tx-empty">没找到匹配的菜。</div>');return;}
     box.innerHTML='<div class="rc-grid">'+list.map(function(r){
       return '<div class="rc-card" data-rc="'+esc(r.id)+'">'+
         '<div class="rc-ph">'+(r.photo?('<img src="'+esc(r.photo)+'" alt="">'):"🍽️")+'</div>'+
@@ -7865,8 +7879,9 @@ margin-left: -22px;
         '<div class="rc-m">'+(r.rate?stars(r.rate):"")+
         (r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
         (function(){var c=cookedCount(r.id,r.name);return c?('<span class="rc-tag">做过 '+c+' 次</span>'):"";})()+
+        (isPublished(r.name)?'<span class="rc-tag" style="background:var(--primary-soft);color:var(--primary)">🌐 已公开</span>':"")+
         (r.tags||[]).slice(0,3).map(function(t){return '<span class="rc-tag">'+esc(t)+'</span>';}).join("")+
-        '</div></div><button class="x" data-rcdel="'+esc(r.id)+'" title="删除">✕</button></div>';}).join("")+'</div>';}
+        '</div></div><button class="x" data-rcdel="'+esc(r.id)+'" title="删除">✕</button></div>';}).join("")+'</div>'+pubHTML;}
   // ---- 点单 ----
   var MEALS={b:"早餐",l:"午餐",d:"晚餐",s:"夜宵/加餐"};
   function renderFoodOrders(box){
@@ -7941,6 +7956,20 @@ margin-left: -22px;
       '<div class="sh-row" style="margin-top:10px"><button class="btn" id="sh-sqlbtn">显示 SQL</button>'+
       '<button class="btn" id="sh-copy">复制 SQL</button></div>'+
       '<textarea class="sh-sql" id="sh-sql" readonly style="display:none"></textarea></div>';
+    html+='<div class="sh-card"><h4>🌐 公共菜谱（存在 GitHub，所有人可见）</h4>'+
+      '<div class="sh-note">这条路不用登录、不占 Supabase 额度：菜谱直接存进你仓库的 <code>recipes/recipes.json</code>，'+
+      '任何人打开网站就能在菜谱库底部看到。<b>点单不会公开</b>，只有菜谱本身会。</div>'+
+      '<div class="sh-row" style="margin-top:10px">'+
+      '<input id="gh-token" type="text" placeholder="GitHub Token（ghp_… / github_pat_…）" '+
+      'style="flex:1;min-width:200px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:12.5px;-webkit-text-security:disc" '+
+      'autocomplete="off" value="'+esc(ghToken)+'">'+
+      '<button class="btn" id="gh-save">保存</button><button class="btn" id="gh-test">测试</button></div>'+
+      '<div class="sh-note" id="gh-status" style="margin-top:8px"></div>'+
+      '<div class="sh-note" style="margin-top:10px">怎么拿 Token：GitHub 头像 → Settings → Developer settings → '+
+      'Personal access tokens → <b>Fine-grained tokens</b> → Generate new token → Repository access 选 <code>'+esc(ghRepo)+'</code> → '+
+      'Permissions 里把 <b>Contents</b> 设成 <b>Read and write</b> → 生成后复制粘到上面。'+
+      '<br>Token 只存在你这台设备的浏览器里，<b>不进云同步、不进仓库</b>。</div>'+
+      '<div class="sh-note" style="margin-top:8px;color:var(--danger)">⚠️ 公开仓库有 git 历史：发布过的内容即使撤下，历史记录里仍能查到。别放不想让人看到的东西。</div></div>';
     if(sharedIn.length){
       html+=sharedIn.map(function(s){
         var d=s.data||{},rs=d.recipes||[],os=(d.orders||[]).filter(function(o){return !o.done;});
@@ -8058,9 +8087,14 @@ margin-left: -22px;
     var s=document.getElementById("rcv-scaler"),l=document.getElementById("rcv-ing");
     if(s)s.innerHTML=rcvScalerHTML();
     if(l)l.innerHTML=rcvIngHTML();}
-  function openRecipeView(r){
+  function openRecipeView(r,readonly){
     rcViewing=r;rcvFactor=1;rcvBase=0;
-    var cnt=cookedCount(r.id,r.name);
+    var mine=!readonly&&!!rcById(r.id);
+    var cnt=mine?cookedCount(r.id,r.name):0;
+    document.getElementById("rcv-edit").style.display=mine?"":"none";
+    document.getElementById("rcv-pub").style.display=mine?"":"none";
+    document.getElementById("rcv-copy").style.display=mine?"none":"";
+    if(mine)document.getElementById("rcv-pub").textContent=isPublished(r.name)?"🌐 取消公开":"🌐 发布";
     document.getElementById("rcv-title").textContent=r.name||"菜谱";
     document.getElementById("rcv-body").innerHTML=
       (r.photo?('<img class="rc-hero" src="'+esc(r.photo)+'" alt="">'):"")+
@@ -8112,6 +8146,65 @@ margin-left: -22px;
       if((r.steps||[]).length){out.push("**做法**","");r.steps.forEach(function(x,i){out.push((i+1)+". "+x);});out.push("");}
       if(r.note)out.push("> "+r.note,"");});
     downloadFile("我的菜谱 "+nbStamp()+".md",out.join("\n"),"text/markdown;charset=utf-8");}
+  // ---- 🌐 公共菜谱：直接存在 GitHub 仓库里，谁都能看 ----
+  var PUB_PATH="recipes/recipes.json";
+  var pubRecipes=load("tt_pubrecipes",[])||[],pubAt=+load("tt_pubat",0)||0;
+  var ghToken=load("tt_ghtoken",""),ghRepo=load("tt_ghrepo","kathychen47/timetracker"),ghBranch=load("tt_ghbranch","main");
+  function b64ToStr(b){
+    var bin=atob(String(b).replace(/\s/g,"")),bytes=new Uint8Array(bin.length);
+    for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    return new TextDecoder("utf-8").decode(bytes);}
+  function strToB64(s){
+    var bytes=new TextEncoder().encode(s),bin="";
+    bytes.forEach(function(b){bin+=String.fromCharCode(b);});
+    return btoa(bin);}
+  function pubFetch(force){                     // 从网站自己的目录读，同源没有跨域问题
+    if(!force&&pubRecipes.length&&(Date.now()-pubAt<600000))return Promise.resolve(pubRecipes);
+    return fetch(PUB_PATH+"?t="+Date.now()).then(function(r){
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      return r.json();}).then(function(j){
+        pubRecipes=(Array.isArray(j)?j:(j.recipes||[])).filter(function(x){return x&&x.name;});
+        pubAt=Date.now();save("tt_pubrecipes",pubRecipes);save("tt_pubat",pubAt);
+        return pubRecipes;},
+      function(){return pubRecipes;});}          // 拿不到就用上次缓存的
+  function ghHeaders(){
+    return {"Authorization":"Bearer "+ghToken,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"};}
+  function ghUrl(){return "https://api.github.com/repos/"+ghRepo+"/contents/"+PUB_PATH;}
+  async function ghRead(){
+    var r=await fetch(ghUrl()+"?ref="+encodeURIComponent(ghBranch)+"&t="+Date.now(),{headers:ghHeaders()});
+    if(r.status===404)return {sha:"",list:[]};
+    if(!r.ok)throw new Error("读取失败 "+r.status+"："+(await r.text()).slice(0,140));
+    var j=await r.json(),list=[];
+    try{list=JSON.parse(b64ToStr(j.content||""));}catch(e){list=[];}
+    return {sha:j.sha||"",list:Array.isArray(list)?list:[]};}
+  async function ghWrite(list,msg){
+    var cur=await ghRead();
+    var body={message:msg||"Update public recipes",content:strToB64(JSON.stringify(list,null,1)+"\n"),branch:ghBranch};
+    if(cur.sha)body.sha=cur.sha;
+    var r=await fetch(ghUrl(),{method:"PUT",headers:Object.assign({"Content-Type":"application/json"},ghHeaders()),body:JSON.stringify(body)});
+    if(!r.ok)throw new Error("写入失败 "+r.status+"："+(await r.text()).slice(0,140));
+    pubRecipes=list;pubAt=Date.now();save("tt_pubrecipes",list);save("tt_pubat",pubAt);
+    return true;}
+  function pubStripped(r){                      // 公开出去的版本：不带照片（仓库别塞 base64）
+    return {name:r.name,rate:r.rate||0,time:r.time||"",serves:r.serves||"",
+      tags:(r.tags||[]).slice(),ing:(r.ing||[]).slice(),steps:(r.steps||[]).slice(),
+      note:r.note||"",by:(sbUser&&sbUser.email)?String(sbUser.email).split("@")[0]:"",ts:r.ts||Date.now()};}
+  function isPublished(name){
+    var yes=false;pubRecipes.forEach(function(r){if((r.name||"")===name)yes=true;});return yes;}
+  async function publishRecipe(r,anchor){
+    if(!ghToken){ttAlert("先到「👥 分享」页填 GitHub Token（那页有一步步的说明）",{anchor:anchor});return;}
+    var pub=isPublished(r.name);
+    var ok=await ttConfirm(pub?("把「"+r.name+"」从公共菜谱撤下来？")
+      :("把「"+r.name+"」发布到公共菜谱？\n发布后**任何人**打开这个网站都能看到（照片不会上传）。\n公开仓库有 git 历史，撤下来也仍能在历史里查到。"),{anchor:anchor});
+    if(!ok)return;
+    try{
+      var cur=await ghRead();
+      var list=cur.list.filter(function(x){return (x.name||"")!==r.name;});
+      if(!pub)list.push(pubStripped(r));
+      await ghWrite(list,(pub?"Remove ":"Publish ")+r.name);
+      ttAlert(pub?"已撤下（GitHub Pages 约 1 分钟后生效）":"已发布 ✓（约 1 分钟后所有人可见）",{anchor:anchor});
+      renderFood();
+    }catch(e){ttAlert("操作失败："+String(e&&e.message||e),{anchor:anchor});}}
   // ---- 导入 / 导出（.json）----
   function rcNormalize(o){
     if(!o||typeof o!=="object")return null;
@@ -8194,6 +8287,15 @@ margin-left: -22px;
           if(!await ttConfirm("删掉这道菜谱？",{danger:true,anchor:dl}))return;
           recipes=recipes.filter(function(x){return x.id!==dl.getAttribute("data-rcdel");});
           saveRecipes();renderFood();return;}
+        if(e.target.closest("#pub-refresh")){
+          e.stopPropagation();pubFetch(true).then(function(){renderFood();});return;}
+        var pubc=e.target.closest("[data-pub]");
+        if(pubc){var pr=pubRecipes.filter(function(x){return true;});
+          var mineN={};recipes.forEach(function(x){mineN[(x.name||"").trim()]=1;});
+          var only=pr.filter(function(x){return !mineN[(x.name||"").trim()]&&foodMatch(x);});
+          var one=only[+pubc.getAttribute("data-pub")];
+          if(one)openRecipeView(one,true);
+          return;}
         var card=e.target.closest("[data-rc]");
         if(card){var r=rcById(card.getAttribute("data-rc"));if(r)openRecipeView(r);return;}
         var shc=e.target.closest("[data-shrc]");
@@ -8213,6 +8315,17 @@ margin-left: -22px;
         if(e.target.closest("#sh-on")){
           shareOn=document.getElementById("sh-on").checked;save("tt_shareon",shareOn);
           if(shareOn)shareUp().then(shareDown);else shStatus("已关掉分享（云端那份还在，可在 Supabase 里删）");
+          return;}
+        if(e.target.closest("#gh-save")){
+          ghToken=(document.getElementById("gh-token").value||"").trim();save("tt_ghtoken",ghToken);
+          document.getElementById("gh-status").textContent=ghToken?"Token 已存在这台设备上 ✓":"已清空 Token";return;}
+        if(e.target.closest("#gh-test")){
+          var st=document.getElementById("gh-status");
+          ghToken=(document.getElementById("gh-token").value||"").trim();save("tt_ghtoken",ghToken);
+          if(!ghToken){st.textContent="先把 Token 粘进来";return;}
+          st.textContent="测试中…";
+          ghRead().then(function(c){st.textContent="连上了 ✓ 仓库里现在有 "+c.list.length+" 道公共菜谱";},
+            function(err){st.textContent="连不上："+String(err&&err.message||err);});
           return;}
         if(e.target.closest("#sh-push")){shareUp();return;}
         if(e.target.closest("#sh-pull")){shareDown();return;}
@@ -8272,7 +8385,17 @@ margin-left: -22px;
       document.getElementById("rcv-overlay").addEventListener("click",function(e){if(e.target.id==="rcv-overlay")closeRecipeView();});
       document.getElementById("rcv-edit").addEventListener("click",function(){
         var r=rcViewing;closeRecipeView();
-        if(r&&rcById(r.id))openRecipeEdit(r);else ttAlert("别人分享的菜谱不能改，可以照着自己记一道");});
+        if(r&&rcById(r.id))openRecipeEdit(r);else ttAlert("别人分享的菜谱不能改，可以先「复制到我的菜谱」");});
+      document.getElementById("rcv-pub").addEventListener("click",function(){
+        var r=rcViewing;if(!r)return;
+        publishRecipe(r,this);});
+      document.getElementById("rcv-copy").addEventListener("click",function(){
+        var r=rcViewing;if(!r)return;
+        var copy=rcNormalize(r);
+        if(!copy)return;
+        var have=false;recipes.forEach(function(x){if(x.name===copy.name)have=true;});
+        if(have){ttAlert("你的菜谱库里已经有同名的了",{anchor:this});return;}
+        recipes.push(copy);saveRecipes();closeRecipeView();renderFood();});
       document.getElementById("rcv-order").addEventListener("click",function(){
         var r=rcViewing;closeRecipeView();addOrder(r,this);});
       document.addEventListener("keydown",function(e){
@@ -8282,6 +8405,7 @@ margin-left: -22px;
         else if(document.getElementById("rcimp-overlay").classList.contains("on"))closeRcImport();});
     }
     renderFood();
+    pubFetch().then(function(){if(state.tab==="food")renderFood();});     // 拉一次公共菜谱（10 分钟内用缓存）
     if(shareOn&&SB&&sbUser&&foodTab==="share")shareDown();}
 
   // ---------- 税务（新西兰：PAYE / ACC / GST） ----------
