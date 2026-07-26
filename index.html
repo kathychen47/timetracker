@@ -667,9 +667,13 @@
     box-shadow:0 4px 14px rgba(0,0,0,.16);white-space:pre;
     transform:scale(1.13);transform-origin:left center;animation:hlpop .13s ease-out}
   @keyframes hlpop{from{transform:scale(1);opacity:.6}to{transform:scale(1.13);opacity:1}}
-  #rd-pop{position:fixed;z-index:60;width:min(430px,92vw);max-height:52vh;overflow:auto;
+  /* 大小跟着内容走：内容少就是小框，内容多才长到上限（用户拖过之后才用固定大小） */
+  #rd-pop{position:fixed;z-index:60;width:fit-content;height:auto;max-height:52vh;overflow:auto;
     background:var(--surface);border:1px solid var(--border);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.22);
-    resize:both;min-width:250px;min-height:120px;max-width:96vw}
+    resize:both;min-width:240px;min-height:0;max-width:min(430px,92vw)}
+  #rd-pop.mini{min-width:0}
+  #rd-pop.mini .rd-pop-bd{padding:9px 13px 11px}
+  #rd-pop.mini .dict-hint{padding:2px;font-size:13.5px;white-space:nowrap}
   #rd-pop::-webkit-resizer{background:transparent}
   #rd-pop::after{content:"";position:absolute;right:2px;bottom:2px;width:12px;height:12px;pointer-events:none;
     background:linear-gradient(135deg,transparent 45%,var(--border) 45%,var(--border) 55%,transparent 55%,transparent 70%,var(--border) 70%,var(--border) 80%,transparent 80%)}
@@ -679,7 +683,7 @@
   .rd-pop-hd .btn.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
   .rd-pop-bd{padding:10px 12px 14px}
   @media (hover:none){
-    #rd-pop{width:min(94vw,520px);max-height:58vh;-webkit-overflow-scrolling:touch}
+    #rd-pop{width:fit-content;max-width:min(94vw,520px);max-height:58vh;-webkit-overflow-scrolling:touch}
     .rd-pop-hd .btn{padding:7px 13px;font-size:14px}
     .rd-content{height:calc(100vh - 200px)}
   }
@@ -6613,16 +6617,19 @@ margin-left: -22px;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
     star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
     if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
-    var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">查询中…</div>';
-    rdPop.style.display="";applyPopSize();placeRdPop(rect);
+    var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">正在查词，请稍等…</div>';
+    rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
+    applyPopSize(false);placeRdPop(rect);
     if(!bd.querySelector(".dict-card:not(.mynote)")){        // 词典里没有 → 直接翻译
       var w0=rdPopWord.disp;
-      bd.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
+      bd.innerHTML='<div class="dict-hint">词典没收录，正在翻译，请稍等…</div>';
+      applyPopSize(true);placeRdPop(rect);
       try{var tr=await translateText(w0);
         bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
           '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>';}
-      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>';}}
+      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>';}
+      applyPopSize(false);placeRdPop(rect);}
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
   var ANNC=load("tt_anncolors",null)||["#ffe58a","#b7f0c8","#bcd9ff","#ffc9d8"];
@@ -6992,22 +6999,36 @@ margin-left: -22px;
     if(curBook&&curBook.type!=="pdf")showRdTools(rect);   // 选中就出标注工具条
     if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
     else showRdTrans(s,rect);}   // 选中整句 → 任何模式都翻译
-  function applyPopSize(){       // 用上次拖出来的大小
-    if(!rdPop)return;var sz=load("tt_popsize",null);
-    if(sz&&sz.w>200&&sz.h>100){
+  // 默认「跟着内容走」：加载时就一行字的小框，出结果后长到内容那么大（上限 52vh）。
+  // 只有用户自己拖过右下角，才改用固定大小；双击标题栏可以恢复自适应。
+  function applyPopSize(mini){
+    if(!rdPop)return;
+    rdPop.classList.toggle("mini",!!mini);
+    var sz=load("tt_popsize",null);
+    if(sz&&sz.fix&&sz.w>200&&sz.h>100){
       rdPop.style.width=Math.min(sz.w,innerWidth-24)+"px";
       rdPop.style.height=Math.min(sz.h,innerHeight-24)+"px";
-      rdPop.style.maxHeight="none";}}
-  function watchPopSize(){       // 拖完记下来
-    if(!rdPop||!window.ResizeObserver||rdPop.__ro)return;
-    var t=null;
-    rdPop.__ro=new ResizeObserver(function(){
-      if(rdPop.style.display==="none")return;
-      if(t)clearTimeout(t);
-      t=setTimeout(function(){
-        var w=rdPop.offsetWidth,h=rdPop.offsetHeight;
-        if(w>200&&h>100)save("tt_popsize",{w:w,h:h});},400);});
-    rdPop.__ro.observe(rdPop);}
+      rdPop.style.maxHeight="none";
+    }else{rdPop.style.width="";rdPop.style.height="";rdPop.style.maxHeight="";}}
+  function watchPopSize(){
+    if(!rdPop||rdPop.__ro)return;
+    rdPop.__ro=1;
+    var dragging=false;
+    rdPop.addEventListener("pointerdown",function(e){
+      var r=rdPop.getBoundingClientRect();
+      dragging=(e.clientX>r.right-22&&e.clientY>r.bottom-22);});   // 只认右下角那个拖拽角
+    document.addEventListener("pointerup",function(){
+      if(!dragging)return;
+      dragging=false;
+      var w=rdPop.offsetWidth,h=rdPop.offsetHeight;
+      if(w>200&&h>100){save("tt_popsize",{w:w,h:h,fix:1});rdPop.style.maxHeight="none";}});
+    var hd=rdPop.querySelector(".rd-pop-hd");
+    if(hd){
+      hd.title="双击这里：让卡片大小重新跟着内容走";
+      hd.addEventListener("dblclick",function(e){
+        if(e.target.closest("button"))return;
+        save("tt_popsize",null);applyPopSize(false);
+        ttAlert("卡片大小恢复自动了：内容多大，框就多大",{anchor:hd});});}}
   function placeRdPop(rect){
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
     var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
@@ -7021,16 +7042,18 @@ margin-left: -22px;
     document.getElementById("rd-pop-w").textContent="翻译";
     var star=document.getElementById("rd-pop-star");star.style.display="none";
     var bd=document.getElementById("rd-pop-bd");
-    bd.innerHTML='<div class="dict-hint">翻译中…</div>';
-    rdPop.style.display="";applyPopSize();placeRdPop(rect);
+    bd.innerHTML='<div class="dict-hint">正在翻译，请稍等…</div>';
+    rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 等 AI 期间不倒计时
     translateText(text).then(function(res){
       bd.innerHTML='<div class="rd-tr">'+esc(res.text)+'</div>'+
         '<div class="rd-tr-src">'+esc(text)+'</div>'+
         '<div class="rd-tr-by">'+esc(res.by)+'</div>';
+      applyPopSize(false);placeRdPop(rect);
       rdPopIdle(9000);
     },function(e){
-      bd.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎试试。</div>';});}
+      bd.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎试试。</div>';
+      applyPopSize(false);placeRdPop(rect);});}
 
   var readerInit=false;
   function openReader(){
