@@ -147,6 +147,7 @@
   .pomo-task input[type=text]{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:13.5px;text-align:center}
   .pomo-task-cat{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
   .pomo-task-cat select{padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
+  .pomo-task-cat select.auto{border-style:dashed;border-color:var(--primary)}   /* 虚线 = 按任务名自动归的类 */
   .pomo-log{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer}
   .pomo-log input{width:14px;height:14px;accent-color:var(--primary)}
   .ring{width:168px;height:168px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;position:relative;
@@ -3505,7 +3506,8 @@ margin-left: -22px;
     if(!parentObj(hit.cat))return null;               // 分类已被删掉
     var sub=hit.sub&&subsOf(hit.cat).some(function(s){return s.key===hit.sub;})?hit.sub:null;
     return {cat:hit.cat,sub:sub};}
-  function autoCat(title){
+  // 真正匹配上才返回；没把握返回 null（番茄钟只在有把握时才自动改分类）
+  function autoCatMatch(title){
     var mem=recallCat(title);if(mem)return mem;
     var t=(title||"").toLowerCase();
     for(var i=0;i<cats.length;i++){var subs=cats[i].subs||[];
@@ -3513,8 +3515,9 @@ margin-left: -22px;
         for(var j=0;j<kw.length;j++){if(kw[j]&&t.indexOf(String(kw[j]).toLowerCase())>=0)return{cat:cats[i].key,sub:subs[s].key};}}}
     for(var a=0;a<cats.length;a++){var pk=cats[a].kw||[];
       for(var b=0;b<pk.length;b++){if(pk[b]&&t.indexOf(String(pk[b]).toLowerCase())>=0)return{cat:cats[a].key,sub:null};}}
-    return{cat:"focus",sub:null};
+    return null;
   }
+  function autoCat(title){return autoCatMatch(title)||{cat:"focus",sub:null};}
 
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
@@ -4116,10 +4119,25 @@ margin-left: -22px;
     if(!cats.some(function(c){return c.key===r.cat;}))return;
     pomoCat.value=r.cat;fillPomoSubs();
     if(r.sub&&subsOf(r.cat).some(function(s){return s.key===r.sub;}))pomoSub.value=r.sub;}
+  // 打任务名 → 自动归类（和新建事件用同一套：先查你以前手动归过的同名/同系列，再按关键词）
+  // 你自己动过下拉就不再自动改，直到把任务名清空或重置
+  var pomoManual=false;
+  function markPomoAuto(on){
+    pomoCat.classList.toggle("auto",!!on);pomoSub.classList.toggle("auto",!!(on&&pomoSub.value));
+    var tip=on?"根据任务名自动归的类，可以自己改":"";pomoCat.title=tip;pomoSub.title=tip;}
+  function autoPomoCat(){
+    var t=(pomoTask.value||"").trim();
+    if(!t){pomoManual=false;markPomoAuto(false);return;}   // 清空任务名 → 自动识别重新生效
+    if(pomoManual||t.length<2)return;
+    var a=autoCatMatch(t);
+    if(!a){markPomoAuto(false);return;}
+    if(pomoCat.value!==a.cat){pomoCat.value=a.cat;fillPomoSubs();}
+    pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
+    markPomoAuto(true);}
   fillPomoSubs();applyPomoLast();
-  pomoCat.addEventListener("change",function(){fillPomoSubs();savePomoLast();});
-  pomoSub.addEventListener("change",savePomoLast);
-  pomoTask.addEventListener("input",drawPomo);
+  pomoCat.addEventListener("change",function(){pomoManual=true;markPomoAuto(false);fillPomoSubs();savePomoLast();});
+  pomoSub.addEventListener("change",function(){pomoManual=true;markPomoAuto(false);savePomoLast();});
+  pomoTask.addEventListener("input",function(){autoPomoCat();drawPomo();});
   // 大类/小类改了（设置里管理、事件弹窗里新建删除、云端拉取）之后，这些下拉要重建，否则一直是打开页面那一刻的旧列表
   function refreshCatSelects(){
     var has=function(k){return cats.some(function(c){return c.key===k;});};
@@ -4139,7 +4157,9 @@ margin-left: -22px;
     }catch(e){}
   }
   function logFocusToCalendar(focusSec,endMs){
-    if(!pomoToCal.checked)return;var task=(pomoTask.value||"").trim()||"专注";
+    var typed=(pomoTask.value||"").trim();
+    if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
+    if(!pomoToCal.checked)return;var task=typed||"专注";
     var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
     events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pomoCat.value,sub:(pomoSub.value||null),done:false});
     save("tt_events",events);if(state.tab==="calendar")renderCal();
@@ -4215,7 +4235,7 @@ margin-left: -22px;
     else pEndAt=now+pLeft*1000;
     pTimer=setInterval(pomoTick,500);
     startBtn.textContent="暂停";savePomoRun();savePomoLast();pomoTick();}
-  function resetPomo(){stopTimer();pBase=0;
+  function resetPomo(){stopTimer();pBase=0;pomoManual=false;autoPomoCat();
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     save("tt_pomorun",null);drawPomo();}
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
@@ -4232,7 +4252,7 @@ margin-left: -22px;
     document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
     skipBtn.textContent=(timerMode==="up"?"结束":"跳过");
     if(r.task)pomoTask.value=r.task;
-    if(r.cat)pomoCat.value=r.cat;
+    if(r.cat){pomoCat.value=r.cat;fillPomoSubs();pomoManual=true;}   // 还在跑的这次用它自己的分类，别被自动识别改掉
     if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
     pomoToCal.checked=(r.tocal!==false);
     if(timerMode==="up"){
