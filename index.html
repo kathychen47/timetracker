@@ -556,6 +556,58 @@
   .tr-flow h3{font-size:1.12em;margin:1.1em 0 .5em;line-height:1.45}
   .tr-flow .src{color:var(--muted);font-size:.86em;display:block;margin-top:.15em}
   .tr-wait{color:var(--muted);font-size:12.5px;padding:8px 2px}
+  /* ===== 🍳 菜谱 ===== */
+  .rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+  .rc-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;
+    transition:transform .12s,box-shadow .12s;position:relative}
+  .rc-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.1)}
+  .rc-ph{height:118px;display:grid;place-items:center;font-size:40px;background:var(--surface-2);overflow:hidden}
+  .rc-ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .rc-b{padding:10px 12px 12px}
+  .rc-n{font-size:14px;font-weight:640;line-height:1.4;margin-bottom:5px}
+  .rc-m{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .rc-tag{background:var(--surface-2);border-radius:999px;padding:1px 8px;font-size:11px;color:var(--muted)}
+  .rc-star{color:#f5a623;letter-spacing:-1px}
+  .rc-card .x{position:absolute;right:6px;top:6px;width:24px;height:24px;border:none;border-radius:8px;
+    background:rgba(0,0,0,.45);color:#fff;cursor:pointer;opacity:0;font-size:12px}
+  .rc-card:hover .x{opacity:1}
+  .rc-sec{margin:14px 0 6px;font-size:12.5px;font-weight:650;color:var(--muted)}
+  .rc-list{margin:0;padding-left:1.3em;line-height:1.85;font-size:14px}
+  .rc-list li{margin-bottom:3px}
+  .rc-hero{width:100%;max-height:240px;object-fit:cover;border-radius:12px;display:block;margin-bottom:12px}
+  .rc-lines{white-space:pre-wrap;line-height:1.8;font-size:14px}
+  .rc-scaler{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);
+    background:var(--surface-2);border-radius:10px;padding:8px 11px;margin-bottom:10px}
+  .rc-scaler select{max-width:190px;padding:4px 6px;border:1px solid var(--border);border-radius:8px;
+    background:var(--surface);color:var(--text);font-size:12.5px}
+  .rc-scaler input{width:76px;padding:4px 7px;border:1px solid var(--border);border-radius:8px;
+    background:var(--surface);color:var(--text);font-size:12.5px;text-align:right}
+  .rc-scaler .btn{padding:3px 9px;font-size:12px}
+  .rc-scaler .rcv-u{margin-right:4px}
+  .rc-list .rc-tag{font-size:10.5px}
+  /* 点单 */
+  .od-item{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;border:1px solid var(--border);
+    border-radius:12px;background:var(--surface);margin-bottom:9px}
+  .od-item.done{opacity:.55}
+  .od-item.done .od-n{text-decoration:line-through}
+  .od-chk{width:20px;height:20px;flex:none;border-radius:6px;border:1.5px solid var(--border);background:transparent;
+    cursor:pointer;display:grid;place-items:center;color:transparent;font-size:12px;margin-top:1px}
+  .od-item.done .od-chk{background:var(--primary);border-color:var(--primary);color:#fff}
+  .od-c{flex:1;min-width:0}
+  .od-n{font-size:14px;font-weight:600;margin-bottom:3px}
+  .od-m{font-size:11.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:8px}
+  .od-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px}
+  .od-x:hover{background:var(--surface-2);color:var(--danger)}
+  .od-h{font-size:12.5px;font-weight:650;color:var(--muted);margin:16px 0 8px}
+  .od-h:first-child{margin-top:0}
+  /* 分享 */
+  .sh-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:15px 17px;margin-bottom:12px}
+  .sh-card h4{margin:0 0 8px;font-size:14px}
+  .sh-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:9px}
+  .sh-note{font-size:12.5px;color:var(--muted);line-height:1.75}
+  .sh-from{font-size:12px;color:var(--primary);background:var(--primary-soft);border-radius:999px;padding:2px 10px;display:inline-block}
+  .sh-sql{width:100%;min-height:150px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;
+    border:1px solid var(--border);border-radius:10px;padding:10px;background:var(--surface-2);color:var(--text);white-space:pre}
   /* ===== 📓 笔记本 ===== */
   .rd-book.nb .rd-cover{background:linear-gradient(145deg,#f6d365,#fda085);color:#7a4a12;font-size:34px}
   .rd-book.nb .n{font-weight:650}
@@ -2464,6 +2516,7 @@ margin-left: -22px;
     <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg></button>
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
     <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"></path></svg></button>
+    <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18M4 3v6a3 3 0 0 0 6 0V3"></path><path d="M17.5 3C15.6 5 14.5 7.4 14.5 10.5h6C20.5 7.4 19.4 5 17.5 3z"></path><path d="M17.5 10.5V21"></path></svg></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
     <div class="grow"></div>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
@@ -2637,6 +2690,26 @@ margin-left: -22px;
       </div>
     </section>
 
+    <!-- FOOD -->
+    <section class="view" id="view-food">
+      <div class="page-h">菜谱 <span class="rd-sub">好吃的记下来 · 想吃的点一单</span></div>
+      <div class="tax-wrap">
+        <div class="tax-bar">
+          <div class="seg" id="food-tabs">
+            <button data-ft="lib" class="on">📖 菜谱库</button>
+            <button data-ft="order">🧾 点单</button>
+            <button data-ft="share">👥 分享</button>
+          </div>
+          <input id="food-q" class="nb-q" placeholder="搜菜名 / 食材 / 标签…">
+          <span class="grow"></span>
+          <button class="btn primary" id="food-add">+ 新菜谱</button>
+          <button class="btn" id="food-order-add">🧾 点一单</button>
+          <button class="btn" id="food-export" title="导出全部菜谱为 Markdown">⬇️</button>
+        </div>
+        <div id="food-body"></div>
+      </div>
+    </section>
+
     <!-- READER -->
     <section class="view" id="view-reader">
       <div id="rd-shelf">
@@ -2755,6 +2828,33 @@ margin-left: -22px;
   </div>
 
   <!-- 生词本工具（导入 / 选词 / 测词汇量） -->
+  <!-- 菜谱编辑 -->
+  <div class="overlay" id="rc-overlay">
+    <div class="modal" style="max-width:640px">
+      <h3 id="rc-title">新菜谱</h3>
+      <div id="rc-form"></div>
+      <div class="modal-actions">
+        <button class="btn danger" id="rc-del" style="display:none">删除</button>
+        <div class="grow"></div>
+        <button class="btn" id="rc-cancel">取消</button>
+        <button class="btn primary" id="rc-save">保存</button>
+      </div>
+    </div>
+  </div>
+  <!-- 菜谱详情 -->
+  <div class="overlay" id="rcv-overlay">
+    <div class="modal" style="max-width:640px">
+      <h3 id="rcv-title">菜谱</h3>
+      <div id="rcv-body"></div>
+      <div class="modal-actions">
+        <button class="btn" id="rcv-edit">✎ 编辑</button>
+        <div class="grow"></div>
+        <button class="btn" id="rcv-close">关闭</button>
+        <button class="btn primary" id="rcv-order">🧾 点这道</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="wbtool-overlay">
     <div class="modal" style="max-width:600px">
       <h3 id="wbtool-title">工具</h3>
@@ -3461,12 +3561,13 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
-    ["calendar","todo","stats","dict","reader","tax"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax","food"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo")renderTodos();
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
+    if(tab==="food")openFood();
   });
 
   // ---------- calendar core ----------
@@ -4348,7 +4449,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_notes"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_notes","tt_recipes","tt_orders","tt_shareon"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -4370,7 +4471,8 @@ margin-left: -22px;
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
-    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
+    recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
@@ -7680,6 +7782,429 @@ margin-left: -22px;
       if(last)bGet("meta",last).then(function(m){if(m)openBook(last);else{save("tt_rdbook","");renderShelf();}},function(){renderShelf();});
       else renderShelf();}
     ensureDictInit();}
+
+  // ---------- 🍳 菜谱 · 点单 · 分享 ----------
+  var recipes=load("tt_recipes",[])||[],orders=load("tt_orders",[])||[];
+  var foodTab=load("tt_foodtab","lib")||"lib",foodQ="";
+  var shareOn=load("tt_shareon",false),sharedIn=load("tt_sharedin",[])||[];
+  function saveRecipes(){save("tt_recipes",recipes);shareUpSoon();}
+  function saveOrders(){save("tt_orders",orders);shareUpSoon();}
+  function rcById(id){var o=null;recipes.forEach(function(r){if(r.id===id)o=r;});return o;}
+  function stars(n){n=+n||0;return '<span class="rc-star">'+"★".repeat(n)+"☆".repeat(Math.max(0,5-n))+'</span>';}
+  function shrinkImage(file,max,q){return new Promise(function(res,rej){
+    var img=new Image(),url=URL.createObjectURL(file);
+    img.onload=function(){
+      var w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;
+      var s=Math.min(1,(max||720)/Math.max(w,h));
+      var c=document.createElement("canvas");
+      c.width=Math.max(1,Math.round(w*s));c.height=Math.max(1,Math.round(h*s));
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url);
+      var out=c.toDataURL("image/jpeg",q||0.72);
+      if(out.length>220000)out=c.toDataURL("image/jpeg",0.55);   // 太大就再压一次，别撑爆同步包
+      res(out);};
+    img.onerror=function(){URL.revokeObjectURL(url);rej(new Error("这张图读不出来"));};
+    img.src=url;});}
+  // ---- 配方等比换算：1kg 鸡肉的方子，输入 2.5kg 就全部按 2.5 倍算 ----
+  var FRACS={"½":0.5,"¼":0.25,"¾":0.75,"⅓":1/3,"⅔":2/3,"⅛":0.125};
+  function qtyOf(line){                       // 取这一行里的第一个数量
+    var s=String(line||"");
+    for(var k in FRACS){var i=s.indexOf(k);if(i>=0)return {n:FRACS[k],raw:k,i:i};}
+    var m=s.match(/(\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)/);      // 1/2
+    if(m&&+m[2])return {n:parseFloat(m[1])/parseFloat(m[2]),raw:m[0],i:m.index};
+    m=s.match(/\d+(?:\.\d+)?/);
+    if(m)return {n:parseFloat(m[0]),raw:m[0],i:m.index};
+    return null;}
+  function fmtNum(n){
+    if(!isFinite(n))return "";
+    var r=Math.round(n*100)/100;
+    return (Math.abs(r-Math.round(r))<0.005)?String(Math.round(r)):String(r);}
+  function scaleLine(line,f){                 // 只换数字，其他原样保留
+    var q=qtyOf(line);
+    if(!q||!f||f===1)return line;
+    var after=String(line).slice(q.i+q.raw.length);
+    if(/^\s*(分钟|分|小时|秒|钟|min|mins|minutes|h|hr|hours|℃|°C|度)/i.test(after))return line;   // 时间/温度不缩放
+    return line.slice(0,q.i)+fmtNum(q.n*f)+line.slice(q.i+q.raw.length);}
+  function unitOf(line){
+    var q=qtyOf(line);if(!q)return "";
+    var m=String(line).slice(q.i+q.raw.length).match(/^\s*(kg|g|ml|l|斤|两|克|千克|毫升|升|个|只|块|片|勺|大勺|小勺|杯|颗|根|条|把|罐|包)/i);
+    return m?m[1]:"";}
+  function cookedCount(rid,name){             // 这道菜做过几次（点单记录保留着，不会删）
+    var n=0;
+    orders.forEach(function(o){if(o.done&&((rid&&o.rid===rid)||(!o.rid&&o.name===name)))n++;});
+    return n;}
+  function foodMatch(r){
+    var q=foodQ.trim().toLowerCase();if(!q)return true;
+    return ((r.name||"")+" "+(r.tags||[]).join(" ")+" "+(r.ing||[]).join(" ")+" "+(r.note||"")).toLowerCase().indexOf(q)>=0;}
+  // ---- 菜谱库 ----
+  function renderFoodLib(box){
+    var list=recipes.filter(foodMatch).sort(function(a,b){return (b.ts||0)-(a.ts||0);});
+    if(!recipes.length){box.innerHTML='<div class="tx-empty">还没有菜谱。<br>点右上角「+ 新菜谱」记一道你觉得好吃的，<br>也可以整段粘贴进去让 AI 帮你拆成食材和步骤。</div>';return;}
+    if(!list.length){box.innerHTML='<div class="tx-empty">没找到匹配的菜。</div>';return;}
+    box.innerHTML='<div class="rc-grid">'+list.map(function(r){
+      return '<div class="rc-card" data-rc="'+esc(r.id)+'">'+
+        '<div class="rc-ph">'+(r.photo?('<img src="'+esc(r.photo)+'" alt="">'):"🍽️")+'</div>'+
+        '<div class="rc-b"><div class="rc-n">'+esc(r.name||"未命名")+'</div>'+
+        '<div class="rc-m">'+(r.rate?stars(r.rate):"")+
+        (r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
+        (function(){var c=cookedCount(r.id,r.name);return c?('<span class="rc-tag">做过 '+c+' 次</span>'):"";})()+
+        (r.tags||[]).slice(0,3).map(function(t){return '<span class="rc-tag">'+esc(t)+'</span>';}).join("")+
+        '</div></div><button class="x" data-rcdel="'+esc(r.id)+'" title="删除">✕</button></div>';}).join("")+'</div>';}
+  // ---- 点单 ----
+  var MEALS={b:"早餐",l:"午餐",d:"晚餐",s:"夜宵/加餐"};
+  function renderFoodOrders(box){
+    if(!orders.length){box.innerHTML='<div class="tx-empty">还没点单。<br>点右上角「🧾 点一单」，或在菜谱详情里点「🧾 点这道」。<br>点了之后，白名单里的人也能看到你想吃什么。</div>';return;}
+    var todo=orders.filter(function(o){return !o.done;})
+      .sort(function(a,b){return (a.date||"9999").localeCompare(b.date||"9999")||(b.ts||0)-(a.ts||0);});
+    var done=orders.filter(function(o){return o.done;})
+      .sort(function(a,b){return (b.doneTs||b.ts||0)-(a.doneTs||a.ts||0);});   // 记录保留，按做的时间倒序
+    function item(o){
+      return '<div class="od-item'+(o.done?" done":"")+'" data-od="'+esc(o.id)+'">'+
+        '<button class="od-chk" data-odchk="'+esc(o.id)+'" title="'+(o.done?"点一下改回想吃":"做好了")+'">✓</button>'+
+        '<div class="od-c"><div class="od-n">'+esc(o.name||"")+'</div>'+
+        '<div class="od-m">'+(o.date?('<span>📅 '+esc(o.date)+'</span>'):"")+
+        (o.meal?('<span>'+esc(MEALS[o.meal]||o.meal)+'</span>'):"")+
+        (o.note?('<span>“'+esc(o.note)+'”</span>'):"")+
+        (o.done&&o.doneTs?('<span>✓ '+new Date(o.doneTs).toLocaleDateString()+' 做的</span>'):"")+
+        (o.rid?'<span>📖 有菜谱</span>':"")+'</div></div>'+
+        '<button class="od-x" data-oddel="'+esc(o.id)+'" title="删掉这条记录">✕</button></div>';}
+    box.innerHTML=(todo.length?('<div class="od-h">想吃的 '+todo.length+' 道</div>'+todo.map(item).join(""))
+                              :'<div class="od-h">现在没有想吃的，去菜谱库点一道吧</div>')+
+      (done.length?('<div class="od-h">吃过的记录 '+done.length+' 条<span style="font-weight:400">　（一直留着，不会自动清）</span></div>'+done.map(item).join("")):"");}
+  // ---- 分享 ----
+  function foodSQL(){
+    var uidv=(sbUser&&sbUser.id)||"你的-user-id（登录后再生成就会自动填）";
+    return "-- 一次跑完即可，可重复运行\n"+
+"-- ① 白名单表（如果之前建过会跳过）\n"+
+"create table if not exists public.allow_users (\n  email text primary key, note text, added_at timestamptz default now());\nalter table public.allow_users enable row level security;\n\n"+
+"-- ② 把能看你菜谱的人加进来（改成对方的 Gmail）\ninsert into public.allow_users (email, note) values\n  ('"+((sbUser&&sbUser.email)||"你自己@gmail.com")+"','我自己')\non conflict (email) do nothing;\n\n"+
+"-- ③ 判断当前登录者在不在白名单\ncreate or replace function public.is_allowed() returns boolean\nlanguage sql stable security definer set search_path = public as $$\n  select exists (select 1 from public.allow_users\n                 where email = lower(auth.jwt() ->> 'email'));\n$$;\n\n"+
+"-- ④ 分享表：一人一行，存菜谱+点单\ncreate table if not exists public.shares (\n  owner_id uuid references auth.users on delete cascade,\n  kind text not null,\n  owner_email text,\n  data jsonb,\n  updated_at timestamptz default now(),\n  primary key (owner_id, kind));\nalter table public.shares enable row level security;\n\n"+
+"drop policy if exists \"share_own\" on public.shares;\ndrop policy if exists \"share_read\" on public.shares;\n\n"+
+"-- 自己完全可读写\ncreate policy \"share_own\" on public.shares for all to authenticated\n  using ( auth.uid() = owner_id ) with check ( auth.uid() = owner_id );\n\n"+
+"-- 白名单里的人可以「读」别人分享出来的\ncreate policy \"share_read\" on public.shares for select to authenticated\n  using ( public.is_allowed() );\n"+
+"-- 你的 user id："+uidv+"\n";}
+  var shareTimer=null;
+  function shareUpSoon(){
+    if(!shareOn||!SB||!sbUser)return;
+    if(shareTimer)clearTimeout(shareTimer);
+    shareTimer=setTimeout(shareUp,2000);}
+  function shStatus(t,bad){
+    var el=document.getElementById("sh-status");
+    if(el){el.textContent=t||"";el.style.color=bad?"var(--danger)":"var(--muted)";}}
+  function shareUp(){
+    if(!SB||!sbUser){shStatus("要先在 ⚙️设置 → ☁️云同步 里用 Google 登录",true);return Promise.resolve();}
+    shStatus("上传中…");
+    return SB.from("shares").upsert({owner_id:sbUser.id,kind:"recipes",owner_email:sbUser.email||"",
+      data:{recipes:recipes,orders:orders},updated_at:new Date().toISOString()}).then(function(r){
+      if(r.error){shStatus("上传失败："+r.error.message+"（多半是还没跑下面那段 SQL）",true);return;}
+      shStatus("已分享 ✓（"+new Date().toLocaleTimeString()+"）");},
+      function(e){shStatus("上传失败："+String(e),true);});}
+  function shareDown(){
+    if(!SB||!sbUser){shStatus("要先登录",true);return Promise.resolve();}
+    shStatus("读取中…");
+    return SB.from("shares").select("owner_id,owner_email,data,updated_at").eq("kind","recipes").then(function(r){
+      if(r.error){shStatus("读取失败："+r.error.message,true);return;}
+      sharedIn=(r.data||[]).filter(function(x){return x.owner_id!==sbUser.id;});
+      save("tt_sharedin",sharedIn);
+      shStatus(sharedIn.length?("收到 "+sharedIn.length+" 个人的分享 ✓"):"目前没有别人分享给你（或对方还没打开分享）");
+      if(foodTab==="share")renderFood();},
+      function(e){shStatus("读取失败："+String(e),true);});}
+  function renderFoodShare(box){
+    var who=(sbUser&&sbUser.email)||"";
+    var html='<div class="sh-card"><h4>把我的菜谱和点单分享出去</h4>'+
+      '<div class="sh-row"><label class="pa-chk" style="font-size:13px"><input type="checkbox" id="sh-on"'+(shareOn?" checked":"")+'> 打开分享</label>'+
+      '<button class="btn" id="sh-push">立即上传</button><button class="btn" id="sh-pull">看看别人分享了什么</button></div>'+
+      '<div class="sh-note" id="sh-status">'+(who?("当前登录："+esc(who)):"还没登录，去 ⚙️设置 → ☁️云同步 用 Google 登录")+'</div>'+
+      '<div class="sh-note" style="margin-top:8px">打开后，白名单里的邮箱登录这个网站，就能看到你的菜谱和你想吃的菜（他们只能看，不能改）。</div></div>'+
+      '<div class="sh-card"><h4>第一次要做的事</h4>'+
+      '<div class="sh-note">① 去 Supabase → SQL Editor 跑下面这段（建分享表 + 白名单）；<br>'+
+      '② 在 SQL 里把要分享的人的 Gmail 加进 <code>allow_users</code>；<br>'+
+      '③ 对方也要在 Google Cloud Console 的「测试用户」名单里，否则登不进来。</div>'+
+      '<div class="sh-row" style="margin-top:10px"><button class="btn" id="sh-sqlbtn">显示 SQL</button>'+
+      '<button class="btn" id="sh-copy">复制 SQL</button></div>'+
+      '<textarea class="sh-sql" id="sh-sql" readonly style="display:none"></textarea></div>';
+    if(sharedIn.length){
+      html+=sharedIn.map(function(s){
+        var d=s.data||{},rs=d.recipes||[],os=(d.orders||[]).filter(function(o){return !o.done;});
+        return '<div class="sh-card"><h4><span class="sh-from">'+esc(s.owner_email||"某人")+'</span></h4>'+
+          '<div class="sh-note">分享了 '+rs.length+' 道菜谱'+(os.length?('，现在想吃 '+os.length+' 道'):"")+
+          (s.updated_at?('　·　'+new Date(s.updated_at).toLocaleString()):"")+'</div>'+
+          (os.length?('<div class="od-h" style="margin-top:12px">TA 想吃的</div>'+os.map(function(o){
+            return '<div class="od-item"><div class="od-c"><div class="od-n">'+esc(o.name||"")+'</div>'+
+              '<div class="od-m">'+(o.date?('<span>📅 '+esc(o.date)+'</span>'):"")+
+              (o.meal?('<span>'+esc(MEALS[o.meal]||o.meal)+'</span>'):"")+
+              (o.note?('<span>“'+esc(o.note)+'”</span>'):"")+'</div></div></div>';}).join("")):"")+
+          (rs.length?('<div class="od-h" style="margin-top:12px">TA 的菜谱</div><div class="rc-grid">'+rs.map(function(r,i){
+            return '<div class="rc-card" data-shrc="'+esc(s.owner_id)+"|"+i+'">'+
+              '<div class="rc-ph">'+(r.photo?('<img src="'+esc(r.photo)+'" alt="">'):"🍽️")+'</div>'+
+              '<div class="rc-b"><div class="rc-n">'+esc(r.name||"未命名")+'</div>'+
+              '<div class="rc-m">'+(r.rate?stars(r.rate):"")+(r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
+              '</div></div></div>';}).join("")+'</div>'):"")+'</div>';}).join("");}
+    box.innerHTML=html;}
+  function renderFood(){
+    var box=document.getElementById("food-body");if(!box)return;
+    document.querySelectorAll("#food-tabs button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-ft")===foodTab);});
+    var qi=document.getElementById("food-q");if(qi)qi.style.display=(foodTab==="lib")?"":"none";
+    if(foodTab==="lib")return renderFoodLib(box);
+    if(foodTab==="order")return renderFoodOrders(box);
+    return renderFoodShare(box);}
+  // ---- 新增/编辑菜谱 ----
+  var rcEditing=null,rcPhoto="";
+  function rcFormHTML(r){
+    return '<div class="field"><label>菜名</label><input id="rc-name" value="'+esc(r.name||"")+'" placeholder="例：番茄牛腩"></div>'+
+      '<div class="field"><div class="row">'+
+      '<div><label>评分</label><select id="rc-rate">'+[0,1,2,3,4,5].map(function(n){
+        return '<option value="'+n+'"'+((+r.rate||0)===n?" selected":"")+'>'+(n?("★".repeat(n)):"未评")+'</option>';}).join("")+'</select></div>'+
+      '<div><label>耗时</label><input id="rc-time" value="'+esc(r.time||"")+'" placeholder="40 分钟"></div>'+
+      '<div><label>几人份</label><input id="rc-serves" value="'+esc(r.serves||"")+'" placeholder="2"></div></div></div>'+
+      '<div class="field"><label>标签（空格分隔）</label><input id="rc-tags" value="'+esc((r.tags||[]).join(" "))+'" placeholder="中餐 家常 汤"></div>'+
+      '<div class="field"><label>食材（一行一个）</label><textarea id="rc-ing" style="min-height:88px" placeholder="牛腩 500g&#10;番茄 3 个">'+esc((r.ing||[]).join("\n"))+'</textarea></div>'+
+      '<div class="field"><label>步骤（一行一步）</label><textarea id="rc-steps" style="min-height:110px" placeholder="牛腩冷水下锅焯水&#10;番茄炒出汁">'+esc((r.steps||[]).join("\n"))+'</textarea></div>'+
+      '<div class="field"><label>备注 / 来源</label><input id="rc-note" value="'+esc(r.note||"")+'" placeholder="小红书某某 / 妈妈教的"></div>'+
+      '<div class="field"><label>照片</label><div class="sh-row">'+
+      '<label class="btn" style="cursor:pointer">📷 选图<input type="file" id="rc-photo" accept="image/*" hidden></label>'+
+      '<button class="btn" id="rc-photo-del" style="display:'+(r.photo?"":"none")+'">去掉图</button>'+
+      '<span class="sh-note" id="rc-photo-note">'+(r.photo?"已有图片":"可不放")+'</span></div>'+
+      '<img id="rc-photo-prev" class="rc-hero" style="margin-top:10px;'+(r.photo?"":"display:none")+'" src="'+esc(r.photo||"")+'"></div>'+
+      '<div class="field"><label>整段粘贴 → 让 AI 拆成食材和步骤</label>'+
+      '<textarea id="rc-raw" style="min-height:60px" placeholder="从小红书/网页复制一整段菜谱贴这里"></textarea>'+
+      '<div class="sh-row" style="margin-top:8px"><button class="btn" id="rc-ai">✨ AI 整理</button>'+
+      '<span class="sh-note" id="rc-ai-note"></span></div></div>';}
+  function openRecipeEdit(r){
+    rcEditing=r||null;rcPhoto=(r&&r.photo)||"";
+    document.getElementById("rc-title").textContent=r?"编辑菜谱":"新菜谱";
+    document.getElementById("rc-form").innerHTML=rcFormHTML(r||{});
+    document.getElementById("rc-del").style.display=r?"":"none";
+    document.getElementById("rc-overlay").classList.add("on");
+    setTimeout(function(){var n=document.getElementById("rc-name");if(n)n.focus();},40);}
+  function closeRecipeEdit(){document.getElementById("rc-overlay").classList.remove("on");rcEditing=null;rcPhoto="";}
+  function rcLines(id){
+    var el=document.getElementById(id);
+    return el?el.value.split(/\n+/).map(function(s){return s.trim();}).filter(Boolean):[];}
+  function saveRecipeForm(){
+    var name=(document.getElementById("rc-name").value||"").trim();
+    if(!name){ttAlert("给这道菜起个名字吧",{anchor:document.getElementById("rc-save")});return;}
+    var r=rcEditing||{id:"r"+uid(),ts:Date.now()};
+    r.name=name;
+    r.rate=+document.getElementById("rc-rate").value||0;
+    r.time=(document.getElementById("rc-time").value||"").trim();
+    r.serves=(document.getElementById("rc-serves").value||"").trim();
+    r.tags=(document.getElementById("rc-tags").value||"").split(/[\s,，]+/).filter(Boolean).slice(0,8);
+    r.ing=rcLines("rc-ing");r.steps=rcLines("rc-steps");
+    r.note=(document.getElementById("rc-note").value||"").trim();
+    r.photo=rcPhoto||"";
+    if(!rcEditing)recipes.push(r);
+    saveRecipes();closeRecipeEdit();renderFood();}
+  async function rcAITidy(){
+    var raw=(document.getElementById("rc-raw").value||"").trim();
+    var note=document.getElementById("rc-ai-note");
+    if(!raw){note.textContent="先把菜谱文字粘进上面的框";return;}
+    note.textContent="AI 整理中…";
+    var prompt="把下面这段菜谱整理成 JSON，只输出 JSON 本身，不要解释：\n"+
+      '{"name":"菜名","time":"耗时","serves":"几人份","tags":["标签"],"ingredients":["食材 用量"],"steps":["步骤"]}\n\n'+raw;
+    try{
+      var t=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
+      var m=String(t).match(/\{[\s\S]*\}/);
+      if(!m)throw new Error("AI 没返回 JSON");
+      var o=JSON.parse(m[0]);
+      if(o.name&&!document.getElementById("rc-name").value)document.getElementById("rc-name").value=o.name;
+      if(o.time)document.getElementById("rc-time").value=o.time;
+      if(o.serves)document.getElementById("rc-serves").value=String(o.serves);
+      if(o.tags&&o.tags.length)document.getElementById("rc-tags").value=o.tags.join(" ");
+      if(o.ingredients&&o.ingredients.length)document.getElementById("rc-ing").value=o.ingredients.join("\n");
+      if(o.steps&&o.steps.length)document.getElementById("rc-steps").value=o.steps.join("\n");
+      note.textContent="整理好了，检查一下再保存 ✓";
+    }catch(e){note.textContent="整理失败："+String(e&&e.message||e)+"（可到设置里换 AI 引擎）";}}
+  // ---- 详情（含等比换算）----
+  var rcViewing=null,rcvFactor=1,rcvBase=0;
+  function rcvIngHTML(){
+    var r=rcViewing;if(!r)return "";
+    return (r.ing||[]).map(function(x){
+      var s=scaleLine(x,rcvFactor);
+      return "<li>"+esc(s)+(rcvFactor!==1&&s!==x?'<span class="rc-tag" style="margin-left:6px">原 '+esc(x)+'</span>':"")+"</li>";}).join("");}
+  function rcvScalerHTML(){
+    var r=rcViewing,ing=(r.ing||[]);
+    var idx=[];
+    ing.forEach(function(x,i){if(qtyOf(x))idx.push(i);});
+    if(!idx.length)return "";
+    if(idx.indexOf(rcvBase)<0)rcvBase=idx[0];
+    var q=qtyOf(ing[rcvBase]),u=unitOf(ing[rcvBase]);
+    return '<div class="rc-scaler">按 <select id="rcv-base">'+idx.map(function(i){
+        return '<option value="'+i+'"'+(i===rcvBase?" selected":"")+'>'+esc(ing[i].replace(/\s+/g," ").slice(0,18))+'</option>';}).join("")+'</select>'+
+      ' 换算：我有 <input id="rcv-have" type="number" step="any" min="0" value="'+fmtNum(q.n*rcvFactor)+'"><span class="rcv-u">'+esc(u)+'</span>'+
+      '<button class="btn" data-mul="0.5">×0.5</button><button class="btn" data-mul="2">×2</button>'+
+      '<button class="btn" data-mul="3">×3</button><button class="btn" id="rcv-reset">原方子</button>'+
+      (rcvFactor!==1?('<span class="rc-tag" style="background:var(--primary-soft);color:var(--primary)">全部 ×'+fmtNum(rcvFactor)+'</span>'):"")+
+      '</div>';}
+  function rcvRefresh(){
+    var s=document.getElementById("rcv-scaler"),l=document.getElementById("rcv-ing");
+    if(s)s.innerHTML=rcvScalerHTML();
+    if(l)l.innerHTML=rcvIngHTML();}
+  function openRecipeView(r){
+    rcViewing=r;rcvFactor=1;rcvBase=0;
+    var cnt=cookedCount(r.id,r.name);
+    document.getElementById("rcv-title").textContent=r.name||"菜谱";
+    document.getElementById("rcv-body").innerHTML=
+      (r.photo?('<img class="rc-hero" src="'+esc(r.photo)+'" alt="">'):"")+
+      '<div class="rc-m">'+(r.rate?stars(r.rate):"")+
+      (r.time?('<span class="rc-tag">⏱ '+esc(r.time)+'</span>'):"")+
+      (r.serves?('<span class="rc-tag">👥 '+esc(r.serves)+' 人份</span>'):"")+
+      (cnt?('<span class="rc-tag">做过 '+cnt+' 次</span>'):"")+
+      (r.tags||[]).map(function(t){return '<span class="rc-tag">'+esc(t)+'</span>';}).join("")+'</div>'+
+      ((r.ing||[]).length?('<div class="rc-sec">食材</div><div id="rcv-scaler">'+rcvScalerHTML()+'</div>'+
+        '<ul class="rc-list" id="rcv-ing">'+rcvIngHTML()+'</ul>'):"")+
+      ((r.steps||[]).length?('<div class="rc-sec">做法</div><ol class="rc-list">'+r.steps.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+'</ol>'):"")+
+      (r.note?('<div class="rc-sec">备注</div><div class="rc-lines">'+esc(r.note)+'</div>'):"");
+    document.getElementById("rcv-overlay").classList.add("on");}
+  function closeRecipeView(){document.getElementById("rcv-overlay").classList.remove("on");rcViewing=null;rcvFactor=1;}
+  // ---- 点单 ----
+  async function addOrder(r,anchor){
+    var name=r?r.name:null;
+    if(!name){
+      name=await ttPrompt("想吃什么？（菜谱库里没有的也能点）","",{anchor:anchor});
+      if(name===null||!name.trim())return;
+      name=name.trim();
+      var hit=null;recipes.forEach(function(x){if(x.name===name)hit=x;});
+      r=hit;}
+    var when=await ttPrompt("什么时候吃？（留空=不指定；可写 今天/明天 或 2026-07-28）","",{anchor:anchor});
+    if(when===null)return;
+    var date=(when||"").trim();
+    var d0=new Date();
+    var ymd=function(d){return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);};
+    if(/^今天$/.test(date))date=ymd(d0);
+    else if(/^明天$/.test(date)){d0.setDate(d0.getDate()+1);date=ymd(d0);}
+    else if(/^后天$/.test(date)){d0.setDate(d0.getDate()+2);date=ymd(d0);}
+    var note=await ttPrompt("有什么要求吗？（少辣 / 多放蒜 / 留空）","",{anchor:anchor});
+    if(note===null)note="";
+    orders.push({id:"o"+uid(),rid:r?r.id:"",name:name,date:date,meal:"",note:(note||"").trim(),
+      by:(sbUser&&sbUser.email)||"",done:false,ts:Date.now()});
+    saveOrders();foodTab="order";save("tt_foodtab",foodTab);renderFood();}
+  function foodExportMD(){
+    if(!recipes.length){ttAlert("还没有菜谱");return;}
+    var out=["# 我的菜谱","","> 导出时间："+new Date().toLocaleString()+"　共 "+recipes.length+" 道",""];
+    recipes.slice().sort(function(a,b){return (b.rate||0)-(a.rate||0);}).forEach(function(r){
+      out.push("## "+(r.name||"未命名"));
+      var meta=[];
+      if(r.rate)meta.push("★".repeat(r.rate));
+      if(r.time)meta.push("耗时 "+r.time);
+      if(r.serves)meta.push(r.serves+" 人份");
+      if((r.tags||[]).length)meta.push(r.tags.join(" / "));
+      if(meta.length)out.push("`"+meta.join("　·　")+"`","");
+      if((r.ing||[]).length){out.push("**食材**","");r.ing.forEach(function(x){out.push("- "+x);});out.push("");}
+      if((r.steps||[]).length){out.push("**做法**","");r.steps.forEach(function(x,i){out.push((i+1)+". "+x);});out.push("");}
+      if(r.note)out.push("> "+r.note,"");});
+    downloadFile("我的菜谱 "+nbStamp()+".md",out.join("\n"),"text/markdown;charset=utf-8");}
+  var foodInit=false;
+  function openFood(){
+    if(!foodInit){
+      foodInit=true;
+      document.getElementById("food-tabs").addEventListener("click",function(e){
+        var b=e.target.closest("[data-ft]");if(!b)return;
+        foodTab=b.getAttribute("data-ft");save("tt_foodtab",foodTab);renderFood();
+        if(foodTab==="share"&&shareOn&&SB&&sbUser)shareDown();});
+      var fq=document.getElementById("food-q");
+      var ft=null;
+      fq.addEventListener("input",function(){var v=this.value;
+        if(ft)clearTimeout(ft);ft=setTimeout(function(){foodQ=v;renderFood();},160);});
+      document.getElementById("food-add").addEventListener("click",function(){openRecipeEdit(null);});
+      document.getElementById("food-order-add").addEventListener("click",function(){addOrder(null,this);});
+      document.getElementById("food-export").addEventListener("click",foodExportMD);
+      // 列表交互
+      document.getElementById("food-body").addEventListener("click",async function(e){
+        var dl=e.target.closest("[data-rcdel]");
+        if(dl){e.stopPropagation();
+          if(!await ttConfirm("删掉这道菜谱？",{danger:true,anchor:dl}))return;
+          recipes=recipes.filter(function(x){return x.id!==dl.getAttribute("data-rcdel");});
+          saveRecipes();renderFood();return;}
+        var card=e.target.closest("[data-rc]");
+        if(card){var r=rcById(card.getAttribute("data-rc"));if(r)openRecipeView(r);return;}
+        var shc=e.target.closest("[data-shrc]");
+        if(shc){var p=shc.getAttribute("data-shrc").split("|"),s=null;
+          sharedIn.forEach(function(x){if(x.owner_id===p[0])s=x;});
+          var rr=s&&s.data&&s.data.recipes&&s.data.recipes[+p[1]];
+          if(rr)openRecipeView(rr);return;}
+        var ck=e.target.closest("[data-odchk]");
+        if(ck){var oid=ck.getAttribute("data-odchk");
+          orders.forEach(function(o){if(o.id===oid){o.done=!o.done;if(o.done)o.doneTs=Date.now();}});
+          saveOrders();renderFood();return;}
+        var od=e.target.closest("[data-oddel]");
+        if(od){e.stopPropagation();
+          if(!await ttConfirm("删掉这条点单？",{danger:true,anchor:od}))return;
+          orders=orders.filter(function(o){return o.id!==od.getAttribute("data-oddel");});
+          saveOrders();renderFood();return;}
+        if(e.target.closest("#sh-on")){
+          shareOn=document.getElementById("sh-on").checked;save("tt_shareon",shareOn);
+          if(shareOn)shareUp().then(shareDown);else shStatus("已关掉分享（云端那份还在，可在 Supabase 里删）");
+          return;}
+        if(e.target.closest("#sh-push")){shareUp();return;}
+        if(e.target.closest("#sh-pull")){shareDown();return;}
+        if(e.target.closest("#sh-sqlbtn")){
+          var ta=document.getElementById("sh-sql");
+          ta.value=foodSQL();ta.style.display=(ta.style.display==="none")?"":"none";return;}
+        if(e.target.closest("#sh-copy")){
+          var t2=foodSQL();
+          navigator.clipboard.writeText(t2).then(function(){shStatus("SQL 已复制，去 Supabase → SQL Editor 粘贴运行");},
+            function(){var ta2=document.getElementById("sh-sql");ta2.value=t2;ta2.style.display="";shStatus("复制不了，手动全选复制下面这段",true);});
+          return;}});
+      // 编辑弹窗
+      document.getElementById("rc-cancel").addEventListener("click",closeRecipeEdit);
+      document.getElementById("rc-save").addEventListener("click",saveRecipeForm);
+      document.getElementById("rc-overlay").addEventListener("click",function(e){if(e.target.id==="rc-overlay")closeRecipeEdit();});
+      document.getElementById("rc-del").addEventListener("click",async function(){
+        if(!rcEditing)return;
+        if(!await ttConfirm("删掉这道菜谱？",{danger:true,anchor:this}))return;
+        recipes=recipes.filter(function(x){return x.id!==rcEditing.id;});
+        saveRecipes();closeRecipeEdit();renderFood();});
+      document.getElementById("rc-form").addEventListener("click",function(e){
+        if(e.target.closest("#rc-ai")){rcAITidy();return;}
+        if(e.target.closest("#rc-photo-del")){
+          rcPhoto="";
+          document.getElementById("rc-photo-prev").style.display="none";
+          document.getElementById("rc-photo-del").style.display="none";
+          document.getElementById("rc-photo-note").textContent="已去掉";return;}});
+      document.getElementById("rc-form").addEventListener("change",async function(e){
+        var f=e.target.closest("#rc-photo");if(!f||!f.files||!f.files[0])return;
+        var note=document.getElementById("rc-photo-note");
+        note.textContent="处理中…";
+        try{
+          rcPhoto=await shrinkImage(f.files[0],720,0.72);
+          var prev=document.getElementById("rc-photo-prev");
+          prev.src=rcPhoto;prev.style.display="";
+          document.getElementById("rc-photo-del").style.display="";
+          note.textContent="约 "+Math.round(rcPhoto.length/1400)+" KB";
+        }catch(err){note.textContent="失败："+String(err&&err.message||err);}});
+      // 详情弹窗：等比换算
+      document.getElementById("rcv-body").addEventListener("click",function(e){
+        var mb=e.target.closest("[data-mul]");
+        if(mb){rcvFactor=parseFloat(mb.getAttribute("data-mul"))||1;rcvRefresh();return;}
+        if(e.target.closest("#rcv-reset")){rcvFactor=1;rcvRefresh();return;}});
+      document.getElementById("rcv-body").addEventListener("input",function(e){
+        if(!e.target.closest("#rcv-have")||!rcViewing)return;
+        var base=(rcViewing.ing||[])[rcvBase],q=base?qtyOf(base):null;
+        var have=parseFloat(e.target.value);
+        if(!q||!q.n||!isFinite(have)||have<=0)return;
+        rcvFactor=have/q.n;
+        var l=document.getElementById("rcv-ing");if(l)l.innerHTML=rcvIngHTML();
+        var tagbox=document.querySelector("#rcv-scaler .rc-tag");
+        if(tagbox)tagbox.textContent="全部 ×"+fmtNum(rcvFactor);});
+      document.getElementById("rcv-body").addEventListener("change",function(e){
+        if(!e.target.closest("#rcv-base"))return;
+        rcvBase=+e.target.value||0;rcvFactor=1;rcvRefresh();});
+      document.getElementById("rcv-close").addEventListener("click",closeRecipeView);
+      document.getElementById("rcv-overlay").addEventListener("click",function(e){if(e.target.id==="rcv-overlay")closeRecipeView();});
+      document.getElementById("rcv-edit").addEventListener("click",function(){
+        var r=rcViewing;closeRecipeView();
+        if(r&&rcById(r.id))openRecipeEdit(r);else ttAlert("别人分享的菜谱不能改，可以照着自己记一道");});
+      document.getElementById("rcv-order").addEventListener("click",function(){
+        var r=rcViewing;closeRecipeView();addOrder(r,this);});
+      document.addEventListener("keydown",function(e){
+        if(e.key!=="Escape")return;
+        if(document.getElementById("rc-overlay").classList.contains("on"))closeRecipeEdit();
+        else if(document.getElementById("rcv-overlay").classList.contains("on"))closeRecipeView();});
+    }
+    renderFood();
+    if(shareOn&&SB&&sbUser&&foodTab==="share")shareDown();}
 
   // ---------- 税务（新西兰：PAYE / ACC / GST） ----------
   var TX_BRACKETS=[{min:0,max:15600,rate:10.5},{min:15600,max:53500,rate:17.5},{min:53500,max:78100,rate:30},{min:78100,max:180000,rate:33},{min:180000,max:null,rate:39}];
