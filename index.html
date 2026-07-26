@@ -3115,8 +3115,10 @@ margin-left: -22px;
       <div class="set-sec-h">📅 Google 日历</div>
       <div class="set-item">
         <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">连接状态</div><div class="set-desc" id="gcal-status">未连接</div></div>
-          <button class="btn" id="gcal-connect" type="button">连接</button>
+          <div class="set-row-txt"><div class="set-row-t">连接状态</div><div class="set-desc" id="gcal-status">未连接</div>
+          <div class="set-desc" style="margin-top:6px">日历用的是你在「👤 账号」里登录的那个 Google 账号，<b>不用单独登录</b>。<br>
+          Google 的授权每次只管 1 小时，到点会自动悄悄续；只有偶尔续不上（比如浏览器里退出了 Google）才需要点一下右边。</div></div>
+          <button class="btn" id="gcal-connect" type="button">重新授权</button>
         </div>
       </div>
       <div class="set-item">
@@ -4724,17 +4726,35 @@ margin-left: -22px;
       client_id:GCAL_CLIENT_ID,
       scope:"https://www.googleapis.com/auth/calendar.events",
       callback:function(resp){if(resp&&resp.access_token){gToken=resp.access_token;save("tt_gcal","1");save("tt_gtok",{t:gToken,exp:Date.now()+((resp.expires_in||3600)-60)*1000});onGcalConnected();}},
-      error_callback:function(){if(!silentMode)gStatusEl.textContent="连接已取消或失败";}
+      error_callback:function(){if(!silentMode)gStatusEl.textContent="连接已取消或失败";else gStatusEl.textContent="Google 授权过期了，点右边「重新授权」一次即可（每次约管 1 小时）";}
     });
   }
-  function updateGcalUI(){if(gToken){gConnectBtn.textContent="重新连接";}else{gConnectBtn.textContent="连接 Google Calendar";gStatusEl.textContent="未连接";}}
+  function updateGcalUI(){
+    if(gToken){gConnectBtn.textContent="重新授权";}
+    else{
+      gConnectBtn.textContent=sbUser?"重新授权":"连接 Google Calendar";
+      gStatusEl.textContent=sbUser?("已登录 "+(sbUser.email||"")+"，日历授权待续期…"):"未连接（先在「👤 账号」用 Google 登录）";}}
   gConnectBtn.addEventListener("click",function(){
     silentMode=false;initGis();
     if(!tokenClient){gStatusEl.textContent="Google 库未加载（预览页不支持，请到你的网站上用）";return;}
     gStatusEl.textContent="正在打开 Google 登录…";
     tokenClient.requestAccessToken({prompt:gToken?"":"consent"});
   });
+  var gRetried=false,gRenewT=null;
   function trySilentGcal(){silentMode=true;initGis();if(tokenClient){try{tokenClient.requestAccessToken({prompt:"none"});}catch(e){}}}
+  // Google 的 access token 只活 1 小时。以前只在打开页面时续一次，所以开着开着就"掉线"了。
+  // 现在：每分钟看一眼，快过期（剩 5 分钟）就静默续；从别的标签页切回来也查一次。
+  function gcalKeepAlive(){
+    if(gRenewT)clearInterval(gRenewT);
+    gRenewT=setInterval(function(){
+      if(SOLO||!load("tt_gcal",""))return;
+      var s=load("tt_gtok",null);
+      if(!s||!s.t||(s.exp-Date.now())<300000)trySilentGcal();
+    },60000);
+    document.addEventListener("visibilitychange",function(){
+      if(document.hidden||SOLO||!load("tt_gcal",""))return;
+      var s=load("tt_gtok",null);
+      if(!s||!s.t||(s.exp-Date.now())<120000)trySilentGcal();});}
   function onGcalConnected(){updateGcalUI();fetchGcal();}
   function fetchGcal(){
     if(!gToken)return;
@@ -4742,7 +4762,11 @@ margin-left: -22px;
     var url="https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250"+
       "&timeMin="+encodeURIComponent(lo.toISOString())+"&timeMax="+encodeURIComponent(hi.toISOString());
     fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
-      if(j.error){gStatusEl.textContent="读取失败："+(j.error.message||"");if(j.error.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();}return;}
+      if(j.error){
+        if(j.error.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();
+          if(!gRetried){gRetried=true;gStatusEl.textContent="授权过期，正在自动续…";trySilentGcal();setTimeout(function(){gRetried=false;},30000);}
+          return;}
+        gStatusEl.textContent="读取失败："+(j.error.message||"");return;}
       gcalEvents=(j.items||[]).filter(function(it){return it.start&&it.start.dateTime;}).map(mapGEvent);
       gStatusEl.textContent="已连接 ✓（本区间 "+gcalEvents.length+" 个事件）";
       renderCal();
@@ -4768,8 +4792,8 @@ margin-left: -22px;
   updateGcalUI();
   (function(){
     var saved=load("tt_gtok",null);
-    if(saved&&saved.t&&saved.exp>Date.now()){gToken=saved.t;onGcalConnected();return;}
-    if(!SOLO&&load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();}else if(++_gt>40)clearInterval(_gi);},250);}
+    if(saved&&saved.t&&saved.exp>Date.now()){gToken=saved.t;onGcalConnected();gcalKeepAlive();return;}
+    if(!SOLO&&load("tt_gcal","")){var _gt=0,_gi=setInterval(function(){if(gisReady()){clearInterval(_gi);trySilentGcal();gcalKeepAlive();}else if(++_gt>40)clearInterval(_gi);},250);}
   })();
 
   // ---------- 词典 · 背单词 ----------
