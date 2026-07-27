@@ -1086,6 +1086,60 @@
   .cs-pal .sw{width:20px;height:20px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-pal .sw.on{border-color:var(--text)}
   .cs-pal-tip{font-size:11px;color:var(--muted);flex-basis:100%}
+  /* 身体数据 */
+  .body-wrap{display:flex;flex-direction:column;gap:14px;max-width:1000px}
+  .bd-mini{float:right;margin-left:8px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer}
+  .bd-mini:hover{color:var(--primary);border-color:var(--primary)}
+  .bd-h-sub{font-size:11.5px;font-weight:400;color:var(--muted);margin-left:8px}
+  .bd-ai{display:flex;gap:8px;margin-bottom:6px}
+  .bd-ai input{flex:1;min-width:0;padding:9px 12px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:13px}
+  .bd-tip{font-size:12px;color:var(--muted);align-self:center}
+  .bd-aitip{min-height:16px;margin:-2px 0 8px}
+  .bd-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:9px}
+  .bd-f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+  .bd-f span{display:flex;align-items:center;gap:5px}
+  .bd-f span i{width:8px;height:8px;border-radius:50%;flex:none}
+  .bd-f span em{font-style:normal;opacity:.7;font-size:11px}
+  .bd-f input{padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:14px;font-variant-numeric:tabular-nums;width:100%;box-sizing:border-box}
+  .bd-note{grid-column:1/-1}
+  .bd-actions{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .bd-pick{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;padding:9px;background:var(--surface-2);border-radius:10px}
+  .bd-pick .li{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);cursor:pointer;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg)}
+  .bd-pick .li i{width:9px;height:9px;border-radius:50%;background:var(--c)}
+  .bd-pick .li.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 15%,var(--bg));color:var(--text);font-weight:600}
+  .bd-addm{color:var(--primary);border-style:dashed}
+  .bd-range{margin:10px 0 4px;align-self:flex-start;display:inline-flex}
+  .bd-chart{width:100%;overflow:hidden}
+  .bg-svg{width:100%;height:250px;display:block}
+  .bg-grid{stroke:var(--line);stroke-width:1}
+  .bg-ylab{fill:var(--muted);font-size:11px;text-anchor:end}
+  .bg-xlab{fill:var(--muted);font-size:11px}
+  .bg-xlab.end{text-anchor:end}
+  .bg-area{fill:color-mix(in srgb,var(--c) 16%,transparent);stroke:none}
+  .bg-line{fill:none;stroke:var(--c);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
+  .bg-dot{fill:var(--bg);stroke:var(--c);stroke-width:2}
+  .bg-target{stroke:var(--cat-sport);stroke-width:1.5;stroke-dasharray:5 4}
+  .bg-tlab{fill:var(--cat-sport);font-size:11px;text-anchor:end}
+  .bg-vlab{fill:var(--text);font-size:12px;font-weight:600;text-anchor:middle}
+  .bg-vlab.end{text-anchor:end}
+  .bd-deltas{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:9px}
+  .bd-d{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:var(--bg);cursor:pointer}
+  .bd-d.on{border-color:var(--primary);background:var(--primary-soft)}
+  .bd-d .nm{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .bd-d .nm i{width:8px;height:8px;border-radius:50%}
+  .bd-d b{font-size:20px;font-variant-numeric:tabular-nums}
+  .bd-d b small{font-size:11px;font-weight:500;color:var(--muted);margin-left:2px}
+  .bd-d .dt{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .bd-d .dt.good{color:var(--cat-sport)}
+  .bd-d .dt.bad{color:var(--danger)}
+  .bd-table td{font-variant-numeric:tabular-nums}
+  .bd-table tbody tr{cursor:pointer}
+  .bd-table tbody tr:hover{background:var(--surface-2)}
+  .bd-table td small{color:var(--muted);font-size:10.5px;margin-left:1px}
+  .bd-table td .mu{color:var(--border)}
+  .bd-table td.nt{color:var(--muted);font-size:12px;max-width:200px}
+  .bd-del{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:0 4px}
+  .bd-del:hover{color:var(--danger)}
   .cs-name{cursor:pointer;border-bottom:1px dashed transparent}
   .cs-name:hover{border-bottom-color:var(--primary);color:var(--primary)}
   .cs-del{margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--danger);border-radius:7px;padding:3px 10px;font-size:12px;cursor:pointer}
@@ -2591,6 +2645,7 @@ margin-left: -22px;
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
     <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"></path></svg></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18M4 3v6a3 3 0 0 0 6 0V3"></path><path d="M17.5 3C15.6 5 14.5 7.4 14.5 10.5h6C20.5 7.4 19.4 5 17.5 3z"></path><path d="M17.5 10.5V21"></path></svg></button>
+    <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 5-6 4 4"></path><circle cx="8" cy="12" r="1.4"></circle><circle cx="12" cy="15" r="1.4"></circle><circle cx="17" cy="9" r="1.4"></circle></svg></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
     <div class="grow"></div>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
@@ -2767,6 +2822,11 @@ margin-left: -22px;
     </section>
 
     <!-- FOOD -->
+    <section class="view" id="view-body">
+      <div class="page-h">身体数据 <span class="rd-sub">体重 / 围度 / 体脂 · 看变化曲线</span></div>
+      <div class="body-wrap" id="body-wrap"></div>
+    </section>
+
     <section class="view" id="view-food">
       <div class="page-h">菜谱 <span class="rd-sub">好吃的记下来 · 想吃的点一单</span></div>
       <div class="tax-wrap">
@@ -3695,13 +3755,14 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
-    ["calendar","todo","stats","dict","reader","tax","food"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax","food","body"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo")renderTodos();
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
     if(tab==="food")openFood();
+    if(tab==="body")renderBody();
   });
 
   // ---------- calendar core ----------
@@ -4945,7 +5006,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -4969,7 +5030,9 @@ margin-left: -22px;
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
-    recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
+    bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
+    if(state.tab==="body")try{renderBody();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     try{renderCatSettings();refreshCatSelects();}catch(e){}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
@@ -9236,6 +9299,260 @@ margin-left: -22px;
           taxRecs=taxRecs.filter(function(x){return String(x.id)!==did;});saveTax();renderTax();}});
     }
     renderTax();}
+
+  // ---------- 身体数据 ----------
+  // 一天一条记录，v 里按指标 key 存数值；指标表可扩展，加新指标不用动存储结构。
+  // good:"down" = 数字变小算进步（体重/围度），"up" = 变大算进步（肌肉量），"" = 中性（身高）
+  var BODY_M=[
+    {k:"w",    n:"体重",   u:"kg", c:"#e06c5a", good:"down"},
+    {k:"fat",  n:"体脂率", u:"%",  c:"#eeb85f", good:"down"},
+    {k:"mus",  n:"肌肉量", u:"kg", c:"#5cbd90", good:"up"},
+    {k:"waist",n:"腰围",   u:"cm", c:"#5f9bd8", good:"down"},
+    {k:"hip",  n:"臀围",   u:"cm", c:"#7c83e6", good:"down"},
+    {k:"thigh",n:"大腿围", u:"cm", c:"#61c4cf", good:"down"},
+    {k:"calf", n:"小腿围", u:"cm", c:"#8bb04f", good:"down"},
+    {k:"arm",  n:"上臂围", u:"cm", c:"#d9925f", good:"down"},
+    {k:"chest",n:"胸围",   u:"cm", c:"#c77fd0", good:""},
+    {k:"h",    n:"身高",   u:"cm", c:"#9aa1b0", good:""}
+  ];
+  var bodyRecs=load("tt_body",[])||[],bodyCfg=load("tt_bodycfg",null)||{};
+  if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];
+  var bodyMetric="w",bodyRange="all",bodyPick=false;
+  function bodyAll(){return BODY_M.concat(bodyCfg.custom||[]);}
+  function bodyDef(k){var a=bodyAll();for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return null;}
+  function saveBody(){save("tt_body",bodyRecs);}
+  function saveBodyCfg(){save("tt_bodycfg",bodyCfg);}
+  function bodySorted(){return bodyRecs.slice().sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});}
+  function bodyNum(x){return (x===""||x==null||isNaN(+x))?null:+x;}
+  function bodyLatest(k){var s=bodySorted();for(var i=s.length-1;i>=0;i--){var v=bodyNum(s[i].v&&s[i].v[k]);if(v!==null)return{v:v,date:s[i].date};}return null;}
+  function bodyRangeStart(){var t=new Date();
+    if(bodyRange==="30")return fmt(addDays(t,-29));
+    if(bodyRange==="90")return fmt(addDays(t,-89));
+    if(bodyRange==="365")return fmt(addDays(t,-364));
+    return null;}
+  function bodySeries(k){var st=bodyRangeStart();
+    return bodySorted().filter(function(r){
+      if(st&&r.date<st)return false;
+      return bodyNum(r.v&&r.v[k])!==null;
+    }).map(function(r){return{date:r.date,v:bodyNum(r.v[k])};});}
+  function bodyFmt(v,d){var n=Math.round(v*10)/10;return (d&&d.u==="kg"||d&&d.u==="%")?n.toFixed(1):String(n);}
+  // 折线图：x 按真实日期比例排（记录间隔不均匀时才不会骗人），y 自适应并留白
+  function bodyChart(k){
+    var d=bodyDef(k);if(!d)return '<div class="stat-empty">指标不存在</div>';
+    var pts=bodySeries(k);
+    if(!pts.length)return '<div class="stat-empty">这个时间范围内还没有「'+esc(d.n)+'」的记录</div>';
+    var W=760,H=250,PL=48,PR=18,PT=16,PB=30;
+    var xs=pts.map(function(p){return parse(p.date).getTime();});
+    var minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs);if(maxX<=minX)maxX=minX+86400000;
+    var vals=pts.map(function(p){return p.v;});
+    var tg=(k==="w")?bodyNum(bodyCfg.target):null;
+    var minV=Math.min.apply(null,vals),maxV=Math.max.apply(null,vals);
+    if(tg!==null&&tg!==undefined){minV=Math.min(minV,tg);maxV=Math.max(maxV,tg);}
+    var span=(maxV-minV)||Math.max(1,Math.abs(maxV)*0.06);
+    minV-=span*0.18;maxV+=span*0.18;
+    function X(t){return PL+(t-minX)/(maxX-minX)*(W-PL-PR);}
+    function Y(v){return PT+(maxV-v)/(maxV-minV)*(H-PT-PB);}
+    var g="";
+    for(var i=0;i<=3;i++){var vv=maxV-(maxV-minV)*i/3,yy=Y(vv);
+      g+='<line x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'" class="bg-grid"/>'+
+         '<text x="'+(PL-8)+'" y="'+(yy+4).toFixed(1)+'" class="bg-ylab">'+(Math.round(vv*10)/10)+'</text>';}
+    var line=pts.map(function(p,i){return (i?"L":"M")+X(parse(p.date).getTime()).toFixed(1)+" "+Y(p.v).toFixed(1);}).join(" ");
+    var area=line+" L"+X(maxX).toFixed(1)+" "+(H-PB)+" L"+X(minX).toFixed(1)+" "+(H-PB)+" Z";
+    var dots=pts.map(function(p){return '<circle cx="'+X(parse(p.date).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.2" class="bg-dot"><title>'+p.date+"  "+p.v+d.u+'</title></circle>';}).join("");
+    var tgLine=(tg!==null&&tg!==undefined)?('<line x1="'+PL+'" y1="'+Y(tg).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(tg).toFixed(1)+'" class="bg-target"/>'+
+      '<text x="'+(W-PR)+'" y="'+(Y(tg)-6).toFixed(1)+'" class="bg-tlab">目标 '+tg+d.u+'</text>'):"";
+    var first=pts[0],last=pts[pts.length-1];
+    var lab=(pts.length>1?('<text x="'+X(parse(first.date).getTime()).toFixed(1)+'" y="'+(Y(first.v)-9).toFixed(1)+'" class="bg-vlab">'+first.v+'</text>'):"")+
+      '<text x="'+X(parse(last.date).getTime()).toFixed(1)+'" y="'+(Y(last.v)-9).toFixed(1)+'" class="bg-vlab end">'+last.v+'</text>';
+    var xlab='<text x="'+PL+'" y="'+(H-8)+'" class="bg-xlab">'+first.date.slice(5)+'</text>'+
+      (pts.length>1?'<text x="'+(W-PR)+'" y="'+(H-8)+'" class="bg-xlab end">'+last.date.slice(5)+'</text>':"");
+    return '<svg class="bg-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--c:'+d.c+'">'+
+      g+tgLine+'<path d="'+area+'" class="bg-area"/><path d="'+line+'" class="bg-line"/>'+dots+lab+xlab+'</svg>';}
+  function bodyDelta(k){                       // 这个范围内：最新值、相对首条的变化
+    var s=bodySeries(k);if(s.length<1)return null;
+    var last=s[s.length-1],first=s[0];
+    return{last:last.v,date:last.date,diff:Math.round((last.v-first.v)*10)/10,n:s.length};}
+  function renderBody(){
+    var wrap=document.getElementById("body-wrap");if(!wrap)return;
+    var all=bodyAll(),d=bodyDef(bodyMetric)||all[0];
+    var wLast=bodyLatest("w"),hLast=bodyLatest("h"),tg=bodyNum(bodyCfg.target);
+    var bmi=(wLast&&hLast&&hLast.v>0)?(wLast.v/Math.pow(hLast.v/100,2)):null;
+    var bmiTxt=bmi?(Math.round(bmi*10)/10+" · "+(bmi<18.5?"偏瘦":bmi<24?"正常":bmi<28?"偏胖":"肥胖")):"—";
+    var toGo=(wLast&&tg!==null&&tg!==undefined)?Math.round((wLast.v-tg)*10)/10:null;
+    var ranges=[["30","30天"],["90","3个月"],["365","1年"],["all","全部"]];
+    var today=fmt(new Date());
+    var cur=bodyRecs.filter(function(r){return r.date===today;})[0];
+    // 录入表：只显示你选中的指标
+    var form=bodyCfg.on.map(function(k){var m=bodyDef(k);if(!m)return "";
+      var v=(cur&&cur.v&&cur.v[k]!=null)?cur.v[k]:"";
+      return '<label class="bd-f"><span><i style="background:'+m.c+'"></i>'+esc(m.n)+'<em>'+m.u+'</em></span>'+
+        '<input type="number" step="0.1" inputmode="decimal" data-bk="'+k+'" value="'+v+'" placeholder="—"></label>';}).join("");
+    var picker=bodyPick?('<div class="bd-pick">'+all.map(function(m){return '<button class="li'+(bodyCfg.on.indexOf(m.k)>=0?" on":"")+'" data-bon="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+
+      '<button class="li bd-addm" data-baddm="1">＋ 自定义指标</button></div>'):"";
+    var deltas=all.map(function(m){var dd=bodyDelta(m.k);if(!dd)return "";
+      var up=dd.diff>0,flat=Math.abs(dd.diff)<0.05;
+      var cls=flat?"":((m.good==="down"&&!up)||(m.good==="up"&&up)?"good":(m.good?"bad":""));
+      return '<div class="bd-d'+(m.k===bodyMetric?" on":"")+'" data-bm="'+m.k+'"><span class="nm"><i style="background:'+m.c+'"></i>'+esc(m.n)+'</span>'+
+        '<b>'+dd.last+'<small>'+m.u+'</small></b>'+
+        '<span class="dt '+cls+'">'+(flat?"持平":((up?"+":"")+dd.diff+m.u))+'</span></div>';}).join("");
+    var rows=bodySorted().reverse().map(function(r){
+      var cells=bodyCfg.on.map(function(k){var v=bodyNum(r.v&&r.v[k]);var m=bodyDef(k);
+        return '<td>'+(v===null?'<span class="mu">—</span>':(v+(m?'<small>'+m.u+'</small>':""))) +'</td>';}).join("");
+      return '<tr data-bd="'+r.date+'"><td class="dt">'+r.date+'</td>'+cells+'<td class="nt">'+esc(r.note||"")+'</td><td><button class="bd-del" data-bdel="'+r.date+'" title="删除">✕</button></td></tr>';}).join("");
+    var heads=bodyCfg.on.map(function(k){var m=bodyDef(k);return '<th>'+(m?esc(m.n):k)+'</th>';}).join("");
+    wrap.innerHTML=
+      '<div class="stat-cards">'+
+        '<div class="sc"><div class="k">当前体重</div><div class="v">'+(wLast?wLast.v:"—")+'<small> kg</small></div></div>'+
+        '<div class="sc"><div class="k">距目标</div><div class="v">'+(toGo===null?"—":(toGo>0?toGo:"达成 ✓"))+(toGo!==null&&toGo>0?'<small> kg</small>':"")+'</div></div>'+
+        '<div class="sc"><div class="k">BMI</div><div class="v" style="font-size:17px">'+bmiTxt+'</div></div>'+
+        '<div class="sc"><div class="k">记录数</div><div class="v">'+bodyRecs.length+'<small> 条</small></div></div>'+
+      '</div>'+
+      '<div class="panel"><h3>记一笔 <button class="bd-mini" id="bd-pick-btn">'+(bodyPick?"收起":"选指标")+'</button>'+
+        '<button class="bd-mini" id="bd-target">'+(tg!==null&&tg!==undefined?"目标 "+tg+"kg":"设目标体重")+'</button></h3>'+
+        picker+
+        '<div class="bd-ai"><input type="text" id="bd-ai" placeholder="用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿"><button class="btn" id="bd-ai-go">✨ 识别填入</button></div>'+
+        '<div class="bd-tip bd-aitip" id="bd-ai-tip"></div>'+
+        '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" id="bd-date" value="'+today+'"></label>'+form+
+        '<label class="bd-f bd-note"><span>备注</span><input type="text" id="bd-note" value="'+esc((cur&&cur.note)||"")+'" placeholder="今天的感觉、饮食…"></label></div>'+
+        '<div class="bd-actions"><button class="btn primary" id="bd-save">保存这一天</button><span class="bd-tip" id="bd-tip"></span></div></div>'+
+      '<div class="panel"><h3>变化曲线 <span class="bd-h-sub">点下面的指标切换</span></h3>'+
+        '<div class="legend stat-legend">'+all.map(function(m){return '<button class="li'+(m.k===bodyMetric?" on":"")+'" data-bm="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+'</div>'+
+        '<div class="seg bd-range">'+ranges.map(function(r){return '<button data-br="'+r[0]+'"'+(bodyRange===r[0]?' class="on"':'')+'>'+r[1]+'</button>';}).join("")+'</div>'+
+        '<div class="bd-chart">'+bodyChart(bodyMetric)+'</div></div>'+
+      '<div class="panel"><h3>各项变化（'+esc(ranges.filter(function(r){return r[0]===bodyRange;}).map(function(r){return r[1];})[0]||"全部")+'）</h3><div class="bd-deltas">'+(deltas||'<div class="stat-empty">还没有记录</div>')+'</div></div>'+
+      '<div class="panel"><h3>全部记录 <button class="bd-mini" id="bd-csv">下载 CSV</button></h3>'+
+        (rows?('<div style="overflow-x:auto"><table class="rep-table bd-table"><thead><tr><th>日期</th>'+heads+'<th>备注</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'):'<div class="stat-empty">还没有记录，上面记第一笔吧</div>')+
+      '</div>';
+    // ---- 事件 ----
+    wrap.querySelectorAll("[data-bm]").forEach(function(b){b.addEventListener("click",function(){bodyMetric=this.getAttribute("data-bm");renderBody();});});
+    wrap.querySelectorAll("[data-br]").forEach(function(b){b.addEventListener("click",function(){bodyRange=this.getAttribute("data-br");renderBody();});});
+    wrap.querySelector("#bd-pick-btn").addEventListener("click",function(){bodyPick=!bodyPick;renderBody();});
+    wrap.querySelector("#bd-ai-go").addEventListener("click",bodyAIParse);
+    wrap.querySelector("#bd-ai").addEventListener("keydown",function(e){if(e.key==="Enter")bodyAIParse();});
+    wrap.querySelectorAll("[data-bon]").forEach(function(b){b.addEventListener("click",function(){
+      var k=this.getAttribute("data-bon"),i=bodyCfg.on.indexOf(k);
+      if(i>=0){if(bodyCfg.on.length>1)bodyCfg.on.splice(i,1);}else bodyCfg.on.push(k);
+      saveBodyCfg();renderBody();});});
+    var addm=wrap.querySelector("[data-baddm]");
+    if(addm)addm.addEventListener("click",async function(){
+      var nm=await ttPrompt("新指标名称（如：肩宽）：","",{anchor:addm});if(!nm||!nm.trim())return;
+      var un=await ttPrompt("单位（如 cm / kg / %）：","cm");if(un===null)return;
+      bodyCfg.custom=bodyCfg.custom||[];
+      var kk="x"+uid();
+      bodyCfg.custom.push({k:kk,n:nm.trim(),u:(un||"").trim()||"cm",c:PALETTE[(bodyCfg.custom.length*5+3)%PALETTE.length],good:"down"});
+      bodyCfg.on.push(kk);saveBodyCfg();renderBody();});
+    wrap.querySelector("#bd-target").addEventListener("click",async function(){
+      var v=await ttPrompt("目标体重（kg，留空取消）：",(tg!==null&&tg!==undefined)?String(tg):"",{anchor:this});
+      if(v===null)return;
+      if(!v.trim())delete bodyCfg.target;else bodyCfg.target=bodyNum(v.trim());
+      saveBodyCfg();renderBody();});
+    wrap.querySelector("#bd-save").addEventListener("click",function(){
+      var date=wrap.querySelector("#bd-date").value||today,v={},any=false;
+      wrap.querySelectorAll("[data-bk]").forEach(function(inp){var n=bodyNum(inp.value);
+        if(n!==null){v[inp.getAttribute("data-bk")]=n;any=true;}});
+      var note=(wrap.querySelector("#bd-note").value||"").trim();
+      if(!any&&!note){wrap.querySelector("#bd-tip").textContent="至少填一项";return;}
+      var old=bodyRecs.filter(function(r){return r.date===date;})[0];
+      if(old){old.v=Object.assign({},old.v||{},v);old.note=note;}      // 同一天再记 = 补充/覆盖，不会多出一条
+      else bodyRecs.push({id:uid(),date:date,v:v,note:note});
+      saveBody();renderBody();
+      var t=document.getElementById("bd-tip");if(t){t.textContent="已保存 ✓";setTimeout(function(){if(t)t.textContent="";},2000);}});
+    wrap.querySelectorAll("[data-bdel]").forEach(function(b){b.addEventListener("click",async function(e){
+      e.stopPropagation();var dt=this.getAttribute("data-bdel");
+      if(!await ttConfirm("删除 "+dt+" 这条记录？",{danger:true,anchor:this}))return;
+      bodyRecs=bodyRecs.filter(function(r){return r.date!==dt;});saveBody();renderBody();});});
+    wrap.querySelectorAll("tr[data-bd]").forEach(function(tr){tr.addEventListener("click",function(){
+      var dt=this.getAttribute("data-bd"),di=wrap.querySelector("#bd-date");
+      if(di){di.value=dt;renderBodyForm(dt);}
+      try{di.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}});});
+    var dateI=wrap.querySelector("#bd-date");
+    if(dateI)dateI.addEventListener("change",function(){renderBodyForm(this.value);});
+    wrap.querySelector("#bd-csv").addEventListener("click",function(){
+      var ks=bodyAll();
+      var lines=[["日期"].concat(ks.map(function(m){return m.n+"("+m.u+")";})).concat(["备注"]).join(",")];
+      bodySorted().forEach(function(r){
+        lines.push([r.date].concat(ks.map(function(m){var v=bodyNum(r.v&&r.v[m.k]);return v===null?"":v;})).concat([csvCell(r.note||"")]).join(","));});
+      downloadFile("身体数据_"+fmt(new Date())+".csv","﻿"+lines.join("\r\n"),"text/csv;charset=utf-8");});
+  }
+  // 通用「只要一个 JSON」的 AI 调用，两个供应商都走这里（AI 助手那边有自己的一套，不动它）
+  function aiJSON(sys,text){
+    if(aiProvider==="ollama"){
+      var url=(ollamaUrl||"http://localhost:11434").replace(/\/+$/,"")+"/api/generate";
+      return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({model:ollamaModel||"qwen3:8b",prompt:sys+"\n\n用户："+text+"\n\n直接输出 JSON：",stream:false,format:"json",think:false,options:{temperature:0.1}})})
+        .then(function(r){return r.json();}).then(function(j){
+          var t=j&&(j.response||j.message&&j.message.content);
+          if(!t)throw new Error("本地模型没返回内容");return JSON.parse(t);});}
+    if(!apiKey)throw new Error("还没设置 Gemini API Key");
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/"+apiModel+":generateContent?key="+encodeURIComponent(apiKey),
+      {method:"POST",headers:{"Content-Type":"application/json"},
+       body:JSON.stringify({contents:[{role:"user",parts:[{text:sys+"\n\n用户："+text}]}],generationConfig:{responseMimeType:"application/json",temperature:0.1}})})
+      .then(function(r){return r.json();}).then(function(j){
+        if(j.error)throw new Error(j.error.message||"请求失败");
+        var c=j.candidates&&j.candidates[0]&&j.candidates[0].content&&j.candidates[0].content.parts&&j.candidates[0].content.parts[0];
+        if(!c||!c.text)throw new Error("AI 没返回内容");
+        return JSON.parse(c.text);});}
+  var BODY_ALIAS={w:["体重","weight"],fat:["体脂率","体脂","bodyfat","fat"],mus:["肌肉量","肌肉","muscle"],
+    waist:["腰围","腰"],hip:["臀围","臀"],thigh:["大腿围","大腿"],calf:["小腿围","小腿"],
+    arm:["上臂围","臂围","手臂"],chest:["胸围"],h:["身高","height"]};
+  // 本地兜底解析：「体重62.5 腰围72」这种直接就认，没网/没配 AI 也能用
+  function bodyLocalParse(t){
+    var out={},s=String(t||"");
+    bodyAll().forEach(function(m){
+      var names=(BODY_ALIAS[m.k]||[]).concat([m.n]).sort(function(a,b){return b.length-a.length;});
+      for(var i=0;i<names.length;i++){
+        var mm=s.match(new RegExp(rxEsc(names[i])+"\\s*(?:是|为|大概|约|:|：|=)?\\s*(\\d+(?:\\.\\d+)?)","i"));
+        if(mm){out[m.k]=+mm[1];break;}}});
+    return out;}
+  function bodyFill(vals,date){                  // 把解析出来的数值填进表单（不直接存，你确认后再点保存）
+    var wrap=document.getElementById("body-wrap");if(!wrap)return 0;
+    var n=0,add=[];
+    Object.keys(vals||{}).forEach(function(k){
+      var v=bodyNum(vals[k]);if(v===null)return;
+      if(bodyCfg.on.indexOf(k)<0&&bodyDef(k))add.push(k);});
+    if(add.length){add.forEach(function(k){bodyCfg.on.push(k);});saveBodyCfg();renderBody();}  // 说到了但表里没显示的指标，自动加上
+    wrap=document.getElementById("body-wrap");
+    if(date){var di=wrap.querySelector("#bd-date");if(di)di.value=date;}
+    Object.keys(vals||{}).forEach(function(k){
+      var v=bodyNum(vals[k]);if(v===null)return;
+      var inp=wrap.querySelector('[data-bk="'+k+'"]');if(inp){inp.value=v;n++;}});
+    return n;}
+  function bodyTip(t){var el=document.getElementById("bd-ai-tip");if(el)el.textContent=t;}
+  async function bodyAIParse(){
+    var wrap=document.getElementById("body-wrap");if(!wrap)return;
+    var inp=wrap.querySelector("#bd-ai");if(!inp)return;
+    var text=(inp.value||"").trim();if(!text){inp.focus();return;}
+    var all=bodyAll();
+    bodyTip("识别中…");
+    var sys="你从用户的一句话里提取身体测量数据。今天是 "+fmt(new Date())+"。"+
+      "可用指标（key=名称/单位）："+all.map(function(m){return m.k+"="+m.n+"("+m.u+")";}).join("、")+"。"+
+      "只输出一个 JSON 对象：{\"values\":{指标key:数字},\"date\":\"YYYY-MM-DD\",\"note\":\"\"}。"+
+      "规则：只放用户真正提到的指标，没提到的不要出现；数值一律用数字不带单位；"+
+      "斤要换算成 kg（1 斤=0.5kg），磅换算成 kg（1 lb=0.4536kg），英寸换算成 cm（1 in=2.54cm）；"+
+      "用户没说日期就用今天；note 放用户提到的主观描述（如「今天有点浮肿」），没有就空字符串。只输出 JSON。";
+    var vals=null,date=null,note="",via="AI";
+    try{
+      var o=await aiJSON(sys,text);
+      vals=o&&o.values;date=o&&o.date;note=(o&&o.note)||"";
+    }catch(err){
+      vals=bodyLocalParse(text);via="本地识别";
+      if(!Object.keys(vals).length){bodyTip("没认出来："+String(err&&err.message||err));return;}
+    }
+    if(!vals||!Object.keys(vals).length){          // AI 通了但什么都没提取到 → 再用本地试一次
+      vals=bodyLocalParse(text);via="本地识别";
+      if(!Object.keys(vals).length){bodyTip("这句话里没找到可识别的数据");return;}}
+    var n=bodyFill(vals,date);
+    var w2=document.getElementById("body-wrap");
+    if(note){var nt=w2.querySelector("#bd-note");if(nt&&!nt.value)nt.value=note;}
+    var ai2=w2.querySelector("#bd-ai");if(ai2)ai2.value=text;
+    bodyTip(via+"填好 "+n+" 项，核对一下再点「保存这一天」");}
+  function renderBodyForm(date){                 // 换日期时把那天已有的数值填回表单
+    var wrap=document.getElementById("body-wrap");if(!wrap)return;
+    var r=bodyRecs.filter(function(x){return x.date===date;})[0];
+    wrap.querySelectorAll("[data-bk]").forEach(function(inp){
+      var v=r?bodyNum(r.v&&r.v[inp.getAttribute("data-bk")]):null;
+      inp.value=(v===null||v===undefined)?"":v;});
+    var nt=wrap.querySelector("#bd-note");if(nt)nt.value=(r&&r.note)||"";}
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
