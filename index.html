@@ -3997,7 +3997,7 @@ margin-left: -22px;
     if(pl){var g=goals.filter(function(x){return x.id===pl.getAttribute("data-plus");})[0];if(g){
       if(!window.confirm("确认给「"+g.title+"」打卡一次？"))return;
       var end=new Date(),start=new Date(end.getTime()-3600*1000);
-      var _ac=autoCat(g.title);events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:false,goalId:g.id});
+      var _ac=autoCat(g.title);events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:true,goalId:g.id});   // 打卡＝已经做了
       save("tt_events",events);renderCal();}return;}
     var ed=e.target.closest("[data-gedit]");if(ed){var gg=goals.filter(function(x){return x.id===ed.getAttribute("data-gedit");})[0];if(gg)renderGoalDetail(gg);}
   });
@@ -4308,7 +4308,8 @@ margin-left: -22px;
       Object.keys(by).forEach(function(k){if(!best||by[k]>by[best])best=k;});
       pc=best.split("|")[0];ps=best.split("|")[1]||null;}
     var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
-    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:false};
+    // 番茄钟记进来的是"已经做完的时间"，不是计划 → 直接打勾
+    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true};
     if(segs)ev.segs=segs;
     events.push(ev);
     save("tt_events",events);if(state.tab==="calendar")renderCal();
