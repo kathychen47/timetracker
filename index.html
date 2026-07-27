@@ -297,6 +297,9 @@
   .legend .li i{width:11px;height:11px;border-radius:4px;background:var(--c)}
   .legend .li:hover{background:var(--surface-2);color:var(--text)}
   .legend .li.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 15%,var(--bg));color:var(--text);font-weight:600}
+  /* 统计页顶部的大类/小类切换块（和日历下面那排同一套样式） */
+  .stat-legend{margin-top:0;width:100%}
+  .stat-legend .li em{font-style:normal;font-size:11px;opacity:.7;margin-left:1px;font-variant-numeric:tabular-nums}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
 
@@ -4699,15 +4702,23 @@ margin-left: -22px;
       trendHTML=keys.length?keys.map(function(k){var m=byc[k],h=Math.max(3,Math.round(m/mx2*110));return '<div class="bar"><div class="amt">'+fmtDur(m)+'</div><div class="col2" style="height:'+h+'px;background:'+catColor(k)+'"></div><div class="lb">'+esc(catName(k))+'</div></div>';}).join(""):'<div class="stat-empty">这天没有事件</div>';
       trendTitle="各大类时长（当天）";}
     var modes=[["day","日"],["week","周"],["month","月"],["year","年"],["custom","自定义"]];
-    var catOpts='<option value="__all">全部大类</option>'+cats.map(function(c){return '<option value="'+c.key+'"'+(statState.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");
+    // 大类/小类用色块切换（和日历下面那排一样），比下拉和扇区下钻都直接
     var subs=(statState.cat==="__all")?[]:subsOf(statState.cat);
-    var subOpts='<option value="__all">全部小类</option>'+subs.map(function(s){return '<option value="'+s.key+'"'+(statState.sub===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");
+    var catRow='<div class="legend stat-legend">'+
+      '<button class="li'+(statState.cat==="__all"?" on":"")+'" data-scat="__all" style="--c:var(--muted)"><i></i>全部</button>'+
+      cats.map(function(c){var m=0;evs.forEach(function(e){evMix(e).forEach(function(x){if(x.cat===c.key)m+=x.min;});});
+        return '<button class="li'+(statState.cat===c.key?" on":"")+'" data-scat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+(m?'<em>'+fmtDur(m)+'</em>':'')+'</button>';}).join("")+
+      '</div>';
+    var subRow=subs.length?('<div class="legend stat-legend">'+
+      '<button class="li'+(statState.sub==="__all"?" on":"")+'" data-ssub="__all" style="--c:'+catColor(statState.cat)+'"><i></i>全部小类</button>'+
+      subs.map(function(s){return '<button class="li'+(statState.sub===s.key?" on":"")+'" data-ssub="'+s.key+'" style="--c:'+subColor(statState.cat,s.key)+'"><i></i>'+esc(s.name)+'</button>';}).join("")+
+      '</div>'):'';
     wrap.innerHTML=
       '<div class="panel stat-controls">'+
         '<div class="seg" id="stat-mode">'+modes.map(function(o){return '<button data-m="'+o[0]+'"'+(statState.mode===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join("")+'</div>'+
         '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'+
         '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
-        '<div class="stat-catsel"><select id="stat-cat">'+catOpts+'</select><select id="stat-sub"'+(subs.length?'':' disabled')+'>'+subOpts+'</select></div>'+
+        catRow+subRow+
       '</div>'+
       '<div class="stat-cards">'+
         '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div></div>'+
@@ -4715,7 +4726,7 @@ margin-left: -22px;
         '<div class="sc"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
       '</div>'+
-      '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+' · 点扇区可下钻）</h3><div class="dist">'+
+      '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3><div class="dist">'+
         '<div class="donut" style="background:'+donutBg+'"><div class="hole"><div><b>'+totH+'h</b><span>'+(groupByCat?"合计":esc(catName(statState.cat)))+'</span></div></div></div>'+
         '<div class="dist-legend">'+legend+'</div></div></div>'+
       '<div class="panel"><h3>'+trendTitle+'</h3><div class="bars">'+trendHTML+'</div></div>'+
@@ -4729,15 +4740,11 @@ margin-left: -22px;
     var sfI=wrap.querySelector("#stat-from"),stI=wrap.querySelector("#stat-to");
     if(sfI)sfI.addEventListener("change",function(){statState.from=sfI.value;renderStatsView();});
     if(stI)stI.addEventListener("change",function(){statState.to=stI.value;renderStatsView();});
-    wrap.querySelector("#stat-cat").addEventListener("change",function(){statState.cat=this.value;statState.sub="__all";renderStatsView();});
-    var subSel=wrap.querySelector("#stat-sub");if(subSel)subSel.addEventListener("change",function(){statState.sub=this.value;renderStatsView();});
-    function drill(k){if(k===null)return;if(groupByCat){statState.cat=k;statState.sub="__all";renderStatsView();}else if(k!=="__none"){statState.sub=k;renderStatsView();}}
-    var donutEl=wrap.querySelector(".donut"),legendEl=wrap.querySelector(".dist-legend");
-    if(donutEl&&totalMin){donutEl.style.cursor="pointer";donutEl.addEventListener("click",function(e){
-      var r=donutEl.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,dx=e.clientX-cx,dy=e.clientY-cy,dist=Math.sqrt(dx*dx+dy*dy);
-      if(dist<r.width*0.30)return;var ang=Math.atan2(dx,-dy);if(ang<0)ang+=2*Math.PI;var pp=ang/(2*Math.PI)*100,hit=null;
-      for(var i=0;i<segs.length;i++){if(pp>=segs[i].start&&pp<segs[i].start+segs[i].pct){hit=segs[i].k;break;}}drill(hit);});}
-    if(legendEl)legendEl.addEventListener("click",function(e){var row=e.target.closest(".dl");if(row)drill(row.getAttribute("data-k"));});
+    wrap.querySelectorAll(".stat-legend").forEach(function(box){box.addEventListener("click",function(e){
+      var b=e.target.closest("button");if(!b)return;
+      var ck=b.getAttribute("data-scat"),sk=b.getAttribute("data-ssub");
+      if(ck!==null){statState.cat=ck;statState.sub="__all";renderStatsView();return;}
+      if(sk!==null){statState.sub=sk;renderStatsView();}});});
     var reportEl=wrap.querySelector("#exp-report");
     var rowsSorted=evs.slice().sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});
     var scope=(statState.cat==="__all"?"全部":catName(statState.cat))+(statState.sub!=="__all"?" › "+subName(statState.cat,statState.sub):"");
