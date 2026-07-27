@@ -1007,6 +1007,24 @@
   .wt-bar .tr{flex:1;height:9px;border-radius:99px;background:var(--surface-2);overflow:hidden}
   .wt-bar .tr i{display:block;height:100%;background:var(--primary);border-radius:99px}
   .wt-bar .p{width:52px;text-align:right;color:var(--muted);font-size:12px}
+  .wt-sum{display:grid;gap:8px;margin-bottom:10px}
+  .wt-sr{display:flex;align-items:center;gap:11px;border:1px solid var(--border);border-radius:12px;padding:9px 13px;background:var(--surface)}
+  .wt-sr .ic{font-size:17px;line-height:1}
+  .wt-sr .k{font-size:13.5px;font-weight:600}
+  .wt-sr .h{font-size:11.5px;color:var(--muted)}
+  .wt-sr .n{margin-left:auto;font-size:20px;font-weight:800}
+  .wt-sr.ok{background:var(--primary-soft);border-color:transparent}
+  .wt-sr.ok .n{color:var(--primary)}
+  .wt-sr.skip{opacity:.72}
+  .wt-det{margin:0 0 9px}
+  .wt-det>summary{cursor:pointer;font-size:12.5px;color:var(--muted);padding:5px 2px;list-style:none;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+  .wt-det>summary::before{content:"▸";display:inline-block;transition:transform .15s}
+  .wt-det[open]>summary::before{transform:rotate(90deg)}
+  .wt-det>summary::-webkit-details-marker{display:none}
+  .wt-mini{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:7px;padding:2px 8px;font-size:11.5px;cursor:pointer}
+  .wt-chip small{color:var(--muted);margin-left:6px;font-size:11px}
+  .wt-chip.on small{color:inherit;opacity:.75}
+  .wt-chip.off{opacity:.5;cursor:default}
   .wt-big{text-align:center;padding:14px 0 6px}
   .wt-big .n{font-size:38px;font-weight:800;color:var(--primary);line-height:1.1}
   .wt-big .k{font-size:12.5px;color:var(--muted);margin-top:4px}
@@ -4828,17 +4846,27 @@ margin-left: -22px;
           'A'+r+' '+r+' 0 '+big+' 0 '+i0[0].toFixed(1)+' '+i0[1].toFixed(1)+'Z" fill="'+s.col+'"/>';}
       var mid=full?Math.PI*0.5:(a0+a1)/2,right=Math.sin(mid)>=0;
       var p1=px(mid,R+4),p2=px(mid,R+ELB);
-      labs.push({y:p2[1],x:p2[0],p1:p1,right:right,col:s.col,
+      labs.push({y:p2[1],p1:p1,right:right,col:s.col,
         nm:nameOf(s.k),val:fmtDur(s.m)+" · "+Math.round(s.pct)+"%"});});
-    // 同侧标签按 y 排开，避免叠在一起
+    // 同侧标签按 y 排开，避免叠在一起：先往下顶，顶穿底边就整体往上收，最后压间距保证塞得下
+    var TOP=26,BOT=H-20;
     [true,false].forEach(function(side){
       var g=labs.filter(function(l){return l.right===side;}).sort(function(a,b){return a.y-b.y;});
-      for(var i=1;i<g.length;i++)if(g[i].y-g[i-1].y<GAP)g[i].y=g[i-1].y+GAP;
-      var over=g.length?(g[g.length-1].y-(H-30)):0;
-      if(over>0)g.forEach(function(l){l.y-=over;});});
+      if(!g.length)return;
+      var gap=(g.length>1)?Math.min(GAP,(BOT-TOP)/(g.length-1)):GAP;
+      for(var i=1;i<g.length;i++)if(g[i].y-g[i-1].y<gap)g[i].y=g[i-1].y+gap;
+      if(g[g.length-1].y>BOT){g[g.length-1].y=BOT;
+        for(var j=g.length-2;j>=0;j--)if(g[j+1].y-g[j].y<gap)g[j].y=g[j+1].y-gap;}
+      if(g[0].y<TOP){g[0].y=TOP;
+        for(var k=1;k<g.length;k++)if(g[k].y-g[k-1].y<gap)g[k].y=g[k-1].y+gap;}});
     labs.forEach(function(l){
-      var ex=l.right?(cx+R+ELB+16):(cx-R-ELB-16);
-      lead+='<polyline points="'+l.p1[0].toFixed(1)+','+l.p1[1].toFixed(1)+' '+l.x.toFixed(1)+','+l.y.toFixed(1)+' '+ex+','+l.y.toFixed(1)+'" class="dn-lead" style="stroke:'+l.col+'"/>'+
+      var sd=l.right?1:-1,ex=cx+sd*(R+ELB+16);
+      // 拐点必须按"错开之后"的 y 现算：横线要在这个高度上从圆环外面起步，
+      // 否则贴着 12 点的小块会拉出一条先竖后横、贴着圆环顶上横穿过去的线。
+      var dy=Math.abs(l.y-cy),cl=(dy<R+6)?Math.sqrt((R+6)*(R+6)-dy*dy):0;
+      var bx=cx+sd*Math.max(Math.abs(l.p1[0]-cx)+10,cl+12);
+      bx=l.right?Math.min(bx,ex-10):Math.max(bx,ex+10);
+      lead+='<polyline points="'+l.p1[0].toFixed(1)+','+l.p1[1].toFixed(1)+' '+bx.toFixed(1)+','+l.y.toFixed(1)+' '+ex+','+l.y.toFixed(1)+'" class="dn-lead" style="stroke:'+l.col+'"/>'+
         '<circle cx="'+ex+'" cy="'+l.y.toFixed(1)+'" r="3" fill="'+l.col+'"/>';
       var tx=l.right?(ex+8):(ex-8),anc=l.right?"start":"end";
       lead+='<text x="'+tx+'" y="'+(l.y-4).toFixed(1)+'" class="dn-nm" text-anchor="'+anc+'">'+esc(l.nm)+'</text>'+
@@ -5107,7 +5135,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -5130,7 +5158,7 @@ margin-left: -22px;
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
-    words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
+    words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
     bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
     if(state.tab==="body")try{renderBody();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
@@ -5257,7 +5285,7 @@ margin-left: -22px;
       if(isSaved(w))aiMsg("这个词已经在生词本里了：<b>"+esc(w)+"</b>","ok");
       else{words.push({w:w,disp:String(o.word).trim(),dict:isCJK(w)?"collins":"oald",ts:Date.now(),
           group:wbGroups.def,ef:2.5,iv:0,reps:0,lapses:0,due:Date.now()});
-        saveWords();updateWbCount();if(state.tab==="dict")renderWordbook();
+        saveWords();trashDrop(w);updateWbCount();if(state.tab==="dict")renderWordbook();
         aiMsg("✅ "+esc(o.reply||"已加入生词本")+"<br><span style='color:var(--muted);font-size:12px'>"+esc(w)+"</span>","ok");}
     }else{
       aiMsg(esc(o.reply||"（无回答）"),"ok");
@@ -5376,6 +5404,55 @@ margin-left: -22px;
   function trigOn(k){return !!(dictPrefs.trig&&dictPrefs.trig[k]);}
   function saveDictPrefs(){save("tt_dictprefs",dictPrefs);}
   function saveWords(){save("tt_words",words);}
+  // 被删掉的词记一笔（{词:删除时间}）。下次导入撞上同一个词时，问一句"要不要加回来"，
+  // 而不是默默塞回去 —— 删掉本来就是"我不想背它"的意思。
+  var wbTrash=load("tt_wbtrash",{})||{};
+  function saveWbTrash(){
+    var ks=Object.keys(wbTrash);
+    if(ks.length>4000){                                  // 封顶，只留最近删的 3000 个
+      ks.sort(function(x,y){return (wbTrash[y]||0)-(wbTrash[x]||0);});
+      var keep={};ks.slice(0,3000).forEach(function(k){keep[k]=wbTrash[k];});wbTrash=keep;}
+    save("tt_wbtrash",wbTrash);}
+  function trashKey(w){return String(w||"").toLowerCase().trim();}
+  function trashHas(w){return !!wbTrash[trashKey(w)];}
+  function trashAdd(w){var k=trashKey(w);if(!k)return;wbTrash[k]=Date.now();saveWbTrash();}
+  function trashDrop(w,quiet){                           // quiet：批量导入时先不落盘，最后统一存一次
+    var k=trashKey(w);if(!wbTrash[k])return false;
+    delete wbTrash[k];if(!quiet)saveWbTrash();return true;}
+  function trashCount(){return Object.keys(wbTrash).length;}
+  // 一眼就不像单词的东西（页码、网址、整句话、乱码…）。返回空串表示"是个正常词"。
+  function wordIssue(s){
+    s=String(s||"").trim();
+    if(!s)return "空行";
+    var cjk=/[぀-ヿ㐀-䶿一-鿿가-힯]/.test(s),
+        lat=/[A-Za-zÀ-ɏ]/.test(s);
+    if(!cjk&&!lat)return "没有字母";
+    if(/\d/.test(s))return "含数字";
+    if(/https?:\/\/|www\.|@/i.test(s))return "像网址或邮箱";
+    if(cjk)return s.length>20?"太长，像句子":"";
+    if(s.length>40)return "太长（超过 40 个字符）";
+    if(/[^A-Za-zÀ-ɏ\s'’.\-]/.test(s))return "含奇怪符号";
+    if(s.split(/\s+/).length>5)return "词太多，像句子";
+    if(/(.)\1{3,}/.test(s))return "同一个字母连着好几个，像乱码";
+    if(s.replace(/[^A-Za-zÀ-ɏ]/g,"").length<2&&!/^[ai]$/i.test(s))return "太短";
+    return "";}
+  // 把粘贴/读进来的文本分成四堆：能加的、已经有的、删过的、不像单词的
+  function analyzeImport(raw){
+    var seen={},r={fresh:[],dup:[],back:[],bad:[],rep:0,total:0};
+    String(raw||"").split(/\r?\n/).forEach(function(line){
+      var cell=line.split(/[,\t;]/)[0];
+      var s=cell.replace(/^\s*(?:\d{1,3}[.、)）]|[-*•·])\s+/,"").trim();  // 去掉行首的 "1. " "- " 之类
+      if(!s&&!line.trim())return;                        // 纯空行不算数
+      r.total++;
+      var key=s.toLowerCase();
+      if(seen[key]){r.rep++;return;}                     // 这份名单自己重了
+      seen[key]=1;
+      var why=wordIssue(s);
+      if(why){r.bad.push({w:s,why:why});return;}
+      if(isSaved(key)){r.dup.push(s);return;}
+      if(trashHas(key)){r.back.push(s);return;}
+      r.fresh.push(s);});
+    return r;}
   function isCJK(s){return /[一-鿿]/.test(s);}
   function pronounce(text,cjk){
     try{
@@ -5626,7 +5703,7 @@ margin-left: -22px;
       if(hit){matches.push([store,hit.rec]);if(hit.changed&&!viaBase)viaBase=hit.base;}}
     if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
-      if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
+      if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();trashDrop(w0);updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
     if(!html){
       // 输入的是词组/句子 —— 直接给翻译
@@ -5671,11 +5748,12 @@ margin-left: -22px;
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
   function toggleWord(w,disp,store){
     var idx=-1;for(var i=0;i<words.length;i++)if(words[i].w===w){idx=i;break;}
-    if(idx>=0)words.splice(idx,1);else words.push({w:w,disp:disp||w,dict:store,ts:Date.now(),group:wbGroups.def});
+    if(idx>=0){words.splice(idx,1);trashAdd(w);}        // 取消收藏 = 删掉，记一笔
+    else{words.push({w:w,disp:disp||w,dict:store,ts:Date.now(),group:wbGroups.def});trashDrop(w);}
     saveWords();updateWbCount();
     var inp=document.getElementById("dict-q");
     if(inp&&document.getElementById("dict-look").style.display!=="none")doLookup(inp.value);}
-  function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();renderWordbook();}
+  function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();trashAdd(w);renderWordbook();}
   function updateWbCount(){var el=document.getElementById("wb-count");if(el)el.textContent=words.length?("("+words.length+")"):"";}
 
   var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
@@ -5947,37 +6025,123 @@ margin-left: -22px;
     var nm=await ttPrompt("新分组名称：","");if(!nm||!nm.trim())return null;
     var g={id:"g"+uid(),name:nm.trim()};wbGroups.list.push(g);saveWbGroups();return g.id;}
   function addWords(list,gid){ // list: [{w,disp}]
-    var added=0,skip=0;
+    var added=0,skip=0,td=false;
     list.forEach(function(it){
       var w=(it.w||"").toLowerCase().trim();if(!w)return;
       if(isSaved(w)){skip++;return;}
+      if(trashDrop(w,true))td=true;                      // 主动加回来了，就别再记着"删过"
       words.push({w:w,disp:it.disp||w,dict:isCJK(w)?"collins":"oald",ts:Date.now(),group:gid,
         ef:2.5,iv:0,reps:0,lapses:0,due:Date.now()});added++;});
     if(added)saveWords();
+    if(td)saveWbTrash();
     return {added:added,skip:skip};}
 
-  // ① 导入单词
+  // ① 导入单词：贴 → 体检（去重/剔除/问删过的） → 确认导入
   function openImport(){
-    var b=wbtOpen("📥 导入单词",
-      '<div class="wt-row"><label class="t">粘贴单词（每行一个；也支持「word,释义」这种，取第一列）</label>'+
-      '<textarea id="wt-text" placeholder="abandon\nbrilliant\ncuriosity\n…"></textarea></div>'+
-      '<div class="wt-row"><label class="t">或选文件（.txt / .csv）</label>'+
-      '<input type="file" id="wt-file" accept=".txt,.csv,.tsv"></div>'+
-      '<div class="wt-row"><label class="t">加到分组</label><select id="wt-group">'+groupOptions()+'</select></div>'+
-      '<button class="btn primary" id="wt-do">导入</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>');
-    b.querySelector("#wt-file").addEventListener("change",function(e){
-      var f=e.target.files&&e.target.files[0];if(!f)return;
-      f.text().then(function(t){b.querySelector("#wt-text").value=t;
-        b.querySelector("#wt-msg").textContent="已读入文件，点「导入」";});});
-    b.querySelector("#wt-do").addEventListener("click",async function(){
-      var raw=b.querySelector("#wt-text").value||"";
-      var list=raw.split(/\r?\n/).map(function(l){
-        var w=l.split(/[,\t;]/)[0].trim();return w?{w:w.toLowerCase(),disp:w}:null;}).filter(Boolean);
-      if(!list.length){b.querySelector("#wt-msg").textContent="没读到单词";return;}
-      var gid=await resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
-      var r=addWords(list,gid);
-      b.querySelector("#wt-msg").textContent="✓ 导入 "+r.added+" 个"+(r.skip?("，跳过重复 "+r.skip):"");
-      renderWordbook();});}
+    var b=wbtOpen("📥 导入单词",""),raw="",res=null,pick={};
+    function nBack(){return res.back.filter(function(w,i){return pick["back:"+i];}).length;}
+    function nBad(){return res.bad.filter(function(o,i){return pick["bad:"+i];}).length;}
+    function sumRow(cls,ic,k,n,hid,h){
+      return '<div class="wt-sr '+cls+'"><span class="ic">'+ic+'</span><span><span class="k">'+k+'</span>'+
+        '<br><span class="h"'+(hid?' id="'+hid+'"':'')+'>'+h+'</span></span><span class="n">'+n+'</span></div>';}
+    function chipsOf(arr,kind){
+      return arr.map(function(o,i){var w=(typeof o==="string")?o:o.w,why=(typeof o==="string")?"":o.why;
+        return '<span class="wt-chip'+(pick[kind+":"+i]?" on":"")+'" data-pk="'+kind+':'+i+'">'+esc(w)+
+          (why?'<small>'+esc(why)+'</small>':'')+'</span>';}).join("");}
+
+    function step1(){                                    // 贴单词
+      b.innerHTML=
+        '<div class="wt-row"><label class="t">粘贴单词（每行一个；也支持「word,释义」这种，取第一列）</label>'+
+        '<textarea id="wt-text" placeholder="abandon\nbrilliant\ncuriosity\n…"></textarea></div>'+
+        '<div class="wt-row"><label class="t">或选文件（.txt / .csv）</label>'+
+        '<input type="file" id="wt-file" accept=".txt,.csv,.tsv"></div>'+
+        '<button class="btn primary" id="wt-do">下一步：检查</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>'+
+        '<div class="wt-note">同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。'+
+        (trashCount()?('<br>🗑 你一共删掉过 '+trashCount()+' 个词，如果名单里又出现了，会单独问你要不要加回来。'+
+          '<a href="#" id="wt-clr">清空这个记录</a>'):'')+'</div>';
+      var ta=b.querySelector("#wt-text");ta.value=raw;
+      b.querySelector("#wt-file").addEventListener("change",function(e){
+        var f=e.target.files&&e.target.files[0];if(!f)return;
+        f.text().then(function(t){ta.value=t;b.querySelector("#wt-msg").textContent="已读入文件，点「下一步」";});});
+      var clr=b.querySelector("#wt-clr");
+      if(clr)clr.addEventListener("click",async function(e){e.preventDefault();
+        if(!await ttConfirm("清空删除记录？以后再导入到这些词，就直接加进来、不问了。",{danger:true,anchor:clr}))return;
+        wbTrash={};saveWbTrash();step1();});
+      b.querySelector("#wt-do").addEventListener("click",function(){
+        raw=ta.value||"";res=analyzeImport(raw);pick={};
+        if(!res.total){b.querySelector("#wt-msg").textContent="没读到单词";return;}
+        step2();});}
+
+    function step2(){                                    // 体检报告 + 确认
+      b.innerHTML=
+        '<div class="wt-sum">'+
+          sumRow("ok","✅","新词",res.fresh.length,"","这次会加进生词本")+
+          (res.dup.length?sumRow("skip","⊘","已经在生词本里",res.dup.length,"","自动跳过，不会重复"):"")+
+          (res.rep?sumRow("skip","⊘","这份名单里自己重了",res.rep,"","同一个词只留一个"):"")+
+          (res.back.length?sumRow("back","🗑","你以前删掉过",res.back.length,"wt-hback","默认不加回来 —— 想要哪个就点哪个"):"")+
+          (res.bad.length?sumRow("bad","⚠️","不像单词，已剔除",res.bad.length,"wt-hbad","展开能看到剔除的理由"):"")+
+        '</div>'+
+        (res.back.length?('<details class="wt-det" open><summary>🗑 以前删掉过的 '+res.back.length+' 个 —— 点一下就加回来'+
+          '<button class="wt-mini" data-all="back">全都加回来</button><button class="wt-mini" data-none="back">都不要</button></summary>'+
+          '<div class="wt-chips" id="wt-cback">'+chipsOf(res.back,"back")+'</div></details>'):"")+
+        (res.bad.length?('<details class="wt-det"><summary>⚠️ 被剔除的 '+res.bad.length+' 个（点开看为什么）'+
+          '<button class="wt-mini" data-all="bad">这些我也要</button><button class="wt-mini" data-none="bad">都不要</button></summary>'+
+          '<div class="wt-chips" id="wt-cbad">'+chipsOf(res.bad,"bad")+'</div></details>'):"")+
+        (res.dup.length?('<details class="wt-det"><summary>⊘ 已经在生词本里的 '+res.dup.length+' 个</summary>'+
+          '<div class="wt-chips">'+res.dup.map(function(w){return '<span class="wt-chip off">'+esc(w)+'</span>';}).join("")+'</div></details>'):"")+
+        '<div class="wt-row" style="margin-top:12px"><label class="t">加到分组</label><select id="wt-group">'+groupOptions()+'</select></div>'+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
+          '<button class="btn" id="wt-edit">← 改一改</button>'+
+          '<button class="btn primary" id="wt-go">导入 '+res.fresh.length+' 个词</button>'+
+          '<span class="wt-note" id="wt-msg" style="margin:0"></span></div>';
+      function refresh(){
+        var bk=nBack(),bd=nBad(),tot=res.fresh.length+bk+bd;
+        var g=b.querySelector("#wt-go");g.textContent="导入 "+tot+" 个词";g.disabled=!tot;
+        var hb=b.querySelector("#wt-hback");
+        if(hb)hb.textContent=bk?("已选 "+bk+" 个加回来"):"默认不加回来 —— 想要哪个就点哪个";
+        var hd=b.querySelector("#wt-hbad");
+        if(hd)hd.textContent=bd?("你要强行留下 "+bd+" 个"):"展开能看到剔除的理由";}
+      function bindPick(id,kind,arr){
+        var box=b.querySelector(id);if(!box)return;
+        box.addEventListener("click",function(e){
+          var c=e.target.closest(".wt-chip");if(!c)return;
+          var k=c.getAttribute("data-pk");pick[k]=!pick[k];c.classList.toggle("on",!!pick[k]);refresh();});
+        var s=box.parentNode;
+        s.addEventListener("click",function(e){
+          var al=e.target.closest("[data-all]"),no=e.target.closest("[data-none]");
+          if(!al&&!no)return;
+          e.preventDefault();                            // 别让点按钮顺手把 details 折起来
+          arr.forEach(function(x,i){pick[kind+":"+i]=!!al;});
+          box.querySelectorAll(".wt-chip").forEach(function(c){c.classList.toggle("on",!!al);});
+          refresh();});}
+      bindPick("#wt-cback","back",res.back);
+      bindPick("#wt-cbad","bad",res.bad);
+      refresh();
+      b.querySelector("#wt-edit").addEventListener("click",step1);
+      b.querySelector("#wt-go").addEventListener("click",async function(){
+        var list=res.fresh.slice();
+        res.back.forEach(function(w,i){if(pick["back:"+i])list.push(w);});
+        res.bad.forEach(function(o,i){if(pick["bad:"+i])list.push(o.w);});
+        if(!list.length)return;
+        var gid=await resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
+        var r=addWords(list.map(function(w){return {w:w.toLowerCase(),disp:w};}),gid);
+        renderWordbook();step3(r,gid);});}
+
+    function step3(r,gid){                               // 结果
+      var notBack=res.back.length-nBack();
+      b.innerHTML='<div class="wt-big"><div class="n">+'+r.added+'</div><div class="k">已加入「'+esc(wbGroupName(gid))+'」</div></div>'+
+        '<div class="wt-note" style="text-align:center;font-size:12.5px">'+
+        ([res.dup.length?("跳过已有 "+res.dup.length+" 个"):"",
+          res.rep?("名单内重复 "+res.rep+" 个"):"",
+          notBack?("删过的没加回来 "+notBack+" 个"):"",
+          (res.bad.length-nBad())?("剔除不像单词的 "+(res.bad.length-nBad())+" 个"):""
+         ].filter(Boolean).join("　·　")||"一个没落下")+'</div>'+
+        '<div style="margin-top:16px;display:flex;gap:8px;justify-content:center">'+
+        '<button class="btn" id="wt-again">再导一批</button><button class="btn primary" id="wt-fin">完成</button></div>';
+      b.querySelector("#wt-again").addEventListener("click",function(){raw="";res=null;pick={};step1();});
+      b.querySelector("#wt-fin").addEventListener("click",wbtClose);}
+
+    step1();}
 
   // ② 从牛津按等级选词
   function openBuild(pre){
@@ -5990,7 +6154,8 @@ margin-left: -22px;
           return '<label class="'+(on?"on":"")+'"><input type="checkbox" value="'+l+'"'+(on?" checked":"")+'>'+LVNAME[l]+' ('+counts[i]+')</label>';}).join("")+
         '</div></div>'+
         '<div class="wt-row"><label class="t">最多加入</label><select id="wt-n"><option>50</option><option selected>100</option><option>200</option><option>500</option><option>1000</option><option value="99999">全部</option></select>'+
-        ' <label style="margin-left:14px;font-size:13px"><input type="checkbox" id="wt-skip" checked> 跳过已在生词本的</label></div>'+
+        ' <label style="margin-left:14px;font-size:13px"><input type="checkbox" id="wt-skip" checked> 跳过已在生词本的</label>'+
+        ' <label style="margin-left:10px;font-size:13px"><input type="checkbox" id="wt-skipdel" checked> 跳过我删过的</label></div>'+
         '<div class="wt-row"><label class="t">加到分组</label><select id="wt-group">'+groupOptions()+'</select></div>'+
         '<button class="btn primary" id="wt-do">加入词库</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>'+
         '<div class="wt-note">提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。</div>';
@@ -6003,6 +6168,7 @@ margin-left: -22px;
         var n=+b.querySelector("#wt-n").value||100,skip=b.querySelector("#wt-skip").checked;
         var pool=[];lvs.forEach(function(l){pool=pool.concat(rec.idx[l]);});
         if(skip)pool=pool.filter(function(w){return !isSaved(w);});
+        if(b.querySelector("#wt-skipdel").checked)pool=pool.filter(function(w){return !trashHas(w);});
         shuffle(pool);pool=pool.slice(0,n);
         if(!pool.length){b.querySelector("#wt-msg").textContent="没有可加的词（可能都已在生词本里）";return;}
         var gid=await resolveGroup(b.querySelector("#wt-group").value);if(!gid)return;
