@@ -1080,6 +1080,14 @@
   .cs-cat{border:1px solid var(--border);border-radius:11px;padding:10px 12px;margin-bottom:8px;background:var(--surface)}
   .cs-cat-h{display:flex;align-items:center;gap:8px;font-size:14px}
   .cs-cat-h i{width:11px;height:11px;border-radius:50%;flex:none}
+  .cs-dot{width:15px;height:15px;border-radius:50%;flex:none;border:2px solid var(--surface);box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0}
+  .cs-dot:hover{box-shadow:0 0 0 2px var(--primary)}
+  .cs-pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:9px;padding:8px;background:var(--surface-2);border-radius:9px}
+  .cs-pal .sw{width:20px;height:20px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .cs-pal .sw.on{border-color:var(--text)}
+  .cs-pal-tip{font-size:11px;color:var(--muted);flex-basis:100%}
+  .cs-name{cursor:pointer;border-bottom:1px dashed transparent}
+  .cs-name:hover{border-bottom-color:var(--primary);color:var(--primary)}
   .cs-del{margin-left:auto;background:transparent;border:1px solid var(--border);color:var(--danger);border-radius:7px;padding:3px 10px;font-size:12px;cursor:pointer}
   .cs-del:hover{background:var(--danger);color:#fff}
   .cs-subs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
@@ -3237,7 +3245,7 @@ margin-left: -22px;
 
     <div class="set-pane" data-pane="cats">
       <div class="set-sec-h">🏷️ 分类</div>
-      <div class="set-desc" style="margin-bottom:12px">管理你自己的大类 / 小类和配色。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。<br>「关键词」：新建事件或番茄钟的标题里出现这些词，就自动归到这个分类（小类的关键词优先）。小类的关键词点它旁边的 🏷 改。</div>
+      <div class="set-desc" style="margin-bottom:12px">管理你自己的大类 / 小类和配色。<b>点名字可改名、点左边小圆点可换颜色</b>（改名不影响已有事件，它们跟的是内部 ID）。小类颜色跟着大类自动做深浅。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。<br>「关键词」：新建事件或番茄钟的标题里出现这些词，就自动归到这个分类（小类的关键词优先）。小类的关键词点它旁边的 🏷 改。</div>
       <div id="cat-settings"></div>
       <div class="set-item" style="margin-top:12px">
         <div style="font-weight:600;font-size:13px;margin-bottom:8px">＋ 新建大类</div>
@@ -4848,9 +4856,11 @@ margin-left: -22px;
     el.innerHTML=PALETTE.map(function(c){return '<span class="sw'+(c===csColor?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></span>';}).join("");}
   function renderCatSettings(){var box=document.getElementById("cat-settings");if(!box)return;
     box.innerHTML=cats.map(function(c){var subs=c.subs||[],kw=c.kw||[];
-      return '<div class="cs-cat"><div class="cs-cat-h"><i style="background:'+c.color+'"></i><b>'+esc(c.name)+'</b>'+
+      return '<div class="cs-cat"><div class="cs-cat-h"><button class="cs-dot" type="button" data-colcat="'+c.key+'" title="点一下换颜色" style="background:'+c.color+'"></button><b class="cs-name" data-rencat="'+c.key+'" title="点一下改名">'+esc(c.name)+'</b>'+
         '<button class="cs-del" type="button" data-delcat="'+c.key+'">删除</button></div>'+
-        '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+c.color+'"></i>'+esc(s.name)+
+        '<div class="cs-pal" data-pal="'+c.key+'" hidden>'+PALETTE.map(function(x){return '<span class="sw'+(x===c.color?" on":"")+'" data-setcol="'+c.key+'|'+x+'" style="background:'+x+'"></span>';}).join("")+
+        '<span class="cs-pal-tip">小类会自动跟着这个颜色做深浅</span></div>'+
+        '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+subColor(c.key,s.key)+'"></i><span class="cs-name" data-rensub="'+c.key+'|'+s.key+'" title="点一下改名">'+esc(s.name)+'</span>'+
           '<button class="cs-subkw" type="button" data-kwsub="'+c.key+'|'+s.key+'" title="这个小类的关键词">🏷</button>'+
           '<button class="cs-subdel" type="button" data-delsub="'+c.key+'|'+s.key+'" title="删除">✕</button></span>';}).join("")+
         '<span class="cs-sub cs-addsub" data-addsub="'+c.key+'">＋ 小类</span></div>'+
@@ -4858,7 +4868,7 @@ margin-left: -22px;
         kw.map(function(w,i){return '<span class="cs-kw">'+esc(w)+'<button class="cs-subdel" type="button" data-delkw="'+c.key+'|'+i+'" title="删除">✕</button></span>';}).join("")+
         '<span class="cs-kw cs-addkw" data-addkw="'+c.key+'">＋ 词</span></div></div>';}).join("");}
   function kwSplit(s){return String(s||"").split(/[\s,，、;；]+/).map(function(x){return x.trim();}).filter(Boolean);}
-  function afterCatChange(){renderCatSettings();save("tt_cats",cats);try{renderParents();renderSubs();}catch(e){}try{refreshCatSelects();}catch(e){}renderCal();renderDashboard();if(state.tab==="todo")renderTodos();}
+  function afterCatChange(){renderCatSettings();save("tt_cats",cats);try{renderParents();renderSubs();}catch(e){}try{refreshCatSelects();}catch(e){}renderCal();renderDashboard();if(state.tab==="todo")renderTodos();if(state.tab==="stats")try{renderStatsView();}catch(e){}}
   (function(){var box=document.getElementById("cat-settings");if(!box)return;
     renderCatColors();renderCatSettings();
     var cc=document.getElementById("cs-colors");if(cc)cc.addEventListener("click",function(e){var s=e.target.closest(".sw");if(!s)return;csColor=s.getAttribute("data-c");renderCatColors();});
@@ -4866,6 +4876,31 @@ margin-left: -22px;
       var i=document.getElementById("cs-newcat"),nm=i.value.trim();if(!nm){i.focus();return;}
       cats.push({key:"c"+uid(),name:nm,color:csColor,kw:[nm],subs:[]});i.value="";afterCatChange();});
     box.addEventListener("click",async function(e){
+      // 换大类颜色：点小圆点展开色板
+      var dot=e.target.closest("[data-colcat]");
+      if(dot){var pal=box.querySelector('[data-pal="'+dot.getAttribute("data-colcat")+'"]'),wasOpen=pal&&!pal.hasAttribute("hidden");
+        box.querySelectorAll(".cs-pal").forEach(function(x){x.setAttribute("hidden","");});
+        if(pal&&!wasOpen)pal.removeAttribute("hidden");return;}
+      var setc=e.target.closest("[data-setcol]");
+      if(setc){var pr0=setc.getAttribute("data-setcol").split("|"),c0=parentObj(pr0[0]);
+        if(c0){c0.color=pr0[1];afterCatChange();}return;}
+      // 改名：key 不动，所以已有的事件、目标、笔记全都跟着改，不会脱钩
+      var rc=e.target.closest("[data-rencat]");
+      if(rc){var c1=parentObj(rc.getAttribute("data-rencat"));if(!c1)return;
+        var n1=await ttPrompt("大类改名：",c1.name,{anchor:rc});
+        if(n1&&n1.trim()&&n1.trim()!==c1.name){
+          if(c1.kw&&c1.kw.indexOf(c1.name)>=0)c1.kw[c1.kw.indexOf(c1.name)]=n1.trim();  // 旧名当关键词的一并跟上
+          c1.name=n1.trim();afterCatChange();}
+        return;}
+      var rs=e.target.closest("[data-rensub]");
+      if(rs){var pr1=rs.getAttribute("data-rensub").split("|"),c3=parentObj(pr1[0]),s3=null;
+        if(c3)(c3.subs||[]).forEach(function(x){if(x.key===pr1[1])s3=x;});
+        if(!s3)return;
+        var n2=await ttPrompt("小类改名：",s3.name,{anchor:rs});
+        if(n2&&n2.trim()&&n2.trim()!==s3.name){
+          if(s3.kw&&s3.kw.indexOf(s3.name)>=0)s3.kw[s3.kw.indexOf(s3.name)]=n2.trim();
+          s3.name=n2.trim();afterCatChange();}
+        return;}
       var dc=e.target.closest("[data-delcat]"),dsb=e.target.closest("[data-delsub]"),asb=e.target.closest("[data-addsub]");
       if(dc){var k=dc.getAttribute("data-delcat");if(cats.length<=1){ttAlert("至少保留一个大类");return;}var c=parentObj(k);
         if(!await ttConfirm("删除大类「"+(c?c.name:"")+"」？用过它的事件不会被删，只会变默认色。",{danger:true,anchor:dc}))return;
