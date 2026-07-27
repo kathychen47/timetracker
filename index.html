@@ -12,6 +12,8 @@
     --cat-focus:#ec8b76;--cat-meeting:#5f9bd8;--cat-sport:#5cbd90;--cat-study:#9d8bd8;
     --cat-goal:#eeb85f;--cat-habit:#61c4cf;--cat-life:#9aa1b0;
     --danger:#e5786e;--now:#ef5350;
+    /* 日历色块的深浅。浅色主题下调深；深色主题里 --c 是浅色，比例调高反而更亮，所以两边分开设 */
+    --ev-tint:55%;--ev-ink:32%;
     --radius:14px;--radius-sm:10px;
     --shadow:0 1px 2px rgba(30,34,54,.05), 0 12px 30px -16px rgba(30,34,54,.16);
     --font:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",Roboto,"Helvetica Neue",sans-serif;
@@ -21,18 +23,21 @@
     --text:#e6e8ef;--muted:#949bab;--primary:#818cf8;--primary-soft:#262a44;--primary-ink:#15171c;
     --cat-focus:#f0a48f;--cat-meeting:#7bb2e2;--cat-sport:#75cca2;--cat-study:#b2a4e2;
     --cat-goal:#f2c47c;--cat-habit:#7cd1db;--cat-life:#9aa1b0;--danger:#ef8b81;--now:#ff6b66;
+    --ev-tint:35%;--ev-ink:72%;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -18px rgba(0,0,0,.7);}}
   :root[data-theme="light"]{
     --bg:#ffffff;--surface:#f7f8fa;--surface-2:#eef0f4;--border:#e7e9ef;--line:#eef0f5;
     --text:#262a35;--muted:#767d8d;--primary:#6366f1;--primary-soft:#eef0fe;--primary-ink:#ffffff;
     --cat-focus:#ec8b76;--cat-meeting:#5f9bd8;--cat-sport:#5cbd90;--cat-study:#9d8bd8;
     --cat-goal:#eeb85f;--cat-habit:#61c4cf;--cat-life:#9aa1b0;--danger:#e5786e;--now:#ef5350;
+    --ev-tint:55%;--ev-ink:32%;
     --shadow:0 1px 2px rgba(30,34,54,.05), 0 12px 30px -16px rgba(30,34,54,.16);}
   :root[data-theme="dark"]{
     --bg:#15171c;--surface:#1c1f26;--surface-2:#252932;--border:#2c313b;--line:#23262f;
     --text:#e6e8ef;--muted:#949bab;--primary:#818cf8;--primary-soft:#262a44;--primary-ink:#15171c;
     --cat-focus:#f0a48f;--cat-meeting:#7bb2e2;--cat-sport:#75cca2;--cat-study:#b2a4e2;
     --cat-goal:#f2c47c;--cat-habit:#7cd1db;--cat-life:#9aa1b0;--danger:#ef8b81;--now:#ff6b66;
+    --ev-tint:35%;--ev-ink:72%;
     --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -18px rgba(0,0,0,.7);}
 
   *{box-sizing:border-box}html,body{margin:0}
@@ -194,10 +199,10 @@
 
   /* event block (week/day) style B deep + label + checkbox */
   .ev{border-radius:9px;overflow:hidden;cursor:pointer;position:relative;
-    background:color-mix(in srgb,var(--c) 35%,var(--bg))}
-  .ev .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--c) 72%,var(--text))}
-  .ev .h{font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--c) 55%,var(--muted))}
-  .ev .lbl{font-size:9.5px;color:color-mix(in srgb,var(--c) 48%,var(--muted));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    background:color-mix(in srgb,var(--c) var(--ev-tint),var(--bg))}
+  .ev .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--c) var(--ev-ink),var(--text))}
+  .ev .h{font-variant-numeric:tabular-nums;color:color-mix(in srgb,var(--c) 26%,var(--text));opacity:.85}
+  .ev .lbl{font-size:9.5px;color:color-mix(in srgb,var(--c) 26%,var(--text));opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ev .chk{position:absolute;right:3px;bottom:3px;width:14px;height:14px;border-radius:4px;border:1.4px solid color-mix(in srgb,var(--c) 55%,var(--muted));background:var(--bg);display:grid;place-items:center;cursor:pointer}
   .ev .chk svg{width:9px;height:9px;color:var(--primary-ink);opacity:0}
   .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
@@ -257,9 +262,9 @@
   .cell:nth-child(7n+1){border-left:none}
   .cell .dn{font-size:12px;font-weight:550;width:23px;height:23px;display:grid;place-items:center;border-radius:50%;font-variant-numeric:tabular-nums}
   .cell.dim{opacity:.4}.cell.today .dn{background:var(--primary);color:var(--primary-ink)}
-  .pill{display:flex;align-items:center;gap:5px;padding:2px 7px;border-radius:7px;min-width:0;background:color-mix(in srgb,var(--c) 35%,var(--bg))}
+  .pill{display:flex;align-items:center;gap:5px;padding:2px 7px;border-radius:7px;min-width:0;background:color-mix(in srgb,var(--c) var(--ev-tint),var(--bg))}
   .pill i{width:6px;height:6px;border-radius:50%;background:var(--c);flex:none}
-  .pill b{font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--c) 72%,var(--text))}
+  .pill b{font-size:10.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:color-mix(in srgb,var(--c) var(--ev-ink),var(--text))}
   .cell .more{font-size:10px;color:var(--muted);padding-left:2px}
 
   /* todos shown on the calendar */
@@ -3504,6 +3509,22 @@ margin-left: -22px;
   function subsOf(k){var p=parentObj(k);return p&&p.subs?p.subs:[];}
   function subName(pk,sk){var s=subsOf(pk);for(var i=0;i<s.length;i++)if(s[i].key===sk)return s[i].name;return "";}
   function catColor(k){var p=parentObj(k);return p?p.color:"var(--cat-focus)";}
+  // 小类颜色：和大类同色系，按它在列表里的顺序做深→浅的渐变，一眼看出是一家子。
+  // 用 CSS color-mix 而不是自己算 HSL，因为内置分类的颜色是 var(--cat-xxx)，取不到具体值；
+  // 这样明暗主题切换时也会自动跟着变。
+  function shade(base,amt){                       // amt<0 变深，>0 变浅
+    if(!amt)return base;
+    return amt<0?("color-mix(in srgb,"+base+" "+(100+amt)+"%,#000)")
+                :("color-mix(in srgb,"+base+" "+(100-amt)+"%,#fff)");}
+  function subColor(ck,sk){
+    var p=parentObj(ck);if(!p)return catColor(ck);
+    var subs=p.subs||[],i=-1;
+    for(var k=0;k<subs.length;k++)if(subs[k].key===sk)i=k;
+    if(i<0)return p.color;
+    if(subs[i].color)return subs[i].color;        // 手动指定过就用指定的
+    var n=subs.length;if(n<=1)return p.color;
+    return shade(p.color,Math.round(-22+36*(i/(n-1))));}   // 第一个最深，最后一个略浅
+  function evColor(e){return (e&&e.sub)?subColor(e.cat,e.sub):catColor(e&&e.cat);}
   function catName(k){var p=parentObj(k);return p?p.name:"专注";}
   // ===== 标题 → 分类 记忆：手动设过一次，以后同名/同系列自动归类 =====
   var catMemo=load("tt_catmemo",{})||{};
@@ -3717,7 +3738,7 @@ margin-left: -22px;
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});
     var acc=0,stops=[];
     ss.forEach(function(s){var a=acc/tot*100;acc+=(+s.sec||0);var b=acc/tot*100;
-      var c="color-mix(in srgb,"+catColor(s.cat)+" 35%,var(--bg))";
+      var c="color-mix(in srgb,"+subColor(s.cat,s.sub)+" 50%,var(--bg))";
       stops.push(c+" "+a.toFixed(2)+"% "+b.toFixed(2)+"%");});
     return "linear-gradient(180deg,"+stops.join(",")+")";}
   function evPos(e){var s=toMin(e.start),en=toMin(e.end);if(en<=s)en=s+30;
@@ -3742,7 +3763,7 @@ margin-left: -22px;
     var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
-    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+multi+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+catColor(e.cat)+';'+box+(grad?';background:'+grad:'')+'">'+
+    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+multi+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
@@ -4163,7 +4184,7 @@ margin-left: -22px;
     if(!st){f.style.display="none";box.innerHTML="";return;}
     f.style.display="";
     box.innerHTML=st.map(function(s){
-      return '<div class="evs"><i style="background:'+catColor(s.cat)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
+      return '<div class="evs"><i style="background:'+subColor(s.cat,s.sub)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
         '<span class="nm">'+esc(s.t||"（未命名）")+'</span><span class="cg">'+esc(catName(s.cat))+(s.sub?" › "+esc(subName(s.cat,s.sub)):"")+'</span>'+
         '<span class="mn">'+secLabel(s.sec)+'</span></div>';}).join("")+
       '<div class="evs-note">统计里这条按各段实测时长分账，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
@@ -4312,9 +4333,9 @@ margin-left: -22px;
     segsBox.classList.toggle("on",multi);
     if(!multi){segsBox.innerHTML="";return;}
     segsBox.innerHTML='<div class="pomo-segbar">'+
-      list.map(function(s){return '<span style="flex:'+s.sec+';background:'+catColor(s.cat)+'"></span>';}).join("")+
+      list.map(function(s){return '<span style="flex:'+s.sec+';background:'+subColor(s.cat,s.sub)+'"></span>';}).join("")+
       '</div><div class="pomo-seglist">'+
-      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+'"><i style="background:'+catColor(s.cat)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
+      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+'"><i style="background:'+subColor(s.cat,s.sub)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
       '</div>';}
   function switchTask(){
     if(!pTimer||timerMode!=="up")return;
@@ -4644,7 +4665,7 @@ margin-left: -22px;
       if(statState.cat!=="__all"&&x.cat!==statState.cat)return;
       if(statState.sub!=="__all"&&(x.sub||null)!==statState.sub)return;
       var k=groupByCat?x.cat:(x.sub||"__none");gmap[k]=(gmap[k]||0)+x.min;});});
-    function segColor(k,i){if(groupByCat)return catColor(k);if(k==="__none")return "var(--cat-life)";return SUBPAL[i%SUBPAL.length];}
+    function segColor(k,i){if(groupByCat)return catColor(k);if(k==="__none")return "var(--cat-life)";return subColor(statState.cat,k);}   // 小类用大类的同色系深浅
     function segName(k){if(groupByCat)return catName(k);if(k==="__none")return "未细分";return subName(statState.cat,k);}
     var segs=Object.keys(gmap).map(function(k){return{k:k,m:gmap[k]};}).sort(function(a,b){return b.m-a.m;});
     var acc=0,stops=[];segs.forEach(function(s,i){s.pct=totalMin?s.m/totalMin*100:0;s.col=segColor(s.k,i);s.start=acc;stops.push(s.col+" "+acc.toFixed(2)+"% "+(acc+s.pct).toFixed(2)+"%");acc+=s.pct;});
