@@ -163,6 +163,7 @@
   .pomo-side .dash-card2{display:flex;flex-direction:column;gap:11px}
   .pomo-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
   .pomo-btns .btn{padding:9px 15px;font-size:13px}
+  .pomo-btns .btn:disabled{opacity:.4;cursor:default}
   .pomo-set{display:flex;gap:14px;justify-content:center}
   .pomo-set label{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;align-items:center}
   .pomo-set input{width:58px;text-align:center;padding:7px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px}
@@ -4331,7 +4332,9 @@ margin-left: -22px;
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
     if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
-    if(switchBtn)switchBtn.style.display=(timerMode==="up"&&pTimer)?"":"none";
+    // 正计时下一直显示「换任务」（没跑的时候置灰），不然你根本不知道有这个功能
+    if(switchBtn){switchBtn.style.display=(timerMode==="up")?"":"none";switchBtn.disabled=!pTimer;
+      switchBtn.title=pTimer?"结算当前这一段，接着做别的；总计时不停":"先点开始，跑起来之后才能换任务";}
     renderSegs();
     if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
       if(!noting)pomoHint.textContent=hintText();
