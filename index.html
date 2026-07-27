@@ -7249,6 +7249,8 @@ margin-left: -22px;
   function gotoTab(t){var b=document.querySelector('.rail button[data-tab="'+t+'"]');if(b)b.click();}
   function openNotebook(){gotoTab("notes");}          // 笔记本已经是顶栏页签了
   function showNotes(){                                // 切到笔记页签时跑
+    readerBind();                                      // 笔记本的按钮和查词弹窗都在这里面绑
+    try{ensureDictInit();}catch(e){}                   // 不初始化词典的话查词是空的
     notes=load("tt_notes",[])||[];
     renderNotebook();
     refreshNbBooks().then(function(){renderNotebook();},function(){});}
@@ -7273,12 +7275,12 @@ margin-left: -22px;
         '<select id="nbd-cat"><option value="">（不分类）</option>'+cs+"</select>"+
         '<select id="nbd-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+ss+"</select>"+
         '<span class="grow"></span>'+
-        '<div class="seg" id="nbd-mode"><button data-dm="edit" class="on">✎ 写</button><button data-dm="read">👁 读（可查词）</button></div>'+
+        '<div class="seg" id="nbd-mode" title="两个模式选中文字都能查词"><button data-dm="edit" class="on">✎ 写</button><button data-dm="read">👁 读</button></div>'+
         '<button class="btn" id="nbd-tag" title="标签">🏷</button>'+
         '<button class="btn" id="nbd-del" title="删除这篇">✕</button>'+
       "</div>"+
       '<div class="nb-doc-tags">'+(r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+"</span>";}).join("")+"</div>"+
-      '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`">'+esc(r.note||"")+"</textarea>"+
+      '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`　　选中任意文字即可查词/翻译">'+esc(r.note||"")+"</textarea>"+
       '<div id="nbd-view" class="nb-doc-view rd-content" style="display:none"></div>'+
       '<div class="nb-doc-foot"><span id="nbd-saved"></span></div>'+
     "</div>";}
@@ -7313,8 +7315,27 @@ margin-left: -22px;
         vw.innerHTML='<div class="md">'+mdToHtml(bd.value||"*（还没写内容）*")+"</div>";
         bd.style.display="none";vw.style.display="";}
       else{bd.style.display="";vw.style.display="none";hideRdPop();}});
-    // 阅读模式里选中文字 → 查词/翻译（复用阅读器那一套，但不带标注工具条）
+    // 阅读模式：正常的 DOM 选区
     vw.addEventListener("mouseup",function(){setTimeout(noteSelHandler,10);});
+    // 编辑模式：textarea 里的选区 window.getSelection() 读不到，只能用 selectionStart/End，
+    // 位置也没有现成的 rect，用鼠标/手指落点现造一个。
+    function taLookup(pt){
+      if(bd.style.display==="none")return;
+      var s=(bd.value||"").slice(bd.selectionStart||0,bd.selectionEnd||0).trim();
+      if(!s||s.length>1200)return;
+      var x=pt&&pt.clientX,y=pt&&pt.clientY;
+      if(!x&&!y){var br=bd.getBoundingClientRect();x=br.left+24;y=br.top+28;}
+      var rect={left:x,right:x,top:y-12,bottom:y+6,width:0,height:18};
+      if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
+      else showRdTrans(s,rect);}
+    bd.addEventListener("mouseup",function(e){var p={clientX:e.clientX,clientY:e.clientY};setTimeout(function(){taLookup(p);},10);});
+    bd.addEventListener("dblclick",function(e){var p={clientX:e.clientX,clientY:e.clientY};setTimeout(function(){taLookup(p);},10);});
+    bd.addEventListener("touchend",function(e){
+      var t=e.changedTouches&&e.changedTouches[0],p=t?{clientX:t.clientX,clientY:t.clientY}:null;
+      setTimeout(function(){taLookup(p);},80);},{passive:true});
+    bd.addEventListener("keyup",function(e){                 // Shift+方向键选中也算
+      if(!e.shiftKey)return;
+      if(bd.selectionEnd>bd.selectionStart)taLookup(null);});
   }
   function noteSelHandler(){
     var s=(getSelection()?String(getSelection()):"").trim();
@@ -8251,7 +8272,9 @@ margin-left: -22px;
       applyPopSize(false);placeRdPop(rect);});}
 
   var readerInit=false;
-  function openReader(){
+  // 一次性绑定：阅读器和笔记本的 DOM 事件、查词弹窗都在这里。
+  // 笔记本已经是独立页签，直接点它进来也必须先跑这个，否则整页按钮全是死的。
+  function readerBind(){
     if(!readerInit){
       readerInit=true;
       rdContent=document.getElementById("rd-content");
@@ -8373,13 +8396,9 @@ margin-left: -22px;
         if(zenOn&&!document.fullscreenElement)toggleZen(false);});
       // 笔记栏
       document.getElementById("rd-notes-btn").addEventListener("click",function(){toggleNotes();});
-      if(load("tt_rdnotes",false))toggleNotes(true);
-      if(load("tt_rdbi",false))toggleBi(true);
-      if(load("tt_rdzen",false))toggleZen(true);
       // 分屏
       document.getElementById("rd-split-btn").addEventListener("click",function(){toggleSplit();});
       bindSplit();
-      if(!SOLO&&load("tt_rdsplit",false))toggleSplit(true);
       document.getElementById("rd-notes").addEventListener("click",async function(e){
         if(e.target.closest("#rn-close")){toggleNotes(false);return;}
         var pd=e.target.closest("[data-pdone]");
@@ -8511,7 +8530,7 @@ margin-left: -22px;
         var t=tocData[+b2.getAttribute("data-toc")];if(!t)return;
         if(t.page)gotoPage(t.page);else if(t.ch!==undefined)showChapter(t.ch,0);
         renderToc();});
-      if(load("tt_rdtoc",false))toggleToc(true);
+      
       var goI=document.getElementById("rd-go");
       if(goI)goI.addEventListener("keydown",function(e){
         if(e.key==="Enter"){e.preventDefault();var v=parseInt(this.value,10);if(v>0){gotoPage(v);this.blur();}}});
@@ -8549,6 +8568,19 @@ margin-left: -22px;
         if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
       window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
     }
+  }
+  var readerRestored=false;
+  function readerRestore(){                        // 只在真正进「看书」时恢复阅读器状态
+    if(readerRestored)return;readerRestored=true;
+    try{
+      if(load("tt_rdnotes",false))toggleNotes(true);
+      if(load("tt_rdbi",false))toggleBi(true);
+      if(load("tt_rdzen",false))toggleZen(true);
+      if(!SOLO&&load("tt_rdsplit",false))toggleSplit(true);
+      if(load("tt_rdtoc",false))toggleToc(true);
+    }catch(e){}}
+  function openReader(){
+    readerBind();readerRestore();
     reconcileNotes().then(function(){              // 把各本书的标注同步进笔记本镜像（首次会把老数据补齐）
       var sh=document.getElementById("rd-shelf");
       if(sh&&sh.style.display!=="none")renderShelf();
