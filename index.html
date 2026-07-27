@@ -4301,8 +4301,9 @@ margin-left: -22px;
       if(nm&&nm.trim()){var key="c"+uid();
         cats.push({key:key,name:nm.trim(),color:nextCatColor(),kw:[nm.trim()],subs:[]});
         save("tt_cats",cats);afterCatEdit();
-        pomoCat.value=key;fillPomoSubs();}
+        pomoCat.value=key;}
     }
+    fillPomoSubs();                    // 换了大类就得重填小类（别放进上面的分支里，普通切换也要跑）
     pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
     pomoManual=true;markPomoAuto(false);savePomoLast();});
   pomoSub.addEventListener("change",async function(){
