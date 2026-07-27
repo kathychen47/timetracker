@@ -208,6 +208,9 @@
   .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
   .ev.done .chk svg{opacity:1;color:var(--bg)}
   .ev.gcal{border:1px dashed color-mix(in srgb,var(--c) 55%,var(--border))}
+  /* 摸鱼事件：斜条纹，一眼看出这段时间是叠在别的事情上面的 */
+  .ev.par{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.42) 0 6px,transparent 6px 12px)}
+  .ev.par .fish{position:absolute;left:4px;bottom:2px;font-size:10px;line-height:1;opacity:.85}
   .ev .gtag{position:absolute;right:3px;bottom:3px;font-size:9px;font-weight:700;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;line-height:13px;padding:0 3px}
 
   /* week + single-day grid */
@@ -299,6 +302,7 @@
   .legend .li.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 15%,var(--bg));color:var(--text);font-weight:600}
   /* 统计页顶部的大类/小类切换块（和日历下面那排同一套样式） */
   .stat-legend{margin-top:0;width:100%}
+  .sc-sub{font-size:11px;color:var(--muted);margin-top:2px}
   .stat-legend .li em{font-style:normal;font-size:11px;opacity:.7;margin-left:1px;font-variant-numeric:tabular-nums}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
@@ -2719,6 +2723,7 @@ margin-left: -22px;
               <input type="text" id="pomo-task" placeholder="这次专注做什么？（记入日历）">
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
+              <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
             </div>
             <div class="ring" id="ring"><div class="ring-knob-rot"><span class="ring-knob"></span></div><div class="in"><div>
               <div class="time" id="pomo-time">25:00</div>
@@ -3070,6 +3075,7 @@ margin-left: -22px;
     <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
+    <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
     <label class="pomo-log" id="ev-gcal-row" style="display:none;justify-content:flex-start;margin-top:4px"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
     <div class="modal-actions">
       <button class="link-danger" id="ev-delete" style="display:none">删除</button>
@@ -3859,8 +3865,9 @@ margin-left: -22px;
     var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
-    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+multi+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+corner+'</div>';}
+    var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
+    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+fish+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -4271,6 +4278,7 @@ margin-left: -22px;
     }else{gf.style.display="none";}
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.slice():null;   // 编辑时保住分段；除非你手动改了分类
     renderEvSegs(obj);
+    document.getElementById("ev-par").checked=!!(obj&&obj.par);
     var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?(isG?true:!!obj.gid):!!(gToken&&gcalDefault);
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
@@ -4294,19 +4302,20 @@ margin-left: -22px;
     var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
+    var isPar=!!document.getElementById("ev-par").checked;
     if(catManual)rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
-      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note};
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       if(gToken)gcalSync(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
-      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
-    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note};events.push(obj);}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
     save("tt_events",events);
     if(gToken)gcalSync(obj,want);
     closeModal();renderCal();
@@ -4461,7 +4470,8 @@ margin-left: -22px;
       pc=best.split("|")[0];ps=best.split("|")[1]||null;}
     var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
     // 番茄钟记进来的是"已经做完的时间"，不是计划 → 直接打勾
-    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true};
+    var pf=document.getElementById("pomo-par");
+    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked)};
     if(segs)ev.segs=segs;
     events.push(ev);
     save("tt_events",events);
@@ -4699,12 +4709,12 @@ margin-left: -22px;
     return events.filter(function(e){if(!evHasCat(e,ck,sk))return false;if(st){var d=parse(e.date);if(d<st||d>today)return false;}return true;})
       .sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});}
   function csvCell(s){s=String(s==null?"":s);if(/[",\n]/.test(s))s='"'+s.replace(/"/g,'""')+'"';return s;}
-  function buildCSV(rows){var lines=[["日期","星期","标题","大类","小类","开始","结束","时长(分钟)"].join(",")];
+  function buildCSV(rows){var lines=[["日期","星期","标题","大类","小类","开始","结束","时长(分钟)","摸鱼"].join(",")];
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7],st=segTimes(e);
       if(st){st.forEach(function(s){         // 分段事件：一段一行，钟点按段顺序推算，方便进 Excel 透视
         var mn=s.min||Math.round(s.sec/60*100)/100;   // 不满 1 分钟的段写成小数，别在表里变成 0
-        lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn].join(","));});return;}
-      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evMinutes(e)].join(","));});
+        lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn,e.par?"是":""].join(","));});return;}
+      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evMinutes(e),e.par?"是":""].join(","));});
     return "﻿"+lines.join("\r\n");}
   function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evMinutes(e)+"分)\n";});return s;}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
@@ -4798,6 +4808,7 @@ margin-left: -22px;
     var wrap=document.getElementById("stats-wrap");
     var p=statPeriod(),evs=statEvents(p);
     var totalMin=evs.reduce(function(a,e){return a+statMin(e);},0),totH=Math.round(totalMin/6)/10;
+    var parMin=evs.reduce(function(a,e){return a+(e.par?statMin(e):0);},0);   // 摸鱼那部分（和别的事重叠、被重复计算了的）
     var days=Math.max(1,Math.round((p.end-p.start)/86400000)+1),avgH=Math.round(totalMin/days/6)/10;
     var groupByCat=(statState.cat==="__all");
     var gmap={};evs.forEach(function(e){evMix(e).forEach(function(x){        // 分段事件按各段实测时长分账
@@ -4839,7 +4850,7 @@ margin-left: -22px;
         catRow+subRow+
       '</div>'+
       '<div class="stat-cards">'+
-        '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div></div>'+
+        '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(parMin?'<div class="sc-sub">🐟 含摸鱼 '+fmtDur(parMin)+'</div>':'')+'</div>'+
         '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
         '<div class="sc"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
