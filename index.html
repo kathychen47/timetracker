@@ -3159,11 +3159,23 @@ margin-left: -22px;
       <div class="set-item">
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">Google 事件计入统计（自动打勾）</div><div class="set-desc">开启后，从 Google 日历同步过来的事件会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。</div></div>
-          <label class="switch"><input type="checkbox" id="set-gcal-count"><span class="track"></span></label>
+          <label class="switch"><input type="checkbox" id="set-gcal-count"><span class="sw-track"></span></label>
+        </div>
+      </div>
+      <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">哪些事件自动加入 Google 日历</div>
+        <div class="set-desc" style="margin-bottom:8px">分开控制，各管各的。关掉的那类仍然会记在本地日历里，只是不往 Google 推。</div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">✏️ 手动新建的事件</div><div class="set-desc">新建事件弹窗里那个「同时加到我的 Google 日历」默认勾上，不用每次手动勾。</div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-default"><span class="sw-track"></span></label>
         </div>
         <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">新建事件默认加入 Google 日历</div><div class="set-desc">勾选后新建的事件会自动同步到 Google，不用每次手动勾。</div></div>
-          <label class="switch"><input type="checkbox" id="set-gcal-default"><span class="sw-track"></span></label>
+          <div class="set-row-txt"><div class="set-row-t">🍅 番茄钟完成</div><div class="set-desc">专注结束后记下来的那条（要番茄钟里「完成后记入日历」也是勾着的）。</div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-pomo"><span class="sw-track"></span></label>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">🎯 目标打卡 +1</div><div class="set-desc">在目标卡片上点「打卡 +1」生成的那条记录。</div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-goal"><span class="sw-track"></span></label>
         </div>
       </div>
     </div>
@@ -3579,6 +3591,9 @@ margin-left: -22px;
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
   var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false),gcalCount=load("tt_gcalcount",false);
+  // 除了手动新建，还有几个地方会自动生成事件（番茄钟、目标打卡），各自能不能自动同步到 Google 单独控制
+  var gcalAuto=load("tt_gcalauto",null);
+  if(!gcalAuto||typeof gcalAuto!=="object")gcalAuto={pomo:!!gcalDefault,goal:!!gcalDefault};   // 老设置沿用「新建事件」那一项
 
   if(events===null){
     var mon=startOfWeek(new Date());
@@ -4019,8 +4034,10 @@ margin-left: -22px;
     if(pl){var g=goals.filter(function(x){return x.id===pl.getAttribute("data-plus");})[0];if(g){
       if(!window.confirm("确认给「"+g.title+"」打卡一次？"))return;
       var end=new Date(),start=new Date(end.getTime()-3600*1000);
-      var _ac=autoCat(g.title);events.push({id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:true,goalId:g.id});   // 打卡＝已经做了
-      save("tt_events",events);renderCal();}return;}
+      var _ac=autoCat(g.title),_gev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:true,goalId:g.id};   // 打卡＝已经做了
+      events.push(_gev);save("tt_events",events);
+      if(gToken&&gcalAuto.goal)try{gcalSync(_gev,true);}catch(e){}
+      renderCal();}return;}
     var ed=e.target.closest("[data-gedit]");if(ed){var gg=goals.filter(function(x){return x.id===ed.getAttribute("data-gedit");})[0];if(gg)renderGoalDetail(gg);}
   });
   document.getElementById("goal-add-btn").addEventListener("click",function(){openGoalModal(null);});
@@ -4365,7 +4382,9 @@ margin-left: -22px;
     var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true};
     if(segs)ev.segs=segs;
     events.push(ev);
-    save("tt_events",events);if(state.tab==="calendar")renderCal();
+    save("tt_events",events);
+    if(gToken&&gcalAuto.pomo)try{gcalSync(ev,true);}catch(e){}    // 之前这里漏了，番茄钟的事件从来没往 Google 推过
+    if(state.tab==="calendar")renderCal();
   }
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
   var skipBtn=document.getElementById("pomo-skip");
@@ -4770,7 +4789,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
@@ -4871,6 +4890,7 @@ margin-left: -22px;
   document.getElementById("set-save").addEventListener("click",function(){apiKey=setApiKeyI.value.trim();apiModel=(setModelCustomI.value.trim()||setModelI.value)||"gemini-flash-latest";
     aiProvider=setProviderSel.value;ollamaUrl=ollamaUrlI.value.trim()||"http://localhost:11434";ollamaModel=ollamaModelI.value.trim()||"qwen3:8b";
     gcalDefault=document.getElementById("set-gcal-default").checked;
+    gcalAuto={pomo:document.getElementById("set-gcal-pomo").checked,goal:document.getElementById("set-gcal-goal").checked};save("tt_gcalauto",gcalAuto);
     var newSbUrl=document.getElementById("set-sb-url").value.trim(),newSbKey=document.getElementById("set-sb-key").value.trim(),sbChanged=(newSbUrl!==sbUrl||newSbKey!==sbKey);
     sbUrl=newSbUrl;sbKey=newSbKey;save("tt_sburl",sbUrl);save("tt_sbkey",sbKey);
     gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);fetchGcal();
@@ -4882,7 +4902,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -4904,6 +4924,7 @@ margin-left: -22px;
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
+    var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     try{renderCatSettings();refreshCatSelects();}catch(e){}
