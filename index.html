@@ -1086,6 +1086,14 @@
   .cs-pal .sw{width:20px;height:20px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-pal .sw.on{border-color:var(--text)}
   .cs-pal-tip{font-size:11px;color:var(--muted);flex-basis:100%}
+  /* 时间分布：环形图 + 引出线 */
+  .dn-wrap{display:flex;justify-content:center}
+  .dn-svg{width:100%;max-width:760px;height:auto;display:block}
+  .dn-lead{fill:none;stroke-width:1.4;opacity:.65}
+  .dn-nm{fill:var(--text);font-size:13px;font-weight:600}
+  .dn-val{fill:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .dn-tot{fill:var(--text);font-size:26px;font-weight:700;text-anchor:middle}
+  .dn-totlab{fill:var(--muted);font-size:12px;text-anchor:middle}
   /* 身体数据 */
   .body-wrap{display:flex;flex-direction:column;gap:14px;max-width:1000px}
   .bd-mini{float:right;margin-left:8px;font-size:12px;font-weight:500;padding:3px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer}
@@ -1118,6 +1126,7 @@
   .bg-area{fill:color-mix(in srgb,var(--c) 16%,transparent);stroke:none}
   .bg-line{fill:none;stroke:var(--c);stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round}
   .bg-dot{fill:var(--bg);stroke:var(--c);stroke-width:2}
+  .bg-spread{stroke:var(--c);stroke-width:5;opacity:.22;stroke-linecap:round}
   .bg-target{stroke:var(--cat-sport);stroke-width:1.5;stroke-dasharray:5 4}
   .bg-tlab{fill:var(--cat-sport);font-size:11px;text-anchor:end}
   .bg-vlab{fill:var(--text);font-size:12px;font-weight:600;text-anchor:middle}
@@ -4746,6 +4755,44 @@ margin-left: -22px;
     return null;}
   function bucketMin(b,evs){return evs.filter(function(e){return b.ym?e.date.indexOf(b.ym)===0:e.date===b.s;}).reduce(function(a,e){return a+statMin(e);},0);}
   function statPomo(p){var sf=fmt(p.start),ef=fmt(p.end),cnt=0;Object.keys(pstats).forEach(function(ds){if(ds>=sf&&ds<=ef)cnt+=pstats[ds].count||0;});return cnt;}
+  // 环形图 + 引出线：每块颜色拉一条折线出去，末端写分类名和时长。
+  // 用 SVG 而不是 conic-gradient，是因为要精确知道每块的中点角度才能把线接上去。
+  function donutSVG(segs,totalMin,totH,centerLabel,nameOf){
+    if(!segs.length||!totalMin)return '<div class="stat-empty">这个范围还没有安排事件</div>';
+    var W=760,H=340,cx=W/2,cy=170,R=104,r=66,ELB=20,GAP=17;
+    function px(ang,rad){return[cx+rad*Math.sin(ang),cy-rad*Math.cos(ang)];}
+    var arcs="",lead="",labs=[],acc=0;
+    segs.forEach(function(s){
+      var a0=acc/100*2*Math.PI,a1=(acc+s.pct)/100*2*Math.PI;acc+=s.pct;
+      var full=(s.pct>=99.999);
+      if(full){                                   // 只有一个分类：整圆，走 arc 会退化成一个点
+        arcs+='<path d="M'+cx+' '+(cy-R)+'A'+R+' '+R+' 0 1 1 '+(cx-0.01)+' '+(cy-R)+'Z M'+cx+' '+(cy-r)+'A'+r+' '+r+' 0 1 0 '+(cx-0.01)+' '+(cy-r)+'Z" fill-rule="evenodd" fill="'+s.col+'"/>';
+      }else{
+        var o0=px(a0,R),o1=px(a1,R),i1=px(a1,r),i0=px(a0,r),big=(a1-a0)>Math.PI?1:0;
+        arcs+='<path d="M'+o0[0].toFixed(1)+' '+o0[1].toFixed(1)+
+          'A'+R+' '+R+' 0 '+big+' 1 '+o1[0].toFixed(1)+' '+o1[1].toFixed(1)+
+          'L'+i1[0].toFixed(1)+' '+i1[1].toFixed(1)+
+          'A'+r+' '+r+' 0 '+big+' 0 '+i0[0].toFixed(1)+' '+i0[1].toFixed(1)+'Z" fill="'+s.col+'"/>';}
+      var mid=full?Math.PI*0.5:(a0+a1)/2,right=Math.sin(mid)>=0;
+      var p1=px(mid,R+4),p2=px(mid,R+ELB);
+      labs.push({y:p2[1],x:p2[0],p1:p1,right:right,col:s.col,
+        nm:nameOf(s.k),val:fmtDur(s.m)+" · "+Math.round(s.pct)+"%"});});
+    // 同侧标签按 y 排开，避免叠在一起
+    [true,false].forEach(function(side){
+      var g=labs.filter(function(l){return l.right===side;}).sort(function(a,b){return a.y-b.y;});
+      for(var i=1;i<g.length;i++)if(g[i].y-g[i-1].y<GAP)g[i].y=g[i-1].y+GAP;
+      var over=g.length?(g[g.length-1].y-(H-26)):0;
+      if(over>0)g.forEach(function(l){l.y-=over;});});
+    labs.forEach(function(l){
+      var ex=l.right?(cx+R+ELB+16):(cx-R-ELB-16);
+      lead+='<polyline points="'+l.p1[0].toFixed(1)+','+l.p1[1].toFixed(1)+' '+l.x.toFixed(1)+','+l.y.toFixed(1)+' '+ex+','+l.y.toFixed(1)+'" class="dn-lead" style="stroke:'+l.col+'"/>'+
+        '<circle cx="'+ex+'" cy="'+l.y.toFixed(1)+'" r="3" fill="'+l.col+'"/>';
+      var tx=l.right?(ex+8):(ex-8),anc=l.right?"start":"end";
+      lead+='<text x="'+tx+'" y="'+(l.y-2).toFixed(1)+'" class="dn-nm" text-anchor="'+anc+'">'+esc(l.nm)+'</text>'+
+        '<text x="'+tx+'" y="'+(l.y+12).toFixed(1)+'" class="dn-val" text-anchor="'+anc+'">'+esc(l.val)+'</text>';});
+    return '<div class="dn-wrap"><svg class="dn-svg" viewBox="0 0 '+W+' '+H+'">'+arcs+lead+
+      '<text x="'+cx+'" y="'+(cy-2)+'" class="dn-tot">'+totH+'h</text>'+
+      '<text x="'+cx+'" y="'+(cy+17)+'" class="dn-totlab">'+esc(centerLabel)+'</text></svg></div>';}
   function renderStatsView(){
     var wrap=document.getElementById("stats-wrap");
     var p=statPeriod(),evs=statEvents(p);
@@ -4796,9 +4843,8 @@ margin-left: -22px;
         '<div class="sc"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
       '</div>'+
-      '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3><div class="dist">'+
-        '<div class="donut" style="background:'+donutBg+'"><div class="hole"><div><b>'+totH+'h</b><span>'+(groupByCat?"合计":esc(catName(statState.cat)))+'</span></div></div></div>'+
-        '<div class="dist-legend">'+legend+'</div></div></div>'+
+      '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3>'+
+        donutSVG(segs,totalMin,totH,groupByCat?"合计":catName(statState.cat),segName)+'</div>'+
       '<div class="panel"><h3>'+trendTitle+'</h3><div class="bars">'+trendHTML+'</div></div>'+
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
@@ -5992,15 +6038,15 @@ margin-left: -22px;
     for(var i=flashIdx;i<flashArr.length;i++){if(flashArr[i].reps)rr++;else nn++;}
     document.getElementById("flash-prog").innerHTML=
       '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
-      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtDur(flashStart?Date.now()-flashStart:0)+'</span>';}
-  function fmtDur(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}
+      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flashStart?Date.now()-flashStart:0)+'</span>';}
+  function fmtClock(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}   // 背单词计时用，别和统计的 fmtDur(分钟) 重名
   var flashTick=null;
   function startClock(){
     if(flashTick)clearInterval(flashTick);
     flashTick=setInterval(function(){
       var el=document.getElementById("flash-clock");
       if(!el||!flashStart){return;}
-      el.textContent=fmtDur(Date.now()-flashStart);},1000);}
+      el.textContent=fmtClock(Date.now()-flashStart);},1000);}
   function stopClock(){if(flashTick){clearInterval(flashTick);flashTick=null;}}
   async function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
@@ -9316,6 +9362,7 @@ margin-left: -22px;
     {k:"h",    n:"身高",   u:"cm", c:"#9aa1b0", good:"", noChart:1}   // 基本不变，还会把别的曲线压扁 → 不进图
   ];
   var bodyRecs=load("tt_body",[])||[],bodyCfg=load("tt_bodycfg",null)||{};
+  bodyRecs.forEach(function(r){if(!r.id)r.id=uid();if(r.time===undefined)r.time="";});   // 老记录补 id/时间
   if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];
   var bodyRange="all",bodyPick=false;
   function bodyAll(){return BODY_M.concat(bodyCfg.custom||[]);}
@@ -9326,19 +9373,26 @@ margin-left: -22px;
   function bodyDef(k){var a=bodyAll();for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return null;}
   function saveBody(){save("tt_body",bodyRecs);}
   function saveBodyCfg(){save("tt_bodycfg",bodyCfg);}
-  function bodySorted(){return bodyRecs.slice().sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:0);});}
+  // 一天可以记多条（早晚各称一次这种），所以排序要连时间一起比
+  function bodyKey(r){return (r.date||"")+" "+(r.time||"00:00");}
+  function bodySorted(){return bodyRecs.slice().sort(function(a,b){var x=bodyKey(a),y=bodyKey(b);return x<y?-1:(x>y?1:0);});}
   function bodyNum(x){return (x===""||x==null||isNaN(+x))?null:+x;}
-  function bodyLatest(k){var s=bodySorted();for(var i=s.length-1;i>=0;i--){var v=bodyNum(s[i].v&&s[i].v[k]);if(v!==null)return{v:v,date:s[i].date};}return null;}
+  function bodyLatest(k){var s=bodySorted();for(var i=s.length-1;i>=0;i--){var v=bodyNum(s[i].v&&s[i].v[k]);if(v!==null)return{v:v,date:s[i].date,time:s[i].time};}return null;}
+  function nowHM(){var d=new Date();return pad(d.getHours())+":"+pad(d.getMinutes());}
   function bodyRangeStart(){var t=new Date();
     if(bodyRange==="30")return fmt(addDays(t,-29));
     if(bodyRange==="90")return fmt(addDays(t,-89));
     if(bodyRange==="365")return fmt(addDays(t,-364));
     return null;}
-  function bodySeries(k){var st=bodyRangeStart();
-    return bodySorted().filter(function(r){
-      if(st&&r.date<st)return false;
-      return bodyNum(r.v&&r.v[k])!==null;
-    }).map(function(r){return{date:r.date,v:bodyNum(r.v[k])};});}
+  // 曲线按天：同一天记了几次就取平均（早晚各一次时，曲线不会因为称的时间点不同而抖）
+  function bodySeries(k){var st=bodyRangeStart(),by={},order=[];
+    bodySorted().forEach(function(r){
+      if(st&&r.date<st)return;
+      var v=bodyNum(r.v&&r.v[k]);if(v===null)return;
+      if(!by[r.date]){by[r.date]={sum:0,n:0,min:v,max:v};order.push(r.date);}
+      var b=by[r.date];b.sum+=v;b.n++;b.min=Math.min(b.min,v);b.max=Math.max(b.max,v);});
+    return order.map(function(d){var b=by[d];
+      return{date:d,v:Math.round(b.sum/b.n*100)/100,n:b.n,min:b.min,max:b.max};});}
   // 重量单位偏好：存进去的永远是 kg（唯一真值），输入和显示各自可以换成斤/磅。
   // 分开两个设置是因为「习惯用 kg 称、但想看斤」这种确实存在。
   var WUNIT={kg:{n:"kg",f:1},jin:{n:"斤",f:2},lb:{n:"磅",f:2.20462}};
@@ -9357,7 +9411,7 @@ margin-left: -22px;
   function bodyChart(keys){
     var series=[];
     (keys||[]).forEach(function(k){var d=bodyDef(k);if(!d||d.noChart)return;
-      var pts=bodySeries(k).map(function(p){return{date:p.date,v:toOut(d,p.v)};});   // 图上用显示单位
+      var pts=bodySeries(k).map(function(p){return{date:p.date,v:toOut(d,p.v),n:p.n,min:toOut(d,p.min),max:toOut(d,p.max)};});   // 图上用显示单位
       if(pts.length)series.push({d:d,pts:pts});});
     if(!series.length)return '<div class="stat-empty">这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标</div>';
     var W=760,H=270,PL=46,PR=54,PT=16,PB=30;
@@ -9382,8 +9436,12 @@ margin-left: -22px;
       var line=s.pts.map(function(p,i){return (i?"L":"M")+X(parse(p.date).getTime()).toFixed(1)+" "+Y(p.v).toFixed(1);}).join(" ");
       var only=(series.length===1);
       var area=only?('<path d="'+line+" L"+X(maxX).toFixed(1)+" "+(H-PB)+" L"+X(minX).toFixed(1)+" "+(H-PB)+' Z" class="bg-area"/>'):"";
-      var dots=s.pts.map(function(p){return '<circle cx="'+X(parse(p.date).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="'+(only?3.2:2.6)+'" class="bg-dot"><title>'+esc(s.d.n)+" "+p.date+"  "+p.v+s.d.u+'</title></circle>';}).join("");
-      body+='<g style="--c:'+s.d.c+'">'+area+'<path d="'+line+'" class="bg-line"/>'+dots+'</g>';
+      // 一天记了多次的，画一条细竖线表示当天的高低区间（早晚差值一眼可见）
+      var spread=s.pts.filter(function(p){return p.n>1&&p.max>p.min;}).map(function(p){
+        var x=X(parse(p.date).getTime()).toFixed(1);
+        return '<line x1="'+x+'" y1="'+Y(p.min).toFixed(1)+'" x2="'+x+'" y2="'+Y(p.max).toFixed(1)+'" class="bg-spread"/>';}).join("");
+      var dots=s.pts.map(function(p){return '<circle cx="'+X(parse(p.date).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="'+(only?3.2:2.6)+'" class="bg-dot"><title>'+esc(s.d.n)+" "+p.date+"  "+p.v+mUnitOut(s.d)+(p.n>1?("（"+p.n+" 次平均 "+p.min+"~"+p.max+"）"):"")+'</title></circle>';}).join("");
+      body+='<g style="--c:'+s.d.c+'">'+area+spread+'<path d="'+line+'" class="bg-line"/>'+dots+'</g>';
       var last=s.pts[s.pts.length-1];
       labs.push({y:Y(last.v),c:s.d.c,t:last.v+s.d.u});});
     labs.sort(function(a,b){return a.y-b.y;});           // 末端标签避让，别叠在一起
@@ -9442,8 +9500,8 @@ margin-left: -22px;
     var bmiTxt=bmi?(Math.round(bmi*10)/10+" · "+(bmi<18.5?"偏瘦":bmi<24?"正常":bmi<28?"偏胖":"肥胖")):"—";
     var toGo=(wLast&&tg!==null&&tg!==undefined)?Math.round((wLast.v-tg)*10)/10:null;
     var ranges=[["30","30天"],["90","3个月"],["365","1年"],["all","全部"]];
-    var today=fmt(new Date());
-    var cur=bodyRecs.filter(function(r){return r.date===today;})[0];
+    var today=fmt(new Date()),nowT=nowHM();
+    var cur=null;                       // 新记一笔默认是空表；点表格里某条才会载入那条
     // 录入表：只显示你选中的指标
     var form=bodyCfg.on.map(function(k){var m=bodyDef(k);if(!m)return "";
       var raw=bodyNum(cur&&cur.v&&cur.v[k]),v=(raw===null)?"":toIn(m,raw);
@@ -9455,7 +9513,7 @@ margin-left: -22px;
     var rows=bodySorted().reverse().map(function(r){
       var cells=bodyCfg.on.map(function(k){var v=bodyNum(r.v&&r.v[k]);var m=bodyDef(k);
         return '<td>'+(v===null?'<span class="mu">—</span>':(toOut(m,v)+(m?'<small>'+mUnitOut(m)+'</small>':""))) +'</td>';}).join("");
-      return '<tr data-bd="'+r.date+'"><td class="dt">'+r.date+'</td>'+cells+'<td class="nt">'+esc(r.note||"")+'</td><td><button class="bd-del" data-bdel="'+r.date+'" title="删除">✕</button></td></tr>';}).join("");
+      return '<tr data-bid="'+r.id+'"><td class="dt">'+r.date+'</td><td class="dt">'+(r.time||'<span class="mu">—</span>')+'</td>'+cells+'<td class="nt">'+esc(r.note||"")+'</td><td><button class="bd-del" data-bdel="'+r.id+'" title="删除">✕</button></td></tr>';}).join("");
     var heads=bodyCfg.on.map(function(k){var m=bodyDef(k);return '<th>'+(m?esc(m.n):k)+'</th>';}).join("");
     wrap.innerHTML=
       '<div class="stat-cards">'+
@@ -9470,7 +9528,8 @@ margin-left: -22px;
         picker+
         '<div class="bd-ai"><input type="text" id="bd-ai" placeholder="用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿"><button class="btn" id="bd-ai-go">✨ 识别填入</button></div>'+
         '<div class="bd-tip bd-aitip" id="bd-ai-tip"></div>'+
-        '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" id="bd-date" value="'+today+'"></label>'+form+
+        '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" id="bd-date" value="'+today+'"></label>'+
+        '<label class="bd-f bd-date"><span>时间</span><input type="time" id="bd-time" value="'+nowT+'"></label>'+form+
         '<label class="bd-f bd-note"><span>备注</span><input type="text" id="bd-note" value="'+esc((cur&&cur.note)||"")+'" placeholder="今天的感觉、饮食…"></label></div>'+
         '<div class="bd-actions"><button class="btn primary" id="bd-save">保存这一天</button><span class="bd-tip" id="bd-tip"></span></div></div>'+
       '<div class="panel"><h3>变化曲线 <span class="bd-h-sub">点指标可叠加 / 取消，共用一根轴</span></h3>'+
@@ -9479,7 +9538,7 @@ margin-left: -22px;
         '<div class="bd-chart" id="bd-chart">'+bodyChart(shown)+'</div></div>'+
       '<div class="panel"><h3>各项变化（'+esc(ranges.filter(function(r){return r[0]===bodyRange;}).map(function(r){return r[1];})[0]||"全部")+'）</h3><div class="bd-deltas">'+(deltas||'<div class="stat-empty">还没有记录</div>')+'</div></div>'+
       '<div class="panel"><h3>全部记录 <button class="bd-mini" id="bd-csv">下载 CSV</button></h3>'+
-        (rows?('<div style="overflow-x:auto"><table class="rep-table bd-table"><thead><tr><th>日期</th>'+heads+'<th>备注</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'):'<div class="stat-empty">还没有记录，上面记第一笔吧</div>')+
+        (rows?('<div style="overflow-x:auto"><table class="rep-table bd-table"><thead><tr><th>日期</th><th>时间</th>'+heads+'<th>备注</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'):'<div class="stat-empty">还没有记录，上面记第一笔吧</div>')+
       '</div>';
     // ---- 事件 ----
     bindBodyMetricToggles(wrap);
@@ -9511,31 +9570,36 @@ margin-left: -22px;
       else{var tv=bodyNum(v.trim());bodyCfg.target=(tv===null)?undefined:Math.round(fromIn(WM,tv)*100)/100;}
       saveBodyCfg();renderBody();});
     wrap.querySelector("#bd-save").addEventListener("click",function(){
-      var date=wrap.querySelector("#bd-date").value||today,v={},any=false;
+      var date=wrap.querySelector("#bd-date").value||today,tm=wrap.querySelector("#bd-time").value||nowHM(),v={},any=false;
       wrap.querySelectorAll("[data-bk]").forEach(function(inp){var n=bodyNum(inp.value);
         if(n!==null){var kk=inp.getAttribute("data-bk");v[kk]=Math.round(fromIn(bodyDef(kk),n)*100)/100;any=true;}});  // 一律换算成 kg 再存
       var note=(wrap.querySelector("#bd-note").value||"").trim();
       if(!any&&!note){wrap.querySelector("#bd-tip").textContent="至少填一项";return;}
-      var old=bodyRecs.filter(function(r){return r.date===date;})[0];
-      if(old){old.v=Object.assign({},old.v||{},v);old.note=note;}      // 同一天再记 = 补充/覆盖，不会多出一条
-      else bodyRecs.push({id:uid(),date:date,v:v,note:note});
+      var old=bodyRecs.filter(function(r){return r.date===date&&(r.time||"")===tm;})[0];
+      if(old){old.v=Object.assign({},old.v||{},v);old.note=note;}      // 同一天同一时刻＝改那条；换个时间就是新的一条
+      else bodyRecs.push({id:uid(),date:date,time:tm,v:v,note:note});
       saveBody();renderBody();
       var t=document.getElementById("bd-tip");if(t){t.textContent="已保存 ✓";setTimeout(function(){if(t)t.textContent="";},2000);}});
     wrap.querySelectorAll("[data-bdel]").forEach(function(b){b.addEventListener("click",async function(e){
-      e.stopPropagation();var dt=this.getAttribute("data-bdel");
-      if(!await ttConfirm("删除 "+dt+" 这条记录？",{danger:true,anchor:this}))return;
-      bodyRecs=bodyRecs.filter(function(r){return r.date!==dt;});saveBody();renderBody();});});
-    wrap.querySelectorAll("tr[data-bd]").forEach(function(tr){tr.addEventListener("click",function(){
-      var dt=this.getAttribute("data-bd"),di=wrap.querySelector("#bd-date");
-      if(di){di.value=dt;renderBodyForm(dt);}
+      e.stopPropagation();var rid=this.getAttribute("data-bdel"),rr=bodyRecs.filter(function(r){return r.id===rid;})[0];
+      if(!await ttConfirm("删除 "+(rr?(rr.date+" "+(rr.time||"")):"")+" 这条记录？",{danger:true,anchor:this}))return;
+      bodyRecs=bodyRecs.filter(function(r){return r.id!==rid;});saveBody();renderBody();});});
+    wrap.querySelectorAll("tr[data-bid]").forEach(function(tr){tr.addEventListener("click",function(){
+      var rid=this.getAttribute("data-bid");
+      var rr=bodyRecs.filter(function(r){return r.id===rid;})[0];if(!rr)return;
+      var di=wrap.querySelector("#bd-date"),ti=wrap.querySelector("#bd-time");
+      if(di)di.value=rr.date;if(ti)ti.value=rr.time||"";
+      renderBodyForm(rr.date,rr.time||"");
       try{di.scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}});});
-    var dateI=wrap.querySelector("#bd-date");
-    if(dateI)dateI.addEventListener("change",function(){renderBodyForm(this.value);});
+    var dateI=wrap.querySelector("#bd-date"),timeI=wrap.querySelector("#bd-time");
+    function reloadForm(){renderBodyForm(dateI?dateI.value:"",timeI?timeI.value:"");}
+    if(dateI)dateI.addEventListener("change",reloadForm);
+    if(timeI)timeI.addEventListener("change",reloadForm);
     wrap.querySelector("#bd-csv").addEventListener("click",function(){
       var ks=bodyAll();
-      var lines=[["日期"].concat(ks.map(function(m){return m.n+"("+mUnitOut(m)+")";})).concat(["备注"]).join(",")];
+      var lines=[["日期","时间"].concat(ks.map(function(m){return m.n+"("+mUnitOut(m)+")";})).concat(["备注"]).join(",")];
       bodySorted().forEach(function(r){
-        lines.push([r.date].concat(ks.map(function(m){var v=bodyNum(r.v&&r.v[m.k]);return v===null?"":toOut(m,v);})).concat([csvCell(r.note||"")]).join(","));});
+        lines.push([r.date,r.time||""].concat(ks.map(function(m){var v=bodyNum(r.v&&r.v[m.k]);return v===null?"":toOut(m,v);})).concat([csvCell(r.note||"")]).join(","));});
       downloadFile("身体数据_"+fmt(new Date())+".csv","﻿"+lines.join("\r\n"),"text/csv;charset=utf-8");});
   }
   // 通用「只要一个 JSON」的 AI 调用，两个供应商都走这里（AI 助手那边有自己的一套，不动它）
@@ -9617,9 +9681,9 @@ margin-left: -22px;
     if(note){var nt=w2.querySelector("#bd-note");if(nt&&!nt.value)nt.value=note;}
     var ai2=w2.querySelector("#bd-ai");if(ai2)ai2.value=text;
     bodyTip(via+"填好 "+n+" 项，核对一下再点「保存这一天」");}
-  function renderBodyForm(date){                 // 换日期时把那天已有的数值填回表单
+  function renderBodyForm(date,time){            // 换日期/时间时，把那一条已有的数值填回表单（没有就清空）
     var wrap=document.getElementById("body-wrap");if(!wrap)return;
-    var r=bodyRecs.filter(function(x){return x.date===date;})[0];
+    var r=bodyRecs.filter(function(x){return x.date===date&&(x.time||"")===(time||"");})[0];
     wrap.querySelectorAll("[data-bk]").forEach(function(inp){
       var k=inp.getAttribute("data-bk"),v=r?bodyNum(r.v&&r.v[k]):null;
       inp.value=(v===null||v===undefined)?"":toIn(bodyDef(k),v);});
