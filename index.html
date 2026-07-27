@@ -1090,6 +1090,27 @@
   .cs-pal .sw{width:20px;height:20px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-pal .sw.on{border-color:var(--text)}
   .cs-pal-tip{font-size:11px;color:var(--muted);flex-basis:100%}
+  /* 笔记：自己写的文档 */
+  .nb-docitem{cursor:pointer}
+  .nb-docitem:hover{background:var(--surface-2)}
+  .nb-dt{font-size:15px;font-weight:650;color:var(--text);margin-bottom:3px}
+  .nb-dp{font-size:12.5px;color:var(--muted);line-height:1.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:5px}
+  .nb-doc{display:flex;flex-direction:column;gap:9px;height:100%;min-height:0}
+  .nb-doc-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:9px;border-bottom:2px solid var(--c)}
+  .nb-doc-title{flex:1;min-width:180px;font-size:18px;font-weight:650;padding:7px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text)}
+  .nb-doc-title:focus{border-color:var(--border);background:var(--bg);outline:none}
+  .nb-doc-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
+  .nb-doc-tags{display:flex;flex-wrap:wrap;gap:5px}
+  .nb-doc-body{flex:1;min-height:340px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid var(--border);border-radius:12px;
+    background:var(--bg);color:var(--text);font-size:15px;line-height:1.85;resize:vertical;font-family:var(--font)}
+  .nb-doc-body:focus{outline:none;border-color:var(--c)}
+  .nb-doc-view{flex:1;height:auto;min-height:340px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg);
+    font-size:15px;line-height:1.85;overflow-y:auto}
+  .nb-doc-view h1,.nb-doc-view h2,.nb-doc-view h3{margin:.9em 0 .4em}
+  .nb-doc-view ul,.nb-doc-view ol{padding-left:1.4em}
+  .nb-doc-view code{background:var(--surface-2);padding:1px 5px;border-radius:5px;font-size:.9em}
+  .nb-doc-view pre{background:var(--surface-2);padding:10px 12px;border-radius:9px;overflow-x:auto}
+  .nb-doc-foot{font-size:11.5px;color:var(--muted);min-height:16px}
   /* 时间分布：环形图 + 引出线 */
   .dn-wrap{display:flex;justify-content:center}
   .dn-svg{width:100%;max-width:760px;height:auto;display:block}
@@ -2658,6 +2679,7 @@ margin-left: -22px;
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
     <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"></path></svg></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18M4 3v6a3 3 0 0 0 6 0V3"></path><path d="M17.5 3C15.6 5 14.5 7.4 14.5 10.5h6C20.5 7.4 19.4 5 17.5 3z"></path><path d="M17.5 10.5V21"></path></svg></button>
+    <button data-tab="notes" aria-label="笔记" title="笔记 · 便签与读书笔记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M15 3v4h4M8 11h8M8 15h5"></path></svg></button>
     <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 5-6 4 4"></path><circle cx="8" cy="12" r="1.4"></circle><circle cx="12" cy="15" r="1.4"></circle><circle cx="17" cy="9" r="1.4"></circle></svg></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
     <div class="grow"></div>
@@ -2836,6 +2858,23 @@ margin-left: -22px;
     </section>
 
     <!-- FOOD -->
+    <section class="view" id="view-notes">
+        <div class="rd-bar">
+          <button class="btn" id="nb-back" title="去看书">📖 看书</button>
+          <b class="rd-title">📓 我的笔记本</b>
+          <input id="nb-q" class="nb-q" placeholder="搜笔记 / 原文 / 书名 / 标签…">
+          <div class="seg" id="nb-group" title="怎么排">
+            <button data-ng="time" class="on">⏱ 时间线</button>
+            <button data-ng="book">📚 按书</button>
+          </div>
+          <span class="grow"></span>
+          <button class="btn" id="nb-new">＋ 写一条</button>
+          <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
+          <button class="btn" id="nb-csv" title="导成 CSV，可用 Excel 打开">⬇️ CSV</button>
+        </div>
+        <div class="nb-filters rn-filters" id="nb-filters"></div>
+        <div class="nb-body" id="nb-body"></div>
+    </section>
     <section class="view" id="view-body">
       <div class="page-h">身体数据 <span class="rd-sub">体重 / 围度 / 体脂 · 看变化曲线</span></div>
       <div class="body-wrap" id="body-wrap"></div>
@@ -2878,23 +2917,6 @@ margin-left: -22px;
         <div class="rd-grid" id="rd-grid"></div>
       </div>
 
-      <div id="rd-notebook" style="display:none">
-        <div class="rd-bar">
-          <button class="btn" id="nb-back">← 书架</button>
-          <b class="rd-title">📓 我的笔记本</b>
-          <input id="nb-q" class="nb-q" placeholder="搜笔记 / 原文 / 书名 / 标签…">
-          <div class="seg" id="nb-group" title="怎么排">
-            <button data-ng="time" class="on">⏱ 时间线</button>
-            <button data-ng="book">📚 按书</button>
-          </div>
-          <span class="grow"></span>
-          <button class="btn" id="nb-new">＋ 写一条</button>
-          <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
-          <button class="btn" id="nb-csv" title="导成 CSV，可用 Excel 打开">⬇️ CSV</button>
-        </div>
-        <div class="nb-filters rn-filters" id="nb-filters"></div>
-        <div class="nb-body" id="nb-body"></div>
-      </div>
 
       <div id="rd-read" style="display:none">
         <div class="rd-bar">
@@ -3770,7 +3792,7 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
-    ["calendar","todo","stats","dict","reader","tax","food","body"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax","food","body","notes"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo")renderTodos();
     if(tab==="dict")openDict();
@@ -3778,6 +3800,7 @@ margin-left: -22px;
     if(tab==="tax")openTax();
     if(tab==="food")openFood();
     if(tab==="body")renderBody();
+    if(tab==="notes")showNotes();
   });
 
   // ---------- calendar core ----------
@@ -6501,7 +6524,6 @@ margin-left: -22px;
     var rec=await bGet("blob",id);if(!rec||!rec.blob){ttAlert("这本书的文件丢了，建议删掉重新导入");return;}
     curBook=meta;save("tt_rdbook",id);tocData=null;save("tt_rdview2","");
     document.getElementById("rd-shelf").style.display="none";
-    document.getElementById("rd-notebook").style.display="none";
     document.getElementById("rd-read").style.display="";
     rdTitleEl.textContent=meta.name;rdContent.innerHTML='<div class="rd-empty">加载中…</div>';applyRdFs();
     try{
@@ -7115,11 +7137,14 @@ margin-left: -22px;
   var nbQ="",nbGroup=load("tt_nbgroup","time"),nbF=load("tt_nbfilter","all");
   function nbMatch(r){
     var q=nbQ.trim().toLowerCase();
+    if(nbF==="doc"&&r.t!=="doc")return false;
+    if(nbF==="frombook"&&!r.bid)return false;
+    if(nbF.indexOf("dc:")===0&&!(r.t==="doc"&&r.cat===nbF.slice(3)))return false;
     if(nbF==="noted"&&!r.note)return false;
     if(nbF.indexOf("c:")===0&&!(r.t==="hl"&&r.c===nbF.slice(2)))return false;
     if(nbF.indexOf("t:")===0&&r.t!==nbF.slice(2))return false;
     if(nbF.indexOf("g:")===0&&(r.tags||[]).indexOf(nbF.slice(2))<0)return false;
-    if(q&&((r.x||"")+" "+(r.note||"")+" "+(r.bname||"")+" "+(r.tags||[]).join(" ")).toLowerCase().indexOf(q)<0)return false;
+    if(q&&((r.x||"")+" "+(r.note||"")+" "+(r.title||"")+" "+(r.bname||"")+" "+(r.tags||[]).join(" ")).toLowerCase().indexOf(q)<0)return false;
     return true;}
   function nbList(){return notes.filter(nbMatch);}
   function nbWhen(ts){
@@ -7146,13 +7171,30 @@ margin-left: -22px;
     var cnt=function(f){var old=nbF;nbF=f;var n=notes.filter(nbMatch).length;nbF=old;return n;};
     var chip=function(f,label){
       return '<button class="rn-f'+(nbF===f?" on":"")+'" data-nbf="'+esc(f)+'">'+label+'</button>';};
-    var html=chip("all","全部 "+cnt("all"))+chip("noted","有笔记 "+cnt("noted"));
+    var html=chip("all","全部 "+cnt("all"));
+    if(cnt("doc"))html+=chip("doc","✏️ 我写的 "+cnt("doc"));
+    if(cnt("frombook"))html+=chip("frombook","📖 书里划的 "+cnt("frombook"));
+    html+=chip("noted","有笔记 "+cnt("noted"));
+    var dcats={};all.forEach(function(r){if(r.t==="doc"&&r.cat)dcats[r.cat]=1;});
+    Object.keys(dcats).forEach(function(ck){var n=cnt("dc:"+ck);
+      if(n)html+=chip("dc:"+ck,'<i style="background:'+catColor(ck)+'"></i>'+esc(catName(ck))+" "+n);});
     cols.forEach(function(c){html+=chip("c:"+c,'<i style="background:'+c+'"></i>'+cnt("c:"+c));});
     ["ul","bd","nt"].forEach(function(t){var n=cnt("t:"+t);
       if(n)html+=chip("t:"+t,({ul:"<u>U</u>",bd:"<b>B</b>",nt:"📝"}[t])+" "+n);});
     Object.keys(tags).sort().forEach(function(g){html+=chip("g:"+g,"#"+esc(g)+" "+tags[g]);});
     box.innerHTML=html;}
   function nbItemHTML(r){
+    if(r.t==="doc"){                              // 自己写的文档：标题 + 正文摘要 + 分类
+      var pv=String(r.note||"").replace(/[#*`>\-]/g," ").replace(/\s+/g," ").trim().slice(0,90);
+      var cn=r.cat?(catName(r.cat)+(r.sub?" · "+subName(r.cat,r.sub):"")):"";
+      return '<div class="rn-item nb-item nb-docitem" data-nbdoc="'+esc(r.id)+'" style="--ac:'+(r.cat?catColor(r.cat):"var(--primary)")+'">'+
+        '<div class="nb-dt">'+esc(r.title||"（无标题）")+'</div>'+
+        (pv?'<div class="nb-dp">'+esc(pv)+'</div>':"")+
+        '<div class="mt"><span class="tag">✏️ 我写的</span>'+
+        (cn?'<span>'+esc(cn)+'</span>':"")+
+        (r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+'</span>';}).join("")+
+        '<span>'+esc(nbWhen(r.upd||r.ts))+'</span><span class="grow"></span>'+
+        '<button data-nbdel="'+esc(r.id)+'" title="删除">✕</button></div></div>';}
     var TN={hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"};
     var gone=!!r.bid&&!nbBooks[r.bid];
     return '<div class="rn-item nb-item t-'+r.t+(gone?" gone":"")+'" data-nb="'+esc(r.id)+'" style="--ac:'+(r.c||"var(--primary)")+'">'+
@@ -7169,6 +7211,11 @@ margin-left: -22px;
       '<button data-nbdel="'+esc(r.id)+'" title="删除">✕</button></div></div>';}
   function renderNotebook(){
     var body=document.getElementById("nb-body");if(!body)return;
+    if(nbDoc){                                  // 正在看/写某篇文档 → 整块换成编辑器
+      var dr=noteById(nbDoc);
+      if(!dr){nbDoc=null;}
+      else{document.getElementById("nb-filters").innerHTML="";
+        body.innerHTML=nbDocEditor(dr);bindNbDoc(dr);return;}}
     nbFilters();
     var list=nbList();
     var qi=document.getElementById("nb-q");if(qi&&qi.value!==nbQ)qi.value=nbQ;
@@ -7188,7 +7235,7 @@ margin-left: -22px;
         return (byBook[b].length-byBook[a].length);});
       order.forEach(function(k){
         var rows=byBook[k].slice().sort(function(x,y){return (x.pg-y.pg)||(x.ts-y.ts);});
-        var name=(k==="__free")?"📝 随手记":(rows[0].bname||"未命名");
+        var name=(k==="__free")?"✏️ 我写的 / 随手记":(rows[0].bname||"未命名");
         html+='<div class="nb-gh"><b>'+esc(name)+'</b><span>'+rows.length+' 条</span><span class="grow"></span>'+
           (k==="__free"?"":'<button class="btn" data-nbexp="'+esc(k)+'" title="把这本书的笔记导成 Markdown">⬇️</button>')+'</div>'+
           rows.map(nbItemHTML).join("");});
@@ -7199,18 +7246,84 @@ margin-left: -22px;
         if(b!==last){html+='<div class="nb-gh"><b>'+esc(b)+'</b></div>';last=b;}
         html+=nbItemHTML(r);});}
     body.innerHTML=html;}
-  async function openNotebook(){
-    document.getElementById("rd-shelf").style.display="none";
-    document.getElementById("rd-read").style.display="none";
-    document.getElementById("rd-notebook").style.display="";
-    save("tt_rdview2","notebook");
-    await refreshNbBooks();
+  function gotoTab(t){var b=document.querySelector('.rail button[data-tab="'+t+'"]');if(b)b.click();}
+  function openNotebook(){gotoTab("notes");}          // 笔记本已经是顶栏页签了
+  function showNotes(){                                // 切到笔记页签时跑
     notes=load("tt_notes",[])||[];
-    renderNotebook();}
-  function closeNotebook(){
-    document.getElementById("rd-notebook").style.display="none";
-    save("tt_rdview2","");
-    showShelf();}
+    renderNotebook();
+    refreshNbBooks().then(function(){renderNotebook();},function(){});}
+  function closeNotebook(){gotoTab("reader");}
+  // ---- 文档型笔记（t:"doc"）：标题 + Markdown 正文 + 分类，和读书划线共用同一个 notes 存储 ----
+  var nbDoc=null;                                   // 当前正在编辑/阅读的文档 id
+  function nbDocNew(){
+    var r={id:"d"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"doc",c:"",x:"",
+      title:"",note:"",cat:"",sub:"",tags:[],ts:Date.now(),upd:Date.now()};
+    notes.push(r);saveNotes();nbDoc=r.id;renderNotebook();}
+  function nbDocOpen(id){nbDoc=id;renderNotebook();}
+  function nbDocClose(){nbDoc=null;renderNotebook();}
+  function nbDocEditor(r){
+    var cs=cats.map(function(c){return '<option value="'+c.key+'"'+(r.cat===c.key?" selected":"")+'>'+esc(c.name)+"</option>";}).join("");
+    var subs=r.cat?subsOf(r.cat):[];
+    var ss=subs.map(function(s){return '<option value="'+s.key+'"'+(r.sub===s.key?" selected":"")+'>'+esc(s.name)+"</option>";}).join("");
+    var col=r.cat?catColor(r.cat):"var(--muted)";
+    return '<div class="nb-doc" style="--c:'+col+'">'+
+      '<div class="nb-doc-bar">'+
+        '<button class="btn" id="nbd-back">← 笔记列表</button>'+
+        '<input id="nbd-title" class="nb-doc-title" placeholder="标题…" value="'+esc(r.title||"")+'">'+
+        '<select id="nbd-cat"><option value="">（不分类）</option>'+cs+"</select>"+
+        '<select id="nbd-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+ss+"</select>"+
+        '<span class="grow"></span>'+
+        '<div class="seg" id="nbd-mode"><button data-dm="edit" class="on">✎ 写</button><button data-dm="read">👁 读（可查词）</button></div>'+
+        '<button class="btn" id="nbd-tag" title="标签">🏷</button>'+
+        '<button class="btn" id="nbd-del" title="删除这篇">✕</button>'+
+      "</div>"+
+      '<div class="nb-doc-tags">'+(r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+"</span>";}).join("")+"</div>"+
+      '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`">'+esc(r.note||"")+"</textarea>"+
+      '<div id="nbd-view" class="nb-doc-view rd-content" style="display:none"></div>'+
+      '<div class="nb-doc-foot"><span id="nbd-saved"></span></div>'+
+    "</div>";}
+  function nbDocSave(r,fields){
+    Object.keys(fields).forEach(function(k){r[k]=fields[k];});
+    r.upd=Date.now();saveNotes();
+    var el=document.getElementById("nbd-saved");
+    if(el){el.textContent="已保存 "+new Date().toTimeString().slice(0,5);
+      clearTimeout(el.__t);el.__t=setTimeout(function(){el.textContent="";},2500);}}
+  function bindNbDoc(r){
+    var ti=document.getElementById("nbd-title"),bd=document.getElementById("nbd-body"),
+        vw=document.getElementById("nbd-view"),ca=document.getElementById("nbd-cat"),su=document.getElementById("nbd-sub");
+    var t1=null;
+    function later(fn){clearTimeout(t1);t1=setTimeout(fn,500);}   // 打字停半秒才存，别每个字符都写一次
+    ti.addEventListener("input",function(){later(function(){nbDocSave(r,{title:ti.value});});});
+    bd.addEventListener("input",function(){later(function(){nbDocSave(r,{note:bd.value});});});
+    ca.addEventListener("change",function(){nbDocSave(r,{cat:ca.value,sub:""});renderNotebook();});
+    su.addEventListener("change",function(){nbDocSave(r,{sub:su.value});});
+    document.getElementById("nbd-back").addEventListener("click",function(){
+      nbDocSave(r,{title:ti.value,note:bd.value});nbDocClose();});
+    document.getElementById("nbd-del").addEventListener("click",async function(){
+      if(!await ttConfirm("删除这篇笔记？",{danger:true,anchor:this}))return;
+      notes=notes.filter(function(x){return x.id!==r.id;});saveNotes();nbDocClose();});
+    document.getElementById("nbd-tag").addEventListener("click",async function(){
+      var v=await ttPrompt("标签（空格或逗号分开）：",(r.tags||[]).join(" "),{anchor:this});
+      if(v===null)return;nbDocSave(r,{tags:kwSplit(v)});renderNotebook();});
+    document.getElementById("nbd-mode").addEventListener("click",function(e){
+      var b=e.target.closest("button");if(!b)return;
+      var m=b.getAttribute("data-dm");
+      this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+      if(m==="read"){nbDocSave(r,{title:ti.value,note:bd.value});
+        vw.innerHTML='<div class="md">'+mdToHtml(bd.value||"*（还没写内容）*")+"</div>";
+        bd.style.display="none";vw.style.display="";}
+      else{bd.style.display="";vw.style.display="none";hideRdPop();}});
+    // 阅读模式里选中文字 → 查词/翻译（复用阅读器那一套，但不带标注工具条）
+    vw.addEventListener("mouseup",function(){setTimeout(noteSelHandler,10);});
+  }
+  function noteSelHandler(){
+    var s=(getSelection()?String(getSelection()):"").trim();
+    if(!s||s.length>1200)return;
+    var sel=getSelection();if(!sel.rangeCount)return;
+    var rect=sel.getRangeAt(0).getBoundingClientRect();
+    if(!rect||(!rect.width&&!rect.height))return;
+    if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
+    else showRdTrans(s,rect);}
   async function nbNewNote(anchor){
     var v=await ttPrompt("随手记一条：","",{anchor:anchor});
     if(v===null||!v.trim())return;
@@ -7220,7 +7333,7 @@ margin-left: -22px;
     var r=noteById(id);if(!r)return;
     if(!r.bid){ttAlert("这是随手记，没有对应的原文");return;}
     if(!nbBooks[r.bid]){ttAlert("这台设备上没有这本书（笔记是从别的设备同步过来的）");return;}
-    document.getElementById("rd-notebook").style.display="none";
+    gotoTab("reader");
     await openBook(r.bid);
     setTimeout(function(){jumpAnnot(r.id);},350);}
   // ---- 导出 ----
@@ -8197,7 +8310,7 @@ margin-left: -22px;
         bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
       // 📓 笔记本
       document.getElementById("nb-back").addEventListener("click",closeNotebook);
-      document.getElementById("nb-new").addEventListener("click",function(){nbNewNote(this);});
+      document.getElementById("nb-new").addEventListener("click",function(){nbDocNew();});
       document.getElementById("nb-md").addEventListener("click",function(){nbExport("md",this);});
       document.getElementById("nb-csv").addEventListener("click",function(){nbExport("csv",this);});
       var nbQi=document.getElementById("nb-q");
@@ -8215,7 +8328,9 @@ margin-left: -22px;
       document.getElementById("nb-body").addEventListener("click",async function(e){
         var exp=e.target.closest("[data-nbexp]");
         if(exp){e.stopPropagation();nbExportBook(exp.getAttribute("data-nbexp"));return;}
-        var tg=e.target.closest("[data-nbtag]");
+        var dc=e.target.closest("[data-nbdoc]");
+      if(dc&&!e.target.closest("[data-nbdel]")){nbDocOpen(dc.getAttribute("data-nbdoc"));return;}
+      var tg=e.target.closest("[data-nbtag]");
         if(tg){e.stopPropagation();setNoteTags(tg.getAttribute("data-nbtag"),tg);return;}
         var ed=e.target.closest("[data-nbedit]");
         if(ed){e.stopPropagation();editNoteText(ed.getAttribute("data-nbedit"),ed);return;}
@@ -8437,7 +8552,7 @@ margin-left: -22px;
     reconcileNotes().then(function(){              // 把各本书的标注同步进笔记本镜像（首次会把老数据补齐）
       var sh=document.getElementById("rd-shelf");
       if(sh&&sh.style.display!=="none")renderShelf();
-      if(!SOLO&&load("tt_rdview2","")==="notebook"&&!load("tt_rdbook",""))openNotebook();});
+      });
     if(!curBook){                                  // 上次正在读某本书 → 直接续上（副屏不续，等主窗口指定）
       var last=SOLO?"":load("tt_rdbook","");
       if(last)bGet("meta",last).then(function(m){if(m)openBook(last);else{save("tt_rdbook","");renderShelf();}},function(){renderShelf();});
