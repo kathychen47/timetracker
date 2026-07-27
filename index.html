@@ -4209,12 +4209,15 @@ margin-left: -22px;
     setFocus=document.getElementById("set-focus"),setBreak=document.getElementById("set-break"),startBtn=document.getElementById("pomo-start");
   setFocus.value=settings.focus;setBreak.value=settings.brk;
   var pomoTask=document.getElementById("pomo-task"),pomoCat=document.getElementById("pomo-cat"),pomoSub=document.getElementById("pomo-sub"),pomoToCal=document.getElementById("pomo-tocal");
-  pomoCat.innerHTML=cats.map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("");pomoCat.value="focus";
-  function fillPomoSubs(){var subs=subsOf(pomoCat.value);
-    pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("");
-    pomoSub.style.display="";pomoSub.disabled=!subs.length;}
+  function pomoCatOptions(){return cats.map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("")+'<option value="__new">＋ 新建大类…</option>';}
+  pomoCat.innerHTML=pomoCatOptions();pomoCat.value="focus";
+  function fillPomoSubs(){var subs=subsOf(pomoCat.value),p=parentObj(pomoCat.value);
+    pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+
+      subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("")+
+      (p?'<option value="__new">＋ 新建小类…</option>':'');
+    pomoSub.style.display="";pomoSub.disabled=!p;}   // 只要选了大类就可用，否则没法在这儿加小类
   // 记住上次专注用的分类，下次打开自动填上（分类被删了就退回默认）
-  function savePomoLast(){save("tt_pomolast",{cat:pomoCat.value||"",sub:pomoSub.value||""});}
+  function savePomoLast(){save("tt_pomolast",{cat:pomoCat.value||"",sub:pomoSub.value||"",mode:timerMode});}
   function applyPomoLast(){
     var r=load("tt_pomolast",null);if(!r||!r.cat)return;
     if(!cats.some(function(c){return c.key===r.cat;}))return;
@@ -4237,18 +4240,45 @@ margin-left: -22px;
     pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
     markPomoAuto(true);}
   fillPomoSubs();applyPomoLast();
-  pomoCat.addEventListener("change",function(){pomoManual=true;markPomoAuto(false);fillPomoSubs();savePomoLast();});
-  pomoSub.addEventListener("change",function(){pomoManual=true;markPomoAuto(false);savePomoLast();});
+  // 下拉最后一项是「＋ 新建…」，选中它就地建分类，不用跑去设置里
+  var pomoCatPrev=pomoCat.value,pomoSubPrev=pomoSub.value;
+  function nextCatColor(){var used={};cats.forEach(function(c){used[String(c.color||"").toLowerCase()]=1;});
+    for(var i=0;i<PALETTE.length;i++){if(!used[PALETTE[i].toLowerCase()])return PALETTE[i];}
+    return PALETTE[cats.length%PALETTE.length];}
+  pomoCat.addEventListener("change",async function(){
+    if(pomoCat.value==="__new"){
+      pomoCat.value=pomoCatPrev;fillPomoSubs();                 // 先复位，别让 __new 漏到别处去
+      var nm=await ttPrompt("新建大类，名称：","",{anchor:pomoCat});
+      if(nm&&nm.trim()){var key="c"+uid();
+        cats.push({key:key,name:nm.trim(),color:nextCatColor(),kw:[nm.trim()],subs:[]});
+        save("tt_cats",cats);afterCatEdit();
+        pomoCat.value=key;fillPomoSubs();}
+    }
+    pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
+    pomoManual=true;markPomoAuto(false);savePomoLast();});
+  pomoSub.addEventListener("change",async function(){
+    if(pomoSub.value==="__new"){
+      pomoSub.value=pomoSubPrev;
+      var p=parentObj(pomoCat.value);
+      if(p){var nm2=await ttPrompt("在「"+p.name+"」下新建小类，名称：","",{anchor:pomoSub});
+        if(nm2&&nm2.trim()){var sk="s"+uid();
+          p.subs=p.subs||[];p.subs.push({key:sk,name:nm2.trim(),kw:[nm2.trim()]});
+          save("tt_cats",cats);afterCatEdit();
+          pomoCat.value=p.key;fillPomoSubs();pomoSub.value=sk;}}
+    }
+    pomoSubPrev=pomoSub.value;
+    pomoManual=true;markPomoAuto(false);savePomoLast();});
   pomoTask.addEventListener("input",function(){autoPomoCat();drawPomo();});
   // 大类/小类改了（设置里管理、事件弹窗里新建删除、云端拉取）之后，这些下拉要重建，否则一直是打开页面那一刻的旧列表
   function refreshCatSelects(){
     var has=function(k){return cats.some(function(c){return c.key===k;});};
     try{
       var pc=pomoCat.value,ps=pomoSub.value;
-      pomoCat.innerHTML=cats.map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("");
+      pomoCat.innerHTML=pomoCatOptions();
       pomoCat.value=has(pc)?pc:(has("focus")?"focus":(cats[0]?cats[0].key:""));   // 选中的大类被删了 → 退回默认
       fillPomoSubs();
       if(ps&&subsOf(pomoCat.value).some(function(s){return s.key===ps;}))pomoSub.value=ps;
+      pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
     }catch(e){}
     try{
       var gc=gCat.value,gs=gSub.value;
@@ -4460,8 +4490,17 @@ margin-left: -22px;
     var b=e.target.closest("button");if(!b)return;var tm=b.getAttribute("data-tm");if(tm===timerMode)return;
     stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
     skipBtn.textContent=(tm==="up"?"结束":"跳过");
-    pBase=0;save("tt_pomorun",null);clearSegs();
+    pBase=0;save("tt_pomorun",null);clearSegs();savePomoLast();   // 记住这次选的模式，下次打开还是它
     if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();});
+  // 打开页面时回到上次用的模式（必须放在 timerMode 声明之后，否则会被 var timerMode="down" 覆盖掉）
+  function applyPomoMode(){
+    var r=load("tt_pomolast",null);
+    if(!r||!r.mode||r.mode===timerMode)return;
+    timerMode=r.mode;
+    document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
+    skipBtn.textContent=(timerMode==="up"?"结束":"跳过");
+    if(timerMode==="up"){pElapsed=0;pBase=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
+    drawPomo();}
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
   function renderPomoStats(){var k=todayKey(),st=pstats[k]||{count:0,min:0};
@@ -9115,7 +9154,8 @@ margin-left: -22px;
 
   // ---------- init ----------
   renderCal();drawPomo();renderPomoStats();renderTodos();
-  try{restorePomoRun();}catch(e){}
+  try{applyPomoMode();}catch(e){}      // 先回到上次用的倒计时/正计时
+  try{restorePomoRun();}catch(e){}     // 再让还没跑完的那个番茄钟接着走（它自带模式，会覆盖上面这句）
   initLang();renderBookmarklet();
   // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
   window.addEventListener("tt-words-merged",function(){
