@@ -9313,12 +9313,16 @@ margin-left: -22px;
     {k:"calf", n:"小腿围", u:"cm", c:"#8bb04f", good:"down"},
     {k:"arm",  n:"上臂围", u:"cm", c:"#d9925f", good:"down"},
     {k:"chest",n:"胸围",   u:"cm", c:"#c77fd0", good:""},
-    {k:"h",    n:"身高",   u:"cm", c:"#9aa1b0", good:""}
+    {k:"h",    n:"身高",   u:"cm", c:"#9aa1b0", good:"", noChart:1}   // 基本不变，还会把别的曲线压扁 → 不进图
   ];
   var bodyRecs=load("tt_body",[])||[],bodyCfg=load("tt_bodycfg",null)||{};
   if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];
-  var bodyMetric="w",bodyRange="all",bodyPick=false;
+  var bodyRange="all",bodyPick=false;
   function bodyAll(){return BODY_M.concat(bodyCfg.custom||[]);}
+  function bodyChartable(){return bodyAll().filter(function(m){return !m.noChart;});}
+  function bodyShown(){                                   // 图上显示哪几条线
+    if(!bodyCfg.show)bodyCfg.show=bodyCfg.on.filter(function(k){var m=bodyDef(k);return m&&!m.noChart;});
+    return bodyCfg.show.filter(function(k){var m=bodyDef(k);return m&&!m.noChart;});}
   function bodyDef(k){var a=bodyAll();for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return null;}
   function saveBody(){save("tt_body",bodyRecs);}
   function saveBodyCfg(){save("tt_bodycfg",bodyCfg);}
@@ -9335,46 +9339,104 @@ margin-left: -22px;
       if(st&&r.date<st)return false;
       return bodyNum(r.v&&r.v[k])!==null;
     }).map(function(r){return{date:r.date,v:bodyNum(r.v[k])};});}
+  // 重量单位偏好：存进去的永远是 kg（唯一真值），输入和显示各自可以换成斤/磅。
+  // 分开两个设置是因为「习惯用 kg 称、但想看斤」这种确实存在。
+  var WUNIT={kg:{n:"kg",f:1},jin:{n:"斤",f:2},lb:{n:"磅",f:2.20462}};
+  function wInU(){return WUNIT[bodyCfg.wIn]||WUNIT.kg;}
+  function wOutU(){return WUNIT[bodyCfg.wOut]||WUNIT.kg;}
+  function isKgM(m){return !!m&&m.u==="kg";}
+  function mUnitIn(m){return isKgM(m)?wInU().n:m.u;}          // 录入框上写的单位
+  function mUnitOut(m){return isKgM(m)?wOutU().n:m.u;}        // 展示用的单位
+  function toIn(m,kg){return isKgM(m)?Math.round(kg*wInU().f*100)/100:kg;}
+  function fromIn(m,v){return isKgM(m)?(v/wInU().f):v;}
+  function toOut(m,kg){return isKgM(m)?Math.round(kg*wOutU().f*10)/10:kg;}
   function bodyFmt(v,d){var n=Math.round(v*10)/10;return (d&&d.u==="kg"||d&&d.u==="%")?n.toFixed(1):String(n);}
-  // 折线图：x 按真实日期比例排（记录间隔不均匀时才不会骗人），y 自适应并留白
-  function bodyChart(k){
-    var d=bodyDef(k);if(!d)return '<div class="stat-empty">指标不存在</div>';
-    var pts=bodySeries(k);
-    if(!pts.length)return '<div class="stat-empty">这个时间范围内还没有「'+esc(d.n)+'」的记录</div>';
-    var W=760,H=250,PL=48,PR=18,PT=16,PB=30;
-    var xs=pts.map(function(p){return parse(p.date).getTime();});
-    var minX=Math.min.apply(null,xs),maxX=Math.max.apply(null,xs);if(maxX<=minX)maxX=minX+86400000;
-    var vals=pts.map(function(p){return p.v;});
-    var tg=(k==="w")?bodyNum(bodyCfg.target):null;
-    var minV=Math.min.apply(null,vals),maxV=Math.max.apply(null,vals);
-    if(tg!==null&&tg!==undefined){minV=Math.min(minV,tg);maxV=Math.max(maxV,tg);}
+  // 一张图放多条线：体重/围度/体脂的数值都在 20~100 之间，共用一根轴就行，不用做归一化
+  // （身高 165 会把其他线压扁，所以它 noChart，压根不进图）
+  // x 按真实日期比例排 —— 记录间隔不均匀时按序号排会把隔一个月画成隔一天，那是骗自己
+  function bodyChart(keys){
+    var series=[];
+    (keys||[]).forEach(function(k){var d=bodyDef(k);if(!d||d.noChart)return;
+      var pts=bodySeries(k).map(function(p){return{date:p.date,v:toOut(d,p.v)};});   // 图上用显示单位
+      if(pts.length)series.push({d:d,pts:pts});});
+    if(!series.length)return '<div class="stat-empty">这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标</div>';
+    var W=760,H=270,PL=46,PR=54,PT=16,PB=30;
+    var allX=[],allV=[];
+    series.forEach(function(s){s.pts.forEach(function(p){allX.push(parse(p.date).getTime());allV.push(p.v);});});
+    var minX=Math.min.apply(null,allX),maxX=Math.max.apply(null,allX);if(maxX<=minX)maxX=minX+86400000;
+    var tg=(keys.indexOf("w")>=0)?bodyNum(bodyCfg.target):null;
+    if(tg!==null&&tg!==undefined){tg=toOut(bodyDef("w"),tg);allV.push(tg);}
+    var minV=Math.min.apply(null,allV),maxV=Math.max.apply(null,allV);
     var span=(maxV-minV)||Math.max(1,Math.abs(maxV)*0.06);
-    minV-=span*0.18;maxV+=span*0.18;
+    minV-=span*0.14;maxV+=span*0.14;
     function X(t){return PL+(t-minX)/(maxX-minX)*(W-PL-PR);}
     function Y(v){return PT+(maxV-v)/(maxV-minV)*(H-PT-PB);}
     var g="";
     for(var i=0;i<=3;i++){var vv=maxV-(maxV-minV)*i/3,yy=Y(vv);
       g+='<line x1="'+PL+'" y1="'+yy.toFixed(1)+'" x2="'+(W-PR)+'" y2="'+yy.toFixed(1)+'" class="bg-grid"/>'+
          '<text x="'+(PL-8)+'" y="'+(yy+4).toFixed(1)+'" class="bg-ylab">'+(Math.round(vv*10)/10)+'</text>';}
-    var line=pts.map(function(p,i){return (i?"L":"M")+X(parse(p.date).getTime()).toFixed(1)+" "+Y(p.v).toFixed(1);}).join(" ");
-    var area=line+" L"+X(maxX).toFixed(1)+" "+(H-PB)+" L"+X(minX).toFixed(1)+" "+(H-PB)+" Z";
-    var dots=pts.map(function(p){return '<circle cx="'+X(parse(p.date).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="3.2" class="bg-dot"><title>'+p.date+"  "+p.v+d.u+'</title></circle>';}).join("");
     var tgLine=(tg!==null&&tg!==undefined)?('<line x1="'+PL+'" y1="'+Y(tg).toFixed(1)+'" x2="'+(W-PR)+'" y2="'+Y(tg).toFixed(1)+'" class="bg-target"/>'+
-      '<text x="'+(W-PR)+'" y="'+(Y(tg)-6).toFixed(1)+'" class="bg-tlab">目标 '+tg+d.u+'</text>'):"";
-    var first=pts[0],last=pts[pts.length-1];
-    var lab=(pts.length>1?('<text x="'+X(parse(first.date).getTime()).toFixed(1)+'" y="'+(Y(first.v)-9).toFixed(1)+'" class="bg-vlab">'+first.v+'</text>'):"")+
-      '<text x="'+X(parse(last.date).getTime()).toFixed(1)+'" y="'+(Y(last.v)-9).toFixed(1)+'" class="bg-vlab end">'+last.v+'</text>';
-    var xlab='<text x="'+PL+'" y="'+(H-8)+'" class="bg-xlab">'+first.date.slice(5)+'</text>'+
-      (pts.length>1?'<text x="'+(W-PR)+'" y="'+(H-8)+'" class="bg-xlab end">'+last.date.slice(5)+'</text>':"");
-    return '<svg class="bg-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" style="--c:'+d.c+'">'+
-      g+tgLine+'<path d="'+area+'" class="bg-area"/><path d="'+line+'" class="bg-line"/>'+dots+lab+xlab+'</svg>';}
+      '<text x="'+(W-PR-4)+'" y="'+(Y(tg)-6).toFixed(1)+'" class="bg-tlab">目标 '+tg+wOutU().n+'</text>'):"";
+    var body="",labs=[];
+    series.forEach(function(s){
+      var line=s.pts.map(function(p,i){return (i?"L":"M")+X(parse(p.date).getTime()).toFixed(1)+" "+Y(p.v).toFixed(1);}).join(" ");
+      var only=(series.length===1);
+      var area=only?('<path d="'+line+" L"+X(maxX).toFixed(1)+" "+(H-PB)+" L"+X(minX).toFixed(1)+" "+(H-PB)+' Z" class="bg-area"/>'):"";
+      var dots=s.pts.map(function(p){return '<circle cx="'+X(parse(p.date).getTime()).toFixed(1)+'" cy="'+Y(p.v).toFixed(1)+'" r="'+(only?3.2:2.6)+'" class="bg-dot"><title>'+esc(s.d.n)+" "+p.date+"  "+p.v+s.d.u+'</title></circle>';}).join("");
+      body+='<g style="--c:'+s.d.c+'">'+area+'<path d="'+line+'" class="bg-line"/>'+dots+'</g>';
+      var last=s.pts[s.pts.length-1];
+      labs.push({y:Y(last.v),c:s.d.c,t:last.v+s.d.u});});
+    labs.sort(function(a,b){return a.y-b.y;});           // 末端标签避让，别叠在一起
+    for(var j=1;j<labs.length;j++){if(labs[j].y-labs[j-1].y<13)labs[j].y=labs[j-1].y+13;}
+    var endLab=labs.map(function(l){return '<text x="'+(W-PR+6)+'" y="'+(l.y+4).toFixed(1)+'" class="bg-endlab" style="fill:'+l.c+'">'+l.t+'</text>';}).join("");
+    var d0=fmt(new Date(minX)),d1=fmt(new Date(maxX));
+    var xlab='<text x="'+PL+'" y="'+(H-8)+'" class="bg-xlab">'+d0.slice(5)+'</text>'+
+      (d1!==d0?'<text x="'+(W-PR).toFixed(0)+'" y="'+(H-8)+'" class="bg-xlab end">'+d1.slice(5)+'</text>':"");
+    return '<svg class="bg-svg" viewBox="0 0 '+W+' '+H+'">'+g+tgLine+body+endLab+xlab+'</svg>';}
   function bodyDelta(k){                       // 这个范围内：最新值、相对首条的变化
     var s=bodySeries(k);if(s.length<1)return null;
     var last=s[s.length-1],first=s[0];
     return{last:last.v,date:last.date,diff:Math.round((last.v-first.v)*10)/10,n:s.length};}
+  // 勾/取消一条线只重画图和高亮，不整页重建 —— 点着才跟手
+  function bindBodyMetricToggles(root){
+    root.querySelectorAll("[data-bm]").forEach(function(b){
+      if(b.__bmBound)return;b.__bmBound=1;
+      b.addEventListener("click",function(){
+        var k=this.getAttribute("data-bm"),sh=bodyShown();
+        if(sh.indexOf(k)>=0){if(sh.length>1)bodyCfg.show=sh.filter(function(x){return x!==k;});}  // 至少留一条，不然图是空的
+        else bodyCfg.show=sh.concat([k]);
+        saveBodyCfg();
+        var sh2=bodyShown(),w=document.getElementById("body-wrap");
+        var ch=document.getElementById("bd-chart");if(ch)ch.innerHTML=bodyChart(sh2);
+        w.querySelectorAll("[data-bm]").forEach(function(x){x.classList.toggle("on",sh2.indexOf(x.getAttribute("data-bm"))>=0);});});});}
+  async function bodyUnitPanel(anchor){
+    var opts=[["kg","kg 公斤"],["jin","斤"],["lb","磅 lb"]];
+    var cur=WUNIT[bodyCfg.wIn]?bodyCfg.wIn:"kg";
+    var a=await ttPrompt("【输入】体重时你按哪个单位填？填 kg / 斤 / 磅：",WUNIT[cur].n,{anchor:anchor});
+    if(a===null)return;
+    var mapIn=null;opts.forEach(function(o){if(o[0]===a.trim()||WUNIT[o[0]].n===a.trim())mapIn=o[0];});
+    if(mapIn)bodyCfg.wIn=mapIn;
+    var curO=WUNIT[bodyCfg.wOut]?bodyCfg.wOut:"kg";
+    var b=await ttPrompt("【显示】体重用哪个单位？填 kg / 斤 / 磅：",WUNIT[curO].n,{anchor:anchor});
+    if(b!==null){var mapOut=null;opts.forEach(function(o){if(o[0]===b.trim()||WUNIT[o[0]].n===b.trim())mapOut=o[0];});
+      if(mapOut)bodyCfg.wOut=mapOut;}
+    saveBodyCfg();renderBody();}
+  function bodyDeltasHTML(shown){
+    return bodyAll().map(function(m){var dd=bodyDelta(m.k);if(!dd)return "";
+      var last=toOut(m,dd.last),diff=isKgM(m)?Math.round(dd.diff*wOutU().f*10)/10:dd.diff;
+      var up=diff>0,flat=Math.abs(diff)<0.05,u=mUnitOut(m);
+      var cls=flat?"":((m.good==="down"&&!up)||(m.good==="up"&&up)?"good":(m.good?"bad":""));
+      return '<div class="bd-d'+(shown.indexOf(m.k)>=0?" on":"")+'"'+(m.noChart?'':' data-bm="'+m.k+'"')+'><span class="nm"><i style="background:'+m.c+'"></i>'+esc(m.n)+'</span>'+
+        '<b>'+last+'<small>'+u+'</small></b>'+
+        '<span class="dt '+cls+'">'+(flat?"持平":((up?"+":"")+diff+u))+'</span></div>';}).join("");}
+  function renderBodyDeltas(){
+    var box=document.querySelector("#body-wrap .bd-deltas");if(!box)return;
+    var h=bodyDeltasHTML(bodyShown());
+    box.innerHTML=h||'<div class="stat-empty">还没有记录</div>';
+    bindBodyMetricToggles(box);}
   function renderBody(){
     var wrap=document.getElementById("body-wrap");if(!wrap)return;
-    var all=bodyAll(),d=bodyDef(bodyMetric)||all[0];
+    var all=bodyAll(),shown=bodyShown(),WM=bodyDef("w");
     var wLast=bodyLatest("w"),hLast=bodyLatest("h"),tg=bodyNum(bodyCfg.target);
     var bmi=(wLast&&hLast&&hLast.v>0)?(wLast.v/Math.pow(hLast.v/100,2)):null;
     var bmiTxt=bmi?(Math.round(bmi*10)/10+" · "+(bmi<18.5?"偏瘦":bmi<24?"正常":bmi<28?"偏胖":"肥胖")):"—";
@@ -9384,48 +9446,49 @@ margin-left: -22px;
     var cur=bodyRecs.filter(function(r){return r.date===today;})[0];
     // 录入表：只显示你选中的指标
     var form=bodyCfg.on.map(function(k){var m=bodyDef(k);if(!m)return "";
-      var v=(cur&&cur.v&&cur.v[k]!=null)?cur.v[k]:"";
-      return '<label class="bd-f"><span><i style="background:'+m.c+'"></i>'+esc(m.n)+'<em>'+m.u+'</em></span>'+
+      var raw=bodyNum(cur&&cur.v&&cur.v[k]),v=(raw===null)?"":toIn(m,raw);
+      return '<label class="bd-f"><span><i style="background:'+m.c+'"></i>'+esc(m.n)+'<em>'+mUnitIn(m)+'</em></span>'+
         '<input type="number" step="0.1" inputmode="decimal" data-bk="'+k+'" value="'+v+'" placeholder="—"></label>';}).join("");
     var picker=bodyPick?('<div class="bd-pick">'+all.map(function(m){return '<button class="li'+(bodyCfg.on.indexOf(m.k)>=0?" on":"")+'" data-bon="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+
       '<button class="li bd-addm" data-baddm="1">＋ 自定义指标</button></div>'):"";
-    var deltas=all.map(function(m){var dd=bodyDelta(m.k);if(!dd)return "";
-      var up=dd.diff>0,flat=Math.abs(dd.diff)<0.05;
-      var cls=flat?"":((m.good==="down"&&!up)||(m.good==="up"&&up)?"good":(m.good?"bad":""));
-      return '<div class="bd-d'+(m.k===bodyMetric?" on":"")+'" data-bm="'+m.k+'"><span class="nm"><i style="background:'+m.c+'"></i>'+esc(m.n)+'</span>'+
-        '<b>'+dd.last+'<small>'+m.u+'</small></b>'+
-        '<span class="dt '+cls+'">'+(flat?"持平":((up?"+":"")+dd.diff+m.u))+'</span></div>';}).join("");
+    var deltas=bodyDeltasHTML(shown);
     var rows=bodySorted().reverse().map(function(r){
       var cells=bodyCfg.on.map(function(k){var v=bodyNum(r.v&&r.v[k]);var m=bodyDef(k);
-        return '<td>'+(v===null?'<span class="mu">—</span>':(v+(m?'<small>'+m.u+'</small>':""))) +'</td>';}).join("");
+        return '<td>'+(v===null?'<span class="mu">—</span>':(toOut(m,v)+(m?'<small>'+mUnitOut(m)+'</small>':""))) +'</td>';}).join("");
       return '<tr data-bd="'+r.date+'"><td class="dt">'+r.date+'</td>'+cells+'<td class="nt">'+esc(r.note||"")+'</td><td><button class="bd-del" data-bdel="'+r.date+'" title="删除">✕</button></td></tr>';}).join("");
     var heads=bodyCfg.on.map(function(k){var m=bodyDef(k);return '<th>'+(m?esc(m.n):k)+'</th>';}).join("");
     wrap.innerHTML=
       '<div class="stat-cards">'+
-        '<div class="sc"><div class="k">当前体重</div><div class="v">'+(wLast?wLast.v:"—")+'<small> kg</small></div></div>'+
-        '<div class="sc"><div class="k">距目标</div><div class="v">'+(toGo===null?"—":(toGo>0?toGo:"达成 ✓"))+(toGo!==null&&toGo>0?'<small> kg</small>':"")+'</div></div>'+
+        '<div class="sc"><div class="k">当前体重</div><div class="v">'+(wLast?toOut(WM,wLast.v):"—")+'<small> '+wOutU().n+'</small></div></div>'+
+        '<div class="sc"><div class="k">距目标</div><div class="v">'+(toGo===null?"—":(toGo>0?toOut(WM,toGo):"达成 ✓"))+(toGo!==null&&toGo>0?'<small> '+wOutU().n+'</small>':"")+'</div></div>'+
         '<div class="sc"><div class="k">BMI</div><div class="v" style="font-size:17px">'+bmiTxt+'</div></div>'+
         '<div class="sc"><div class="k">记录数</div><div class="v">'+bodyRecs.length+'<small> 条</small></div></div>'+
       '</div>'+
       '<div class="panel"><h3>记一笔 <button class="bd-mini" id="bd-pick-btn">'+(bodyPick?"收起":"选指标")+'</button>'+
-        '<button class="bd-mini" id="bd-target">'+(tg!==null&&tg!==undefined?"目标 "+tg+"kg":"设目标体重")+'</button></h3>'+
+        '<button class="bd-mini" id="bd-target">'+(tg!==null&&tg!==undefined?"目标 "+toOut(WM,tg)+wOutU().n:"设目标体重")+'</button>'+
+        '<button class="bd-mini" id="bd-units" title="体重的输入单位与显示单位可以分开设">单位 '+wInU().n+'→'+wOutU().n+'</button></h3>'+
         picker+
         '<div class="bd-ai"><input type="text" id="bd-ai" placeholder="用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿"><button class="btn" id="bd-ai-go">✨ 识别填入</button></div>'+
         '<div class="bd-tip bd-aitip" id="bd-ai-tip"></div>'+
         '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" id="bd-date" value="'+today+'"></label>'+form+
         '<label class="bd-f bd-note"><span>备注</span><input type="text" id="bd-note" value="'+esc((cur&&cur.note)||"")+'" placeholder="今天的感觉、饮食…"></label></div>'+
         '<div class="bd-actions"><button class="btn primary" id="bd-save">保存这一天</button><span class="bd-tip" id="bd-tip"></span></div></div>'+
-      '<div class="panel"><h3>变化曲线 <span class="bd-h-sub">点下面的指标切换</span></h3>'+
-        '<div class="legend stat-legend">'+all.map(function(m){return '<button class="li'+(m.k===bodyMetric?" on":"")+'" data-bm="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+'</div>'+
+      '<div class="panel"><h3>变化曲线 <span class="bd-h-sub">点指标可叠加 / 取消，共用一根轴</span></h3>'+
+        '<div class="legend stat-legend" id="bd-lines">'+bodyChartable().map(function(m){return '<button class="li'+(shown.indexOf(m.k)>=0?" on":"")+'" data-bm="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+'</div>'+
         '<div class="seg bd-range">'+ranges.map(function(r){return '<button data-br="'+r[0]+'"'+(bodyRange===r[0]?' class="on"':'')+'>'+r[1]+'</button>';}).join("")+'</div>'+
-        '<div class="bd-chart">'+bodyChart(bodyMetric)+'</div></div>'+
+        '<div class="bd-chart" id="bd-chart">'+bodyChart(shown)+'</div></div>'+
       '<div class="panel"><h3>各项变化（'+esc(ranges.filter(function(r){return r[0]===bodyRange;}).map(function(r){return r[1];})[0]||"全部")+'）</h3><div class="bd-deltas">'+(deltas||'<div class="stat-empty">还没有记录</div>')+'</div></div>'+
       '<div class="panel"><h3>全部记录 <button class="bd-mini" id="bd-csv">下载 CSV</button></h3>'+
         (rows?('<div style="overflow-x:auto"><table class="rep-table bd-table"><thead><tr><th>日期</th>'+heads+'<th>备注</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'):'<div class="stat-empty">还没有记录，上面记第一笔吧</div>')+
       '</div>';
     // ---- 事件 ----
-    wrap.querySelectorAll("[data-bm]").forEach(function(b){b.addEventListener("click",function(){bodyMetric=this.getAttribute("data-bm");renderBody();});});
-    wrap.querySelectorAll("[data-br]").forEach(function(b){b.addEventListener("click",function(){bodyRange=this.getAttribute("data-br");renderBody();});});
+    bindBodyMetricToggles(wrap);
+    wrap.querySelectorAll("[data-br]").forEach(function(b){b.addEventListener("click",function(){
+      bodyRange=this.getAttribute("data-br");
+      wrap.querySelectorAll("[data-br]").forEach(function(x){x.classList.toggle("on",x===b);});
+      var ch=document.getElementById("bd-chart");if(ch)ch.innerHTML=bodyChart(bodyShown());
+      renderBodyDeltas();});});
+    wrap.querySelector("#bd-units").addEventListener("click",function(){bodyUnitPanel(this);});
     wrap.querySelector("#bd-pick-btn").addEventListener("click",function(){bodyPick=!bodyPick;renderBody();});
     wrap.querySelector("#bd-ai-go").addEventListener("click",bodyAIParse);
     wrap.querySelector("#bd-ai").addEventListener("keydown",function(e){if(e.key==="Enter")bodyAIParse();});
@@ -9442,14 +9505,15 @@ margin-left: -22px;
       bodyCfg.custom.push({k:kk,n:nm.trim(),u:(un||"").trim()||"cm",c:PALETTE[(bodyCfg.custom.length*5+3)%PALETTE.length],good:"down"});
       bodyCfg.on.push(kk);saveBodyCfg();renderBody();});
     wrap.querySelector("#bd-target").addEventListener("click",async function(){
-      var v=await ttPrompt("目标体重（kg，留空取消）：",(tg!==null&&tg!==undefined)?String(tg):"",{anchor:this});
+      var v=await ttPrompt("目标体重（"+wInU().n+"，留空取消）：",(tg!==null&&tg!==undefined)?String(toIn(WM,tg)):"",{anchor:this});
       if(v===null)return;
-      if(!v.trim())delete bodyCfg.target;else bodyCfg.target=bodyNum(v.trim());
+      if(!v.trim())delete bodyCfg.target;
+      else{var tv=bodyNum(v.trim());bodyCfg.target=(tv===null)?undefined:Math.round(fromIn(WM,tv)*100)/100;}
       saveBodyCfg();renderBody();});
     wrap.querySelector("#bd-save").addEventListener("click",function(){
       var date=wrap.querySelector("#bd-date").value||today,v={},any=false;
       wrap.querySelectorAll("[data-bk]").forEach(function(inp){var n=bodyNum(inp.value);
-        if(n!==null){v[inp.getAttribute("data-bk")]=n;any=true;}});
+        if(n!==null){var kk=inp.getAttribute("data-bk");v[kk]=Math.round(fromIn(bodyDef(kk),n)*100)/100;any=true;}});  // 一律换算成 kg 再存
       var note=(wrap.querySelector("#bd-note").value||"").trim();
       if(!any&&!note){wrap.querySelector("#bd-tip").textContent="至少填一项";return;}
       var old=bodyRecs.filter(function(r){return r.date===date;})[0];
@@ -9469,9 +9533,9 @@ margin-left: -22px;
     if(dateI)dateI.addEventListener("change",function(){renderBodyForm(this.value);});
     wrap.querySelector("#bd-csv").addEventListener("click",function(){
       var ks=bodyAll();
-      var lines=[["日期"].concat(ks.map(function(m){return m.n+"("+m.u+")";})).concat(["备注"]).join(",")];
+      var lines=[["日期"].concat(ks.map(function(m){return m.n+"("+mUnitOut(m)+")";})).concat(["备注"]).join(",")];
       bodySorted().forEach(function(r){
-        lines.push([r.date].concat(ks.map(function(m){var v=bodyNum(r.v&&r.v[m.k]);return v===null?"":v;})).concat([csvCell(r.note||"")]).join(","));});
+        lines.push([r.date].concat(ks.map(function(m){var v=bodyNum(r.v&&r.v[m.k]);return v===null?"":toOut(m,v);})).concat([csvCell(r.note||"")]).join(","));});
       downloadFile("身体数据_"+fmt(new Date())+".csv","﻿"+lines.join("\r\n"),"text/csv;charset=utf-8");});
   }
   // 通用「只要一个 JSON」的 AI 调用，两个供应商都走这里（AI 助手那边有自己的一套，不动它）
@@ -9501,8 +9565,14 @@ margin-left: -22px;
     bodyAll().forEach(function(m){
       var names=(BODY_ALIAS[m.k]||[]).concat([m.n]).sort(function(a,b){return b.length-a.length;});
       for(var i=0;i<names.length;i++){
-        var mm=s.match(new RegExp(rxEsc(names[i])+"\\s*(?:是|为|大概|约|:|：|=)?\\s*(\\d+(?:\\.\\d+)?)","i"));
-        if(mm){out[m.k]=+mm[1];break;}}});
+        var mm=s.match(new RegExp(rxEsc(names[i])+"\\s*(?:是|为|大概|约|:|：|=)?\\s*(\\d+(?:\\.\\d+)?)\\s*(kg|公斤|千克|斤|磅|lb|lbs)?","i"));
+        if(mm){var n=+mm[1],u=(mm[2]||"").toLowerCase();
+          if(isKgM(m)){                                  // 句子里写了单位就按它换算，没写就按你的输入单位
+            if(/^(kg|公斤|千克)$/.test(u))n=n;
+            else if(u==="斤")n=n/2;
+            else if(/^(磅|lb|lbs)$/.test(u))n=n/2.20462;
+            else n=fromIn(m,n);}
+          out[m.k]=Math.round(n*100)/100;break;}}});
     return out;}
   function bodyFill(vals,date){                  // 把解析出来的数值填进表单（不直接存，你确认后再点保存）
     var wrap=document.getElementById("body-wrap");if(!wrap)return 0;
@@ -9515,7 +9585,8 @@ margin-left: -22px;
     if(date){var di=wrap.querySelector("#bd-date");if(di)di.value=date;}
     Object.keys(vals||{}).forEach(function(k){
       var v=bodyNum(vals[k]);if(v===null)return;
-      var inp=wrap.querySelector('[data-bk="'+k+'"]');if(inp){inp.value=v;n++;}});
+      var inp=wrap.querySelector('[data-bk="'+k+'"]');
+      if(inp){inp.value=toIn(bodyDef(k),v);n++;}});   // 传进来的是 kg，填进框里要换成你的输入单位
     return n;}
   function bodyTip(t){var el=document.getElementById("bd-ai-tip");if(el)el.textContent=t;}
   async function bodyAIParse(){
@@ -9550,8 +9621,8 @@ margin-left: -22px;
     var wrap=document.getElementById("body-wrap");if(!wrap)return;
     var r=bodyRecs.filter(function(x){return x.date===date;})[0];
     wrap.querySelectorAll("[data-bk]").forEach(function(inp){
-      var v=r?bodyNum(r.v&&r.v[inp.getAttribute("data-bk")]):null;
-      inp.value=(v===null||v===undefined)?"":v;});
+      var k=inp.getAttribute("data-bk"),v=r?bodyNum(r.v&&r.v[k]):null;
+      inp.value=(v===null||v===undefined)?"":toIn(bodyDef(k),v);});
     var nt=wrap.querySelector("#bd-note");if(nt)nt.value=(r&&r.note)||"";}
 
   // ---------- init ----------
