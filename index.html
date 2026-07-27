@@ -4270,7 +4270,8 @@ margin-left: -22px;
       out.push({t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec});});
     return out;}
   function allSegs(){var out=pSegs.slice(),sec=curSegSec();
-    if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});
+    if(sec>=30||(!out.length&&sec>0))out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});
+    else if(sec>0&&out.length)out[out.length-1]={t:out[out.length-1].t,cat:out[out.length-1].cat,sub:out[out.length-1].sub,sec:out[out.length-1].sec+sec}; // 不够 30 秒的零头并进上一段，时间不丢也不冒出个 0 分的段
     return mergeSegs(out);}
   function clearSegs(){pSegs=[];pSegStart=0;segSig="";renderSegs();}
   function renderSegs(){
