@@ -4755,6 +4755,21 @@ margin-left: -22px;
     return statPool().filter(function(e){if(e.date<sf||e.date>ef)return false;
       return evHasCat(e,statState.cat,statState.sub);});}   // 分段事件：任一段命中就算，时长只算命中那部分
   function statMin(e){return evMinFor(e,statState.cat,statState.sub);}
+  // 被重复计算了多少分钟 = 各事件时长相加 − 实际占用（按天把区间并起来）。
+  // 自动算，不依赖你记得勾 🐟 —— 勾不勾只决定哪条是摸鱼的那条。
+  function overlapMin(list){
+    var byDay={};
+    list.forEach(function(e){var m=evMinutes(e);if(!m)return;
+      (byDay[e.date]=byDay[e.date]||[]).push([toMin(e.start),toMin(e.start)+m]);});
+    var sum=0,uni=0;
+    Object.keys(byDay).forEach(function(d){
+      var iv=byDay[d].sort(function(x,y){return x[0]-y[0];});
+      var cs=null,ce=null;
+      iv.forEach(function(p){sum+=p[1]-p[0];
+        if(cs===null){cs=p[0];ce=p[1];return;}
+        if(p[0]<=ce){ce=Math.max(ce,p[1]);}else{uni+=ce-cs;cs=p[0];ce=p[1];}});
+      if(cs!==null)uni+=ce-cs;});
+    return Math.max(0,sum-uni);}
   function statBuckets(p){var arr=[],i,d;
     if(p.unit==="week"){for(i=0;i<7;i++){d=addDays(p.start,i);arr.push({label:WD[i],s:fmt(d)});}return arr;}
     if(p.unit==="month"){var n=p.end.getDate();for(i=1;i<=n;i++){d=new Date(p.start.getFullYear(),p.start.getMonth(),i);arr.push({label:""+i,s:fmt(d)});}return arr;}
@@ -4808,7 +4823,8 @@ margin-left: -22px;
     var wrap=document.getElementById("stats-wrap");
     var p=statPeriod(),evs=statEvents(p);
     var totalMin=evs.reduce(function(a,e){return a+statMin(e);},0),totH=Math.round(totalMin/6)/10;
-    var parMin=evs.reduce(function(a,e){return a+(e.par?statMin(e):0);},0);   // 摸鱼那部分（和别的事重叠、被重复计算了的）
+    var parMin=evs.reduce(function(a,e){return a+(e.par?statMin(e):0);},0);   // 你明确标了 🐟 的
+    var ovMin=overlapMin(evs);                                                // 实际被重复计算的（自动算，不用打勾）
     var days=Math.max(1,Math.round((p.end-p.start)/86400000)+1),avgH=Math.round(totalMin/days/6)/10;
     var groupByCat=(statState.cat==="__all");
     var gmap={};evs.forEach(function(e){evMix(e).forEach(function(x){        // 分段事件按各段实测时长分账
@@ -4850,7 +4866,7 @@ margin-left: -22px;
         catRow+subRow+
       '</div>'+
       '<div class="stat-cards">'+
-        '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(parMin?'<div class="sc-sub">🐟 含摸鱼 '+fmtDur(parMin)+'</div>':'')+'</div>'+
+        '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(ovMin?('<div class="sc-sub" title="这些分钟被算了不止一遍，因为同一时间安排了多件事">⧉ 含重叠 '+fmtDur(ovMin)+(parMin?'（🐟 摸鱼 '+fmtDur(parMin)+'）':'')+'</div>'):'')+'</div>'+
         '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
         '<div class="sc"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
