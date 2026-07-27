@@ -4421,7 +4421,8 @@ margin-left: -22px;
   // 段的边界用「已走秒数」而不是钟表时间记，所以暂停、关网页、电脑睡眠都不会算错。
   var pSegs=[],pSegStart=0,segSig="";
   var segsBox=document.getElementById("pomo-segs"),switchBtn=document.getElementById("pomo-switch");
-  function curSegLabel(){return (pomoTask.value||"").trim()||"专注";}
+  function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||"专注");}
+  function curSegLabel(){return (pomoTask.value||"").trim()||catLabelOf(pomoCat.value,pomoSub.value||null);}
   function curSegSec(){return Math.max(0,pElapsed-pSegStart);}
   function mergeSegs(list){var out=[];                       // 连着的同任务同分类合成一段
     list.forEach(function(s){var p=out[out.length-1];
@@ -4457,10 +4458,13 @@ margin-left: -22px;
   function logFocusToCalendar(focusSec,endMs){
     var typed=(pomoTask.value||"").trim();
     var segs=(timerMode==="up")?allSegs():null;if(segs&&segs.length<2)segs=null;
-    if(segs)segs.forEach(function(s){if(s.t&&s.t!=="专注")rememberCat(s.t,s.cat,s.sub);});
+    // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
+    if(segs)segs.forEach(function(s){if(s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
     else if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
     if(!pomoToCal.checked)return;
-    var task=typed||"专注",pc=pomoCat.value,ps=pomoSub.value||null;
+    var pc=pomoCat.value,ps=pomoSub.value||null;
+    var task=typed||catLabelOf(pc,ps);   // 没填就用「大类 · 小类」
+
     if(segs){
       var names=[];segs.forEach(function(s){if(names.indexOf(s.t)<0)names.push(s.t);});
       task=names.slice(0,2).join(" · ")+(names.length>2?" 等":"");
