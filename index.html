@@ -4165,8 +4165,8 @@ margin-left: -22px;
     box.innerHTML=st.map(function(s){
       return '<div class="evs"><i style="background:'+catColor(s.cat)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
         '<span class="nm">'+esc(s.t||"（未命名）")+'</span><span class="cg">'+esc(catName(s.cat))+(s.sub?" › "+esc(subName(s.cat,s.sub)):"")+'</span>'+
-        '<span class="mn">'+s.min+'分</span></div>';}).join("")+
-      '<div class="evs-note">统计里这条按各段实测时长分账，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分。手动改上面的分类会取消分段。</div>';}
+        '<span class="mn">'+secLabel(s.sec)+'</span></div>';}).join("")+
+      '<div class="evs-note">统计里这条按各段实测时长分账，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
   function closeModal(){overlay.classList.remove("on");}
   document.getElementById("ev-cancel").addEventListener("click",closeModal);
   overlay.addEventListener("click",function(e){if(e.target===overlay)closeModal();});
@@ -4270,30 +4270,30 @@ margin-left: -22px;
       out.push({t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec});});
     return out;}
   function allSegs(){var out=pSegs.slice(),sec=curSegSec();
-    if(sec>=30||(!out.length&&sec>0))out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});
-    else if(sec>0&&out.length)out[out.length-1]={t:out[out.length-1].t,cat:out[out.length-1].cat,sub:out[out.length-1].sub,sec:out[out.length-1].sec+sec}; // 不够 30 秒的零头并进上一段，时间不丢也不冒出个 0 分的段
+    if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});  // 几秒也照记
     return mergeSegs(out);}
+  function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+"秒"):(Math.round(sec/60)+"分");}
   function clearSegs(){pSegs=[];pSegStart=0;segSig="";renderSegs();}
   function renderSegs(){
     if(!segsBox)return;
     var list=(timerMode==="up")?allSegs():[],multi=list.length>1;
-    var sig=multi?list.map(function(s){return s.t+"|"+s.cat+"|"+Math.round(s.sec/60);}).join(","):"";
+    var sig=multi?list.map(function(s){return s.t+"|"+s.cat+"|"+secLabel(s.sec);}).join(","):"";
     if(sig===segSig)return; segSig=sig;                      // 分钟数没变就不重绘，免得每半秒闪一下
     segsBox.classList.toggle("on",multi);
     if(!multi){segsBox.innerHTML="";return;}
     segsBox.innerHTML='<div class="pomo-segbar">'+
       list.map(function(s){return '<span style="flex:'+s.sec+';background:'+catColor(s.cat)+'"></span>';}).join("")+
       '</div><div class="pomo-seglist">'+
-      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+'"><i style="background:'+catColor(s.cat)+'"></i>'+esc(s.t)+' <b>'+Math.round(s.sec/60)+'分</b></span>';}).join("")+
+      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+'"><i style="background:'+catColor(s.cat)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
       '</div>';}
   function switchTask(){
     if(!pTimer||timerMode!=="up")return;
     var sec=curSegSec(),kept=false;
-    if(sec>=30){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});pSegStart=pElapsed;kept=true;}
+    if(sec>0){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});pSegStart=pElapsed;kept=true;}
     pomoManual=false;pomoTask.value="";markPomoAuto(false);   // 让新任务名重新走自动识别
     try{pomoTask.focus();}catch(e){}
     savePomoRun();renderSegs();drawPomo();
-    pomoNote(kept?("记下「"+pSegs[pSegs.length-1].t+" "+Math.round(sec/60)+"分」，接着做别的"):"刚切过不到 30 秒 · 这段直接改成新任务");}
+    pomoNote(kept?("记下「"+pSegs[pSegs.length-1].t+" "+secLabel(sec)+"」，接着做别的"):"还没走时间，直接打新任务名就行");}
   if(switchBtn)switchBtn.addEventListener("click",switchTask);
   function logFocusToCalendar(focusSec,endMs){
     var typed=(pomoTask.value||"").trim();
@@ -4541,7 +4541,8 @@ margin-left: -22px;
   function buildCSV(rows){var lines=[["日期","星期","标题","大类","小类","开始","结束","时长(分钟)"].join(",")];
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7],st=segTimes(e);
       if(st){st.forEach(function(s){         // 分段事件：一段一行，钟点按段顺序推算，方便进 Excel 透视
-        lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,s.min].join(","));});return;}
+        var mn=s.min||Math.round(s.sec/60*100)/100;   // 不满 1 分钟的段写成小数，别在表里变成 0
+        lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn].join(","));});return;}
       lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evMinutes(e)].join(","));});
     return "﻿"+lines.join("\r\n");}
   function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evMinutes(e)+"分)\n";});return s;}
@@ -4554,7 +4555,7 @@ margin-left: -22px;
       if(keys.length>1||keys[0]!=="__none"){h+='<div class="rep-break">';keys.forEach(function(k){var nm=k==="__none"?"（未细分）":subName(ck,k),m=bySub[k];h+='<div class="rb"><span>'+esc(nm)+'</span><span>'+fmtDur(m)+' · '+Math.round(m/total*100)+'%</span></div>';});h+='</div>';}}
     h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>';
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];var cn=evCatLabel(e).replace(" · "," › ");
-      var st=segTimes(e),det=st?'<div class="rep-segs">'+st.map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+s.min+'分</em>';}).join(" · ")+'</div>':'';
+      var st=segTimes(e),det=st?'<div class="rep-segs">'+st.map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+secLabel(s.sec)+'</em>';}).join(" · ")+'</div>':'';
       h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evMinutes(e)+'分</td></tr>';});
     return h+'</tbody></table></div>';}
   function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){ttAlert("此环境不支持直接下载，请改用「复制文本」");}}
