@@ -3094,7 +3094,7 @@ margin-left: -22px;
 <div class="overlay" id="overlay">
   <div class="modal">
     <h3 id="modal-title">新建事件</h3>
-    <div class="field"><label>标题</label><input type="text" id="ev-title" placeholder="例如：团队会议 / 专注写方案"></div>
+    <div class="field"><label>标题</label><input type="text" id="ev-title" placeholder="不填就用「大类 · 小类」"></div>
     <div class="field"><label>日期</label><input type="date" id="ev-date"></div>
     <div class="field"><div class="row">
       <div><label>开始</label><input type="time" id="ev-start" value="09:00"></div>
@@ -4246,7 +4246,10 @@ margin-left: -22px;
     subsBox.innerHTML=subs.map(function(s){return '<div class="cat-chip sub-chip" data-sub="'+s.key+'" style="--c:'+pc+'"><i></i>'+esc(s.name)+'</div>';}).join("")+
       '<div class="cat-chip sub-chip add-chip" data-add="sub" style="border-style:dashed">+ 新建小类</div>';
     subsBox.querySelectorAll(".cat-chip").forEach(function(ch){ch.classList.toggle("on",ch.getAttribute("data-sub")===selSub);});
+    evTitlePH();
   }
+  function evTitlePH(){                              // 占位符现算：让你一眼看到"不填的话它会叫什么"
+    if(fTitle)fTitle.placeholder="不填就叫「"+catLabelOf(selCat,selSub)+"」";}
   function setParent(k,manual){selCat=k;selSub=null;if(manual)catManual=true;renderParents();renderSubs();}
   var addPanel=document.getElementById("cat-add"),addTitle=document.getElementById("cat-add-title"),
     catNameI=document.getElementById("cat-name"),colorsWrap=document.getElementById("cat-colors-wrap"),
@@ -4340,11 +4343,11 @@ margin-left: -22px;
   overlay.addEventListener("click",function(e){if(e.target===overlay)closeModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(!addPanel.hasAttribute("hidden"))closeAddPanel();else if(overlay.classList.contains("on"))closeModal();}});
   document.getElementById("ev-save").addEventListener("click",function(){
-    var title=fTitle.value.trim();if(!title){fTitle.focus();return;}
+    var title=fTitle.value.trim()||catLabelOf(selCat,selSub);   // 没填就用「大类 · 小类」，别卡着不让存
     var want=gToken&&document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     var isPar=!!document.getElementById("ev-par").checked;
-    if(catManual)rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类
+    if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       events.push(obj);save("tt_events",events);
