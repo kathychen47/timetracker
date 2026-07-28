@@ -799,7 +799,19 @@
   .rd-pop-w{font-weight:700;font-size:15px;margin-right:auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd-pop-hd .btn{padding:3px 9px;font-size:12px}
   .rd-pop-hd .btn.on{background:var(--primary-soft);color:var(--primary);border-color:transparent}
-  .rd-pop-bd{padding:10px 12px 14px}
+  .nb-hl{background:#ffe07a;color:#3a2c00;border-radius:3px;padding:0 1px;font-weight:600}
+  :root[data-theme="dark"] .nb-hl{background:#8a6d1f;color:#fff}
+  .nb-saved{font-size:11.5px;color:var(--muted);white-space:nowrap;margin-right:2px}
+  .nb-saved.dirty{color:#d98324;font-weight:600}
+  .rd-pop-bd{padding:10px 12px 14px;zoom:var(--popz,1)}
+  .rd-pop-cfg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 11px;
+    border-bottom:1px solid var(--border);background:var(--surface-2);font-size:12px;color:var(--muted)}
+  .rd-pop-cfg b{font-weight:600;color:var(--text)}
+  .rd-pop-cfg button{border:1px solid var(--border);background:var(--surface);color:var(--text);
+    border-radius:7px;padding:3px 9px;font-size:12px;cursor:pointer;line-height:1.5}
+  .rd-pop-cfg button:hover{border-color:var(--primary);color:var(--primary)}
+  .rd-pop-cfg .v{min-width:40px;text-align:center;font-variant-numeric:tabular-nums;color:var(--text)}
+  .rd-pop-cfg .sep{width:1px;height:15px;background:var(--border);margin:0 3px}
   @media (hover:none){
     #rd-pop{width:fit-content;max-width:min(94vw,520px);max-height:58vh;-webkit-overflow-scrolling:touch}
     .rd-pop-hd .btn{padding:7px 13px;font-size:14px}
@@ -1130,6 +1142,13 @@
   .nb-doc-view ul,.nb-doc-view ol{padding-left:1.4em}
   .nb-doc-view code{background:var(--surface-2);padding:1px 5px;border-radius:5px;font-size:.9em}
   .nb-doc-view pre{background:var(--surface-2);padding:10px 12px;border-radius:9px;overflow-x:auto}
+  .nb-doc-panes{display:flex;gap:12px;flex:1;min-height:0}
+  .nb-doc-panes>*{flex:1;min-width:0}
+  .nb-doc-panes.one-src>.nb-doc-view{display:none}
+  .nb-doc-panes.one-pv>.nb-doc-body{display:none}
+  .nb-doc-panes.both>.nb-doc-view{background:var(--surface-2)}
+  @media (max-width:900px){.nb-doc-panes{flex-direction:column}
+    .nb-doc-panes.both>.nb-doc-body,.nb-doc-panes.both>.nb-doc-view{min-height:200px}}
   .nb-doc-foot{font-size:11.5px;color:var(--muted);min-height:16px}
   /* 时间分布：环形图 + 引出线 */
   .dn-wrap{display:flex;justify-content:center}
@@ -3012,10 +3031,21 @@ margin-left: -22px;
   <div id="rd-pop" style="display:none">
     <div class="rd-pop-hd">
       <span class="rd-pop-w" id="rd-pop-w"></span>
+      <button class="btn" id="rd-pop-cfg" title="字号 / 窗口大小">Aa</button>
       <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
       <button class="btn" id="rd-pop-note" title="写笔记">📝</button>
       <button class="btn" id="rd-pop-star" title="加入生词本"><svg class="star-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg></button>
       <button class="btn" id="rd-pop-x" title="关闭">✕</button>
+    </div>
+    <div class="rd-pop-cfg" id="rd-pop-cfgp" hidden>
+      <b>字号</b><button type="button" data-fs="-1" title="小一点">A−</button>
+      <span class="v" id="rd-fs-v">100%</span>
+      <button type="button" data-fs="1" title="大一点">A＋</button>
+      <span class="sep"></span>
+      <b>窗口</b><button type="button" data-pz="w-">窄</button><button type="button" data-pz="w+">宽</button>
+      <button type="button" data-pz="h-">矮</button><button type="button" data-pz="h+">高</button>
+      <span class="sep"></span>
+      <button type="button" data-pz="auto" title="大小重新跟着内容走">自适应</button>
     </div>
     <div class="rd-pop-bd" id="rd-pop-bd"></div>
   </div>
@@ -5140,7 +5170,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -7376,13 +7406,27 @@ margin-left: -22px;
       if(n)html+=chip("t:"+t,({ul:"<u>U</u>",bd:"<b>B</b>",nt:"📝"}[t])+" "+n);});
     Object.keys(tags).sort().forEach(function(g){html+=chip("g:"+g,"#"+esc(g)+" "+tags[g]);});
     box.innerHTML=html;}
+  function nbHlRe(){                                  // 把搜索词做成正则（转义后的形态，和正文一致）
+    var q=String(nbQ||"").trim();if(!q)return null;
+    try{return new RegExp(esc(q).replace(/[.*+?^{}()|[\]\\$]/g,"\\  function nbItemHTML(r){"),"gi");}catch(e){return null;}}
+  function hlEsc(s){                                  // 先转义再上色，绝不把笔记内容当 HTML 执行
+    var e=esc(String(s==null?"":s)),re=nbHlRe();
+    if(!re)return e;
+    return e.replace(re,function(m){return '<mark class="nb-hl">'+m+'</mark>';});}
+  function nbPreview(txt,len){                        // 命中位置要落在预览里，别被省略号切在外面
+    txt=String(txt||"");
+    var q=String(nbQ||"").trim();
+    var i=q?txt.toLowerCase().indexOf(q.toLowerCase()):-1;
+    if(i<0||i<len-20)return txt.slice(0,len)+(txt.length>len?"…":"");
+    var s=Math.max(0,i-24);
+    return "…"+txt.slice(s,s+len)+((s+len<txt.length)?"…":"");}
   function nbItemHTML(r){
     if(r.t==="doc"){                              // 自己写的文档：标题 + 正文摘要 + 分类
-      var pv=String(r.note||"").replace(/[#*`>\-]/g," ").replace(/\s+/g," ").trim().slice(0,90);
+      var pv=String(r.note||"").replace(/[#*`>\-]/g," ").replace(/\s+/g," ").trim();pv=nbPreview(pv,90);
       var cn=r.cat?(catName(r.cat)+(r.sub?" · "+subName(r.cat,r.sub):"")):"";
       return '<div class="rn-item nb-item nb-docitem" data-nbdoc="'+esc(r.id)+'" style="--ac:'+(r.cat?catColor(r.cat):"var(--primary)")+'">'+
-        '<div class="nb-dt">'+esc(r.title||"（无标题）")+'</div>'+
-        (pv?'<div class="nb-dp">'+esc(pv)+'</div>':"")+
+        '<div class="nb-dt">'+hlEsc(r.title||"（无标题）")+'</div>'+
+        (pv?'<div class="nb-dp">'+hlEsc(pv)+'</div>':"")+
         '<div class="mt"><span class="tag">✏️ 我写的</span>'+
         (cn?'<span>'+esc(cn)+'</span>':"")+
         (r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+'</span>';}).join("")+
@@ -7391,10 +7435,10 @@ margin-left: -22px;
     var TN={hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"};
     var gone=!!r.bid&&!nbBooks[r.bid];
     return '<div class="rn-item nb-item t-'+r.t+(gone?" gone":"")+'" data-nb="'+esc(r.id)+'" style="--ac:'+(r.c||"var(--primary)")+'">'+
-      (r.x?'<div class="q">'+esc(r.x)+'</div>':"")+
-      (r.note?'<div class="nt">'+esc(r.note)+'</div>':"")+
+      (r.x?'<div class="q">'+hlEsc(r.x)+'</div>':"")+
+      (r.note?'<div class="nt">'+hlEsc(r.note)+'</div>':"")+
       '<div class="mt"><span class="tag">'+(TN[r.t]||"笔记")+'</span>'+
-      (r.bid?('<span>'+esc(r.bname||"未命名")+(r.pg?(" · 第 "+r.pg+(String(r.sc).charAt(0)==="c"?" 节":" 页")):"")+'</span>')
+      (r.bid?('<span>'+hlEsc(r.bname||"未命名")+(r.pg?(" · 第 "+r.pg+(String(r.sc).charAt(0)==="c"?" 节":" 页")):"")+'</span>')
             :'<span>📝 随手记</span>')+
       (gone?'<span class="tag gone">不在这台设备</span>':"")+
       (r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+'</span>';}).join("")+
@@ -7404,9 +7448,10 @@ margin-left: -22px;
       '<button data-nbdel="'+esc(r.id)+'" title="删除">✕</button></div></div>';}
   function renderNotebook(){
     var body=document.getElementById("nb-body");if(!body)return;
+    nbFlush=null;                               // 上一屏的输入框要作废，别再往它身上存
     if(nbDoc){                                  // 正在看/写某篇文档 → 整块换成编辑器
       var dr=noteById(nbDoc);
-      if(!dr){nbDoc=null;}
+      if(!dr){nbDoc=null;nbDocRemember();}       // 那篇被删了/同步没跟过来
       else{document.getElementById("nb-filters").innerHTML="";
         body.innerHTML=nbDocEditor(dr);bindNbDoc(dr);return;}}
     nbFilters();
@@ -7449,13 +7494,14 @@ margin-left: -22px;
     refreshNbBooks().then(function(){renderNotebook();},function(){});}
   function closeNotebook(){gotoTab("reader");}
   // ---- 文档型笔记（t:"doc"）：标题 + Markdown 正文 + 分类，和读书划线共用同一个 notes 存储 ----
-  var nbDoc=null;                                   // 当前正在编辑/阅读的文档 id
+  var nbDoc=load("tt_nbdoc","")||null;               // 当前正在编辑/阅读的文档 id（刷新后还回到这一篇）
+  function nbDocRemember(){save("tt_nbdoc",nbDoc||"");}
   function nbDocNew(){
     var r={id:"d"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"doc",c:"",x:"",
       title:"",note:"",cat:"",sub:"",tags:[],ts:Date.now(),upd:Date.now()};
-    notes.push(r);saveNotes();nbDoc=r.id;renderNotebook();}
-  function nbDocOpen(id){nbDoc=id;renderNotebook();}
-  function nbDocClose(){nbDoc=null;renderNotebook();}
+    notes.push(r);saveNotes();nbDoc=r.id;nbDocRemember();renderNotebook();}
+  function nbDocOpen(id){nbDoc=id;nbDocRemember();renderNotebook();}
+  function nbDocClose(){nbSaveNow();nbDoc=null;nbDocRemember();renderNotebook();}
   function nbDocEditor(r){
     var cs=cats.map(function(c){return '<option value="'+c.key+'"'+(r.cat===c.key?" selected":"")+'>'+esc(c.name)+"</option>";}).join("");
     var subs=r.cat?subsOf(r.cat):[];
@@ -7468,29 +7514,54 @@ margin-left: -22px;
         '<select id="nbd-cat"><option value="">（不分类）</option>'+cs+"</select>"+
         '<select id="nbd-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+ss+"</select>"+
         '<span class="grow"></span>'+
-        '<div class="seg" id="nbd-mode" title="两个模式选中文字都能查词"><button data-dm="edit" class="on">✎ 写</button><button data-dm="read">👁 读</button></div>'+
+        '<span class="nb-saved" id="nbd-saved"></span>'+
+        '<button class="btn" id="nbd-save" title="保存（Ctrl+S）；停手半秒也会自动存">💾 保存</button>'+
+        '<div class="seg" id="nbd-mode" title="哪种模式下选中文字都能查词"><button data-dm="edit">✎ 源码</button><button data-dm="split">⇄ 边写边看</button><button data-dm="read">👁 预览</button></div>'+
         '<button class="btn" id="nbd-tag" title="标签">🏷</button>'+
         '<button class="btn" id="nbd-del" title="删除这篇">✕</button>'+
       "</div>"+
       '<div class="nb-doc-tags">'+(r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+"</span>";}).join("")+"</div>"+
+      '<div class="nb-doc-panes" id="nbd-panes">'+
       '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`　　选中任意文字即可查词/翻译">'+esc(r.note||"")+"</textarea>"+
-      '<div id="nbd-view" class="nb-doc-view rd-content" style="display:none"></div>'+
-      '<div class="nb-doc-foot"><span id="nbd-saved"></span></div>'+
+      '<div id="nbd-view" class="nb-doc-view rd-content"></div>'+
+      "</div>"+
     "</div>";}
   function nbDocSave(r,fields){
     Object.keys(fields).forEach(function(k){r[k]=fields[k];});
     r.upd=Date.now();saveNotes();
     var el=document.getElementById("nbd-saved");
-    if(el){el.textContent="已保存 "+new Date().toTimeString().slice(0,5);
-      clearTimeout(el.__t);el.__t=setTimeout(function(){el.textContent="";},2500);}}
+    if(el){el.classList.remove("dirty");
+      el.textContent="✓ 已保存 "+new Date().toTimeString().slice(0,5);
+      clearTimeout(el.__t);el.__t=setTimeout(function(){el.textContent="";},4000);}}
+  var nbFlush=null;                                  // 有没存的改动时，指向"立刻存下来"
+  function nbSaveNow(){if(nbFlush)try{nbFlush();}catch(e){}}
+  window.addEventListener("beforeunload",nbSaveNow);           // 关标签页/刷新前兜底
+  document.addEventListener("visibilitychange",function(){if(document.hidden)nbSaveNow();});
   function bindNbDoc(r){
     var ti=document.getElementById("nbd-title"),bd=document.getElementById("nbd-body"),
         vw=document.getElementById("nbd-view"),ca=document.getElementById("nbd-cat"),su=document.getElementById("nbd-sub");
-    var t1=null;
-    function later(fn){clearTimeout(t1);t1=setTimeout(fn,500);}   // 打字停半秒才存，别每个字符都写一次
-    ti.addEventListener("input",function(){later(function(){nbDocSave(r,{title:ti.value});});});
-    bd.addEventListener("input",function(){later(function(){nbDocSave(r,{note:bd.value});});});
-    ca.addEventListener("change",function(){nbDocSave(r,{cat:ca.value,sub:""});renderNotebook();});
+    var t1=null,t2=null,dirty=false,nbMode=load("tt_nbmode","split")||"split";
+    function flush(){                                            // 立刻落盘（没改过就什么都不做）
+      clearTimeout(t1);t1=null;
+      if(!dirty)return;dirty=false;
+      nbDocSave(r,{title:ti.value,note:bd.value});}
+    function later(){                                            // 打字停 400ms 自动存，中途先标"未保存"
+      dirty=true;
+      var el=document.getElementById("nbd-saved");
+      if(el){el.classList.add("dirty");el.textContent="未保存…";clearTimeout(el.__t);}
+      if(nbMode!=="edit"){clearTimeout(t2);t2=setTimeout(drawPv,180);}   // 边写边看：预览跟着走
+      clearTimeout(t1);t1=setTimeout(flush,400);}
+    nbFlush=flush;
+    function keyS(e){if((e.ctrlKey||e.metaKey)&&(e.key==="s"||e.key==="S")){e.preventDefault();flush();}}
+    ti.addEventListener("input",later);
+    bd.addEventListener("input",later);
+    ti.addEventListener("blur",flush);                           // 点走就存，不用等那 400ms
+    bd.addEventListener("blur",flush);
+    ti.addEventListener("keydown",keyS);
+    bd.addEventListener("keydown",keyS);
+    document.getElementById("nbd-save").addEventListener("click",function(){
+      dirty=true;flush();});
+    ca.addEventListener("change",function(){flush();nbDocSave(r,{cat:ca.value,sub:""});renderNotebook();});
     su.addEventListener("change",function(){nbDocSave(r,{sub:su.value});});
     document.getElementById("nbd-back").addEventListener("click",function(){
       nbDocSave(r,{title:ti.value,note:bd.value});nbDocClose();});
@@ -7500,14 +7571,19 @@ margin-left: -22px;
     document.getElementById("nbd-tag").addEventListener("click",async function(){
       var v=await ttPrompt("标签（空格或逗号分开）：",(r.tags||[]).join(" "),{anchor:this});
       if(v===null)return;nbDocSave(r,{tags:kwSplit(v)});renderNotebook();});
+    var pn=document.getElementById("nbd-panes");
+    function drawPv(){vw.innerHTML='<div class="md">'+mdToHtml(bd.value||"*（还没写内容）*")+"</div>";}
+    function setMode(m,remember){
+      if(m!=="edit"&&m!=="split"&&m!=="read")m="split";
+      nbMode=m;if(remember!==false)save("tt_nbmode",m);
+      pn.className="nb-doc-panes "+(m==="edit"?"one-src":(m==="read"?"one-pv":"both"));
+      document.getElementById("nbd-mode").querySelectorAll("button").forEach(function(x){
+        x.classList.toggle("on",x.getAttribute("data-dm")===m);});
+      if(m==="edit")hideRdPop();else drawPv();}
     document.getElementById("nbd-mode").addEventListener("click",function(e){
       var b=e.target.closest("button");if(!b)return;
-      var m=b.getAttribute("data-dm");
-      this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
-      if(m==="read"){nbDocSave(r,{title:ti.value,note:bd.value});
-        vw.innerHTML='<div class="md">'+mdToHtml(bd.value||"*（还没写内容）*")+"</div>";
-        bd.style.display="none";vw.style.display="";}
-      else{bd.style.display="";vw.style.display="none";hideRdPop();}});
+      flush();setMode(b.getAttribute("data-dm"));});
+    setMode(nbMode,false);                                       // 记住上次用的是哪档
     // 阅读模式：正常的 DOM 选区
     vw.addEventListener("mouseup",function(){setTimeout(noteSelHandler,10);});
     // 编辑模式：textarea 里的选区 window.getSelection() 读不到，只能用 selectionStart/End，
@@ -8006,7 +8082,27 @@ margin-left: -22px;
     setTimeout(function(){relayoutPdf();updateScrub();biUpdate();},80);}
 
   // 阅读中划词
-  var rdPop=null,rdPopWord=null,rdPopTimer=null,rdPopHover=false;
+  var rdPop=null,rdPopWord=null,rdPopTimer=null,rdPopHover=false,rdPopSay="";
+  var popCfg=load("tt_popcfg",null)||{};             // 卡片字号偏好（窗口大小另存 tt_popsize，跟屏幕走不上云）
+  function savePopCfg(){save("tt_popcfg",popCfg);}
+  var POPFS=[0.85,1,1.15,1.3,1.5,1.7];
+  function applyPopFs(){
+    var f=+popCfg.fs||1;
+    if(rdPop)rdPop.style.setProperty("--popz",f);
+    var v=document.getElementById("rd-fs-v");if(v)v.textContent=Math.round(f*100)+"%";}
+  function popFsStep(d){
+    var i=POPFS.indexOf(+popCfg.fs||1);if(i<0)i=1;
+    i=Math.max(0,Math.min(POPFS.length-1,i+d));
+    popCfg.fs=POPFS[i];savePopCfg();applyPopFs();placeRdPop(null);}
+  function popResize(kind){
+    if(!rdPop)return;
+    if(kind==="auto"){save("tt_popsize",null);applyPopSize(false);placeRdPop(null);return;}
+    var r=rdPop.getBoundingClientRect(),w=r.width,h=r.height;
+    if(kind==="w+")w+=70;else if(kind==="w-")w-=70;
+    else if(kind==="h+")h+=90;else if(kind==="h-")h-=90;
+    save("tt_popsize",{fix:1,w:Math.round(Math.max(240,Math.min(innerWidth-24,w))),
+                             h:Math.round(Math.max(150,Math.min(innerHeight-24,h)))});
+    applyPopSize(false);placeRdPop(null);}
   function hideRdPop(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}if(rdPop)rdPop.style.display="none";rdPopWord=null;lastHoverWord="";hideHl();}
   function rdPopArm(){ // 「鼠标移开就消失」模式：离开卡片后收起
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
@@ -8021,6 +8117,8 @@ margin-left: -22px;
     if(!rdPop)return;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
     var me=rdPopWord;                                    // 查词是异步的，等结果时可能又选了别的词
+    rdPopSay=me.disp;
+    document.getElementById("rd-pop-note").style.display="";
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
     star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
@@ -8421,15 +8519,17 @@ margin-left: -22px;
     else showRdTrans(s,rect);}   // 选中整句 → 任何模式都翻译
   // 默认「跟着内容走」：加载时就一行字的小框，出结果后长到内容那么大（上限 52vh）。
   // 只有用户自己拖过右下角，才改用固定大小；双击标题栏可以恢复自适应。
+  function popFix(){var s=load("tt_popsize",null);return (s&&s.fix&&s.w>200&&s.h>100)?s:null;}
   function applyPopSize(mini){
     if(!rdPop)return;
     rdPop.classList.toggle("mini",!!mini);
-    var sz=load("tt_popsize",null);
-    if(sz&&sz.fix&&sz.w>200&&sz.h>100){
+    applyPopFs();
+    var sz=popFix();
+    if(sz){
       rdPop.style.width=Math.min(sz.w,innerWidth-24)+"px";
       rdPop.style.height=Math.min(sz.h,innerHeight-24)+"px";
-      rdPop.style.maxHeight="none";
-    }else{rdPop.style.width="";rdPop.style.height="";rdPop.style.maxHeight="";}}
+      rdPop.style.maxWidth="none";rdPop.style.maxHeight="none";
+    }else{rdPop.style.width="";rdPop.style.height="";rdPop.style.maxWidth="";rdPop.style.maxHeight="";}}
   function watchPopSize(){
     if(!rdPop||rdPop.__ro)return;
     rdPop.__ro=1;
@@ -8449,30 +8549,50 @@ margin-left: -22px;
         if(e.target.closest("button"))return;
         save("tt_popsize",null);applyPopSize(false);
         ttAlert("卡片大小恢复自动了：内容多大，框就多大",{anchor:hd});});}}
+  var lastPopRect=null;
   function placeRdPop(rect){
+    if(rect)lastPopRect=rect;else rect=lastPopRect;
+    if(!rdPop||!rect)return;
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
-    var w=rdPop.offsetWidth||420,vw=innerWidth/z,vh=innerHeight/z;
-    var left=Math.max(8,Math.min(rect.left/z,vw-w-12));
-    var top=rect.bottom/z+8;
-    if(top>vh-160)top=Math.max(8,rect.top/z-Math.min(rdPop.offsetHeight||280,vh*0.5)-8);
+    var vw=innerWidth/z,vh=innerHeight/z,M=10;
+    var rt=rect.top/z,rb=rect.bottom/z;
+    var below=vh-rb-8-M,above=rt-8-M;                    // 选中位置的上下各还剩多少高度
+    // 先把高度限死在放得下的那一侧，再量尺寸 —— 老写法只在很靠下时才翻到上面，
+    // 选中位置在中间偏下时卡片照样长过画布底边，就被切掉了。
+    if(!popFix())rdPop.style.maxHeight=Math.max(150,Math.max(below,above))+"px";
+    var w=rdPop.offsetWidth||420,h=rdPop.offsetHeight||280;
+    var left=Math.max(M,Math.min(rect.left/z,vw-w-M));
+    var top=(below>=h||below>=above)?(rb+8):(rt-8-h);    // 下面放得下就放下面，否则翻上去
+    top=Math.max(M,Math.min(top,vh-h-M));                // 兜底：无论如何不出画布
     rdPop.style.left=left+"px";rdPop.style.top=top+"px";}
   function showRdTrans(text,rect){
     if(!rdPop)return;
-    rdPopWord=null;
-    document.getElementById("rd-pop-w").textContent="翻译";
-    var star=document.getElementById("rd-pop-star");star.style.display="none";
+    var t=String(text||"").trim(),k=t.toLowerCase();
+    rdPopSay=t;
+    var can=!wordIssue(t);                             // 词组能收进生词本；整段话就别塞了
+    rdPopWord=can?{w:k,disp:t}:null;
+    document.getElementById("rd-pop-w").textContent=can?t:"翻译";
+    var star=document.getElementById("rd-pop-star");
+    star.style.display=can?"":"none";
+    if(can){var sv=isSaved(k);star.classList.toggle("on",sv);star.innerHTML=starSVG(sv);
+      star.title=sv?"已收藏（点取消）":"加入生词本";}
+    document.getElementById("rd-pop-note").style.display=can?"":"none";
     var bd=document.getElementById("rd-pop-bd");
     bd.innerHTML='<div class="dict-hint">正在翻译，请稍等…</div>';
     rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 等 AI 期间不倒计时
-    translateText(text).then(function(res){
+    translateText(t).then(function(res){
       bd.innerHTML='<div class="rd-tr">'+esc(res.text)+'</div>'+
-        '<div class="rd-tr-src">'+esc(text)+'</div>'+
-        '<div class="rd-tr-by">'+esc(res.by)+'</div>';
+        '<div class="rd-tr-src">'+esc(t)+'</div>'+
+        '<div class="rd-tr-by">'+esc(res.by)+'</div>'+
+        (can?mineBtnHTML(k,t):"");
+      if(can&&dictPrefs.autoAdd&&!isSaved(k)){         // 开了自动收藏：词组也收，翻译先当草稿
+        addUnknownWord(k,t,res.text);
+        star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}
       applyPopSize(false);placeRdPop(rect);
       rdPopIdle(9000);
     },function(e){
-      bd.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎试试。</div>';
+      bd.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎试试。</div>'+(can?mineBtnHTML(k,t):"");
       applyPopSize(false);placeRdPop(rect);});}
 
   var readerInit=false;
@@ -8745,7 +8865,21 @@ margin-left: -22px;
       rdPop.addEventListener("mouseenter",function(){rdPopHover=true;if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
       rdPop.addEventListener("mouseleave",function(){rdPopHover=false;rdPopArm();});
       document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
-      document.getElementById("rd-pop-spk").addEventListener("click",function(){if(rdPopWord)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));});
+      document.getElementById("rd-pop-spk").addEventListener("click",function(){
+        var s=rdPopSay||(rdPopWord&&rdPopWord.disp);if(s)pronounce(s,isCJK(s));});
+      var pcfg=document.getElementById("rd-pop-cfg"),pcp=document.getElementById("rd-pop-cfgp");
+      if(pcfg&&pcp){
+        pcfg.addEventListener("click",function(){
+          var on=pcp.hasAttribute("hidden");
+          if(on)pcp.removeAttribute("hidden");else pcp.setAttribute("hidden","");
+          pcfg.classList.toggle("on",on);
+          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 调大小的时候别倒计时关掉
+          applyPopFs();placeRdPop(null);});
+        pcp.addEventListener("click",function(e){
+          var b=e.target.closest("button");if(!b)return;
+          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
+          if(b.hasAttribute("data-fs"))popFsStep(+b.getAttribute("data-fs"));
+          else popResize(b.getAttribute("data-pz"));});}
       document.getElementById("rd-pop-note").addEventListener("click",async function(){
         if(!rdPopWord)return;
         if(!isSaved(rdPopWord.w))toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
