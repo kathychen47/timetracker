@@ -724,6 +724,34 @@
   body.zen .rd-notes{border-right:none;border-left:1px solid var(--border)}
   body.zen .rd-content{padding:34px 30px}
   body.zen .rd-content>:not(.rd-page){max-width:46em;margin-left:auto;margin-right:auto}
+  .nb-selbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;margin-bottom:10px;
+    background:var(--primary-soft);border-radius:11px;font-size:13px}
+  .nb-selbar b{font-weight:700;color:var(--primary)}
+  .nb-selbar .btn{padding:4px 11px;font-size:12.5px}
+  .nb-selbar .btn.del{color:#c0392b;border-color:#e3b4ad}
+  .nb-selbar .btn.del:hover:not(:disabled){background:#fdecea}
+  .nb-body.selmode .nb-item{padding-left:38px;position:relative;cursor:pointer}
+  .nb-body.selmode .nb-item.picked{background:var(--primary-soft);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .nb-ck{position:absolute;left:12px;top:13px;margin:0;width:17px;height:17px;accent-color:var(--primary);cursor:pointer}
+  .nb-body.selmode .nb-item .mt button{display:none}    /* 勾选时把每条自己的按钮收起来，别误点 */
+  /* ===== 沉浸式写作（笔记本）===== */
+  body.zen #view-notes{padding:0}
+  body.zen #view-notes.docopen>.rd-bar{display:none}      /* 写文档时，外层那条列表工具栏收起来 */
+  body.zen #view-notes>.nb-filters{margin:0;padding:8px 18px}
+  body.zen .nb-body{height:var(--rdh,100vh);overflow:auto}
+  body.zen .nb-doc{height:var(--rdh,100vh);box-sizing:border-box;gap:0}
+  body.zen .nb-doc-bar{position:fixed;left:0;right:0;top:0;z-index:60;margin:0;padding:9px 16px;
+    background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 6px 22px rgba(0,0,0,.12);
+    transform:translateY(-108%);transition:transform .22s ease}
+  body.zen.zbar .nb-doc-bar{transform:none}
+  body.zen .nb-doc-tags:empty{display:none}
+  body.zen .nb-doc-panes{gap:0;min-height:0}
+  body.zen .nb-doc-body,body.zen .nb-doc-view,body.zen .nb-doc-live{
+    border:none;border-radius:0;min-height:0;height:var(--rdh,100vh);padding:46px 30px}
+  body.zen .nb-doc-panes.both>.nb-doc-view{border-left:1px solid var(--border)}
+  /* 一行不要太长，居中排版 */
+  body.zen .nb-doc-body{padding-left:max(30px,calc((100% - 46em)/2));padding-right:max(30px,calc((100% - 46em)/2))}
+  body.zen .nb-doc-live>.lb,body.zen .nb-doc-view>*{max-width:46em;margin-left:auto;margin-right:auto}
   .rn-h{font-size:12.5px;font-weight:650;color:var(--muted);margin-bottom:9px;display:flex;align-items:center;gap:6px}
   .rn-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;position:sticky;top:-12px;background:var(--surface);padding:4px 0;z-index:2}
   .rn-title{font-size:12.5px;font-weight:650;color:var(--muted);flex:1;min-width:0}
@@ -841,7 +869,7 @@
   .mynote-ex .exh{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:.02em}
   .mynote-ex .ex{margin-bottom:8px}
   .mynote-ex .ex:last-child{margin-bottom:0}
-  .mynote-ex .ex .s{font-size:13.5px;line-height:1.7}
+  .mynote-ex .ex .s{font-size:13.5px;line-height:1.7;color:#5B4A12}
   .mynote-ex .ex .s b{color:var(--primary);font-weight:700}
   .mynote-ex .ex .f{font-size:11px;color:var(--muted);margin-top:3px}
   .rd-mine{margin-top:11px;padding-top:10px;border-top:1px dashed var(--border)}
@@ -924,7 +952,10 @@
   .wb-note:hover{color:var(--primary)}
   .dict-card.mynote{background:#FFFBEA;border-color:#F2E2AE}
   .mynote-t{font-size:14px;line-height:1.7;white-space:pre-wrap;color:#5B4A12}
-  @media (prefers-color-scheme:dark){.dict-card.mynote{background:#2A2617;border-color:#4A4326}.mynote-t{color:#E8D9A0}}
+  /* 跟 app 自己的主题走，不看系统偏好 —— 否则系统深色 + app 浅色时，这张卡片会变成黑框灰字 */
+  :root[data-theme="dark"] .dict-card.mynote{background:#2A2617;border-color:#4A4326}
+  :root[data-theme="dark"] .mynote-t{color:#E8D9A0}
+  :root[data-theme="dark"] .mynote-ex .ex .s{color:#E8D9A0}
   .wb-move{flex:none;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
     border-radius:7px;padding:3px 6px;font-size:11.5px;max-width:110px;opacity:0;transition:opacity .12s}
   .wb-item:hover .wb-move,.wb-move:focus{opacity:1}
@@ -2940,6 +2971,8 @@ margin-left: -22px;
             <button data-ng="book">📚 按书</button>
           </div>
           <span class="grow"></span>
+          <button class="btn" id="nb-pick" title="勾选多条，一起删">☑️ 选择</button>
+          <button class="btn" id="nb-zen" title="沉浸式写作：全屏、隐藏所有按钮（鼠标移到顶端唤回工具栏，Esc 退出）">⛶ 沉浸</button>
           <button class="btn" id="nb-new">＋ 写一条</button>
           <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
           <button class="btn" id="nb-csv" title="导成 CSV，可用 Excel 打开">⬇️ CSV</button>
@@ -3881,6 +3914,7 @@ margin-left: -22px;
   // ---------- rail nav ----------
   document.querySelector(".rail").addEventListener("click",function(e){
     var b=e.target.closest("button[data-tab]");if(!b)return;
+    if(zenOn)toggleZen(false);                            // 先按"当前页签"把状态存好，再切走
     var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
     ["calendar","todo","stats","dict","reader","tax","food","body","notes"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
@@ -7548,6 +7582,28 @@ margin-left: -22px;
     notes=notes.filter(function(r){return r.id!==row.id;});saveNotes();}
   // ---- 视图 ----
   var nbQ="",nbGroup=load("tt_nbgroup","time"),nbF=load("tt_nbfilter","all");
+  var nbSel=null;                                  // null = 没在勾选；否则是 {id:true} 这样一份勾选表
+  function nbSelCount(){var n=0;if(nbSel)Object.keys(nbSel).forEach(function(k){if(nbSel[k])n++;});return n;}
+  function nbSelBarHTML(){
+    if(!nbSel)return "";
+    var n=nbSelCount();
+    return '<div class="nb-selbar"><b>已选 '+n+' 条</b>'+
+      '<button class="btn" type="button" data-selall="1">全选（当前筛选下的）</button>'+
+      '<button class="btn" type="button" data-selnone="1">全不选</button>'+
+      '<span class="grow"></span>'+
+      '<button class="btn del" type="button" data-seldel="1"'+(n?"":" disabled")+'>🗑 删除所选</button>'+
+      '<button class="btn" type="button" data-seloff="1">退出选择</button></div>';}
+  function nbPickToggle(on){
+    nbSel=(on===undefined?(nbSel?null:{}):(on?{}:null));
+    var b=document.getElementById("nb-pick");if(b)b.classList.toggle("on",!!nbSel);
+    renderNotebook();}
+  async function nbDelSelected(anchor){
+    var ids=Object.keys(nbSel||{}).filter(function(k){return nbSel[k];});
+    if(!ids.length)return;
+    if(!await ttConfirm("删除选中的 "+ids.length+" 条笔记？\n书里划的会连同那本书里的标注一起删掉。",{danger:true,anchor:anchor}))return;
+    for(var i=0;i<ids.length;i++)await delNoteRow(noteById(ids[i]));   // 逐条走真源，别只删镜像
+    notes=load("tt_notes",[])||[];
+    nbSel={};renderNotebook();}
   function nbMatch(r){
     var q=nbQ.trim().toLowerCase();
     if(nbF==="doc"&&r.t!=="doc")return false;
@@ -7596,6 +7652,8 @@ margin-left: -22px;
       if(n)html+=chip("t:"+t,({ul:"<u>U</u>",bd:"<b>B</b>",nt:"📝"}[t])+" "+n);});
     Object.keys(tags).sort().forEach(function(g){html+=chip("g:"+g,"#"+esc(g)+" "+tags[g]);});
     box.innerHTML=html;}
+  function nbCkHTML(r){
+    return nbSel?('<input type="checkbox" class="nb-ck" data-ck="'+esc(r.id)+'"'+(nbSel[r.id]?" checked":"")+'>'):"";}
   function nbHlRe(){                                  // 把搜索词做成正则（转义后的形态，和正文一致）
     var q=String(nbQ||"").trim();if(!q)return null;
     try{return new RegExp(esc(q).replace(/[.*+?^{}()|[\]\\$]/g,"\\$&"),"gi");}catch(e){return null;}}
@@ -7614,7 +7672,8 @@ margin-left: -22px;
     if(r.t==="doc"){                              // 自己写的文档：标题 + 正文摘要 + 分类
       var pv=String(r.note||"").replace(/[#*`>\-]/g," ").replace(/\s+/g," ").trim();pv=nbPreview(pv,90);
       var cn=r.cat?(catName(r.cat)+(r.sub?" · "+subName(r.cat,r.sub):"")):"";
-      return '<div class="rn-item nb-item nb-docitem" data-nbdoc="'+esc(r.id)+'" style="--ac:'+(r.cat?catColor(r.cat):"var(--primary)")+'">'+
+      return '<div class="rn-item nb-item nb-docitem'+(nbSel&&nbSel[r.id]?" picked":"")+'" data-nbdoc="'+esc(r.id)+'" style="--ac:'+(r.cat?catColor(r.cat):"var(--primary)")+'">'+
+        nbCkHTML(r)+
         '<div class="nb-dt">'+hlEsc(r.title||"（无标题）")+'</div>'+
         (pv?'<div class="nb-dp">'+hlEsc(pv)+'</div>':"")+
         '<div class="mt"><span class="tag">✏️ 我写的</span>'+
@@ -7624,7 +7683,8 @@ margin-left: -22px;
         '<button data-nbdel="'+esc(r.id)+'" title="删除">✕</button></div></div>';}
     var TN={hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"};
     var gone=!!r.bid&&!nbBooks[r.bid];
-    return '<div class="rn-item nb-item t-'+r.t+(gone?" gone":"")+'" data-nb="'+esc(r.id)+'" style="--ac:'+(r.c||"var(--primary)")+'">'+
+    return '<div class="rn-item nb-item t-'+r.t+(gone?" gone":"")+(nbSel&&nbSel[r.id]?" picked":"")+'" data-nb="'+esc(r.id)+'" style="--ac:'+(r.c||"var(--primary)")+'">'+
+      nbCkHTML(r)+
       (r.x?'<div class="q">'+hlEsc(r.x)+'</div>':"")+
       (r.note?'<div class="nt">'+hlEsc(r.note)+'</div>':"")+
       '<div class="mt"><span class="tag">'+(TN[r.t]||"笔记")+'</span>'+
@@ -7639,6 +7699,8 @@ margin-left: -22px;
   function renderNotebook(){
     var body=document.getElementById("nb-body");if(!body)return;
     nbFlush=null;                               // 上一屏的输入框要作废，别再往它身上存
+    var nbv=document.getElementById("view-notes");
+    if(nbv)nbv.classList.toggle("docopen",!!nbDoc);       // 沉浸模式下要据此收起外层工具栏
     if(nbDoc){                                  // 正在看/写某篇文档 → 整块换成编辑器
       var dr=noteById(nbDoc);
       if(!dr){nbDoc=null;nbDocRemember();}       // 那篇被删了/同步没跟过来
@@ -7648,10 +7710,11 @@ margin-left: -22px;
     var list=nbList();
     var qi=document.getElementById("nb-q");if(qi&&qi.value!==nbQ)qi.value=nbQ;
     document.querySelectorAll("#nb-group button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-ng")===nbGroup);});
+    body.classList.toggle("selmode",!!nbSel);
     if(!notes.length){
       body.innerHTML='<div class="rn-empty">本子还是空的。<br>看书时选中文字 → 点色块高亮、或点 📝 写笔记，<br>都会自动收进这里。<br><br>也可以点上面「＋ 写一条」记点跟书无关的想法。</div>';return;}
-    if(!list.length){body.innerHTML='<div class="rn-empty">没有匹配的笔记，换个筛选或搜索词试试。</div>';return;}
-    var html="";
+    if(!list.length){body.innerHTML=nbSelBarHTML()+'<div class="rn-empty">没有匹配的笔记，换个筛选或搜索词试试。</div>';return;}
+    var html=nbSelBarHTML();
     if(nbGroup==="book"){
       var byBook={},order=[];
       list.forEach(function(r){
@@ -7682,6 +7745,7 @@ margin-left: -22px;
     try{ensureDictInit();}catch(e){}                   // 不初始化词典的话查词是空的
     notes=load("tt_notes",[])||[];
     renderNotebook();
+    try{if(load("tt_nbzen",false))toggleZen(true);}catch(e){}
     refreshNbBooks().then(function(){renderNotebook();},function(){});}
   function closeNotebook(){gotoTab("reader");}
   // ---- 文档型笔记（t:"doc"）：标题 + Markdown 正文 + 分类，和读书划线共用同一个 notes 存储 ----
@@ -7691,7 +7755,7 @@ margin-left: -22px;
     var r={id:"d"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"doc",c:"",x:"",
       title:"",note:"",cat:"",sub:"",tags:[],ts:Date.now(),upd:Date.now()};
     notes.push(r);saveNotes();nbDoc=r.id;nbDocRemember();renderNotebook();}
-  function nbDocOpen(id){nbDoc=id;nbDocRemember();renderNotebook();}
+  function nbDocOpen(id){nbSel=null;nbDoc=id;nbDocRemember();renderNotebook();}
   function nbDocClose(){nbSaveNow();nbDoc=null;nbDocRemember();renderNotebook();}
   function nbDocEditor(r){
     var cs=cats.map(function(c){return '<option value="'+c.key+'"'+(r.cat===c.key?" selected":"")+'>'+esc(c.name)+"</option>";}).join("");
@@ -8385,7 +8449,8 @@ margin-left: -22px;
     if(want===zenOn)return;
     zenOn=want;document.body.classList.toggle("zen",want);
     var b=document.getElementById("rd-zen-btn");if(b)b.classList.toggle("on",want);
-    save("tt_rdzen",want);
+    var nbb=document.getElementById("nb-zen");if(nbb)nbb.classList.toggle("on",want);
+    save(state.tab==="notes"?"tt_nbzen":"tt_rdzen",want);   // 看书和笔记各记各的
     if(want){
       showZenBar();hideZenBarSoon(1800);
       try{if(document.documentElement.requestFullscreen&&!document.fullscreenElement)
@@ -8393,6 +8458,7 @@ margin-left: -22px;
     }else{
       document.body.classList.remove("zbar");
       try{if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(function(){});}catch(e){}}
+    if(state.tab!=="reader")return;                       // 下面这些重排是阅读器专有的
     applySideSize();
     setTimeout(function(){relayoutPdf();updateScrub();biUpdate();},80);}
 
@@ -9004,7 +9070,24 @@ margin-left: -22px;
       document.getElementById("nb-body").addEventListener("click",async function(e){
         var exp=e.target.closest("[data-nbexp]");
         if(exp){e.stopPropagation();nbExportBook(exp.getAttribute("data-nbexp"));return;}
-        var dc=e.target.closest("[data-nbdoc]");
+        if(nbSel){                                        // 勾选模式：整条都是勾选区，别再打开/跳转
+        var sa=e.target.closest("[data-selall]"),sn=e.target.closest("[data-selnone]"),
+            sd=e.target.closest("[data-seldel]"),so=e.target.closest("[data-seloff]");
+        if(sa){nbList().forEach(function(r){nbSel[r.id]=true;});renderNotebook();return;}
+        if(sn){nbSel={};renderNotebook();return;}
+        if(sd){nbDelSelected(sd);return;}
+        if(so){nbPickToggle(false);return;}
+        var row=e.target.closest("[data-nbdoc],[data-nb]");
+        if(row){e.preventDefault();
+          var id=row.getAttribute("data-nbdoc")||row.getAttribute("data-nb");
+          nbSel[id]=!nbSel[id];
+          row.classList.toggle("picked",!!nbSel[id]);
+          var ck=row.querySelector(".nb-ck");if(ck)ck.checked=!!nbSel[id];
+          var bar=document.querySelector(".nb-selbar");
+          if(bar)bar.outerHTML=nbSelBarHTML();          // 只重画那条计数，不重画整张列表
+          return;}
+        return;}
+      var dc=e.target.closest("[data-nbdoc]");
       if(dc&&!e.target.closest("[data-nbdel]")){nbDocOpen(dc.getAttribute("data-nbdoc"));return;}
       var tg=e.target.closest("[data-nbtag]");
         if(tg){e.stopPropagation();setNoteTags(tg.getAttribute("data-nbtag"),tg);return;}
@@ -9037,6 +9120,17 @@ margin-left: -22px;
       // 沉浸式阅读
       document.getElementById("rd-zen-btn").addEventListener("click",function(){toggleZen();});
       document.getElementById("rd-zen-exit").addEventListener("click",function(){toggleZen(false);});
+      var nbz=document.getElementById("nb-zen");
+      if(nbz)nbz.addEventListener("click",function(){toggleZen();});
+      var nbp=document.getElementById("nb-pick");
+      if(nbp)nbp.addEventListener("click",function(){nbPickToggle();});
+      document.addEventListener("keydown",function(e){                 // 没进全屏时 Esc 也能退
+        if(e.key!=="Escape"||!zenOn)return;
+        if(document.querySelector(".overlay.on,#tt-pop.on"))return;    // 有弹窗时这一下先给弹窗
+        toggleZen(false);});
+      document.addEventListener("mouseover",function(e){                // 笔记本的两条工具栏也能悬停唤回
+        if(!zenOn||!e.target.closest)return;
+        if(e.target.closest(".nb-doc-bar,#view-notes .rd-bar"))showZenBar();});
       document.addEventListener("mousemove",function(e){
         if(!zenOn)return;
         if(e.clientY<=42)showZenBar();
