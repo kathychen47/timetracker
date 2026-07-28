@@ -825,6 +825,8 @@
   .dym{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
   .dym-i{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;cursor:pointer;color:var(--primary);font-size:14px}
   .dym-i:hover{background:var(--primary-soft)}
+  .rd-mine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
+  .rd-mine>span{font-size:11.5px;color:var(--muted);flex:1;min-width:120px}
   .dict-hint{color:var(--muted);font-size:14px;padding:20px 4px;text-align:center}
   .dict-hint.via{padding:2px 2px 8px;text-align:left;font-size:12.5px}
   .dict-hint.via b{color:var(--primary)}
@@ -3383,7 +3385,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <label class="do-name" style="cursor:pointer"><input type="checkbox" id="dict-autoadd"> 查词后自动加入生词本</label>
-        <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算。</div>
+        <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算；词典没收录的（专业术语、人名）也会收，先拿翻译垫着，你可以自己改成真正的解释。</div>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="dict-autospeak"> 查词后自动发音</label>
         <div class="set-desc" style="margin-top:4px">查词、以及看书时划词，出结果就自动朗读（口音在查词页的「英/美」切换）。</div>
         <div style="margin-top:12px">
@@ -5722,11 +5724,13 @@ margin-left: -22px;
       var sug=await fuzzySuggest(q);
       var dym=sug.length?'<div class="dym">'+sug.map(function(s){return '<span class="dym-i" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'</span>';}).join("")+'</div>':'';
       box.innerHTML='<div class="dict-hint">词典没收录 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'')+'</div>'+dym+
+        mineBtnHTML(key,q)+
         '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
       try{var tr2=await translateText(q);
         var fb=document.getElementById("dict-fallback");
         if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr2.by)+'</span></div>'+
-          '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';}
+          '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';
+        if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key))addUnknownWord(key,q,tr2.text);}
       catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
       return;}
     box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+html;}
@@ -5893,6 +5897,18 @@ margin-left: -22px;
     return '<div class="dict-card mynote"><div class="dict-card-top"><span class="dict-src">📝 我的笔记</span>'+
       '<button class="dict-add" data-note="'+esc(x.w)+'">编辑</button></div>'+
       '<div class="mynote-t">'+esc(x.note)+'</div></div>';}
+  // 词典查不到的词（专业术语、人名、缩写…）也要能收。翻译只当草稿，真正的解释你自己写。
+  function addUnknownWord(w,disp,draft){
+    var k=String(w||"").toLowerCase().trim();if(!k)return null;
+    var x=wordOf(k);
+    if(!x){addWords([{w:k,disp:disp||w}],wbGroups.def);x=wordOf(k);}
+    if(x&&draft&&!x.note){x.note=draft;saveWords();}    // 只在还没写过的时候垫一句，绝不覆盖你写的
+    updateWbCount();
+    if(state.tab==="dict")try{renderWordbook();}catch(e){}
+    return x;}
+  function mineBtnHTML(w,disp){
+    return '<div class="rd-mine"><button class="btn" data-mynote="'+esc(w)+'" data-disp="'+esc(disp||w)+'">✎ 收进生词本 · 自己写释义</button>'+
+      '<span>专业术语、人名、缩写这类，机器翻译只能当草稿</span></div>';}
   async function setWordNote(w,anchor){
     var x=wordOf(w);
     if(!x){ttAlert("先把这个词加入生词本，再写笔记");return false;}
@@ -5919,11 +5935,14 @@ margin-left: -22px;
       def.innerHTML='<div class="dict-hint">加载中…</div>';
       def.innerHTML=await wbDefHTML(w);
       if(!def.querySelector(".dict-card:not(.mynote)")){
-        def.innerHTML='<div class="dict-hint">词典没收录，翻译中…</div>';
+        var mine=def.querySelector(".dict-card.mynote"),keep=mine?mine.outerHTML:"";   // 自己写的解释留着，别被翻译顶掉
+        def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译中…</div>';
         try{var tr=await translateText(w);
-          def.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
+          def.innerHTML=keep+'<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
             '<div class="rd-tr">'+esc(tr.text)+'</div></div>';}
-        catch(e){def.innerHTML='<div class="dict-hint">查不到，翻译也失败了</div>';}}
+        catch(e){def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译也失败了</div>';}
+        if(!keep)def.innerHTML+='<div class="rd-mine"><button class="dict-add" data-note="'+esc(w)+'">✎ 自己写释义</button>'+
+          '<span>词典没有这个词，写下来的解释会顶在最上面，背诵时也看得到</span></div>';}
       def.setAttribute("data-loaded","1");}
     def.removeAttribute("hidden");item.classList.add("open");}
 
@@ -6380,6 +6399,11 @@ margin-left: -22px;
       saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();ttAlert("已重置");});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
+      var mn2=e.target.closest("[data-mynote]");
+      if(mn2){var mw2=mn2.getAttribute("data-mynote"),md2=mn2.getAttribute("data-disp")||mw2;
+        var te2=document.getElementById("dict-result").querySelector(".rd-tr");
+        addUnknownWord(mw2,md2,te2?te2.textContent.trim():"");
+        setWordNote(mw2,mn2).then(function(){doLookup(q.value);});return;}
       var nb2=e.target.closest("[data-note]");
       if(nb2){setWordNote(nb2.getAttribute("data-note"),nb2).then(function(ok){if(ok)doLookup(q.value);});return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -8012,14 +8036,17 @@ margin-left: -22px;
         updateWbCount();
         star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";
         if(state.tab==="dict")renderWordbook();}}
-    if(!found){                                              // 词典里没有 → 直接翻译
-      var w0=rdPopWord.disp;
+    if(!found){                                              // 词典里没有 → 翻译 + 让你自己写释义
+      var w0=rdPopWord.disp,mine=mineBtnHTML(me.w,me.disp);
       bd.innerHTML='<div class="dict-hint">词典没收录，正在翻译，请稍等…</div>';
       applyPopSize(true);placeRdPop(rect);
       try{var tr=await translateText(w0);
         bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
-          '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>';}
-      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>';}
+          '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>'+mine;
+        if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)){   // 开了自动收藏：查不到的也收
+          addUnknownWord(me.w,me.disp,tr.text);
+          star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}}
+      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>'+mine;}
       applyPopSize(false);placeRdPop(rect);}
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
@@ -8734,6 +8761,15 @@ margin-left: -22px;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
         var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";});
       document.getElementById("rd-pop-bd").addEventListener("click",function(e){
+        var mn=e.target.closest("[data-mynote]");
+        if(mn){
+          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}     // 正在写释义，别让弹窗自己倒计时关掉
+          var mw=mn.getAttribute("data-mynote"),md=mn.getAttribute("data-disp")||mw;
+          var te=this.querySelector(".rd-tr");
+          addUnknownWord(mw,md,te?te.textContent.trim():"");
+          var st2=document.getElementById("rd-pop-star");
+          st2.classList.add("on");st2.innerHTML=starSVG(true);st2.title="已收藏（点取消）";
+          setWordNote(mw,mn);return;}
         var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
         var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
       document.addEventListener("mousedown",function(e){
