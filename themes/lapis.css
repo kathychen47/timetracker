@@ -1,0 +1,195 @@
+/* lapis — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+.mdth{--text-color: #40464f;
+    /* Text */
+    --primary-color: #4870ac;
+    /* Primary Color */
+    --bg-color: #ffffff;
+    --side-bar-bg-color: var(--bg-color);
+    /* Background */
+
+    --marker-color: #a2b6d4;
+    /* List Marker */
+    --highlight-color: #ffffb5c2;
+    /* Highlight */
+    --header-span-color: var(--primary-color);
+    /* h2 Span Color */
+    --block-bg-color: #f6f8fa;
+    /* Block Background */
+    --img-shadow-color: #e3e8f0;
+
+    /* Overwrite of Typora Base Color */
+    --search-hit-bg-color: var(--select-text-bg-color);
+    --search-select-bg-color: #5bb3ff;
+    --control-text-hover-color: #a2b6d4;
+    --rawblock-edit-panel-bd: var(--block-bg-color);
+    --item-hover-bg-color: rgb(246 248 250);
+    --active-file-bg-color: var(--block-bg-color);}
+@media print{
+  .mdth{--text-color: rgb(0, 0, 0);}
+  .mdth ::-webkit-scrollbar-thumb{background-color: transparent !important;}
+}
+.mdth{max-width: 950px;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    word-spacing: 0px;
+    letter-spacing: 0px;
+    word-break: break-word;
+    word-wrap: break-word;
+    text-align: justify;
+
+    font-family: 'Cantarell', 'SourceHanSerifCN', 'JetBrainsMono';
+    margin-bottom: 20rem;}
+.mdth strong{color: var(--primary-color);}
+.mdth a{color: var(--primary-color);}
+.mdth .md-p a,.mdth .md-heading a{word-wrap: break-word;
+    text-decoration: underline solid;
+    margin: 2px;}
+.mdth h2.md-heading a{text-decoration: underline;
+    border-bottom: 0;
+    text-decoration-thickness: 1.2px;
+    text-underline-offset: 2px;}
+.mdth [md-inline=url]{word-break: break-all;
+    font-weight: normal;
+    font-family: 'JetBrainsMono';
+    padding-left: 0.15rem;
+    padding-right: 0rem;
+    color: var(--marker-color);}
+.mdth mark{background: var(--highlight-color);
+    padding: 1px .15rem;
+    border-radius: 1px;
+    color: inherit;}
+.mdth+p,.mdth blockquote p{font-size: 1.1rem;
+    padding-top: .2rem;
+    padding-bottom: .2rem;
+    margin: 0;
+    line-height: 1.8rem;
+    color: var(--text-color);}
+.mdth h4,.mdth h5,.mdth h6{font-weight: normal;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{font-family: 'SourceHanSerifCN';
+    padding: 0px;
+    color: var(--primary-color);}
+.mdth h1{text-align: center;}
+.mdth h2{background-color: var(--header-span-color);
+    color: var(--bg-color);
+    padding: 1px 12.5px;
+    border-radius: 4px;
+    display: inline-block;}
+.mdth h2 a{color: var(--bg-color);
+    border-bottom-color: var(--bg-color) !important;}
+.mdth h2 strong{color: var(--bg-color);}
+.mdth h2 code{color: var(--bg-color);
+    background-color: var(--header-span-color);}
+.mdth h1{font-size: 2rem;}
+.mdth h2{font-size: 1.5rem;}
+.mdth h3{font-size: 1.4rem;}
+.mdth h4{font-size: 1.2rem;}
+.mdth h5{font-size: 1.1rem;}
+.mdth h6{font-size: 1.1rem;}
+.mdth h1{padding-top: 0.9rem;
+    margin-bottom: 2.3rem;}
+.mdth h2{margin: .3em 0;}
+.mdth h3{margin: 1em 0 1em;}
+.mdth h4{margin: 0.8em 0 0.8em;}
+.mdth h5{margin: 0.6em 0 0.6em;}
+.mdth h6{margin: 0.4em 0 0.4em;}
+.mdth ::marker{font-weight: bold;
+    color: var(--marker-color);}
+.mdth li.md-list-item{margin: 0.4rem 0;}
+.mdth ul,.mdth ol{margin-top: 8px;
+    margin-bottom: 8px;
+    padding-left: 20px;}
+.mdth ul{list-style-type: disc;}
+.mdth em{padding: 0 3px 0 0;}
+.mdth ul ul{list-style-type: square;}
+.mdth ol{list-style-type: decimal;}
+.mdth li section{margin-top: 5px;
+    margin-bottom: 5px;
+    line-height: 1.7rem;
+    text-align: justify;
+    color: var(--text-color);
+    font-weight: 500;}
+.mdth blockquote{display: block;
+    font-size: .9em;
+    overflow: auto;
+    border-left: 3px solid var(--primary-color);
+    padding: 15px 30px 15px 20px;
+    margin-bottom: 20px;
+    margin-top: 20px;
+    background: var(--block-bg-color);}
+.mdth code{color: var(--primary-color);
+    font-size: 94%;
+    font-weight: normal;
+    word-wrap: break-word;
+    padding: 2px 4px 2px;
+    border-radius: 3px;
+    margin: 2px;
+    background-color: var(--block-bg-color);
+    font-family: 'JetBrainsMono';
+    word-break: break-all;}
+.mdth img{margin: 0 auto;
+    max-width: 100%;}
+.mdth p>img:only-child{filter: drop-shadow(var(--img-shadow-color) 0px 6px 6px);
+    display: block;
+    margin: 0 auto;
+    padding: 1rem;}
+.mdth table{display: table;
+    text-align: justify;
+    overflow-x: auto;
+    border-collapse: collapse;
+    border-spacing: 0px;
+    font-size: 1em;
+    margin: 0px 0px 20px;
+    width: 100%;}
+.mdth tbody{border: 0;}
+.mdth table tr{border: 0;
+    border-top: 1px solid #ccc;}
+.mdth table tr th,.mdth table tr td{font-size: 1rem;
+    border: 1px solid #d9dfe4;
+    padding: 5px 10px;
+    text-align: justify;}
+.mdth table tr th{font-family: SourceHanSerifCN;
+    text-align: center;
+    min-width: 10rem;
+    font-weight: bold;
+    color: var(--primary-color);}
+.mdth table tr td:hover,.mdth table tr th:hover{background-color: var(--block-bg-color);}
+.mdth table td{min-width: 32px;}
+.mdth .md-comment{color: #a8a8a9;
+    opacity: 1;
+    font-family: 'JetBrainsMono';}
+.mdth hr{margin-top: 20px;
+    margin-bottom: 20px;
+    border: 0;
+    border-top: 2px solid #eef2f5;
+    border-radius: 2px;}
+.mdth input[type=checkbox]{width: 0;}
+.mdth .task-list-item input::before{content: "";
+    display: inline-block;
+    width: 1.0125rem;
+    height: 1.0125rem;
+    vertical-align: middle;
+    text-align: center;
+    border: 1px solid var(--marker-color);
+    border-radius: 1.2rem;
+    background-color: #fdfdfd;
+    margin-left: -0.1rem;
+    margin-right: 0.1rem;
+    margin-top: -.6rem;}
+.mdth .task-list-item input:checked::before{content: '✓';
+    font-weight: bold;
+    -webkit-text-stroke: 1px var(--primary-color);
+    color: var(--primary-color);
+    background-color: var(--bg-color);
+    font-size: 0.75rem;
+    line-height: 0.8rem;}
+.mdth blockquote .task-list-item input::before{margin-top: .2rem;}
+.mdth #file-library::-webkit-scrollbar{width: .5rem;}
+.mdth ::-webkit-scrollbar-track{border-radius: 10px;}
+.mdth ::-webkit-scrollbar-thumb{border-radius: 10px;
+    background: rgba(179, 179, 179, 0.425);}
+.mdth ::-webkit-scrollbar{width: 1rem;}
+.mdth header{background-color: var(--bg-color);
+    background-image: none !important;}
+.mdth #recent-file-panel tbody tr:nth-child(2n-1){background-color: var(--recent-file-panel-n-bg-color);
+    color: var(--recent-file-panel-n-color);}

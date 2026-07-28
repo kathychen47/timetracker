@@ -1,0 +1,130 @@
+/* newsprint — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+@include-when-export url(https://fonts.loli.net/css?family=PT+Serif:400,400italic,700,700italic&subset=latin,cyrillic-ext,cyrillic,latin-ext);
+.mdth{--active-file-bg-color: #dadada;
+	--active-file-bg-color: rgba(32, 43, 51, 0.63);
+	--active-file-text-color: white;
+	--bg-color: #f3f2ee;
+	--text-color: #1f0909;
+	--control-text-color: #444;
+	--rawblock-edit-panel-bd: #e5e5e5;
+
+	--select-text-bg-color: rgba(32, 43, 51, 0.63);
+  --select-text-font-color: white;}
+.mdth pre{--select-text-bg-color: #36284e;
+	--select-text-font-color: #fff;}
+.mdth{font-size: 16px;
+	-webkit-font-smoothing: antialiased;}
+.mdth,.mdth{background-color: #f3f2ee;
+	font-family: "PT Serif", 'Times New Roman', Times, serif;
+	color: #1f0909;
+	line-height: 1.5em;}
+.mdth{max-width: 40em;}
+@media only screen and (min-width: 1400px){
+  .mdth{max-width: 914px;}
+}
+.mdth ol li{list-style-type: decimal;
+	list-style-position: outside;}
+.mdth ul li{list-style-type: disc;
+	list-style-position: outside;}
+.mdth ol,.mdth ul{list-style: none;}
+.mdth blockquote,.mdth q{quotes: none;}
+.mdth blockquote:before,.mdth blockquote:after,.mdth q:before,.mdth q:after{content: '';
+	content: none;}
+.mdth table{border-collapse: collapse;
+	border-spacing: 0;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{font-weight: bold;}
+.mdth h1{font-size: 1.875em;
+	/*30 / 16*/
+	line-height: 1.6em;
+	/* 48 / 30*/
+	margin-top: 2em;}
+.mdth h2,.mdth h3{font-size: 1.3125em;
+	/*21 / 16*/
+	line-height: 1.15;
+	/*24 / 21*/
+	margin-top: 2.285714em;
+	/*48 / 21*/
+	margin-bottom: 1.15em;
+	/*24 / 21*/}
+.mdth h3{font-weight: normal;}
+.mdth h4{font-size: 1.125em;
+	/*18 / 16*/
+	margin-top: 2.67em;
+	/*48 / 18*/}
+.mdth h5,.mdth h6{font-size: 1em;
+	/*16*/}
+.mdth h1{border-bottom: 1px solid;
+	margin-bottom: 1.875em;
+	padding-bottom: 0.8125em;}
+.mdth a{text-decoration: none;
+	color: #065588;}
+.mdth a:hover,.mdth a:active{text-decoration: underline;}
+.mdth p,.mdth blockquote{margin-bottom: 1.5em;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{margin-bottom: 1.5em;}
+.mdth blockquote{font-style: italic;
+	border-left: 5px solid;
+	margin-left: 2em;
+	padding-left: 1em;}
+.mdth ul,.mdth ol{margin: 0 0 1.5em 1.5em;}
+.mdth .md-before,.mdth .md-after{color:#999;}
+.mdth table{margin-bottom: 1.5em;
+	/*24 / 16*/
+	font-size: 1em;
+	/* width: 100%; */}
+.mdth thead th,.mdth tfoot th{padding: .25em .25em .25em .4em;
+	text-transform: uppercase;}
+.mdth th{text-align: left;}
+.mdth td{vertical-align: top;
+	padding: .25em .25em .25em .4em;}
+.mdth code{background-color: #dadada;}
+.mdth code{padding-left: 2px;
+	padding-right: 2px;}
+.mdth pre,.mdth code,.mdth tt{font-size: .875em;
+	line-height: 1.714285em;}
+.mdth h1{line-height: 1.3em;
+	font-weight: normal;
+	margin-bottom: 0.5em;}
+.mdth p + ul,.mdth p + ol{margin-top: .5em;}
+.mdth h3 + ul,.mdth h4 + ul,.mdth h5 + ul,.mdth h6 + ul,.mdth h3 + ol,.mdth h4 + ol,.mdth h5 + ol,.mdth h6 + ol{margin-top: .5em;}
+.mdth li > ul,.mdth li > ol{margin-top: inherit;
+	margin-bottom: 0;}
+.mdth li ol>li{list-style-type: lower-alpha;}
+.mdth li li ol>li{list-style-type: lower-roman;}
+.mdth h2,.mdth h3{margin-bottom: .75em;}
+.mdth hr{border-top: none;
+	border-right: none;
+	border-bottom: 1px solid;
+	border-left: none;}
+.mdth h1{border-color: #c5c5c5;}
+.mdth blockquote{border-color: #bababa;
+	color: #656565;}
+.mdth blockquote ul,.mdth blockquote ol{margin-left:0;}
+.mdth thead{background-color: #dadada;}
+.mdth tr:nth-child(even){background: #e8e7e7;}
+.mdth hr{border-color: #c5c5c5;}
+.mdth .task-list{padding-left: 1rem;}
+.mdth .md-task-list-item{padding-left: 1.5rem;
+	list-style-type: none;}
+.mdth .md-task-list-item > input:before{content: '\221A';
+	display: inline-block;
+	width: 1.25rem;
+  	height: 1.6rem;
+	vertical-align: middle;
+	text-align: center;
+	color: #ddd;
+	background-color: #F3F2EE;}
+.mdth .md-task-list-item > input:checked:before,.mdth .md-task-list-item > input[checked]:before{color: inherit;}
+.mdth header,.mdth footer{font-family: "PT Serif", 'Times New Roman', Times, serif;
+    color: #1f0909;}
+.mdth .long-btn:hover{background-color: #e8e7df;}
+.mdth #recent-file-panel tbody tr:nth-child(2n-1){background-color: transparent !important;}
+.mdth .btn-default{background-color: transparent;}
+.mdth .md-task-list-item>input{margin-left: -1.7em;
+	margin-top: calc(1rem - 12px);
+	-webkit-appearance: button;}
+.mdth input{border: 1px solid #aaa;}
+.mdth .os-windows-7 strong,.mdth .os-windows-7 strong{font-weight: 760;}
+.mdth .export-detail,.mdth .light .export-detail,.mdth .light .export-item.active,.mdth .light .export-items-list-control{background: #e0e0e0;
+	border-radius: 2px;
+	font-weight: 700;
+	color: inherit}

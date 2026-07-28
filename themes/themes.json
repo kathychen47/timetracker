@@ -1,0 +1,157 @@
+[
+  {
+    "id": "drake",
+    "name": "drake",
+    "dark": false
+  },
+  {
+    "id": "drake-google",
+    "name": "drake-google",
+    "dark": false
+  },
+  {
+    "id": "drake-jb",
+    "name": "drake-jb",
+    "dark": false
+  },
+  {
+    "id": "drake-juejin",
+    "name": "drake-juejin",
+    "dark": false
+  },
+  {
+    "id": "drake-light",
+    "name": "drake-light",
+    "dark": false
+  },
+  {
+    "id": "drake-vue",
+    "name": "drake-vue",
+    "dark": false
+  },
+  {
+    "id": "drake-vue3",
+    "name": "drake-vue3",
+    "dark": false
+  },
+  {
+    "id": "github",
+    "name": "GitHub",
+    "dark": false
+  },
+  {
+    "id": "lapis",
+    "name": "Lapis",
+    "dark": false
+  },
+  {
+    "id": "mint",
+    "name": "Mint",
+    "dark": false
+  },
+  {
+    "id": "newsprint",
+    "name": "report",
+    "dark": false
+  },
+  {
+    "id": "notion-light-classic",
+    "name": "notion-light-classic",
+    "dark": false
+  },
+  {
+    "id": "notion-light-enhanced",
+    "name": "notion-light-enhanced",
+    "dark": false
+  },
+  {
+    "id": "orangeheart",
+    "name": "橙心",
+    "dark": false
+  },
+  {
+    "id": "pixyll",
+    "name": "Pixyll",
+    "dark": false
+  },
+  {
+    "id": "vue",
+    "name": "Vue",
+    "dark": false
+  },
+  {
+    "id": "whitey",
+    "name": "Whitey",
+    "dark": false
+  },
+  {
+    "id": "cobalt",
+    "name": "Cobalt",
+    "dark": true
+  },
+  {
+    "id": "drake-ayu",
+    "name": "drake-ayu",
+    "dark": true
+  },
+  {
+    "id": "drake-black",
+    "name": "drake-black",
+    "dark": true
+  },
+  {
+    "id": "drake-dark",
+    "name": "drake-dark",
+    "dark": true
+  },
+  {
+    "id": "drake-material",
+    "name": "drake-material",
+    "dark": true
+  },
+  {
+    "id": "drake-purple",
+    "name": "drake-purple",
+    "dark": true
+  },
+  {
+    "id": "lapis-dark",
+    "name": "Lapis 暗",
+    "dark": true
+  },
+  {
+    "id": "mint-dark",
+    "name": "Mint 暗",
+    "dark": true
+  },
+  {
+    "id": "night",
+    "name": "Night",
+    "dark": true
+  },
+  {
+    "id": "notion-dark-classic",
+    "name": "notion-dark-classic",
+    "dark": true
+  },
+  {
+    "id": "notion-dark-enhanced",
+    "name": "notion-dark-enhanced",
+    "dark": true
+  },
+  {
+    "id": "notion-darker-classic",
+    "name": "notion-darker-classic",
+    "dark": true
+  },
+  {
+    "id": "notion-darker-enhanced",
+    "name": "notion-darker-enhanced",
+    "dark": true
+  },
+  {
+    "id": "vue-dark",
+    "name": "Vue 暗",
+    "dark": true
+  }
+]

@@ -1,0 +1,100 @@
+/* orangeheart — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+.mdth{max-width: 860px;
+  font-size: 1rem;
+  color: black;
+  padding: 0 10px;
+  line-height: 1.6;
+  word-spacing: 0px;
+  letter-spacing: 0px;
+  word-break: break-word;
+  word-wrap: break-word;
+  text-align: left;
+  font-family: Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;}
+.mdth + p,.mdth blockquote p{font-size: 1rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  margin: 0;
+  line-height: 1.5rem;
+  color: black;}
+.mdth div[mdtype=toc]{font-size: 1rem;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{margin: 1.2em 0 1em;
+  padding: 0px;
+  font-weight: bold;
+  color: black;}
+.mdth h1{font-size: 1.5rem;}
+.mdth h2{font-size: 1.3rem;
+  border-bottom: 2px solid rgb(239, 112, 96);}
+.mdth h2 span{display: inline-block;
+ font-weight: bold;
+ background: rgb(239, 112, 96);
+ color: #ffffff;
+ padding: 3px 10px 1px;
+ border-top-right-radius: 3px;
+ border-top-left-radius: 3px;
+ margin-right: 3px;}
+.mdth h2:after{display: inline-block;
+ content: "";
+ vertical-align: bottom;
+ border-bottom: 1.25rem solid #efebe9;
+ border-right: 1.25rem solid transparent;}
+.mdth h3{font-size: 1.3rem;}
+.mdth h4{font-size: 1.2rem;}
+.mdth h5{font-size: 1.1rem;}
+.mdth h6{font-size: 1rem;}
+.mdth ul,.mdth ol{margin-top: 8px;
+  margin-bottom: 8px;
+  padding-left: 25px;
+  color: black;}
+.mdth ul{list-style-type: disc;}
+.mdth ul ul{list-style-type: square;}
+.mdth ol{list-style-type: decimal;}
+.mdth li section{margin-top: 5px;
+  margin-bottom: 5px;
+  line-height: 1.7rem;
+  text-align: left;
+  color: rgb(1,1,1); /* 只要是纯黑色微信编辑器就会把color这个属性吞掉。。。*/
+  font-weight: 500;}
+.mdth blockquote{display: block;
+  font-size: .9em;
+  overflow: auto;
+  border-left: 3px solid rgb(239, 112, 96);
+  color: #6a737d;
+  padding: 10px 10px 10px 20px;
+  margin-bottom: 20px;
+  margin-top: 20px;
+  background: #fff9f9;}
+.mdth a{text-decoration: none;
+  word-wrap: break-word;
+  font-weight: bold;
+  border-bottom: 1px solid #1e6bb8;
+  color: rgb(239, 112, 96);
+  border-bottom: 1px solid rgb(239, 112, 96);}
+.mdth p code,.mdth li code{font-size: .9rem;
+  word-wrap: break-word;
+  padding: 2px 4px;
+  border-radius: 4px;
+  margin: 0 2px;
+  color:  rgb(239, 112, 96);;
+  background-color: rgba(27,31,35,.05);
+  font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+  word-break: break-all;}
+.mdth img{display: block;
+  margin: 0 auto;
+  max-width: 100%;}
+.mdth span img{display: inline-block;
+  border-right: 0px;
+  border-left: 0px;}
+.mdth table{display: table;
+  text-align: left;}
+.mdth tbody{border: 0;}
+.mdth table tr{border: 0;
+  border-top: 1px solid #ccc;
+  background-color: white;}
+.mdth table tr:nth-child(2n){background-color: #F8F8F8;}
+.mdth table tr th,.mdth table tr td{font-size: 1rem;
+  border: 1px solid #ccc;
+  padding: 5px 10px;
+  text-align: left;}
+.mdth table tr th{font-weight: bold;
+  background-color: #f0f0f0;}
+.mdth span code,.mdth li code{color: rgb(239, 112, 96);}

@@ -1,0 +1,57 @@
+/* lapis-dark — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+@import "lapis.css";
+.mdth{--text-color: #e4e4e4e3;
+    /* Text */
+    --primary-color: #8393ad;
+    /* Primary Color */
+    --bg-color: #1e222a;
+    --side-bar-bg-color: #181c24;
+    --panel-bg-color: #40464f;
+    /* Background */
+
+    --code-color: #abbad4;
+    /* Inline Code & Code Block */
+    --marker-color: #7d8a9f;
+    /* List Marker */
+    --highlight-color: #ffffb5c2;
+    /* Highlight */
+    --header-span-color: #47556d;
+    /* h2 Span Color */
+    --block-bg-color: #080e1d;
+    /* Code Block Background */
+    --quote-block-bg-color: #2a2f3b;
+    /* Quote Block Background */
+    --img-shadow-color: var(--block-bg-color);
+
+    /* Overwrite of Typora Base Color */
+    --md-char-color: #7d8a9f7d;
+    --heading-char-color: var(--text-color);
+    --select-text-bg-color: #dae3ea2e;
+    --search-select-bg-color: #346895;
+    --item-hover-bg-color: var(--block-bg-color);
+    --window-border: 1px solid var(--bg-color);
+    --control-text-hover-color: var(--text-color);
+    --rawblock-edit-panel-bd: var(--block-bg-color);}
+.mdth content{background: var(--bg-color);}
+.mdth h2{color: var(--text-color);}
+.mdth mark{background: var(--highlight-color);
+    border-radius: 1px;
+    color: var(--bg-color);}
+.mdth blockquote{background: var(--quote-block-bg-color);}
+.mdth code{color: var(--code-color);}
+.mdth h2 code{background-color: var(--header-span-color);
+    color: var(--text-color);}
+.mdth table.md-table tr th,.mdth table.md-table tr td{border: 1px solid var(--header-span-color);}
+.mdth table.md-table tr th{color: var(--text-color);}
+.mdth table.md-table.md-table td{background-color: var(--bg-color);}
+.mdth table.md-table tr td:hover,.mdth table.md-table tr th:hover{background-color: var(--side-bar-bg-color);}
+.mdth #recent-file-panel{color: var(--text-color);}
+.mdth #recent-file-panel-action-btn{background-color: var(--bg-color);}
+.mdth #recent-file-panel-action-btn-container{color: rgba(146, 146, 146, 0.56);}
+.mdth #recent-file-panel tbody tr:nth-child(2n-1){background-color: var(--panel-bg-color);}
+.mdth .task-list-item input:checked::before,.mdth .task-list-item input:before{background-color: var(--bg-color);}
+.mdth hr{border-top: 1px solid var(--header-span-color);}
+.mdth .md-comment{color: var(--header-span-color);}
+.mdth .nav-group-item.active{background: var(--block-bg-color) !important;
+    color: var(--bg-color);}
+.mdth ::-webkit-scrollbar-thumb{background: var(--block-bg-color);}

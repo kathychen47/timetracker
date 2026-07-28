@@ -1,0 +1,116 @@
+/* mint — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+.mdth{--side-bar-bg-color: #d9ede5;
+	--control-text-color: #6B6B6B;
+	--active-file-bg-color: #ecf6f2;
+	--active-file-border-color: #6B6B6B;
+	--active-file-text-color: #202020;
+	--table-even-row-color:#f8fcfa;
+	--table-head-color:#d9ede5;
+	--deep-theme-color: #4eb289;
+	--code-block-bg-color: #0F111A;}
+.mdth{font-size: 16px;}
+.mdth{font-family: 'Lexend','Helvetica','SourceCodePro','NotoSansSC';
+	font-weight: normal;
+	line-height: 1.5rem;
+	letter-spacing: 0;
+  margin: 0;}
+.mdth{max-width: 900px;
+  padding: 30px 50px 20px;}
+.mdth p{text-align:left;}
+@media print{
+  .mdth,.mdth{font-size: 14px;}
+  .mdth table,.mdth pre{page-break-inside: avoid;}
+  .mdth pre{word-wrap: break-word;}
+}
+.mdth a{color: var(--deep-theme-color);
+	text-decoration: none;}
+.mdth a:hover{text-decoration: underline;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{display: block;
+	font-weight:bold;}
+.mdth h1{font-size: 1.8em;
+  line-height: 110%;
+	margin-top: 0.67em;
+	margin-bottom: 0.67em;}
+.mdth h2{font-size: 1.5em;
+	margin-top: 0.83em;
+	margin-bottom: 0.83em;}
+.mdth h3{font-size: 1.17em;
+	margin-top: 1em;
+	margin-bottom: 1em;}
+.mdth h4{font-size: 1em;
+	margin-top: 1.33em;
+	margin-bottom: 1.33em;}
+.mdth h5{font-size: 1em;
+	margin-top: 1.33em;
+	margin-bottom: 1.33em;
+	color: #777777;}
+.mdth h6{font-size: 1em;
+	margin-top: 1.33em;
+	margin-bottom: 1.33em;
+	color: #adadad;}
+.mdth p,.mdth blockquote,.mdth ul,.mdth ol,.mdth dl,.mdth table{margin: 0.5rem 0;}
+.mdth table{border-collapse: collapse;
+	padding: 0;
+  word-break: initial;
+	width: 100%;}
+.mdth table tr:nth-child(even){background-color: var(--table-even-row-color);}
+.mdth thead{background-color: var(--table-head-color);}
+.mdth table th{text-align: center;
+	padding:6px 13px;
+	border: 1px solid var(--table-head-color);}
+.mdth table td{padding:6px 13px;
+	border: 1px solid var(--table-head-color);}
+.mdth table tr{padding:6px 13px;
+	border: 1px solid var(--table-head-color);}
+.mdth blockquote{border-left: 0.2rem solid var(--side-bar-bg-color);
+	color: #777777;
+	font-family: 'Lexend','NotoSansSC';
+	font-size: 0.9rem;
+	padding-left: 2rem;}
+.mdth li p.first{display: inline-block;}
+.mdth ul,.mdth ol{padding-left: 30px;}
+.mdth ul:first-child,.mdth ol:first-child{margin-top: 0;}
+.mdth ul:last-child,.mdth ol:last-child{margin-bottom: 0;}
+.mdth .md-task-list-item:hover > input:before,.mdth input[type='checkbox']:hover:before{opacity: 1;
+	transition: 0.5s;
+	background-color: var(--side-bar-bg-color);}
+.mdth .task-list-item input::before{content: "";
+  display: inline-block;
+  border-radius: 1.1rem;
+  vertical-align: middle;
+  border: 1.2px solid var(--deep-theme-color);
+  background-color: #ffffff;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: -0.13rem;
+  margin-right: 0.1rem;
+  margin-top: -0.67rem;}
+.mdth .task-list-item input:checked::before{padding-left: 0.125em;
+  content: '✔';
+  color:white;
+  background-color: var(--deep-theme-color);
+  font-size: 0.8rem;
+  line-height: 0.95rem;
+  margin-left: -0.13rem;
+  margin-right: 0.1rem;
+  margin-top: -0.67rem; 
+  transition: background-color 200ms ease-in-out;}
+.mdth .task-list-done{text-decoration: line-through;
+    color: #adadad;}
+.mdth hr{border-style: none;
+  border-top-style: solid;
+  border-color: #e7e7e7;
+  border-width: 1px;
+	margin: 2rem 0;}
+.mdth mark{background-color: #c7ffe8;
+	border-radius: 2px;
+	color: black;
+	padding: 0 4px;
+	margin: 0 2px;}
+.mdth code,.mdth tt{padding: 0.6px 4px;
+	border-radius: 2px;
+	background-color: #f1f1f1;
+	font-family: 'SourceCodePro',Consolas,Courier,'NotoSansSC';
+	font-size: 0.9rem;
+	color: var(--code-block-bg-color);
+	margin: 0 2px;}

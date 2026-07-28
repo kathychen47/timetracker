@@ -1,0 +1,100 @@
+/* github — 由 Typora 主题转换而来，原作 MIT License (c) 2019 evgo，见 themes/LICENSE */
+.mdth{--side-bar-bg-color: #fafafa;
+    --control-text-color: #777;}
+@include-when-export url(https://fonts.loli.net/css?family=Open+Sans:400italic,700italic,700,400&subset=latin,latin-ext);
+.mdth{font-size: 16px;
+    -webkit-font-smoothing: antialiased;}
+.mdth{font-family: "Open Sans","Clear Sans", "Helvetica Neue", Helvetica, Arial, 'Segoe UI Emoji', sans-serif;
+    color: rgb(51, 51, 51);
+    line-height: 1.6;}
+.mdth{max-width: 860px;
+  	margin: 0 auto;
+  	padding: 30px;
+    padding-bottom: 100px;}
+@media only screen and (min-width: 1400px){
+  .mdth{max-width: 1024px;}
+}
+@media only screen and (min-width: 1800px){
+  .mdth{max-width: 1200px;}
+}
+.mdth > ul:first-child,.mdth > ol:first-child{margin-top: 30px;}
+.mdth a{color: #4183C4;}
+.mdth h1,.mdth h2,.mdth h3,.mdth h4,.mdth h5,.mdth h6{position: relative;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+    cursor: text;}
+.mdth h1:hover a.anchor,.mdth h2:hover a.anchor,.mdth h3:hover a.anchor,.mdth h4:hover a.anchor,.mdth h5:hover a.anchor,.mdth h6:hover a.anchor{text-decoration: none;}
+.mdth h1 tt,.mdth h1 code{font-size: inherit;}
+.mdth h2 tt,.mdth h2 code{font-size: inherit;}
+.mdth h3 tt,.mdth h3 code{font-size: inherit;}
+.mdth h4 tt,.mdth h4 code{font-size: inherit;}
+.mdth h5 tt,.mdth h5 code{font-size: inherit;}
+.mdth h6 tt,.mdth h6 code{font-size: inherit;}
+.mdth h1{font-size: 2.25em;
+    line-height: 1.2;
+    border-bottom: 1px solid #eee;}
+.mdth h2{font-size: 1.75em;
+    line-height: 1.225;
+    border-bottom: 1px solid #eee;}
+.mdth h3{font-size: 1.5em;
+    line-height: 1.43;}
+.mdth h4{font-size: 1.25em;}
+.mdth h5{font-size: 1em;}
+.mdth h6{font-size: 1em;
+    color: #777;}
+.mdth p,.mdth blockquote,.mdth ul,.mdth ol,.mdth dl,.mdth table{margin: 0.8em 0;}
+.mdth li>ol,.mdth li>ul{margin: 0 0;}
+.mdth hr{height: 2px;
+    padding: 0;
+    margin: 16px 0;
+    background-color: #e7e7e7;
+    border: 0 none;
+    overflow: hidden;
+    box-sizing: content-box;}
+.mdth li p.first{display: inline-block;}
+.mdth ul,.mdth ol{padding-left: 30px;}
+.mdth ul:first-child,.mdth ol:first-child{margin-top: 0;}
+.mdth ul:last-child,.mdth ol:last-child{margin-bottom: 0;}
+.mdth blockquote{border-left: 4px solid #dfe2e5;
+    padding: 0 15px;
+    color: #777777;}
+.mdth blockquote blockquote{padding-right: 0;}
+.mdth table{padding: 0;
+    word-break: initial;}
+.mdth table tr{border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 0;}
+.mdth table tr:nth-child(2n),.mdth thead{background-color: #f8f8f8;}
+.mdth table th{font-weight: bold;
+    border: 1px solid #dfe2e5;
+    border-bottom: 0;
+    margin: 0;
+    padding: 6px 13px;}
+.mdth table td{border: 1px solid #dfe2e5;
+    margin: 0;
+    padding: 6px 13px;}
+.mdth table th:first-child,.mdth table td:first-child{margin-top: 0;}
+.mdth table th:last-child,.mdth table td:last-child{margin-bottom: 0;}
+.mdth code,.mdth tt{border: 1px solid #e7eaed;
+    background-color: #f8f8f8;
+    border-radius: 3px;
+    padding: 0;
+    padding: 2px 4px 0px 4px;
+    font-size: 0.9em;}
+.mdth code{background-color: #f3f4f4;
+    padding: 0 2px 0 2px;}
+.mdth .md-task-list-item > input{margin-left: -1.3em;}
+@media print{
+  .mdth{font-size: 13px;}
+  .mdth pre{page-break-inside: avoid;
+        word-wrap: break-word;}
+}
+.mdth .md-tag{color: #a7a7a7;
+    opacity: 1;}
+.mdth .on-focus-mode blockquote{border-left-color: rgba(85, 85, 85, 0.12);}
+.mdth header,.mdth footer{font-family: "Segoe UI", "Arial", sans-serif;}
+.mdth .md-lang{color: #b4654d;}
+.mdth .menu-item-container a.menu-style-btn{background-color: #f5f8fa;
+    background-image: linear-gradient( 180deg , hsla(0, 0%, 100%, 0.8), hsla(0, 0%, 100%, 0));}

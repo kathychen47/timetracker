@@ -837,8 +837,23 @@
   .dym{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
   .dym-i{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;cursor:pointer;color:var(--primary);font-size:14px}
   .dym-i:hover{background:var(--primary-soft)}
-  .rd-mine{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)}
-  .rd-mine>span{font-size:11.5px;color:var(--muted);flex:1;min-width:120px}
+  .mynote-ex{margin-top:10px;padding-top:9px;border-top:1px dashed var(--border)}
+  .mynote-ex .exh{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px;letter-spacing:.02em}
+  .mynote-ex .ex{margin-bottom:8px}
+  .mynote-ex .ex:last-child{margin-bottom:0}
+  .mynote-ex .ex .s{font-size:13.5px;line-height:1.7}
+  .mynote-ex .ex .s b{color:var(--primary);font-weight:700}
+  .mynote-ex .ex .f{font-size:11px;color:var(--muted);margin-top:3px}
+  .rd-mine{margin-top:11px;padding-top:10px;border-top:1px dashed var(--border)}
+  .rd-mine-h{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px}
+  .rd-mine-h em{font-style:normal;font-weight:400;font-size:11px;opacity:.85}
+  .rd-mine-st{margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)}
+  .rd-mine-st.dirty{color:#d98324}
+  .rd-mynote{width:100%;box-sizing:border-box;min-height:62px;resize:vertical;padding:8px 10px;
+    border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);
+    font-size:13.5px;line-height:1.65;font-family:inherit}
+  .rd-mynote:focus{outline:none;border-color:var(--primary)}
+  .set-popsize{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
   .dict-hint{color:var(--muted);font-size:14px;padding:20px 4px;text-align:center}
   .dict-hint.via{padding:2px 2px 8px;text-align:left;font-size:12.5px}
   .dict-hint.via b{color:var(--primary)}
@@ -913,6 +928,9 @@
   .wb-move{flex:none;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
     border-radius:7px;padding:3px 6px;font-size:11.5px;max-width:110px;opacity:0;transition:opacity .12s}
   .wb-item:hover .wb-move,.wb-move:focus{opacity:1}
+  .wb-known{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;
+    padding:3px 9px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none}
+  .wb-known:hover{color:#2f9e6e;border-color:#2f9e6e;background:#eef9f3}
   .wb-item .del{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;flex:none}
   .wb-item .del:hover{color:var(--danger)}
   .wb-def{padding:4px 14px 12px;border-top:1px solid var(--border)}
@@ -1142,6 +1160,17 @@
   .nb-doc-view ul,.nb-doc-view ol{padding-left:1.4em}
   .nb-doc-view code{background:var(--surface-2);padding:1px 5px;border-radius:5px;font-size:.9em}
   .nb-doc-view pre{background:var(--surface-2);padding:10px 12px;border-radius:9px;overflow-x:auto}
+  .nb-doc-live{flex:1;min-height:340px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;
+    background:var(--bg);overflow:auto;outline:none;line-height:1.75}
+  .nb-doc-live:focus-within{border-color:var(--c)}
+  .lb{margin:0;padding:1px 0}
+  .lb.src{white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;
+    font-size:13.5px;background:var(--surface-2);border-radius:7px;padding:4px 8px;margin:2px -8px}
+  .lb.empty:not(.src):before{content:"　";color:transparent}
+  .lb>:first-child{margin-top:0}
+  .lb>:last-child{margin-bottom:0}
+  .nb-doc-panes.live>.nb-doc-body,.nb-doc-panes.live>.nb-doc-view{display:none}
+  .nb-doc-panes:not(.live)>.nb-doc-live{display:none}
   .nb-doc-panes{display:flex;gap:12px;flex:1;min-height:0}
   .nb-doc-panes>*{flex:1;min-width:0}
   .nb-doc-panes.one-src>.nb-doc-view{display:none}
@@ -3042,10 +3071,7 @@ margin-left: -22px;
       <span class="v" id="rd-fs-v">100%</span>
       <button type="button" data-fs="1" title="大一点">A＋</button>
       <span class="sep"></span>
-      <b>窗口</b><button type="button" data-pz="w-">窄</button><button type="button" data-pz="w+">宽</button>
-      <button type="button" data-pz="h-">矮</button><button type="button" data-pz="h+">高</button>
-      <span class="sep"></span>
-      <button type="button" data-pz="auto" title="大小重新跟着内容走">自适应</button>
+      <span style="font-size:11px">窗口大小在 ⚙️设置 → 📖词典 里调</span>
     </div>
     <div class="rd-pop-bd" id="rd-pop-bd"></div>
   </div>
@@ -3115,7 +3141,8 @@ margin-left: -22px;
       <div class="flash-def" id="flash-def"></div>
       <div class="flash-btns" id="flash-btns"></div>
       <div class="flash-extra">
-        <button class="btn" id="flash-master" title="不再出现">✓ 已掌握</button>
+        <button class="btn" id="flash-master" title="留在生词本里，但不再排复习">✓ 已掌握</button>
+        <button class="btn" id="flash-known" title="本来就认识：直接移出生词本，以后查到也不再自动收进来">🗑 认识，别收了</button>
         <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
       </div>
     </div>
@@ -3366,6 +3393,11 @@ margin-left: -22px;
         </div>
       </div>
       <div class="set-item">
+        <label class="do-name">笔记的 Markdown 主题</label>
+        <div class="set-desc" style="margin-top:4px">笔记正文渲染出来长什么样。这些是从 Typora 主题转过来的（MIT License · evgo），只作用在笔记预览区，不影响 app 其他地方。</div>
+        <div class="set-popsize" id="set-mdtheme" style="margin-top:9px"></div>
+      </div>
+      <div class="set-item">
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">界面缩放</div><div class="set-desc">整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。</div></div>
           <select id="set-zoom">
@@ -3407,6 +3439,11 @@ margin-left: -22px;
       <div class="set-item">
         <div class="set-desc" style="margin-bottom:10px">牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。</div>
         <div class="dict-setup" id="dict-setup"></div>
+      </div>
+      <div class="set-item">
+        <label class="do-name">划词卡片的窗口大小</label>
+        <div class="set-desc" style="margin-top:4px">看书和笔记里划词弹出来的那张卡片。「自适应」= 内容多大框就多大；也可以直接拖卡片右下角。字号在卡片上的 <b>Aa</b> 里调。</div>
+        <div class="set-popsize" id="set-popsize"></div>
       </div>
       <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">结果顺序 / 显示</div>
@@ -5555,7 +5592,7 @@ margin-left: -22px;
   function bookmarkletCode(){var base=location.origin+location.pathname;
     return "javascript:(function(){var s='';try{s=String(window.getSelection()||'').trim();}catch(e){}if(!s)s=(prompt('\\u67e5\\u8bcd / Look up:','')||'').trim();if(!s)return;var p=window.open('"+base+"?mini=1&add=1&w='+encodeURIComponent(s),'ttdict','width=540,height=700');if(p)p.focus();else alert('\\u5f39\\u7a97\\u88ab\\u62e6\\u622a\\uff0c\\u8bf7\\u5141\\u8bb8\\u5f39\\u7a97');})();";}
   function renderBookmarklet(){var a=document.getElementById("bm-link");if(a)a.setAttribute("href",bookmarkletCode());}
-  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();
+  function syncDictPane(){renderDictSetup();renderDictOrder();renderWbgManage();renderBookmarklet();renderPopSize();renderMdThemes();
     var aa=document.getElementById("dict-autoadd");if(aa)aa.checked=!!dictPrefs.autoAdd;
     var as=document.getElementById("dict-autospeak");if(as)as.checked=!!dictPrefs.autoSpeak;
     var pm=document.getElementById("dict-popmode");if(pm)pm.value=dictPrefs.popMode||"pin";
@@ -5738,7 +5775,8 @@ margin-left: -22px;
       if(hit){matches.push([store,hit.rec]);if(hit.changed&&!viaBase)viaBase=hit.base;}}
     if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
-      if(!isSaved(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();trashDrop(w0);updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
+      // 标过「认识」或删过的词，不再自动收
+      if(!isSaved(w0)&&!trashHas(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();trashDrop(w0);updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
     if(!html){
       // 输入的是词组/句子 —— 直接给翻译
@@ -5760,7 +5798,7 @@ margin-left: -22px;
         var fb=document.getElementById("dict-fallback");
         if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr2.by)+'</span></div>'+
           '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';
-        if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key))addUnknownWord(key,q,tr2.text);}
+        if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);}
       catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
       return;}
     box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+html;}
@@ -5786,11 +5824,18 @@ margin-left: -22px;
   function toggleWord(w,disp,store){
     var idx=-1;for(var i=0;i<words.length;i++)if(words[i].w===w){idx=i;break;}
     if(idx>=0){words.splice(idx,1);trashAdd(w);}        // 取消收藏 = 删掉，记一笔
-    else{words.push({w:w,disp:disp||w,dict:store,ts:Date.now(),group:wbGroups.def});trashDrop(w);}
+    else{words.push({w:w,disp:disp||w,dict:store,ts:Date.now(),group:wbGroups.def});trashDrop(w);ctxAttach(w);}
     saveWords();updateWbCount();
     var inp=document.getElementById("dict-q");
     if(inp&&document.getElementById("dict-look").style.display!=="none")doLookup(inp.value);}
   function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();trashAdd(w);renderWordbook();}
+  async function markKnown(w,anchor){                  // 认识了：移走 + 记进"不再收录"名单
+    var x=wordOf(w),disp=(x&&(x.disp||x.w))||w;
+    words=words.filter(function(y){return y.w!==w;});saveWords();
+    trashAdd(w);renderWordbook();
+    if(!load("tt_knownhint",false)){                   // 只解释一次，别每次都弹
+      save("tt_knownhint",true);
+      ttAlert("「"+disp+"」标记为认识了。\n它会从生词本移走，以后就算再查到、再导入，也不会自动收进来。\n想反悔：📥 导入单词 → 清空删除记录。",{anchor:anchor});}}
   function updateWbCount(){var el=document.getElementById("wb-count");if(el)el.textContent=words.length?("("+words.length+")"):"";}
 
   var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
@@ -5856,7 +5901,8 @@ margin-left: -22px;
         '<select class="wb-move" data-w="'+esc(x.w)+'" title="移到别的词书">'+
           wbGroups.list.map(function(g){return '<option value="'+g.id+'"'+(wbGroupOf(x)===g.id?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
         '</select>'+
-        '<button class="del" data-w="'+esc(x.w)+'" title="移除">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
+        '<button class="wb-known" data-known="'+esc(x.w)+'" title="我认识这个词：移出生词本，以后查到也不再自动收进来">✓ 认识</button>'+
+        '<button class="del" data-w="'+esc(x.w)+'" title="移除（以后查到也不会再自动收）">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
   function renderWbCharts(arr){
     var box=document.getElementById("wb-charts");if(!box)return;
     var hist=load("tt_srshist",{})||{},N=14,today=new Date();
@@ -5922,23 +5968,98 @@ margin-left: -22px;
       return '<div class="do-row"><span class="wbg-l"><button class="wbg-def'+(isDef?" on":"")+'" type="button" data-def="'+g.id+'" title="设为默认（新词进这里）">'+(isDef?"⭐":"☆")+'</button><b>'+esc(g.name)+'</b> <span class="wbg-n">'+n+' 词</span></span>'+
         '<span class="do-btns"><button class="do-mv" type="button" data-ren="'+g.id+'" title="重命名">✎</button>'+((wbGroups.list.length>1&&!isDef)?'<button class="do-mv" type="button" data-delg="'+g.id+'" title="删除">✕</button>':'')+'</span></div>';}).join("");}
   function wordOf(w){w=(w||"").toLowerCase();for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
+  // ===== 语境：查词时把这个词所在的句子抄一份到词条上 =====
+  var pendCtx=null,preCtx=null;                        // preCtx：调用方先算好的（textarea 没有 DOM 选区）
+  function ctxSentence(full,s,e){                      // 从整段文字里切出光标所在的那一句
+    full=String(full||"");if(!full)return "";
+    var L=full.slice(0,s),Rt=full.slice(e),a0=-1;
+    [".","!","?","。","！","？","\n",";","；"].forEach(function(m){var i=L.lastIndexOf(m);if(i>a0)a0=i;});
+    var b0=Rt.search(/[.!?。！？\n;；]/);
+    var out=full.slice(a0+1,e+(b0<0?Rt.length:b0+1)).replace(/\s+/g," ").trim();
+    if(out.length>320)out=out.slice(0,320)+"…";
+    return out;}
+  function ctxSource(){                                // 出处只记文字，不记 id —— 书删了也不会变成死链
+    try{
+      if(state.tab==="notes"&&nbDoc){var d=noteById(nbDoc);return "笔记："+((d&&d.title)||"（无标题）");}
+      if(curBook){var sc=annScope(),n=String(sc||"").slice(1);
+        return "《"+(curBook.name||"未命名")+"》"+(n&&n!=="0"?(" 第 "+n+(String(sc).charAt(0)==="c"?" 节":" 页")):"");}
+    }catch(e){}
+    return "";}
+  function ctxFromDom(word){
+    try{
+      var s=getSelection();if(!s||!s.rangeCount)return null;
+      var t=String(s).trim();
+      if(!t||t.toLowerCase()!==String(word||"").trim().toLowerCase())return null;   // 选中的不是这个词就算了
+      var r=s.getRangeAt(0),host=r.startContainer;
+      host=(host.nodeType===1?host:host.parentNode);
+      if(host&&host.closest)host=host.closest("p,li,td,th,blockquote,h1,h2,h3,h4,h5,h6,section,article,div")||host;
+      var full=host.textContent||"";
+      var pre=document.createRange();pre.selectNodeContents(host);pre.setEnd(r.startContainer,r.startOffset);
+      var st=pre.toString().length;
+      var sent=ctxSentence(full,st,st+t.length);
+      if(!sent||sent.length<=t.length+3)return null;    // 只有这个词本身，不算语境
+      return {s:sent,src:ctxSource()};
+    }catch(e){return null;}}
+  function ctxAttach(w){                               // 词进了生词本才挂上去
+    if(!pendCtx)return;
+    var k=String(w||"").toLowerCase().trim();
+    if(pendCtx.w!==k)return;
+    var x=wordOf(k);if(!x)return;
+    x.ctx=x.ctx||[];
+    for(var i=0;i<x.ctx.length;i++)if(x.ctx[i].s===pendCtx.s)return;   // 同一句不重复记
+    x.ctx.unshift({s:pendCtx.s,src:pendCtx.src||"",ts:Date.now()});
+    if(x.ctx.length>6)x.ctx.length=6;
+    saveWords();pendCtx=null;}
+  function ctxHl(s,w){                                 // 句子里把这个词加粗
+    var e=esc(String(s||"")),q=esc(String(w||"")).replace(/[.*+?^{}()|[\]\\$]/g,"\\$&");
+    if(!q)return e;
+    try{return e.replace(new RegExp(q,"gi"),function(m){return "<b>"+m+"</b>";});}catch(err){return e;}}
   function wordNoteHTML(w){
-    var x=wordOf(w);if(!x||!x.note)return "";
+    var x=wordOf(w);if(!x)return "";
+    var ex=(x.ctx||[]).map(function(c){
+      return '<div class="ex"><div class="s">'+ctxHl(c.s,x.disp||x.w)+'</div>'+
+        (c.src?'<div class="f">'+esc(c.src)+'</div>':"")+'</div>';}).join("");
+    if(!x.note&&!ex)return "";
     return '<div class="dict-card mynote"><div class="dict-card-top"><span class="dict-src">📝 我的笔记</span>'+
       '<button class="dict-add" data-note="'+esc(x.w)+'">编辑</button></div>'+
-      '<div class="mynote-t">'+esc(x.note)+'</div></div>';}
+      (x.note?'<div class="mynote-t">'+esc(x.note)+'</div>':"")+
+      (ex?'<div class="mynote-ex"><div class="exh">📖 我在哪儿遇到它</div>'+ex+'</div>':"")+'</div>';}
   // 词典查不到的词（专业术语、人名、缩写…）也要能收。翻译只当草稿，真正的解释你自己写。
   function addUnknownWord(w,disp,draft){
     var k=String(w||"").toLowerCase().trim();if(!k)return null;
     var x=wordOf(k);
     if(!x){addWords([{w:k,disp:disp||w}],wbGroups.def);x=wordOf(k);}
     if(x&&draft&&!x.note){x.note=draft;saveWords();}    // 只在还没写过的时候垫一句，绝不覆盖你写的
+    ctxAttach(k);                                       // 刚收进来 → 把这次的语境补上
     updateWbCount();
     if(state.tab==="dict")try{renderWordbook();}catch(e){}
     return x;}
+  // 直接给个输入框，别让人再点一次才写得了。写第一个字就自动把词收进生词本。
   function mineBtnHTML(w,disp){
-    return '<div class="rd-mine"><button class="btn" data-mynote="'+esc(w)+'" data-disp="'+esc(disp||w)+'">✎ 收进生词本 · 自己写释义</button>'+
-      '<span>专业术语、人名、缩写这类，机器翻译只能当草稿</span></div>';}
+    var x=wordOf(w),has=!!(x&&x.note);
+    return '<div class="rd-mine"><div class="rd-mine-h">✎ 我的释义 <em>专业术语、人名、缩写这类，机器翻译只能当草稿</em>'+
+      '<span class="rd-mine-st" id="rd-mine-st">'+(has?"✓ 已存":"")+'</span></div>'+
+      '<textarea class="rd-mynote" data-w="'+esc(w)+'" data-disp="'+esc(disp||w)+'" '+
+      'placeholder="写一句自己的解释，背诵时它会顶在最上面…">'+esc((x&&x.note)||"")+'</textarea></div>';}
+  var mineT=null;
+  function mineSave(ta,now){                          // 输入框 → 生词本（停手 600ms 或失焦时落盘）
+    clearTimeout(mineT);
+    function go(){
+      var w=ta.getAttribute("data-w"),dp=ta.getAttribute("data-disp")||w,v=ta.value.trim();
+      if(!v&&!wordOf(w))return;                       // 空的就别凭空收一个词进来
+      var x=addUnknownWord(w,dp,"");if(!x)return;
+      x.note=v;saveWords();
+      var st=document.getElementById("rd-mine-st");
+      if(st){st.textContent="✓ 已存";st.className="rd-mine-st";}
+      var s2=document.getElementById("rd-pop-star");
+      if(s2&&s2.style.display!=="none"){s2.classList.add("on");s2.innerHTML=starSVG(true);s2.title="已收藏（点取消）";}
+      if(state.tab==="dict")try{renderWordbook();}catch(e){}}
+    if(now)go();else mineT=setTimeout(go,600);}
+  function mineTyping(e){
+    var ta=e.target.closest(".rd-mynote");if(!ta)return null;
+    var st=document.getElementById("rd-mine-st");
+    if(st){st.textContent="…";st.className="rd-mine-st dirty";}
+    return ta;}
   async function setWordNote(w,anchor){
     var x=wordOf(w);
     if(!x){ttAlert("先把这个词加入生词本，再写笔记");return false;}
@@ -6109,15 +6230,15 @@ margin-left: -22px;
         '<input type="file" id="wt-file" accept=".txt,.csv,.tsv"></div>'+
         '<button class="btn primary" id="wt-do">下一步：检查</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>'+
         '<div class="wt-note">同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。'+
-        (trashCount()?('<br>🗑 你一共删掉过 '+trashCount()+' 个词，如果名单里又出现了，会单独问你要不要加回来。'+
-          '<a href="#" id="wt-clr">清空这个记录</a>'):'')+'</div>';
+        (trashCount()?('<br>🗑 有 '+trashCount()+' 个词你删过或标了「认识」，它们不会被自动收藏；'+
+          '如果导入名单里又出现，会单独问你要不要加回来。<a href="#" id="wt-clr">清空这个记录</a>'):'')+'</div>';
       var ta=b.querySelector("#wt-text");ta.value=raw;
       b.querySelector("#wt-file").addEventListener("change",function(e){
         var f=e.target.files&&e.target.files[0];if(!f)return;
         f.text().then(function(t){ta.value=t;b.querySelector("#wt-msg").textContent="已读入文件，点「下一步」";});});
       var clr=b.querySelector("#wt-clr");
       if(clr)clr.addEventListener("click",async function(e){e.preventDefault();
-        if(!await ttConfirm("清空删除记录？以后再导入到这些词，就直接加进来、不问了。",{danger:true,anchor:clr}))return;
+        if(!await ttConfirm("清空这份名单？以后再查到/导入到这些词，会像普通生词一样被收进来。",{danger:true,anchor:clr}))return;
         wbTrash={};saveWbTrash();step1();});
       b.querySelector("#wt-do").addEventListener("click",function(){
         raw=ta.value||"";res=analyzeImport(raw);pick={};
@@ -6393,6 +6514,13 @@ margin-left: -22px;
       order.addEventListener("change",function(e){var cb=e.target.closest(".do-en");if(!cb)return;dictPrefs.enabled[cb.getAttribute("data-store")]=cb.checked;saveDictPrefs();refreshLookup();});}
     var aa=document.getElementById("dict-autoadd");
     if(aa)aa.addEventListener("change",function(){dictPrefs.autoAdd=aa.checked;saveDictPrefs();});
+    var psz=document.getElementById("set-popsize");
+    if(psz)psz.addEventListener("click",function(e){
+      var b=e.target.closest("[data-psz]");if(b)popSetSize(b.getAttribute("data-psz"));});
+    var mth=document.getElementById("set-mdtheme");
+    if(mth)mth.addEventListener("click",function(e){
+      var b=e.target.closest("[data-mdth]");if(!b)return;
+      var id=b.getAttribute("data-mdth");save("tt_mdtheme",id);applyMdTheme(id);renderMdThemes();});
     var as=document.getElementById("dict-autospeak");
     if(as)as.addEventListener("change",function(){dictPrefs.autoSpeak=as.checked;saveDictPrefs();});
     var pm=document.getElementById("dict-popmode");
@@ -6427,13 +6555,12 @@ margin-left: -22px;
       if(!await ttConfirm("把所有生词的记忆进度清零（词本身不删）？",{danger:true,anchor:srst}))return;
       words.forEach(function(x){x.ef=2.5;x.iv=0;x.reps=0;x.lapses=0;x.due=Date.now();x.mastered=false;});
       saveWords();save("tt_srsday",{d:"",n:0,r:0});renderWordbook();ttAlert("已重置");});
+    document.getElementById("dict-result").addEventListener("input",function(e){
+      var ta=mineTyping(e);if(ta)mineSave(ta,false);});
+    document.getElementById("dict-result").addEventListener("focusout",function(e){
+      var ta=e.target.closest(".rd-mynote");if(ta)mineSave(ta,true);});
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
-      var mn2=e.target.closest("[data-mynote]");
-      if(mn2){var mw2=mn2.getAttribute("data-mynote"),md2=mn2.getAttribute("data-disp")||mw2;
-        var te2=document.getElementById("dict-result").querySelector(".rd-tr");
-        addUnknownWord(mw2,md2,te2?te2.textContent.trim():"");
-        setWordNote(mw2,mn2).then(function(){doLookup(q.value);});return;}
       var nb2=e.target.closest("[data-note]");
       if(nb2){setWordNote(nb2.getAttribute("data-note"),nb2).then(function(ok){if(ok)doLookup(q.value);});return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
@@ -6448,6 +6575,8 @@ margin-left: -22px;
       if(e.target.closest(".wb-move"))return;            // 别把下拉当成展开
       var nb=e.target.closest("[data-note]");
       if(nb){e.stopPropagation();setWordNote(nb.getAttribute("data-note"),nb);return;}
+      var kn=e.target.closest("[data-known]");
+      if(kn){e.stopPropagation();markKnown(kn.getAttribute("data-known"),kn);return;}
       var del=e.target.closest(".del");if(del){removeWord(del.getAttribute("data-w"));return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
@@ -6459,6 +6588,10 @@ margin-left: -22px;
     document.getElementById("flash-btns").addEventListener("click",function(e){
       var g=e.target.closest("[data-g]");if(g)gradeFlash(+g.getAttribute("data-g"));});
     document.getElementById("flash-master").addEventListener("click",masterFlash);
+    var fk=document.getElementById("flash-known");
+    if(fk)fk.addEventListener("click",function(){
+      var x=flashArr[flashIdx];if(!x)return;
+      markKnown(x.w,fk);flashArr.splice(flashIdx,1);showFlash();});
     document.getElementById("flash-skip").addEventListener("click",function(){flashIdx++;showFlash();});
     document.addEventListener("keydown",function(e){
       var ov=document.getElementById("flash-overlay");
@@ -6759,6 +6892,30 @@ margin-left: -22px;
       if(document.getElementById("rd-main").classList.contains("toc-on"))buildToc();
     }catch(e){rdContent.innerHTML='<div class="rd-empty">打开失败：'+esc(String(e&&e.message||e))+'</div>';}}
 
+  // ===== 笔记的 Markdown 主题（themes/*.css，由 Typora 主题转换而来，全部圈在 .mdth 里）=====
+  var MDTH_DEF="orangeheart";
+  function mdThemeId(){return load("tt_mdtheme",MDTH_DEF)||MDTH_DEF;}
+  function applyMdTheme(id){
+    id=id||mdThemeId();
+    var l=document.getElementById("mdth-css");
+    if(!l){l=document.createElement("link");l.id="mdth-css";l.rel="stylesheet";document.head.appendChild(l);}
+    var href=id==="none"?"":("themes/"+id+".css");
+    if(l.getAttribute("href")!==href)l.setAttribute("href",href);
+    l.disabled=(id==="none");}
+  var mdThList=null;
+  function renderMdThemes(){
+    var el=document.getElementById("set-mdtheme");if(!el)return;
+    function draw(){
+      var cur=mdThemeId();
+      el.innerHTML='<button type="button" class="btn'+(cur==="none"?" primary":"")+'" data-mdth="none">不用主题（跟 app 走）</button>'+
+        (mdThList||[]).map(function(t){
+          return '<button type="button" class="btn'+(cur===t.id?" primary":"")+'" data-mdth="'+esc(t.id)+'">'+
+            esc(t.name)+(t.dark?' <span style="opacity:.55;font-size:11px">暗</span>':'')+'</button>';}).join("");}
+    if(mdThList){draw();return;}
+    el.innerHTML='<span class="wt-note" style="margin:0">读取主题列表…</span>';
+    fetch("themes/themes.json").then(function(r){return r.json();}).then(function(j){
+      mdThList=j;draw();},function(){
+      el.innerHTML='<span class="wt-note" style="margin:0">主题文件没读到（本地直接打开文件时会这样，部署到网站上就正常）。</span>';});}
   function mdToHtml(md){        // 轻量 Markdown 渲染
     var esc2=function(s){return s.replace(/[&<>]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;"}[c];});};
     var out=[],lines=md.split(/\r?\n/),inCode=false,codeBuf=[],listType=null;
@@ -7408,7 +7565,7 @@ margin-left: -22px;
     box.innerHTML=html;}
   function nbHlRe(){                                  // 把搜索词做成正则（转义后的形态，和正文一致）
     var q=String(nbQ||"").trim();if(!q)return null;
-    try{return new RegExp(esc(q).replace(/[.*+?^{}()|[\]\\$]/g,"\\  function nbItemHTML(r){"),"gi");}catch(e){return null;}}
+    try{return new RegExp(esc(q).replace(/[.*+?^{}()|[\]\\$]/g,"\\$&"),"gi");}catch(e){return null;}}
   function hlEsc(s){                                  // 先转义再上色，绝不把笔记内容当 HTML 执行
     var e=esc(String(s==null?"":s)),re=nbHlRe();
     if(!re)return e;
@@ -7488,6 +7645,7 @@ margin-left: -22px;
   function openNotebook(){gotoTab("notes");}          // 笔记本已经是顶栏页签了
   function showNotes(){                                // 切到笔记页签时跑
     readerBind();                                      // 笔记本的按钮和查词弹窗都在这里面绑
+    try{applyMdTheme();}catch(e){}
     try{ensureDictInit();}catch(e){}                   // 不初始化词典的话查词是空的
     notes=load("tt_notes",[])||[];
     renderNotebook();
@@ -7516,14 +7674,15 @@ margin-left: -22px;
         '<span class="grow"></span>'+
         '<span class="nb-saved" id="nbd-saved"></span>'+
         '<button class="btn" id="nbd-save" title="保存（Ctrl+S）；停手半秒也会自动存">💾 保存</button>'+
-        '<div class="seg" id="nbd-mode" title="哪种模式下选中文字都能查词"><button data-dm="edit">✎ 源码</button><button data-dm="split">⇄ 边写边看</button><button data-dm="read">👁 预览</button></div>'+
+        '<div class="seg" id="nbd-mode" title="哪种模式下选中文字都能查词"><button data-dm="live">✨ 所见即所得</button><button data-dm="edit">✎ 源码</button><button data-dm="split">⇄ 边写边看</button><button data-dm="read">👁 预览</button></div>'+
         '<button class="btn" id="nbd-tag" title="标签">🏷</button>'+
         '<button class="btn" id="nbd-del" title="删除这篇">✕</button>'+
       "</div>"+
       '<div class="nb-doc-tags">'+(r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+"</span>";}).join("")+"</div>"+
       '<div class="nb-doc-panes" id="nbd-panes">'+
       '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`　　选中任意文字即可查词/翻译">'+esc(r.note||"")+"</textarea>"+
-      '<div id="nbd-view" class="nb-doc-view rd-content"></div>'+
+      '<div id="nbd-view" class="nb-doc-view rd-content md mdth"></div>'+
+      '<div id="nbd-live" class="nb-doc-live md mdth" contenteditable="true" spellcheck="false"></div>'+
       "</div>"+
     "</div>";}
   function nbDocSave(r,fields){
@@ -7533,6 +7692,30 @@ margin-left: -22px;
     if(el){el.classList.remove("dirty");
       el.textContent="✓ 已保存 "+new Date().toTimeString().slice(0,5);
       clearTimeout(el.__t);el.__t=setTimeout(function(){el.textContent="";},4000);}}
+  // ===== 所见即所得：光标停在哪一段，那一段显示源码，其余段落直接渲染成样子 =====
+  function mdBlocks(src){                            // 按空行切段；代码围栏整块不拆
+    var lines=String(src==null?"":src).split(/\r?\n/),out=[],cur=[],fence=false;
+    lines.forEach(function(l){
+      if(/^\s*(```|~~~)/.test(l)){fence=!fence;cur.push(l);return;}
+      if(!fence&&!l.trim()){if(cur.length){out.push(cur.join("\n"));cur=[];}return;}
+      cur.push(l);});
+    if(cur.length)out.push(cur.join("\n"));
+    return out.length?out:[""];}
+  function caretIn(el){                              // 光标在这一段文本里的第几个字
+    var s=getSelection();if(!s||!s.rangeCount||!el.contains(s.anchorNode))return null;
+    var r=s.getRangeAt(0).cloneRange(),m=document.createRange();
+    m.selectNodeContents(el);m.setEnd(r.endContainer,r.endOffset);
+    return m.toString().length;}
+  function setCaret(el,off){
+    var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null),n,acc=0,r=document.createRange();
+    while((n=w.nextNode())){
+      var L=n.textContent.length;
+      if(acc+L>=off){r.setStart(n,Math.max(0,Math.min(L,off-acc)));r.collapse(true);
+        var s=getSelection();s.removeAllRanges();s.addRange(r);return;}
+      acc+=L;}
+    r.selectNodeContents(el);r.collapse(false);
+    var s2=getSelection();s2.removeAllRanges();s2.addRange(r);}
+  function blkText(el){return el.innerText.replace(/\r/g,"").replace(/\n$/,"");}
   var nbFlush=null;                                  // 有没存的改动时，指向"立刻存下来"
   function nbSaveNow(){if(nbFlush)try{nbFlush();}catch(e){}}
   window.addEventListener("beforeunload",nbSaveNow);           // 关标签页/刷新前兜底
@@ -7540,7 +7723,7 @@ margin-left: -22px;
   function bindNbDoc(r){
     var ti=document.getElementById("nbd-title"),bd=document.getElementById("nbd-body"),
         vw=document.getElementById("nbd-view"),ca=document.getElementById("nbd-cat"),su=document.getElementById("nbd-sub");
-    var t1=null,t2=null,dirty=false,nbMode=load("tt_nbmode","split")||"split";
+    var t1=null,t2=null,dirty=false,nbMode=load("tt_nbmode","live")||"live";
     function flush(){                                            // 立刻落盘（没改过就什么都不做）
       clearTimeout(t1);t1=null;
       if(!dirty)return;dirty=false;
@@ -7549,7 +7732,7 @@ margin-left: -22px;
       dirty=true;
       var el=document.getElementById("nbd-saved");
       if(el){el.classList.add("dirty");el.textContent="未保存…";clearTimeout(el.__t);}
-      if(nbMode!=="edit"){clearTimeout(t2);t2=setTimeout(drawPv,180);}   // 边写边看：预览跟着走
+      if(nbMode==="split"||nbMode==="read"){clearTimeout(t2);t2=setTimeout(drawPv,180);}   // 边写边看：预览跟着走
       clearTimeout(t1);t1=setTimeout(flush,400);}
     nbFlush=flush;
     function keyS(e){if((e.ctrlKey||e.metaKey)&&(e.key==="s"||e.key==="S")){e.preventDefault();flush();}}
@@ -7571,15 +7754,111 @@ margin-left: -22px;
     document.getElementById("nbd-tag").addEventListener("click",async function(){
       var v=await ttPrompt("标签（空格或逗号分开）：",(r.tags||[]).join(" "),{anchor:this});
       if(v===null)return;nbDocSave(r,{tags:kwSplit(v)});renderNotebook();});
-    var pn=document.getElementById("nbd-panes");
-    function drawPv(){vw.innerHTML='<div class="md">'+mdToHtml(bd.value||"*（还没写内容）*")+"</div>";}
+    var pn=document.getElementById("nbd-panes"),lv=document.getElementById("nbd-live");
+    function drawPv(){vw.innerHTML=mdToHtml(bd.value||"*（还没写内容）*");}
+
+    // ---- 所见即所得 ----
+    var composing=false,liveOn=false;
+    function liveDraw(src,focus){                    // focus = 保持源码形态的那一段的序号，-1 表示全部渲染
+      var bs=mdBlocks(src);
+      lv.innerHTML="";
+      bs.forEach(function(b,i){
+        var d=document.createElement("div");
+        d.className="lb"+(i===focus?" src":"")+(b.trim()?"":" empty");
+        d.setAttribute("data-i",i);
+        if(i===focus)d.textContent=b;
+        else{d.setAttribute("data-src",b);d.innerHTML=mdToHtml(b)||"<p></p>";}
+        lv.appendChild(d);});
+      return lv.querySelectorAll(".lb");}
+    function liveSrc(){                              // 把整篇拼回 Markdown
+      return [].map.call(lv.querySelectorAll(".lb"),function(el){
+        return el.classList.contains("src")?blkText(el):(el.getAttribute("data-src")||"");}).join("\n\n");}
+    function curBlk(){
+      var s=getSelection();if(!s||!s.rangeCount)return null;
+      var n=s.anchorNode;n=(n&&n.nodeType===1)?n:(n&&n.parentNode);
+      return n&&n.closest?n.closest(".lb"):null;}
+    function focusBlk(el,off){                       // 让某一段变回源码形态，光标落在 off
+      if(!el||el.classList.contains("src"))return el;
+      var src=el.getAttribute("data-src")||"";
+      el.classList.add("src");el.classList.toggle("empty",!src.trim());
+      el.textContent=src;el.removeAttribute("data-src");
+      setCaret(el,off==null?src.length:off);
+      return el;}
+    function blurBlk(el){                            // 某一段离开光标 → 渲染成样子
+      if(!el||!el.classList.contains("src"))return;
+      var src=blkText(el);
+      el.classList.remove("src");el.classList.toggle("empty",!src.trim());
+      el.setAttribute("data-src",src);el.innerHTML=mdToHtml(src)||"<p></p>";}
+    function liveSync(){                             // 光标换段了就把上一段渲染掉
+      if(composing)return;
+      var el=curBlk();
+      [].forEach.call(lv.querySelectorAll(".lb.src"),function(x){if(x!==el)blurBlk(x);});
+      if(el&&!el.classList.contains("src")){
+        var off=caretIn(el);
+        focusBlk(el,off==null?null:Math.min(off,(el.getAttribute("data-src")||"").length));}}
+    function livePush(){                             // live → textarea → 存盘
+      bd.value=liveSrc();later();}
+    lv.addEventListener("compositionstart",function(){composing=true;});
+    lv.addEventListener("compositionend",function(){composing=false;livePush();});
+    lv.addEventListener("input",function(){if(!composing)livePush();});
+    lv.addEventListener("mouseup",function(){setTimeout(liveSync,0);});
+    lv.addEventListener("keyup",function(e){
+      if(/Arrow|Home|End|PageUp|PageDown/.test(e.key))setTimeout(liveSync,0);});
+    lv.addEventListener("blur",function(){
+      [].forEach.call(lv.querySelectorAll(".lb.src"),blurBlk);flush();});
+    lv.addEventListener("paste",function(e){         // 只收纯文本，别让外部 HTML 混进来
+      e.preventDefault();
+      var t=(e.clipboardData||window.clipboardData).getData("text/plain")||"";
+      document.execCommand("insertText",false,t);});
+    lv.addEventListener("keydown",function(e){
+      if(composing)return;
+      var el=curBlk();if(!el)return;
+      if(e.key==="Enter"&&!e.shiftKey){
+        if(!el.classList.contains("src"))focusBlk(el,null);
+        var off=caretIn(el)||0,txt=blkText(el);
+        var before=txt.slice(0,off),after=txt.slice(off);
+        var inFence=((before.match(/^\s*(```|~~~)/gm)||[]).length%2)===1;
+        var last=before.split("\n").pop()||"";
+        var lm=last.match(/^(\s*)([-*+]|\d+[.)])(\s+)(.*)$/),qm=last.match(/^(\s*>\s?)(.*)$/);
+        if(inFence){e.preventDefault();
+          el.textContent=before+"\n"+after;setCaret(el,off+1);livePush();return;}
+        if(lm&&lm[4].trim()){                        // 列表里回车 → 同一段里续一项
+          e.preventDefault();
+          var mark=/^\d/.test(lm[2])?((parseInt(lm[2],10)+1)+lm[2].replace(/^\d+/,"")):lm[2];
+          var ins="\n"+lm[1]+mark+lm[3];
+          el.textContent=before+ins+after;setCaret(el,off+ins.length);livePush();return;}
+        if(qm&&qm[2].trim()){e.preventDefault();
+          var ins2="\n"+qm[1];el.textContent=before+ins2+after;setCaret(el,off+ins2.length);livePush();return;}
+        // 其余情况：当前段落定稿并渲染，另起一段接着写
+        e.preventDefault();
+        el.textContent=before;blurBlk(el);
+        var nd=document.createElement("div");
+        nd.className="lb src empty";nd.textContent=after;
+        el.parentNode.insertBefore(nd,el.nextSibling);
+        setCaret(nd,0);livePush();return;}
+      if(e.key==="Backspace"){                       // 段首退格 → 和上一段合并
+        if(!el.classList.contains("src"))return;
+        var o=caretIn(el);
+        if(o!==0)return;
+        var prev=el.previousElementSibling;if(!prev)return;
+        e.preventDefault();
+        var ptxt=prev.classList.contains("src")?blkText(prev):(prev.getAttribute("data-src")||"");
+        var merged=ptxt+"\n"+blkText(el);
+        prev.classList.add("src");prev.removeAttribute("data-src");prev.textContent=merged;
+        el.parentNode.removeChild(el);
+        setCaret(prev,ptxt.length);livePush();}});
+    function liveEnter(){liveOn=true;liveDraw(bd.value,-1);}
+    var MODES={live:"live",edit:"one-src",split:"both",read:"one-pv"};
     function setMode(m,remember){
-      if(m!=="edit"&&m!=="split"&&m!=="read")m="split";
+      if(!MODES[m])m="live";
+      if(liveOn&&m!=="live"){bd.value=liveSrc();liveOn=false;}   // 从所见即所得切走：先把内容收回来
       nbMode=m;if(remember!==false)save("tt_nbmode",m);
-      pn.className="nb-doc-panes "+(m==="edit"?"one-src":(m==="read"?"one-pv":"both"));
+      pn.className="nb-doc-panes "+MODES[m];
       document.getElementById("nbd-mode").querySelectorAll("button").forEach(function(x){
         x.classList.toggle("on",x.getAttribute("data-dm")===m);});
-      if(m==="edit")hideRdPop();else drawPv();}
+      if(m==="live")liveEnter();
+      else if(m==="edit")hideRdPop();
+      else drawPv();}
     document.getElementById("nbd-mode").addEventListener("click",function(e){
       var b=e.target.closest("button");if(!b)return;
       flush();setMode(b.getAttribute("data-dm"));});
@@ -7595,7 +7874,10 @@ margin-left: -22px;
       var x=pt&&pt.clientX,y=pt&&pt.clientY;
       if(!x&&!y){var br=bd.getBoundingClientRect();x=br.left+24;y=br.top+28;}
       var rect={left:x,right:x,top:y-12,bottom:y+6,width:0,height:18};
-      if(rdLooksLikeWord(s)){if(trigOn("select"))showRdPop(s,rect);}
+      if(rdLooksLikeWord(s)){if(trigOn("select")){
+        preCtx={w:s.toLowerCase(),s:ctxSentence(bd.value,bd.selectionStart||0,bd.selectionEnd||0),src:ctxSource()};
+        if(!preCtx.s||preCtx.s.length<=s.length+3)preCtx=null;
+        showRdPop(s,rect);}}
       else showRdTrans(s,rect);}
     bd.addEventListener("mouseup",function(e){var p={clientX:e.clientX,clientY:e.clientY};setTimeout(function(){taLookup(p);},10);});
     bd.addEventListener("dblclick",function(e){var p={clientX:e.clientX,clientY:e.clientY};setTimeout(function(){taLookup(p);},10);});
@@ -8094,15 +8376,25 @@ margin-left: -22px;
     var i=POPFS.indexOf(+popCfg.fs||1);if(i<0)i=1;
     i=Math.max(0,Math.min(POPFS.length-1,i+d));
     popCfg.fs=POPFS[i];savePopCfg();applyPopFs();placeRdPop(null);}
-  function popResize(kind){
-    if(!rdPop)return;
-    if(kind==="auto"){save("tt_popsize",null);applyPopSize(false);placeRdPop(null);return;}
-    var r=rdPop.getBoundingClientRect(),w=r.width,h=r.height;
-    if(kind==="w+")w+=70;else if(kind==="w-")w-=70;
-    else if(kind==="h+")h+=90;else if(kind==="h-")h-=90;
-    save("tt_popsize",{fix:1,w:Math.round(Math.max(240,Math.min(innerWidth-24,w))),
-                             h:Math.round(Math.max(150,Math.min(innerHeight-24,h)))});
-    applyPopSize(false);placeRdPop(null);}
+  var POPSZ=[{k:"auto",n:"自适应",d:"内容多大框就多大"},
+             {k:"s",n:"小",w:330,h:270},{k:"m",n:"中",w:430,h:380},{k:"l",n:"大",w:540,h:500}];
+  function popSizeNow(){var s=load("tt_popsize",null);
+    if(!s||!s.fix)return "auto";
+    for(var i=1;i<POPSZ.length;i++)if(Math.abs(POPSZ[i].w-s.w)<12&&Math.abs(POPSZ[i].h-s.h)<12)return POPSZ[i].k;
+    return "custom";}
+  function renderPopSize(){
+    var el=document.getElementById("set-popsize");if(!el)return;
+    var cur=popSizeNow();
+    el.innerHTML=POPSZ.map(function(p){
+      return '<button type="button" class="btn'+(cur===p.k?" primary":"")+'" data-psz="'+p.k+'">'+p.n+
+        (p.w?('<span style="opacity:.6;font-size:11px"> '+p.w+'×'+p.h+'</span>'):"")+'</button>';}).join("")+
+      (cur==="custom"?'<span class="wt-note" style="margin:0;align-self:center">当前是你自己拖出来的大小</span>':"");}
+  function popSetSize(k){
+    if(k==="auto")save("tt_popsize",null);
+    else{for(var i=0;i<POPSZ.length;i++)if(POPSZ[i].k===k&&POPSZ[i].w)
+      save("tt_popsize",{fix:1,w:POPSZ[i].w,h:POPSZ[i].h});}
+    renderPopSize();
+    if(rdPop&&rdPop.style.display!=="none"){applyPopSize(false);placeRdPop(null);}}
   function hideRdPop(){if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}if(rdPop)rdPop.style.display="none";rdPopWord=null;lastHoverWord="";hideHl();}
   function rdPopArm(){ // 「鼠标移开就消失」模式：离开卡片后收起
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
@@ -8117,6 +8409,9 @@ margin-left: -22px;
     if(!rdPop)return;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
     var me=rdPopWord;                                    // 查词是异步的，等结果时可能又选了别的词
+    pendCtx=preCtx||ctxFromDom(me.disp);preCtx=null;      // 先把这次的语境记下来
+    if(pendCtx)pendCtx.w=me.w;
+    ctxAttach(me.w);                                     // 已经在生词本里的，直接挂上
     rdPopSay=me.disp;
     document.getElementById("rd-pop-note").style.display="";
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
@@ -8129,7 +8424,7 @@ margin-left: -22px;
     applyPopSize(false);placeRdPop(rect);
     var found=!!bd.querySelector(".dict-card:not(.mynote)");
     // ⚙️设置里的"查词后自动加入生词本"：看书和笔记本里划词也要算，只在词典真查到时才收
-    if(found&&dictPrefs.autoAdd&&rdPopWord===me&&!isSaved(me.w)){
+    if(found&&dictPrefs.autoAdd&&rdPopWord===me&&!isSaved(me.w)&&!trashHas(me.w)){
       if(addWords([{w:me.w,disp:me.disp}],wbGroups.def).added){
         updateWbCount();
         star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";
@@ -8141,7 +8436,7 @@ margin-left: -22px;
       try{var tr=await translateText(w0);
         bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
           '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>'+mine;
-        if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)){   // 开了自动收藏：查不到的也收
+        if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)&&!trashHas(me.w)){   // 开了自动收藏：查不到的也收
           addUnknownWord(me.w,me.disp,tr.text);
           star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}}
       catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>'+mine;}
@@ -8554,12 +8849,13 @@ margin-left: -22px;
     if(rect)lastPopRect=rect;else rect=lastPopRect;
     if(!rdPop||!rect)return;
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
-    var vw=innerWidth/z,vh=innerHeight/z,M=10;
+    var vw=innerWidth/z,vh=innerHeight/z,M=18;         // 四周留一圈，别贴着画布边
     var rt=rect.top/z,rb=rect.bottom/z;
     var below=vh-rb-8-M,above=rt-8-M;                    // 选中位置的上下各还剩多少高度
     // 先把高度限死在放得下的那一侧，再量尺寸 —— 老写法只在很靠下时才翻到上面，
     // 选中位置在中间偏下时卡片照样长过画布底边，就被切掉了。
-    if(!popFix())rdPop.style.maxHeight=Math.max(150,Math.max(below,above))+"px";
+    // 上限取「那一侧的空地」和 62vh 里更小的：只按空地算的话，页面一长卡片就撑满整屏、贴着底边
+    if(!popFix())rdPop.style.maxHeight=Math.max(150,Math.min(Math.max(below,above),vh*0.62))+"px";
     var w=rdPop.offsetWidth||420,h=rdPop.offsetHeight||280;
     var left=Math.max(M,Math.min(rect.left/z,vw-w-M));
     var top=(below>=h||below>=above)?(rb+8):(rt-8-h);    // 下面放得下就放下面，否则翻上去
@@ -8586,7 +8882,7 @@ margin-left: -22px;
         '<div class="rd-tr-src">'+esc(t)+'</div>'+
         '<div class="rd-tr-by">'+esc(res.by)+'</div>'+
         (can?mineBtnHTML(k,t):"");
-      if(can&&dictPrefs.autoAdd&&!isSaved(k)){         // 开了自动收藏：词组也收，翻译先当草稿
+      if(can&&dictPrefs.autoAdd&&!isSaved(k)&&!trashHas(k)){   // 开了自动收藏：词组也收，翻译先当草稿
         addUnknownWord(k,t,res.text);
         star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}
       applyPopSize(false);placeRdPop(rect);
@@ -8894,16 +9190,16 @@ margin-left: -22px;
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
         var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";});
-      document.getElementById("rd-pop-bd").addEventListener("click",function(e){
-        var mn=e.target.closest("[data-mynote]");
-        if(mn){
-          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}     // 正在写释义，别让弹窗自己倒计时关掉
-          var mw=mn.getAttribute("data-mynote"),md=mn.getAttribute("data-disp")||mw;
-          var te=this.querySelector(".rd-tr");
-          addUnknownWord(mw,md,te?te.textContent.trim():"");
-          var st2=document.getElementById("rd-pop-star");
-          st2.classList.add("on");st2.innerHTML=starSVG(true);st2.title="已收藏（点取消）";
-          setWordNote(mw,mn);return;}
+      var pbd=document.getElementById("rd-pop-bd");
+      pbd.addEventListener("input",function(e){
+        var ta=mineTyping(e);if(!ta)return;
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}       // 正在写释义，别倒计时关掉
+        mineSave(ta,false);});
+      pbd.addEventListener("focusin",function(e){
+        if(e.target.closest(".rd-mynote")&&rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
+      pbd.addEventListener("focusout",function(e){
+        var ta=e.target.closest(".rd-mynote");if(ta)mineSave(ta,true);});
+      pbd.addEventListener("click",function(e){
         var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
         var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
       document.addEventListener("mousedown",function(e){
