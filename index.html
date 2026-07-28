@@ -6071,7 +6071,7 @@ margin-left: -22px;
     var x=wordOf(w),has=!!(x&&x.note);
     return '<div class="rd-mine"><div class="rd-mine-h">✎ 我的释义 <em>专业术语、人名、缩写这类，机器翻译只能当草稿</em>'+
       '<span class="rd-mine-st" id="rd-mine-st">'+(has?"✓ 已存":"")+'</span></div>'+
-      '<textarea class="rd-mynote" data-w="'+esc(w)+'" data-disp="'+esc(disp||w)+'" '+
+      '<textarea class="rd-mynote" spellcheck="false" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" data-w="'+esc(w)+'" data-disp="'+esc(disp||w)+'" '+
       'placeholder="写一句自己的解释，背诵时它会顶在最上面…">'+esc((x&&x.note)||"")+'</textarea></div>';}
   var mineT=null;
   function mineSave(ta,now){                          // 输入框 → 生词本（停手 600ms 或失焦时落盘）
@@ -7713,9 +7713,9 @@ margin-left: -22px;
       "</div>"+
       '<div class="nb-doc-tags">'+(r.tags||[]).map(function(g){return '<span class="tag tg">#'+esc(g)+"</span>";}).join("")+"</div>"+
       '<div class="nb-doc-panes" id="nbd-panes">'+
-      '<textarea id="nbd-body" class="nb-doc-body" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`　　选中任意文字即可查词/翻译">'+esc(r.note||"")+"</textarea>"+
+      '<textarea id="nbd-body" class="nb-doc-body" spellcheck="false" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false" placeholder="正文支持 Markdown：## 标题、- 列表、**加粗**、`代码`　　选中任意文字即可查词/翻译">'+esc(r.note||"")+"</textarea>"+
       '<div id="nbd-view" class="nb-doc-view rd-content md mdth"></div>'+
-      '<div id="nbd-live" class="nb-doc-live md mdth" contenteditable="true" spellcheck="false"></div>'+
+      '<div id="nbd-live" class="nb-doc-live md mdth" contenteditable="true" spellcheck="false" data-gramm="false" data-gramm_editor="false" data-enable-grammarly="false"></div>'+
       "</div>"+
     "</div>";}
   function nbDocSave(r,fields){
