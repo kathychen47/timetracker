@@ -931,6 +931,10 @@
   .wb-known{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;
     padding:3px 9px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none}
   .wb-known:hover{color:#2f9e6e;border-color:#2f9e6e;background:#eef9f3}
+  .wb-item.isknown{opacity:.42}
+  .wb-item.isknown:hover{opacity:.8}
+  .wb-item.isknown .wb-known{color:#2f9e6e;border-color:#bfe3d1;background:#eef9f3}
+  .badge.known{background:#eef9f3;color:#2f9e6e}
   .wb-item .del{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:16px;flex:none}
   .wb-item .del:hover{color:var(--danger)}
   .wb-def{padding:4px 14px 12px;border-top:1px solid var(--border)}
@@ -3142,7 +3146,7 @@ margin-left: -22px;
       <div class="flash-btns" id="flash-btns"></div>
       <div class="flash-extra">
         <button class="btn" id="flash-master" title="留在生词本里，但不再排复习">✓ 已掌握</button>
-        <button class="btn" id="flash-known" title="本来就认识：直接移出生词本，以后查到也不再自动收进来">🗑 认识，别收了</button>
+        <button class="btn" id="flash-known" title="本来就认识：淡化收起来，不再排进复习（生词本里还能找到）">🙂 本来就认识</button>
         <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
       </div>
     </div>
@@ -5829,13 +5833,17 @@ margin-left: -22px;
     var inp=document.getElementById("dict-q");
     if(inp&&document.getElementById("dict-look").style.display!=="none")doLookup(inp.value);}
   function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();trashAdd(w);renderWordbook();}
-  async function markKnown(w,anchor){                  // 认识了：移走 + 记进"不再收录"名单
-    var x=wordOf(w),disp=(x&&(x.disp||x.w))||w;
-    words=words.filter(function(y){return y.w!==w;});saveWords();
-    trashAdd(w);renderWordbook();
-    if(!load("tt_knownhint",false)){                   // 只解释一次，别每次都弹
+  // 认识了：词留在列表里（淡化、沉到最后、不再排复习），随时可以点回来。
+  // 不删掉是有意的 —— 词还在生词本里，本身就挡住了"再次被自动收进来"。
+  async function markKnown(w,anchor){
+    var x=wordOf(w);if(!x)return;
+    var disp=x.disp||x.w,was=!!x.known;
+    x.known=!was;x.upd=Date.now();
+    if(x.known)trashDrop(w);                           // 已经在本子里了，不用再进"不再收录"名单
+    saveWords();renderWordbook();
+    if(!was&&!load("tt_knownhint",false)){             // 只解释一次，别每次都弹
       save("tt_knownhint",true);
-      ttAlert("「"+disp+"」标记为认识了。\n它会从生词本移走，以后就算再查到、再导入，也不会自动收进来。\n想反悔：📥 导入单词 → 清空删除记录。",{anchor:anchor});}}
+      ttAlert("「"+disp+"」标成认识了。\n它会变淡、沉到列表最后，也不再排进复习和背诵。\n再点一次「✓ 认识」就能恢复。",{anchor:anchor});}}
   function updateWbCount(){var el=document.getElementById("wb-count");if(el)el.textContent=words.length?("("+words.length+")"):"";}
 
   var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
@@ -5843,7 +5851,7 @@ margin-left: -22px;
   function renderWbGroups(){var el=document.getElementById("wb-groups");if(!el)return;
     function card(id,name,color,list,isDef){
       var tot=list.length,done=list.filter(function(x){return srsStage(x)==="mature"||srsStage(x)==="done";}).length;
-      var due=list.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=Date.now();}).length;
+      var due=list.filter(function(x){srsInit(x);return !x.known&&!x.mastered&&x.reps>0&&x.due<=Date.now();}).length;
       var pct=tot?Math.round(done/tot*100):0;
       return '<div class="wb-book'+(wbActive===id?" on":"")+'" data-g="'+id+'" style="--bc:'+color+'">'+
         '<div class="cover"><div class="ttl">'+esc(name)+'</div>'+
@@ -5871,7 +5879,7 @@ margin-left: -22px;
     if(startBtn)startBtn.disabled=false;
     var plan=srsPlan(),streak=load("tt_streak",{last:"",n:0});
     var stg={new:0,learn:0,review:0,mature:0,done:0};
-    arr.forEach(function(x){stg[srsStage(x)]++;});
+    arr.forEach(function(x){if(!x.known)stg[srsStage(x)]++;});   // 标了"认识"的不算进学习进度
     if(hint)hint.textContent="共 "+arr.length+" 词"+(streak.n>1?(" · 连续 "+streak.n+" 天 🔥"):"");
     var sb=document.getElementById("wb-stats");
     if(sb)sb.innerHTML=
@@ -5879,6 +5887,8 @@ margin-left: -22px;
       '<div class="wb-st new"><div class="k">今日新词</div><div class="v">'+plan.fresh.length+'</div></div>'+
       '<div class="wb-st"><div class="k">学习中</div><div class="v">'+(stg.learn+stg.review)+'</div></div>'+
       '<div class="wb-st done"><div class="k">已掌握</div><div class="v">'+(stg.mature+stg.done)+'</div></div>'+
+      (function(){var kn=arr.filter(function(x){return x.known;}).length;
+        return kn?('<div class="wb-st"><div class="k">标了认识</div><div class="v">'+kn+'</div></div>'):"";})()+
       '<div class="wb-st"><div class="k">今日已学</div><div class="v">'+((plan.st.n||0)+(plan.st.r||0))+'</div></div>'+
       '<div class="wb-st"><div class="k">今日时长</div><div class="v">'+(((load("tt_srshist",{})||{})[todayKey()]||{}).m||0)+'<small style="font-size:12px"> 分</small></div></div>';
     renderWbCharts(arr);
@@ -5888,20 +5898,21 @@ margin-left: -22px;
     var STN={"new":["新词","new"],"learn":["学习中",""],"review":["复习中",""],"mature":["已熟","done"],"done":["已掌握","done"]};
     var now=Date.now();
     arr=arr.slice().sort(function(a,b){srsInit(a);srsInit(b);
+      if(!!a.known!==!!b.known)return a.known?1:-1;      // 标了"认识"的一律沉到最后
       var ad=(!a.mastered&&a.due<=now)?0:1,bd=(!b.mastered&&b.due<=now)?0:1;
       if(ad!==bd)return ad-bd;return (b.ts||0)-(a.ts||0);});
     box.innerHTML=arr.map(function(x){srsInit(x);
-      var st=srsStage(x),lab=STN[st],overdue=(!x.mastered&&x.due<=now);
-      var when=x.mastered?"已掌握":(overdue?"待复习":("下次 "+fmtWhen(x.due)));
+      var st=srsStage(x),lab=STN[st],overdue=(!x.known&&!x.mastered&&x.due<=now);
+      var when=x.known?"不用背了":(x.mastered?"已掌握":(overdue?"待复习":("下次 "+fmtWhen(x.due))));
       var meta=(x.dict==="collins"?"中→英":"英→中")+(wbActive==="all"?" · "+esc(wbGroupName(wbGroupOf(x))):"")+" · "+when;
-      return '<div class="wb-item" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
-        '<span class="badge '+(overdue?"due":lab[1])+'">'+lab[0]+'</span>'+
+      return '<div class="wb-item'+(x.known?" isknown":"")+'" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
+        '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+(x.known?"认识":lab[0])+'</span>'+
         '<span class="m">'+meta+'</span>'+
         '<button class="wb-note" data-note="'+esc(x.w)+'" title="'+(x.note?"编辑笔记":"写笔记")+'">'+(x.note?"📝":"✎")+'</button>'+
         '<select class="wb-move" data-w="'+esc(x.w)+'" title="移到别的词书">'+
           wbGroups.list.map(function(g){return '<option value="'+g.id+'"'+(wbGroupOf(x)===g.id?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
         '</select>'+
-        '<button class="wb-known" data-known="'+esc(x.w)+'" title="我认识这个词：移出生词本，以后查到也不再自动收进来">✓ 认识</button>'+
+        '<button class="wb-known" data-known="'+esc(x.w)+'" title="'+(x.known?"点一下恢复：重新排进复习":"我本来就认识：淡化、沉到最后、不再排复习（可以再点回来）")+'">'+(x.known?"↩ 恢复":"✓ 认识")+'</button>'+
         '<button class="del" data-w="'+esc(x.w)+'" title="移除（以后查到也不会再自动收）">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
   function renderWbCharts(arr){
     var box=document.getElementById("wb-charts");if(!box)return;
@@ -5923,11 +5934,11 @@ margin-left: -22px;
       '<div class="wbc-lg"><span><i style="background:var(--primary)"></i>新词</span><span><i style="background:#7dd3ae"></i>复习</span></div></div>';
     // ② 未来 14 天复习预测（遗忘曲线排出来的）
     var fut=[],fmax=1,now=Date.now();
-    var overdue=arr.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;}).length;
+    var overdue=arr.filter(function(x){srsInit(x);return !x.known&&!x.mastered&&x.reps>0&&x.due<=now;}).length;
     for(var j=0;j<N;j++){var dd=addDays(today,j),s=new Date(dd);s.setHours(0,0,0,0);
       var e=s.getTime()+DAY,c=0;
       arr.forEach(function(x){srsInit(x);
-        if(x.mastered||!x.reps)return;
+        if(x.known||x.mastered||!x.reps)return;
         if(j===0){if(x.due<e)c++;}else if(x.due>=s.getTime()&&x.due<e)c++;});
       fut.push({d:dd,c:c});fmax=Math.max(fmax,c);}
     var c2='<div class="wbc"><h4>未来 14 天要复习</h4><div class="sub">'+(overdue?("现在有 "+overdue+" 个到期"):"按遗忘曲线自动排的")+'</div>'+
@@ -6131,6 +6142,7 @@ margin-left: -22px;
   function newList(){return words.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});}
   function srsPlan(){ // 按分组过滤 + 每日上限
     var pool=wbFiltered(),now=Date.now();
+    pool=pool.filter(function(x){return !x.known;});   // 标了"认识"的不排复习
     var due=pool.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});
     var fresh=pool.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});
     var st=load("tt_srsday",{d:"",n:0,r:0});
@@ -6419,7 +6431,7 @@ margin-left: -22px;
     var plan=srsPlan();
     flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
     if(!flashArr.length){
-      var pool=wbFiltered().filter(function(x){return !x.mastered;});
+      var pool=wbFiltered().filter(function(x){return !x.mastered&&!x.known;});
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
