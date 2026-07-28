@@ -154,6 +154,10 @@
   .pomo-task-cat select{padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
   .pomo-task-cat select.auto{border-style:dashed;border-color:var(--primary)}   /* 虚线 = 按任务名自动归的类 */
   .pomo-log{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer}
+  .ev-gcal-hint{font-size:11.5px;line-height:1.7;color:var(--muted);margin:5px 0 0 22px}
+  .ev-gcal-hint .lnk{background:none;border:none;padding:0;font:inherit;color:var(--primary);
+    font-weight:650;text-decoration:underline;cursor:pointer}
+  .ev-gcal-hint b{color:var(--primary)}
   .pomo-log input{width:14px;height:14px;accent-color:var(--primary)}
   .ring{width:168px;height:168px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;position:relative;
     background:conic-gradient(var(--cat-focus) calc(var(--p,0)*1%), var(--surface-2) 0)}
@@ -3212,7 +3216,10 @@ margin-left: -22px;
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
-    <label class="pomo-log" id="ev-gcal-row" style="display:none;justify-content:flex-start;margin-top:4px"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
+    <div id="ev-gcal-row" style="display:none;margin-top:4px">
+      <label class="pomo-log" style="justify-content:flex-start"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
+      <div class="ev-gcal-hint" id="ev-gcal-hint" style="display:none"></div>
+    </div>
     <div class="modal-actions">
       <button class="link-danger" id="ev-delete" style="display:none">删除</button>
       <div class="grow"></div>
@@ -4408,6 +4415,33 @@ margin-left: -22px;
     var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-sub")){var sk=ch.getAttribute("data-sub");selSub=(selSub===sk?null:sk);catManual=true;editSegs=null;renderEvSegs();renderSubs();}});
   fTitle.addEventListener("input",function(){if(!catManual){var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();}});
 
+  // 连过一次 Google 就一直把这一行显示出来 —— token 只活 1 小时，
+  // 过期就把选项藏掉的话，你会以为功能没了（而不是授权掉了）。
+  function gcalEver(){return !!load("tt_gcal","");}
+  function gcalPend(){var n=0;events.forEach(function(e){if(typeof e.gwant!=="undefined")n++;});return n;}
+  function gcalWanted(o){return (o&&typeof o.gwant!=="undefined")?!!o.gwant:!!(o&&o.gid);}
+  function gcalApply(o,want){                     // 有 token 直接同步；没有就先记着，等续上了补
+    if(gToken){delete o.gwant;gcalSync(o,want);return;}
+    if(!gcalEver())return;
+    o.gwant=!!want;save("tt_events",events);}
+  function gcalFlush(){                           // 重新授权成功后，把欠的一次性补上
+    if(!gToken)return;
+    var todo=events.filter(function(e){return typeof e.gwant!=="undefined";});
+    if(!todo.length)return;
+    todo.forEach(function(e){var w=!!e.gwant;delete e.gwant;gcalSync(e,w);});
+    save("tt_events",events);}
+  function refreshGcalRow(){
+    var row=document.getElementById("ev-gcal-row"),hint=document.getElementById("ev-gcal-hint");
+    if(!row||!hint)return;
+    if(!gToken&&!gcalEver()){row.style.display="none";return;}
+    row.style.display="";
+    if(gToken){hint.style.display="none";hint.innerHTML="";return;}
+    var n=gcalPend();
+    hint.style.display="";
+    hint.innerHTML='授权过期了（Google 的登录每次只管 1 小时）。现在勾上也算数，'+
+      '<button type="button" class="lnk" data-gauth="1">重新授权</button> 之后会自动补传。'+
+      (n?'（<b>'+n+'</b> 条排着队）':'');}
+
   function openModal(obj,opts){opts=opts||{};
     var isG=obj&&obj.gcal;                       // Google 事件（还没转成本地）
     adoptGid=isG?obj.id.slice(2):null;
@@ -4430,7 +4464,8 @@ margin-left: -22px;
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.slice():null;   // 编辑时保住分段；除非你手动改了分类
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
-    var gr=document.getElementById("ev-gcal-row");gr.style.display=gToken?"flex":"none";document.getElementById("ev-gcal").checked=obj?(isG?true:!!obj.gid):!!(gToken&&gcalDefault);
+    document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
+    refreshGcalRow();
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   var editSegs=null;
@@ -4447,11 +4482,13 @@ margin-left: -22px;
       '<div class="evs-note">统计里这条按各段实测时长分账，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
   function closeModal(){overlay.classList.remove("on");}
   document.getElementById("ev-cancel").addEventListener("click",closeModal);
+  document.getElementById("ev-gcal-row").addEventListener("click",function(e){
+    if(e.target.closest("[data-gauth]")){e.preventDefault();gcalConnect();}});
   overlay.addEventListener("click",function(e){if(e.target===overlay)closeModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(!addPanel.hasAttribute("hidden"))closeAddPanel();else if(overlay.classList.contains("on"))closeModal();}});
   document.getElementById("ev-save").addEventListener("click",function(){
     var title=fTitle.value.trim()||catLabelOf(selCat,selSub);   // 没填就用「大类 · 小类」，别卡着不让存
-    var want=gToken&&document.getElementById("ev-gcal").checked,obj;
+    var want=!!document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     var isPar=!!document.getElementById("ev-par").checked;
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
@@ -4459,7 +4496,7 @@ margin-left: -22px;
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
-      if(gToken)gcalSync(obj,want);
+      gcalApply(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
@@ -4468,7 +4505,7 @@ margin-left: -22px;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
     else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
     save("tt_events",events);
-    if(gToken)gcalSync(obj,want);
+    gcalApply(obj,want);
     closeModal();renderCal();
   });
   delBtn.addEventListener("click",async function(){
@@ -5428,13 +5465,14 @@ margin-left: -22px;
     else{
       gConnectBtn.textContent=sbUser?"重新授权":"连接 Google Calendar";
       gStatusEl.textContent=sbUser?("已登录 "+(sbUser.email||"")+"，日历授权待续期…"):"未连接（先在「👤 账号」用 Google 登录）";}}
-  gConnectBtn.addEventListener("click",function(){
+  function gcalConnect(){                                        // 设置里那颗按钮和事件弹窗里的链接共用
     silentMode=false;gSilentFail=0;gLastSilent=0;               // 你自己点的，解开熔断重新来
     initGis();
     if(!tokenClient){gStatusEl.textContent="Google 库未加载（预览页不支持，请到你的网站上用）";return;}
     gStatusEl.textContent="正在打开 Google 登录…";
     tokenClient.requestAccessToken({prompt:gToken?"":"consent"});
-  });
+  }
+  gConnectBtn.addEventListener("click",gcalConnect);
   var gRetried=false,gRenewT=null,gSilentFail=0,gLastSilent=0;
   function trySilentGcal(){
     if(SOLO)return;
@@ -5458,7 +5496,7 @@ margin-left: -22px;
       if(document.hidden||SOLO||!load("tt_gcal",""))return;
       var s=load("tt_gtok",null);
       if(s&&s.t&&s.exp>Date.now()&&(s.exp-Date.now())<120000)trySilentGcal();});}
-  function onGcalConnected(){updateGcalUI();fetchGcal();}
+  function onGcalConnected(){updateGcalUI();try{gcalFlush();}catch(e){}try{refreshGcalRow();}catch(e){}fetchGcal();}
   function fetchGcal(){
     if(!gToken)return;
     var lo=addDays(state.cursor,-31),hi=addDays(state.cursor,62);
