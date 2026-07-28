@@ -3383,7 +3383,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <label class="do-name" style="cursor:pointer"><input type="checkbox" id="dict-autoadd"> 查词后自动加入生词本</label>
-        <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。</div>
+        <div class="set-desc" style="margin-top:4px">开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算。</div>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="dict-autospeak"> 查词后自动发音</label>
         <div class="set-desc" style="margin-top:4px">查词、以及看书时划词，出结果就自动朗读（口音在查词页的「英/美」切换）。</div>
         <div style="margin-top:12px">
@@ -7996,6 +7996,7 @@ margin-left: -22px;
   async function showRdPop(text,rect){
     if(!rdPop)return;
     rdPopWord={w:text.trim().toLowerCase(),disp:text.trim()};
+    var me=rdPopWord;                                    // 查词是异步的，等结果时可能又选了别的词
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
     star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
@@ -8004,7 +8005,14 @@ margin-left: -22px;
     rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
     bd.innerHTML=await wbDefHTML(rdPopWord.w);
     applyPopSize(false);placeRdPop(rect);
-    if(!bd.querySelector(".dict-card:not(.mynote)")){        // 词典里没有 → 直接翻译
+    var found=!!bd.querySelector(".dict-card:not(.mynote)");
+    // ⚙️设置里的"查词后自动加入生词本"：看书和笔记本里划词也要算，只在词典真查到时才收
+    if(found&&dictPrefs.autoAdd&&rdPopWord===me&&!isSaved(me.w)){
+      if(addWords([{w:me.w,disp:me.disp}],wbGroups.def).added){
+        updateWbCount();
+        star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";
+        if(state.tab==="dict")renderWordbook();}}
+    if(!found){                                              // 词典里没有 → 直接翻译
       var w0=rdPopWord.disp;
       bd.innerHTML='<div class="dict-hint">词典没收录，正在翻译，请稍等…</div>';
       applyPopSize(true);placeRdPop(rect);
