@@ -5076,7 +5076,11 @@ margin-left: -22px;
     var totalMin=evs.reduce(function(a,e){return a+statMin(e);},0),totH=Math.round(totalMin/6)/10;
     var parMin=evs.reduce(function(a,e){return a+(e.par?statMin(e):0);},0);   // 你明确标了 🐟 的
     var ovMin=overlapMin(evs);                                                // 实际被重复计算的（自动算，不用打勾）
-    var days=Math.max(1,Math.round((p.end-p.start)/86400000)+1),avgH=Math.round(totalMin/days/6)/10;
+    // 分母＝真正有记录的天数，不是区间跨了几天。
+    // 否则周三看"本周"，还没到的周四~周日也在分母里，13.6h 会被摊成 1.9h/天；
+    // "今年"更离谱——一月到现在都算，哪怕你七月才开始记。
+    var dayset={};evs.forEach(function(e){if(statMin(e)>0)dayset[e.date]=1;});
+    var days=Math.max(1,Object.keys(dayset).length),avgH=Math.round(totalMin/days/6)/10;
     var groupByCat=(statState.cat==="__all");
     var gmap={};evs.forEach(function(e){evMix(e).forEach(function(x){        // 分段事件按各段实测时长分账
       if(!x.min)return;
@@ -5119,7 +5123,8 @@ margin-left: -22px;
       '<div class="stat-cards">'+
         '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(ovMin?('<div class="sc-sub" title="这些分钟被算了不止一遍，因为同一时间安排了多件事">⧉ 含重叠 '+fmtDur(ovMin)+(parMin?'（🐟 摸鱼 '+fmtDur(parMin)+'）':'')+'</div>'):'')+'</div>'+
         '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
-        '<div class="sc"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div></div>'+
+        '<div class="sc" title="总时长 ÷ 有记录的天数。没记录的日子（还没到的、休息的）不进分母，不然平均值会被摊薄"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div>'+
+          '<div class="sc-sub">按 '+days+' 天有记录</div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
       '</div>'+
       '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3>'+
