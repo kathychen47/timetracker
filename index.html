@@ -212,6 +212,15 @@
   .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
   .ev.done .chk svg{opacity:1;color:var(--bg)}
   .ev.gcal{border:1px dashed color-mix(in srgb,var(--c) 55%,var(--border))}
+  /* 正计时进行中：日历上先占着位置，跟着秒数往下长 */
+  .ev.live{border:1.5px dashed color-mix(in srgb,var(--c) 65%,transparent);transition:height .5s linear;
+    animation:evlive 2.6s ease-in-out infinite}
+  .ev.live .ltag{position:absolute;right:4px;bottom:3px;font-size:10px;line-height:1;opacity:.9}
+  @keyframes evlive{
+    0%,100%{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 10%,transparent)}
+    50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--c) 24%,transparent)}}
+  .pill.live{outline:1.4px dashed color-mix(in srgb,var(--c) 65%,transparent);outline-offset:-1px}
+  @media (prefers-reduced-motion:reduce){.ev.live{animation:none;transition:none}}
   /* 摸鱼事件：斜条纹，一眼看出这段时间是叠在别的事情上面的 */
   .ev.par{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.42) 0 6px,transparent 6px 12px)}
   .ev.par .fish{position:absolute;left:4px;bottom:2px;font-size:10px;line-height:1;opacity:.85}
@@ -3942,8 +3951,41 @@ margin-left: -22px;
   function todosOn(ds){return todos.filter(function(t){return t.due===ds&&!t.archived;});}
   function todoColor(t){return (t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--cat-goal)";}
   function todoChipHTML(t){return '<div class="ad-todo'+(t.done?" done":"")+'" data-todo="'+t.id+'" style="--c:'+todoColor(t)+'"><span class="adk" data-todocheck><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><b>'+esc(t.title)+'</b></div>';}
+  // 正计时跑着的时候，日历上先画一块"正在进行"。它只在渲染时插进来，不进 events ——
+  // 所以统计不会重复算，浏览器崩了/直接关掉也不会留下半截垃圾事件。真正落库是结束时那一下。
+  var liveKey="";
+  function liveEv(){
+    if(timerMode!=="up")return null;                      // 只有正计时有这个"边做边长"的语义
+    if(!pTimer&&!pElapsed)return null;                    // 暂停时保留（冻住），归零后消失
+    if(!pomoToCal||!pomoToCal.checked)return null;         // 你没勾"记入日历"就别画
+    var sec=Math.min(pElapsed,UPMAX);if(sec<1)return null;
+    var end=new Date(),start=new Date(end.getTime()-sec*1000);
+    if(fmt(start)!==fmt(end)){                            // 跨零点：只画今天这一截
+      start=new Date(end.getFullYear(),end.getMonth(),end.getDate(),0,0,0);
+      sec=Math.max(1,Math.round((end-start)/1000));}
+    var pc=pomoCat.value,ps=pomoSub.value||null,pf=document.getElementById("pomo-par");
+    var e={id:"__live",date:fmt(start),
+      start:pad(start.getHours())+":"+pad(start.getMinutes()),
+      end:pad(end.getHours())+":"+pad(end.getMinutes()),
+      title:(pomoTask.value||"").trim()||catLabelOf(pc,ps),
+      cat:pc,sub:ps,done:false,live:true,sec:sec,par:!!(pf&&pf.checked)};
+    var ss=allSegs();if(ss&&ss.length>1)e.segs=ss;         // 换过任务的话，色块跟着分段一起长
+    return e;}
+  function liveH(e){var p=evPos(e);return Math.max(20,Math.min(e.sec/3600*PH,GH-p.top));}
+  // key 里故意不放 start：它是"现在 - 已走秒数"算出来的，四舍五入会在整分处来回跳一格，
+  // 放进去就会平白无故整张重画。真正需要重画的是它出现/消失/换了名字或分类。
+  function liveKeyOf(e){return e?(e.date+"|"+e.title+"|"+e.cat+"|"+(e.sub||"")+"|"+(e.segs?e.segs.length:0)):"";}
+  function liveRefresh(){
+    var e=liveEv(),key=liveKeyOf(e);
+    if(key!==liveKey){liveKey=key;if(state.tab==="calendar")renderCal();return;}   // 出现/消失才整张重画
+    if(!e||state.tab!=="calendar"||state.view==="month")return;
+    var n=calBody.querySelector(".ev.live");
+    if(!n)return;                                         // 当前视图里看不见它，什么都不用做
+    n.style.height=liveH(e).toFixed(1)+"px";              // 只动这一块的高度，不重画整张日历
+    var h=n.querySelector(".h");if(h)h.textContent=e.start+" · 已"+secLabel(e.sec);}
   function eventsOn(ds){
     var local=events.filter(function(e){return e.date===ds;});
+    var lv=liveEv();if(lv&&lv.date===ds)local=local.concat([lv]);
     var gids={},sig={};local.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.start]=1;});
     var g=gcalEvents.filter(function(e){return e.date===ds&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.start];});
     return local.concat(g);
@@ -4015,14 +4057,15 @@ margin-left: -22px;
   }
   function evHTML(e,withLabel,lay){var p=evPos(e);
     var lbl=withLabel?'<div class="lbl">'+esc(evCatLabel(e))+'</div>':'';
-    var box='top:'+p.top+'px;height:'+p.h+'px';
+    var box='top:'+p.top+'px;height:'+(e.live?liveH(e).toFixed(1):p.h)+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
-    var corner=e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG();
+    var corner=e.live?'<span class="ltag" title="正计时进行中">⏱</span>'
+      :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG());
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
-    return '<div class="ev'+(e.done?" done":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+e.start+'</div>'+lbl+fish+corner+'</div>';}
+    return '<div class="ev'+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?e.start+" · 已"+secLabel(e.sec):e.start)+'</div>'+lbl+fish+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -4104,7 +4147,7 @@ margin-left: -22px;
     for(var i=0;i<42;i++){
       var day=addDays(gstart,i),ds=fmt(day),dim=day.getMonth()!==c.getMonth(),isT=sameDay(day,today);
       var evs=eventsOn(ds),pills="";
-      for(var k=0;k<evs.length&&k<3;k++)pills+='<div class="pill'+(state.catFilter&&evs[k].cat!==state.catFilter?" faded":"")+'" style="--c:'+catColor(evs[k].cat)+'"><i></i><b>'+esc(evs[k].title)+'</b></div>';
+      for(var k=0;k<evs.length&&k<3;k++)pills+='<div class="pill'+(evs[k].live?" live":"")+(state.catFilter&&evs[k].cat!==state.catFilter?" faded":"")+'" style="--c:'+catColor(evs[k].cat)+'"><i></i><b>'+esc(evs[k].title)+'</b></div>';
       if(evs.length>3)pills+='<div class="more">+'+(evs.length-3)+'</div>';
       var mtds=todosOn(ds),mtDots=mtds.length?'<div class="m-todo">'+mtds.slice(0,5).map(function(t){return '<i style="background:'+todoColor(t)+(t.done?";opacity:.4":"")+'"></i>';}).join("")+(mtds.length>5?'<span>+'+(mtds.length-5)+'</span>':'')+'</div>':'';
       html+='<div class="cell'+(dim?" dim":"")+(isT?" today":"")+'" data-date="'+ds+'" data-goday="'+ds+'"><div class="dn">'+day.getDate()+'</div>'+mtDots+pills+'</div>';
@@ -4141,6 +4184,10 @@ margin-left: -22px;
     if(tchk){var tc=tchk.closest("[data-todo]");if(tc){var tid=tc.getAttribute("data-todo");todos=todos.map(function(x){return x.id===tid?Object.assign({},x,{done:!x.done}):x;});save("tt_todos",todos);renderCal();renderTodos();}return;}
     var tchip=e.target.closest("[data-todo]");
     if(tchip){openTodoModal(tchip.getAttribute("data-todo"));return;}
+    var lv=e.target.closest(".ev.live,.pill.live");
+    if(lv){var pk=document.querySelector(".pomo-side");                 // 它还没存下来，点了就滚回番茄钟
+      if(pk)try{pk.scrollIntoView({behavior:"smooth",block:"center"});}catch(err){pk.scrollIntoView();}
+      return;}
     var ev=e.target.closest(".ev");
     if(ev){var id2=ev.getAttribute("data-id");
       if(id2.indexOf("g_")===0){var gg=gcalEvents.filter(function(x){return x.id===id2;})[0];if(gg)openModal(gg);return;}
@@ -4279,7 +4326,7 @@ margin-left: -22px;
       var end=new Date(),start=new Date(end.getTime()-3600*1000);
       var _ac=autoCat(g.title),_gev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:g.title,cat:g.cat||_ac.cat,sub:g.sub||_ac.sub,done:true,goalId:g.id};   // 打卡＝已经做了
       events.push(_gev);save("tt_events",events);
-      if(gToken&&gcalAuto.goal)try{gcalSync(_gev,true);}catch(e){}
+      if(gcalAuto.goal)try{gcalApply(_gev,true);}catch(e){}          // 没 token 就先记着，续上了补
       renderCal();}return;}
     var ed=e.target.closest("[data-gedit]");if(ed){var gg=goals.filter(function(x){return x.id===ed.getAttribute("data-gedit");})[0];if(gg)renderGoalDetail(gg);}
   });
@@ -4667,7 +4714,8 @@ margin-left: -22px;
     if(segs)ev.segs=segs;
     events.push(ev);
     save("tt_events",events);
-    if(gToken&&gcalAuto.pomo)try{gcalSync(ev,true);}catch(e){}    // 之前这里漏了，番茄钟的事件从来没往 Google 推过
+    // 之前这里要求"当场握着 token"，可 token 只活 1 小时 —— 过期那会儿做的番茄钟就静静地没上去。
+    if(gcalAuto.pomo)try{gcalApply(ev,true);}catch(e){}
     if(state.tab==="calendar")renderCal();
   }
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
@@ -4683,6 +4731,7 @@ margin-left: -22px;
   var pomoSetBox=document.querySelector(".pomo-set"),noteUntil=0;
   function hintText(){return timerMode==="up"?"正计时 · 一圈 60 分，最多 3 小时":"拖动圆环设时长 · 一圈 60 分";}
   function drawPomo(){
+    try{liveRefresh();}catch(e){}                          // 日历上那一块跟着长（开始/暂停/结束也靠它清理）
     var tk=(pomoTask.value||"").trim();
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
@@ -6518,7 +6567,7 @@ margin-left: -22px;
       note:"复习 "+flashDone+" 个单词"};
     events.push(ev);save("tt_events",events);
     if(state.tab==="calendar")renderCal();
-    if(dictPrefs.logGcal&&gToken)gcalSync(ev,true);}
+    if(dictPrefs.logGcal)gcalApply(ev,true);}
   function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
   async function startFlash(){
     var plan=srsPlan();
