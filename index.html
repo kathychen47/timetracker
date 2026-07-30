@@ -2858,7 +2858,7 @@ margin-left: -22px;
               <button data-tm="up">正计时</button>
             </div>
             <div class="pomo-task">
-              <input type="text" id="pomo-task" placeholder="这次专注做什么？（记入日历）">
+              <input type="text" id="pomo-task" placeholder="这次专注做什么？（记进日历备注）">
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
@@ -3720,7 +3720,7 @@ margin-left: -22px;
     "新建事件默认加入 Google 日历":"Add new events to Google Calendar by default","Supabase 网址":"Supabase URL",
     "账号":"Account","登录":"Sign in","用 Google 登录":"Sign in with Google","退出登录":"Sign out",
     "主题":"Theme","浅色":"Light","深色":"Dark","界面缩放":"UI scale","自动（按屏幕）":"Auto (by screen)","语言 / Language":"Language",
-    "番茄钟":"Pomodoro","倒计时":"Countdown","正计时":"Count up","这次专注做什么？（记入日历）":"What are you focusing on?",
+    "番茄钟":"Pomodoro","倒计时":"Countdown","正计时":"Count up","这次专注做什么？（记进日历备注）":"What are you focusing on? (saved as the note)",
     "完成后记入日历":"Log to calendar when done","开始":"Start","重置":"Reset","跳过":"Skip","结束":"Finish",
     "今日次数":"Sessions today","今日时长":"Minutes today","拖动圆环设置时长":"Drag the ring to set duration",
     "新目标":"New goal","编辑目标":"Edit goal","名称":"Name","类型":"Type","时长(小时)":"Time (hours)","次数":"Count","目标值":"Target",
@@ -3967,14 +3967,14 @@ margin-left: -22px;
     var e={id:"__live",date:fmt(start),
       start:pad(start.getHours())+":"+pad(start.getMinutes()),
       end:pad(end.getHours())+":"+pad(end.getMinutes()),
-      title:(pomoTask.value||"").trim()||catLabelOf(pc,ps),
+      title:catLabelOf(pc,ps),note:(pomoTask.value||"").trim()||null,
       cat:pc,sub:ps,done:false,live:true,sec:sec,par:!!(pf&&pf.checked)};
     var ss=allSegs();if(ss&&ss.length>1)e.segs=ss;         // 换过任务的话，色块跟着分段一起长
     return e;}
   function liveH(e){var p=evPos(e);return Math.max(20,Math.min(e.sec/3600*PH,GH-p.top));}
   // key 里故意不放 start：它是"现在 - 已走秒数"算出来的，四舍五入会在整分处来回跳一格，
   // 放进去就会平白无故整张重画。真正需要重画的是它出现/消失/换了名字或分类。
-  function liveKeyOf(e){return e?(e.date+"|"+e.title+"|"+e.cat+"|"+(e.sub||"")+"|"+(e.segs?e.segs.length:0)):"";}
+  function liveKeyOf(e){return e?(e.date+"|"+e.title+"|"+(e.note||"")+"|"+e.cat+"|"+(e.sub||"")+"|"+(e.segs?e.segs.length:0)):"";}
   function liveRefresh(){
     var e=liveEv(),key=liveKeyOf(e);
     if(key!==liveKey){liveKey=key;if(state.tab==="calendar")renderCal();return;}   // 出现/消失才整张重画
@@ -4056,7 +4056,10 @@ margin-left: -22px;
     return map;
   }
   function evHTML(e,withLabel,lay){var p=evPos(e);
-    var lbl=withLabel?'<div class="lbl">'+esc(evCatLabel(e))+'</div>':'';
+    // 标题＝「大类 · 小类」时，下面那行再写一遍分类就是废话 —— 改成显示备注，
+    // 这样番茄钟里打的"做了什么"在块上仍然看得见，不用悬停。
+    var lt=(e.note&&e.title===catLabelOf(e.cat,e.sub))?e.note:(withLabel?evCatLabel(e):"");
+    var lbl=lt?'<div class="lbl">'+esc(lt)+'</div>':'';
     var box='top:'+p.top+'px;height:'+(e.live?liveH(e).toFixed(1):p.h)+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.live?'<span class="ltag" title="正计时进行中">⏱</span>'
@@ -4698,19 +4701,18 @@ margin-left: -22px;
     else if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
     if(!pomoToCal.checked)return;
     var pc=pomoCat.value,ps=pomoSub.value||null;
-    var task=typed||catLabelOf(pc,ps);   // 没填就用「大类 · 小类」
-
+    var note=typed;                      // 你打的字进「备注」，标题统一是「大类 · 小类」
     if(segs){
-      var names=[];segs.forEach(function(s){if(names.indexOf(s.t)<0)names.push(s.t);});
-      task=names.slice(0,2).join(" · ")+(names.length>2?" 等":"");
       var by={},best=null;                                   // 主分类 = 占时最长的那个，决定色块底色和筛选
       segs.forEach(function(s){var k=(s.cat||"")+"|"+(s.sub||"");by[k]=(by[k]||0)+s.sec;});
       Object.keys(by).forEach(function(k){if(!best||by[k]>by[best])best=k;});
-      pc=best.split("|")[0];ps=best.split("|")[1]||null;}
+      pc=best.split("|")[0];ps=best.split("|")[1]||null;
+      note=segs.map(function(s){return s.t+" "+secLabel(s.sec);}).join(" · ");}   // 换过任务：备注里把每段列清楚
+    var task=catLabelOf(pc,ps);
     var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
     // 番茄钟记进来的是"已经做完的时间"，不是计划 → 直接打勾
     var pf=document.getElementById("pomo-par");
-    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked)};
+    var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked),note:note||null};
     if(segs)ev.segs=segs;
     events.push(ev);
     save("tt_events",events);
