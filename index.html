@@ -351,8 +351,8 @@
   .todo-cols .todo-list:empty{display:none}
   /* 技能卡片是"卡中卡"，所以用浅一层的底色和左侧色条区分，而不是再画一圈边框 */
   .sk-wrap{display:flex;flex-direction:column;gap:10px}
-  .sk-card{background:var(--surface-2);border-radius:12px;padding:11px 13px;
-    border-left:3px solid var(--skc,var(--primary))}
+  .sk-card{background:var(--surface-2);border-radius:12px;padding:11px 13px}
+  .sk-dot{width:7px;height:7px;border-radius:50%;background:var(--skc,var(--primary));flex:none}
   .sk-top{display:flex;align-items:center;gap:7px}
   .sk-fold{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 3px;flex:none;line-height:1}
   .sk-mini{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
@@ -4070,6 +4070,7 @@ margin-left: -22px;
       return '<div class="sk-card'+(open?"":" fold")+(sk.arch?" arch":"")+'" style="--skc:'+(sk.cat?catColor(sk.cat):"var(--primary)")+'">'+
         '<div class="sk-top">'+
           '<button class="sk-fold" data-fold="'+sk.id+'" title="'+(open?"收起":"展开")+'">'+(open?"▼":"▶")+'</button>'+
+          '<i class="sk-dot"></i>'+
           '<span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
           '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+'</span>'+
           '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?"↩":"📥")+'</button>'+
