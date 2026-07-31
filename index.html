@@ -413,7 +413,9 @@
   .ti.done .txt .main{color:var(--muted);text-decoration:line-through}
   .ti .tcat{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);white-space:nowrap;flex:none}
   .ti .tcat i{width:8px;height:8px;border-radius:50%;background:var(--tc);flex:none}
-  .ti .prio{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:99px;white-space:nowrap;color:color-mix(in srgb,var(--pc) 70%,var(--text));background:color-mix(in srgb,var(--pc) 22%,var(--bg))}
+  .ti .prio{font-size:10.5px;font-weight:640;padding:1px 6px;border-radius:6px;white-space:nowrap;
+    color:color-mix(in srgb,var(--pc) 60%,var(--text));background:transparent;
+    border:1px solid color-mix(in srgb,var(--pc) 45%,var(--border))}
   .ti .del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;flex:none}
   .ti .del:hover{color:var(--danger);background:color-mix(in srgb,var(--danger) 12%,var(--bg))}
   .ti .del svg{width:15px;height:15px}
@@ -429,7 +431,9 @@
   .tf-arch.on{border-color:var(--primary);color:var(--primary);font-weight:600}
   .ti.overdue{border-color:color-mix(in srgb,var(--danger) 45%,var(--border))}
   .ti .due.overdue{color:var(--danger);font-weight:600}
-  .ti .tact{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;flex:none;font-size:14px;line-height:1}
+  .ti .tact{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px 6px;border-radius:6px;flex:none;font-size:14px;line-height:1;display:flex;align-items:center}
+  .ti .tact svg{width:15px;height:15px;display:block}
+  .tf-arch svg{width:13px;height:13px;vertical-align:-2px;margin-right:3px}
   .ti .tact:hover{background:var(--surface-2)}
 
   /* 税务 */
@@ -5194,7 +5198,7 @@ margin-left: -22px;
     var timeHTML=times.map(function(o){return '<button class="tf-chip'+((todoTimeFilter||"all")===o[0]?" on":"")+'" data-tt="'+o[0]+'">'+o[1]+'</button>';}).join("");
     var chipHTML='<button class="tf-chip'+(!todoFilter?" on":"")+'" data-tf="__all">全部</button>'+
       cats.map(function(c){var n=todos.filter(function(t){return t.cat===c.key&&!t.archived;}).length;return n?'<button class="tf-chip'+(todoFilter===c.key?" on":"")+'" data-tf="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+' '+n+'</button>':"";}).join("");
-    var archBtn=archN?'<button class="tf-arch'+(showArchived?" on":"")+'" data-arch>📦 已归档 '+archN+'</button>':"";
+    var archBtn=archN?'<button class="tf-arch'+(showArchived?" on":"")+'" data-arch>'+SVG_ARCH+' 已归档 '+archN+'</button>':"";
     document.getElementById("todo-controls").innerHTML='<div class="tf-chips">'+timeHTML+'</div><div class="tf-catrow"><div class="tf-chips">'+chipHTML+'</div>'+archBtn+'</div>';
     var arr=todos.filter(function(t){
       if(showArchived)return !!t.archived;
@@ -5207,7 +5211,7 @@ margin-left: -22px;
     else todoList.innerHTML=arr.map(function(t){
       var overdue=t.due&&!t.done&&t.due<todayStr;
       var due=t.due?'<div class="due'+(overdue?" overdue":"")+'">'+(overdue?"⚠ 已逾期 · ":"")+'截止 '+t.due+'</div>':'';
-      var archAct=t.archived?'<button class="tact" data-act="unarch" title="取消归档">↩︎</button>':'<button class="tact" data-act="arch" title="归档">📦</button>';
+      var archAct=t.archived?'<button class="tact" data-act="unarch" title="取消归档">'+SVG_UNARCH+'</button>':'<button class="tact" data-act="arch" title="归档">'+SVG_ARCH+'</button>';
       var tc=(t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--border)";
       return '<div class="ti'+(t.done?" done":"")+(overdue?" overdue":"")+'" data-id="'+t.id+'" style="--tc:'+tc+'">'+
         '<div class="box" data-act="toggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>'+
