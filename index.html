@@ -5431,7 +5431,7 @@ margin-left: -22px;
     SB.auth.onAuthStateChange(function(ev,session){
       if(session&&session.user){sbUser=session.user;updateSbUI();
         if(session.provider_token)adoptProviderToken(session.provider_token);
-        stashRefreshToken(session);
+        setTimeout(function(){stashRefreshToken(session);},0);   // 别在这个回调里同步调 Supabase
         if(ev==="SIGNED_IN")pullCloud();}
       else if(ev==="SIGNED_OUT"){sbUser=null;updateSbUI();}});
     SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();
@@ -5450,11 +5450,27 @@ margin-left: -22px;
       // 没登录动作时（比如刷新页面读旧 session）本来就不会有，别乱报
       if(session.provider_token&&!gcalHasRT())grtDiag({ok:false,why:"nort"});
       return;}
-    SB.from("gcal_tokens").upsert({user_id:session.user.id,refresh_token:rt,updated_at:new Date().toISOString()})
-      .then(function(r){
-        if(r&&r.error){grtDiag({ok:false,why:"db",msg:r.error.message});return;}
-        save("tt_grt_"+session.user.id,true);grtDiag({ok:true});},
-        function(err){grtDiag({ok:false,why:"db",msg:String(err)});});}
+    // 这里刻意不用 SB.from()：它靠客户端内部那份 token，而登录回调刚触发时那份还没挂上，
+    // 请求就成了匿名的 → auth.uid() 是 NULL → RLS 直接拒（"new row violates..."）。
+    // 裸 fetch 显式带上这次 session 的 access_token，没有时序问题。
+    var base=sbUrl.replace(/\/+$/,"")+"/rest/v1/gcal_tokens",
+        H={apikey:sbKey,Authorization:"Bearer "+session.access_token,
+           "Content-Type":"application/json",Prefer:"return=minimal"},
+        uid=session.user.id;
+    // 先删自己那一行再插：upsert 走的 ON CONFLICT DO UPDATE 在 Postgres 里需要 SELECT 策略，
+    // 而这张表故意不给 SELECT（不然浏览器就能把 refresh token 读回去）。
+    fetch(base+"?user_id=eq."+encodeURIComponent(uid),{method:"DELETE",headers:H})
+      .catch(function(){})
+      .then(function(){
+        return fetch(base,{method:"POST",headers:H,
+          body:JSON.stringify({user_id:uid,refresh_token:rt,updated_at:new Date().toISOString()})});})
+      .then(function(res){
+        if(res&&(res.status===201||res.status===204||res.ok)){
+          save("tt_grt_"+uid,true);grtDiag({ok:true});return;}
+        return res.text().then(function(t){
+          var m=t;try{m=JSON.parse(t).message||t;}catch(e){}
+          grtDiag({ok:false,why:"db",msg:"HTTP "+res.status+" "+String(m).slice(0,160)});});})
+      .catch(function(err){grtDiag({ok:false,why:"db",msg:String(err)});});}
   // 一键：直接带 consent 重新授权一次，不用先退出再登录
   function gcalRelink(){
     if(!SB){ttAlert("Supabase 还没加载好，稍等几秒再点");return;}
