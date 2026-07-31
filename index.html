@@ -365,7 +365,8 @@
   .sk-card.arch{opacity:.6}
   .sk-name{font-size:15px;font-weight:660;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sk-name:hover{color:var(--primary)}
-  .sk-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex:none}
+  .sk-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex:none;display:flex;align-items:center}
+  .sk-x svg{width:14px;height:14px;display:block}
   .sk-x:hover{color:#c0392b}
   .sk-cats{display:flex;gap:6px;margin-bottom:8px}
   .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
@@ -379,9 +380,10 @@
   .sk-t{flex:1;min-width:0;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sk-t:hover{color:var(--primary)}
   .sk-step.done .sk-t{text-decoration:line-through;color:var(--muted)}
-  .sk-time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;cursor:pointer;white-space:nowrap}
-  .sk-time:hover{color:var(--primary)}
-  .sk-time b{color:var(--text)}
+  .sk-time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;cursor:pointer;white-space:nowrap;
+    background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px 7px;line-height:1.5}
+  .sk-time:hover{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
+  .sk-time b{color:var(--text);font-weight:640;margin-left:1px}
   .sk-go{border:none;background:var(--primary-soft);color:var(--primary);border-radius:8px;padding:3px 8px;font-size:11.5px;font-weight:640;cursor:pointer;flex:none}
   .sk-go:hover{background:color-mix(in srgb,var(--primary) 22%,var(--bg))}
   .sk-step.done .sk-go{visibility:hidden}
@@ -4051,6 +4053,9 @@ margin-left: -22px;
   function skSubOpts(cat,sel){var subs=cat?subsOf(cat):[];
     return '<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(sel===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");}
+  // 和侧栏那套描线图标同一家族：只用 currentColor，缩小也不糊
+  var SVG_ARCH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M10 13h4"></path></svg>';
+  var SVG_UNARCH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"></rect><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"></path><path d="M12 17v-5M9.5 14.5 12 12l2.5 2.5"></path></svg>';
   var skArchOpen=load("tt_skarch",false);
   function skCardHTML(sk){
       var s=skillSum(sk),pct=s.total?s.done/s.total*100:0;
@@ -4063,7 +4068,7 @@ margin-left: -22px;
           '<input type="checkbox" class="sk-ck" data-ck="'+st.id+'"'+(st.done?" checked":"")+'>'+
           '<span class="sk-t" data-ren="'+st.id+'" title="点一下改名">'+esc(st.t)+'</span>'+
           '<span class="sk-time" data-est="'+st.id+'" title="预计 / 实际 —— 点一下改预计">'+
-            (st.est?("预计"+hrs(st.est)):"未估")+' · 实际<b>'+hrs(m)+'</b></span>'+
+            (st.est?("预计 "+hrs(st.est)):"未估")+' · 实际 <b>'+hrs(m)+'</b></span>'+
           '<button class="sk-go" data-go="'+st.id+'" title="开始正计时，时间自动记到这一步">▶</button>'+
           '<button class="sk-x" data-sdel="'+st.id+'" title="删掉这一步">✕</button></div>';}).join("");
       var open=sk.open!==false&&!sk.arch;
@@ -4073,7 +4078,7 @@ margin-left: -22px;
           '<i class="sk-dot"></i>'+
           '<span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
           '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+'</span>'+
-          '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?"↩":"📥")+'</button>'+
+          '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
