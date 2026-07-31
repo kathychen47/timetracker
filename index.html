@@ -3391,8 +3391,8 @@ margin-left: -22px;
       <div class="set-item">
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">连接状态</div><div class="set-desc" id="gcal-status">未连接</div>
-          <div class="set-desc" style="margin-top:6px">日历用的是你在「👤 账号」里登录的那个 Google 账号，<b>不用单独登录</b>。<br>
-          Google 的授权每次只管 1 小时，到点会自动悄悄续；只有偶尔续不上（比如浏览器里退出了 Google）才需要点一下右边。</div></div>
+          <div class="set-desc" style="margin-top:6px">日历用的是你在「👤 账号」里登录的那个 Google 账号，<b>不用单独登录</b>。</div>
+          <div class="set-desc" id="gcal-auto" style="margin-top:6px"></div></div>
           <button class="btn" id="gcal-connect" type="button">重新授权</button>
         </div>
       </div>
@@ -5423,16 +5423,71 @@ margin-left: -22px;
     if(SB||!window.supabase||!sbUrl||!sbKey)return;
     try{SB=window.supabase.createClient(sbUrl,sbKey);}catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
     SB.auth.onAuthStateChange(function(ev,session){
-      if(session&&session.user){sbUser=session.user;updateSbUI();if(session.provider_token)adoptProviderToken(session.provider_token);if(ev==="SIGNED_IN")pullCloud();}
+      if(session&&session.user){sbUser=session.user;updateSbUI();
+        if(session.provider_token)adoptProviderToken(session.provider_token);
+        stashRefreshToken(session);
+        if(ev==="SIGNED_IN")pullCloud();}
       else if(ev==="SIGNED_OUT"){sbUser=null;updateSbUI();}});
-    SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();if(r.data.session.provider_token)adoptProviderToken(r.data.session.provider_token);pullCloud();}else updateSbUI();});}
+    SB.auth.getSession().then(function(r){if(r.data&&r.data.session){sbUser=r.data.session.user;updateSbUI();
+      if(r.data.session.provider_token)adoptProviderToken(r.data.session.provider_token);
+      stashRefreshToken(r.data.session);
+      pullCloud();
+      gcalRenew(true);                                  // 开页面时先把日历 token 续上，别等你去点
+    }else updateSbUI();});}
+  // Google 只在"第一次同意"时给 refresh token。所以还没存到的时候要带 prompt=consent 再要一次。
+  function gcalHasRT(){return !!(sbUser&&load("tt_grt_"+sbUser.id,false));}
+  function stashRefreshToken(session){
+    var rt=session&&session.provider_refresh_token;
+    if(!rt||!SB||!session.user)return;
+    SB.from("gcal_tokens").upsert({user_id:session.user.id,refresh_token:rt,updated_at:new Date().toISOString()})
+      .then(function(r){
+        if(r&&r.error){console.warn("refresh token 没存上：",r.error.message);return;}
+        save("tt_grt_"+session.user.id,true);
+        try{updateGcalUI();}catch(e){}},function(){});}
+  // 找 Edge Function 要一个新鲜 token。函数没部署 / 没存过 refresh token 都会走到 catch，安静退回旧方式。
+  var gBrokerT=null,gBrokerDead=0;
+  function gcalBroker(){
+    if(!SB||!sbUser||!sbUrl)return Promise.resolve(null);
+    if(Date.now()<gBrokerDead)return Promise.resolve(null);      // 刚失败过，别每分钟捶它
+    if(gBrokerT)return gBrokerT;                                  // 同一时刻只发一个请求
+    gBrokerT=SB.auth.getSession().then(function(r){
+      var s=r&&r.data&&r.data.session;if(!s)return null;
+      return fetch(sbUrl.replace(/\/+$/,"")+"/functions/v1/gcal-token",{
+        method:"POST",headers:{Authorization:"Bearer "+s.access_token,apikey:sbKey,"Content-Type":"application/json"}})
+        .then(function(res){return res.json().then(function(j){return{ok:res.ok,st:res.status,j:j};});});
+    }).then(function(o){
+      gBrokerT=null;
+      if(!o)return null;
+      if(o.ok&&o.j&&o.j.access_token){
+        gToken=o.j.access_token;gSilentFail=0;
+        save("tt_gcal","1");save("tt_gtok",{t:gToken,exp:Date.now()+((o.j.expires_in||3600)-120)*1000});
+        try{onGcalConnected();}catch(e){}
+        return gToken;}
+      // 404 = 还没存过 refresh token；410 = 你在 Google 那边撤销了授权。都要重新走一次同意。
+      if(o.st===404||o.st===410){if(sbUser)save("tt_grt_"+sbUser.id,false);}
+      gBrokerDead=Date.now()+(o.st===404||o.st===410?6*3600*1000:10*60*1000);
+      return null;
+    },function(){gBrokerT=null;gBrokerDead=Date.now()+30*60*1000;return null;});   // 函数没部署 → 半小时内不再试
+    return gBrokerT;}
+  // 要 token 的统一入口：先看手上的还新不新鲜，再找中转，最后才是让你自己点一下
+  function gcalRenew(quiet){
+    var s=load("tt_gtok",null);
+    if(s&&s.t&&s.exp>Date.now()+60000){gToken=s.t;return Promise.resolve(gToken);}
+    if(!load("tt_gcal","")&&!sbUser)return Promise.resolve(null);
+    return gcalBroker().then(function(t){
+      if(t||quiet)return t;
+      trySilentGcal();                                   // 没有中转就退回老办法（多半会失败，然后提示你点一下）
+      return null;});}
   function adoptProviderToken(tok){if(!tok)return;gToken=tok;save("tt_gcal","1");save("tt_gtok",{t:tok,exp:Date.now()+3540*1000});try{onGcalConnected();}catch(e){}try{updateSbUI();}catch(e){}}
   function cloudAuthClick(){
     if(!sbUrl||!sbKey){ttAlert("先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录");return;}
     if(!SB)initSupabase();
     if(!SB){ttAlert("Supabase 还没加载好（或网址不对），稍等几秒或检查网址");return;}
-    if(sbUser){SB.auth.signOut().then(function(){sbUser=null;gToken=null;save("tt_gtok",null);updateSbUI();try{updateGcalUI();}catch(e){}});}
-    else{SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:{access_type:"offline"},redirectTo:location.href.split("#")[0].split("?")[0]}});}}
+    if(sbUser){SB.auth.signOut().then(function(){sbUser=null;gToken=null;save("tt_gtok",null);gBrokerDead=0;updateSbUI();try{updateGcalUI();}catch(e){}});}
+    else{
+      var qp={access_type:"offline"};
+      if(!gcalHasRT())qp.prompt="consent";              // 还没拿到过 refresh token，就明确再要一次同意
+      SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:qp,redirectTo:location.href.split("#")[0].split("?")[0]}});}}
   document.getElementById("set-sb-auth").addEventListener("click",cloudAuthClick);
   document.getElementById("acct-login").addEventListener("click",cloudAuthClick);
   if(!SOLO)(function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
@@ -5563,6 +5618,10 @@ margin-left: -22px;
     });
   }
   function updateGcalUI(){
+    var au=document.getElementById("gcal-auto");
+    if(au)au.textContent=gcalHasRT()
+      ?"✅ 自动续期已开启 —— 授权存在你自己的 Supabase 里，过期会自动续，不会再弹窗"
+      :"⚠️ 自动续期没开：现在每次授权只管 1 小时，过期要手动点一次。开启方法见 supabase/README.md";
     if(gToken){gConnectBtn.textContent="重新授权";}
     else{
       gConnectBtn.textContent=sbUser?"重新授权":"连接 Google Calendar";
@@ -5592,12 +5651,13 @@ margin-left: -22px;
       var s=load("tt_gtok",null);
       // 必须"还握着一个没过期的 token"才续。原来写的是"没 token 也续"，
       // 而没 token 这件事在手机上永远成立 —— 于是每分钟弹一次登录框。
-      if(s&&s.t&&s.exp>Date.now()&&(s.exp-Date.now())<300000)trySilentGcal();
+      if(s&&s.t&&s.exp>Date.now()&&(s.exp-Date.now())<300000)gcalRenew(true);
+      else if((!s||!s.t||s.exp<=Date.now())&&sbUser)gcalRenew(true);   // 已经过期也能自己续回来（有中转的话）
     },60000);
     document.addEventListener("visibilitychange",function(){
       if(document.hidden||SOLO||!load("tt_gcal",""))return;
       var s=load("tt_gtok",null);
-      if(s&&s.t&&s.exp>Date.now()&&(s.exp-Date.now())<120000)trySilentGcal();});}
+      if(!s||!s.t||s.exp-Date.now()<120000)gcalRenew(true);});}
   function onGcalConnected(){updateGcalUI();try{gcalFlush();}catch(e){}try{refreshGcalRow();}catch(e){}fetchGcal();}
   function fetchGcal(){
     if(!gToken)return;
@@ -5607,8 +5667,8 @@ margin-left: -22px;
     fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
       if(j.error){
         if(j.error.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();
-          if(!gRetried&&gSilentFail<2){gRetried=true;gStatusEl.textContent="授权过期，正在自动续…";trySilentGcal();setTimeout(function(){gRetried=false;},30000);}
-          else if(gSilentFail>=2)gStatusEl.textContent="Google 授权过期了，点右边「重新授权」一次即可";
+          if(!gRetried){gRetried=true;gStatusEl.textContent="授权过期，正在自动续…";
+            gcalRenew(false);setTimeout(function(){gRetried=false;},30000);}
           return;}
         gStatusEl.textContent="读取失败："+(j.error.message||"");return;}
       gcalEvents=(j.items||[]).filter(function(it){return it.start&&it.start.dateTime;}).map(mapGEvent);
@@ -5638,9 +5698,12 @@ margin-left: -22px;
     var saved=load("tt_gtok",null);
     if(saved&&saved.t&&saved.exp>Date.now()){gToken=saved.t;onGcalConnected();gcalKeepAlive();return;}
     if(!SOLO&&load("tt_gcal","")){
-      // token 已经彻底过期：不自动弹登录框（手机上那一弹就是没完没了），只挂上保活、把话说清楚
+      // token 过期了：先安静地找中转续（有部署就永远不用你管），续不到才提示你点一下。
+      // 绝不自动弹 Google 的登录框 —— 手机上那一弹就是没完没了。
       gcalKeepAlive();
-      gStatusEl.textContent="Google 授权过期了，点右边「重新授权」一次即可（约管 1 小时）";}
+      gStatusEl.textContent="Google 授权过期了，正在尝试自动续…";
+      gcalRenew(true).then(function(t){
+        if(!t)gStatusEl.textContent="Google 授权过期了，点右边「重新授权」一次即可（约管 1 小时）";});}
   })();
 
   // ---------- 词典 · 背单词 ----------
