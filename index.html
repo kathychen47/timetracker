@@ -3393,7 +3393,10 @@ margin-left: -22px;
           <div class="set-row-txt"><div class="set-row-t">连接状态</div><div class="set-desc" id="gcal-status">未连接</div>
           <div class="set-desc" style="margin-top:6px">日历用的是你在「👤 账号」里登录的那个 Google 账号，<b>不用单独登录</b>。</div>
           <div class="set-desc" id="gcal-auto" style="margin-top:6px"></div></div>
-          <button class="btn" id="gcal-connect" type="button">重新授权</button>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn" id="gcal-connect" type="button">重新授权</button>
+            <button class="btn primary" id="gcal-relink" type="button" style="display:none">开启自动续期</button>
+          </div>
         </div>
       </div>
       <div class="set-item">
@@ -5421,7 +5424,10 @@ margin-left: -22px;
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
     if(SB||!window.supabase||!sbUrl||!sbKey)return;
-    try{SB=window.supabase.createClient(sbUrl,sbKey);}catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
+    // 必须是 pkce：默认的 implicit flow 只把 provider_token 带回来，
+    // provider_refresh_token 只有 PKCE 换码那一步才给 —— 没有它就没法自动续期。
+    try{SB=window.supabase.createClient(sbUrl,sbKey,{auth:{flowType:"pkce",detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});}
+    catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
     SB.auth.onAuthStateChange(function(ev,session){
       if(session&&session.user){sbUser=session.user;updateSbUI();
         if(session.provider_token)adoptProviderToken(session.provider_token);
@@ -5436,14 +5442,27 @@ margin-left: -22px;
     }else updateSbUI();});}
   // Google 只在"第一次同意"时给 refresh token。所以还没存到的时候要带 prompt=consent 再要一次。
   function gcalHasRT(){return !!(sbUser&&load("tt_grt_"+sbUser.id,false));}
+  function grtDiag(o){save("tt_grtdiag",o);try{updateGcalUI();}catch(e){}}
   function stashRefreshToken(session){
-    var rt=session&&session.provider_refresh_token;
-    if(!rt||!SB||!session.user)return;
+    if(!SB||!session||!session.user)return;
+    var rt=session.provider_refresh_token;
+    if(!rt){
+      // 没登录动作时（比如刷新页面读旧 session）本来就不会有，别乱报
+      if(session.provider_token&&!gcalHasRT())grtDiag({ok:false,why:"nort"});
+      return;}
     SB.from("gcal_tokens").upsert({user_id:session.user.id,refresh_token:rt,updated_at:new Date().toISOString()})
       .then(function(r){
-        if(r&&r.error){console.warn("refresh token 没存上：",r.error.message);return;}
-        save("tt_grt_"+session.user.id,true);
-        try{updateGcalUI();}catch(e){}},function(){});}
+        if(r&&r.error){grtDiag({ok:false,why:"db",msg:r.error.message});return;}
+        save("tt_grt_"+session.user.id,true);grtDiag({ok:true});},
+        function(err){grtDiag({ok:false,why:"db",msg:String(err)});});}
+  // 一键：直接带 consent 重新授权一次，不用先退出再登录
+  function gcalRelink(){
+    if(!SB){ttAlert("Supabase 还没加载好，稍等几秒再点");return;}
+    save("tt_grtdiag",null);
+    SB.auth.signInWithOAuth({provider:"google",options:{
+      scopes:"https://www.googleapis.com/auth/calendar.events",
+      queryParams:{access_type:"offline",prompt:"consent"},
+      redirectTo:location.href.split("#")[0].split("?")[0]}});}
   // 找 Edge Function 要一个新鲜 token。函数没部署 / 没存过 refresh token 都会走到 catch，安静退回旧方式。
   var gBrokerT=null,gBrokerDead=0;
   function gcalBroker(){
@@ -5618,10 +5637,15 @@ margin-left: -22px;
     });
   }
   function updateGcalUI(){
-    var au=document.getElementById("gcal-auto");
-    if(au)au.textContent=gcalHasRT()
-      ?"✅ 自动续期已开启 —— 授权存在你自己的 Supabase 里，过期会自动续，不会再弹窗"
-      :"⚠️ 自动续期没开：现在每次授权只管 1 小时，过期要手动点一次。开启方法见 supabase/README.md";
+    var au=document.getElementById("gcal-auto"),rb=document.getElementById("gcal-relink");
+    if(au){
+      var d=load("tt_grtdiag",null),txt;
+      if(gcalHasRT())txt="✅ 自动续期已开启 —— 授权存在你自己的 Supabase 里，过期会自动续，不会再弹窗";
+      else if(d&&d.why==="nort")txt="⚠️ 上次登录 Google 没有回传 refresh token（多半是没出现「允许访问日历」那一步）。点右边再来一次，看到同意页要点「继续」。";
+      else if(d&&d.why==="db")txt="⚠️ refresh token 拿到了，但存不进数据库："+(d.msg||"未知错误");
+      else txt="⚠️ 自动续期没开：现在每次授权只管 1 小时，过期要手动点一次。点右边开启。";
+      au.textContent=txt;}
+    if(rb)rb.style.display=gcalHasRT()?"none":"";
     if(gToken){gConnectBtn.textContent="重新授权";}
     else{
       gConnectBtn.textContent=sbUser?"重新授权":"连接 Google Calendar";
@@ -5634,6 +5658,7 @@ margin-left: -22px;
     tokenClient.requestAccessToken({prompt:gToken?"":"consent"});
   }
   gConnectBtn.addEventListener("click",gcalConnect);
+  (function(){var b=document.getElementById("gcal-relink");if(b)b.addEventListener("click",gcalRelink);})();
   var gRetried=false,gRenewT=null,gSilentFail=0,gLastSilent=0;
   function trySilentGcal(){
     if(SOLO)return;
