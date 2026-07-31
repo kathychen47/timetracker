@@ -317,6 +317,13 @@
   .stat-legend{margin-top:0;width:100%}
   .sc-sub{font-size:11px;color:var(--muted);margin-top:2px}
   .stat-legend .li em{font-style:normal;font-size:11px;opacity:.7;margin-left:1px;font-variant-numeric:tabular-nums}
+  /* 矮块：按剩多少地方决定显示到哪一行，而不是把块撑大 */
+  .col .ev.short,.dv-col .ev.short{padding:2px 6px}
+  .col .ev.short .t,.dv-col .ev.short .t{font-size:10.5px;line-height:1.15}
+  .ev.short .h,.ev.short .lbl{display:none}
+  .col .ev.mini,.dv-col .ev.mini{padding:0 5px;border-radius:6px;display:flex;align-items:center}
+  .col .ev.mini .t,.dv-col .ev.mini .t{font-size:9.5px;line-height:1}
+  .ev.mini .h,.ev.mini .lbl,.ev.mini .chk,.ev.mini .gtag,.ev.mini .fish,.ev.mini .ltag{display:none}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
 
@@ -3989,7 +3996,7 @@ margin-left: -22px;
       cat:pc,sub:ps,done:false,live:true,sec:sec,par:!!(pf&&pf.checked)};
     var ss=allSegs();if(ss&&ss.length>1)e.segs=ss;         // 换过任务的话，色块跟着分段一起长
     return e;}
-  function liveH(e){var p=evPos(e);return Math.max(20,Math.min(e.sec/3600*PH,GH-p.top));}
+  function liveH(e){var p=evPos(e);return Math.max(EVMINH,Math.min(e.sec/3600*PH,GH-p.top));}  // 和普通块同一个地板，停表时不会突然缩一下
   // key 里故意不放 start：它是"现在 - 已走秒数"算出来的，四舍五入会在整分处来回跳一格，
   // 放进去就会平白无故整张重画。真正需要重画的是它出现/消失/换了名字或分类。
   function liveKeyOf(e){return e?(e.date+"|"+e.title+"|"+(e.note||"")+"|"+e.cat+"|"+(e.sub||"")+"|"+(e.segs?e.segs.length:0)):"";}
@@ -4058,11 +4065,16 @@ margin-left: -22px;
       var c="color-mix(in srgb,"+subColor(s.cat,s.sub)+" 50%,var(--bg))";
       stops.push(c+" "+a.toFixed(2)+"% "+b.toFixed(2)+"%");});
     return "linear-gradient(180deg,"+stops.join(",")+")";}
-  function evPos(e){var s=toMin(e.start),en=toMin(e.end);if(en<=s)en=s+30;
-    var top=(s-HS*60)/60*PH,h=(en-s)/60*PH;if(top<0){h+=top;top=0;}if(h<20)h=20;return{top:top,h:h};}
+  var EVMINH=9;                                   // 块最矮 9px（≈12 分钟）——再矮就点不动了
+  function evPos(e){var s=toMin(e.start),en=toMin(e.end);if(en<=s)en=s+5;   // 零长度的给 5 分钟，不是 30
+    var top=(s-HS*60)/60*PH,h=(en-s)/60*PH;if(top<0){h+=top;top=0;}
+    if(h<EVMINH)h=EVMINH;                          // 原来是 20px，等于 27 分钟以内全一样高
+    return{top:top,h:h};}
   function chkSVG(){return '<div class="chk" data-chk><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>';}
   function packLayout(evs){
-    var items=evs.map(function(e){var s=toMin(e.start),en=Math.max(toMin(e.end),s+15);return{id:e.id,s:s,e2:en};});
+    // 按真实结束时间判断重叠。原来强行拉到 15 分钟，导致"9:00–9:05"和"9:10–9:40"
+    // 明明前后脚，却被当成重叠排成两栏。只给零长度事件垫 1 分钟。
+    var items=evs.map(function(e){var s=toMin(e.start),en=Math.max(toMin(e.end),s+1);return{id:e.id,s:s,e2:en};});
     items.sort(function(a,b){return a.s-b.s||a.e2-b.e2;});
     var map={},group=[],groupEnd=-1;
     function flush(){var colsEnd=[];group.forEach(function(it){var placed=false;
@@ -4074,18 +4086,21 @@ margin-left: -22px;
     return map;
   }
   function evHTML(e,withLabel,lay){var p=evPos(e);
+    var hpx=e.live?liveH(e):p.h;
+    // 块矮到一定程度就别硬塞三行字：先收起第三行，再收起时间那行。
+    var sz=(hpx<15)?" mini":((hpx<30)?" short":"");
     // 标题＝「大类 · 小类」时，下面那行再写一遍分类就是废话 —— 改成显示备注，
     // 这样番茄钟里打的"做了什么"在块上仍然看得见，不用悬停。
     var lt=(e.note&&e.title===catLabelOf(e.cat,e.sub))?e.note:(withLabel?evCatLabel(e):"");
-    var lbl=lt?'<div class="lbl">'+esc(lt)+'</div>':'';
-    var box='top:'+p.top+'px;height:'+(e.live?liveH(e).toFixed(1):p.h)+'px';
+    var lbl=(lt&&hpx>=42)?'<div class="lbl">'+esc(lt)+'</div>':'';
+    var box='top:'+p.top+'px;height:'+hpx.toFixed(1)+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.live?'<span class="ltag" title="正计时进行中">⏱</span>'
       :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG());
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
-    return '<div class="ev'+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?e.start+" · 已"+secLabel(e.sec):e.start)+'</div>'+lbl+fish+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
