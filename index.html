@@ -346,9 +346,23 @@
   @media (max-width:980px){.todo-cols{flex-direction:column}.todo-cols .sk-col{width:100%}}
   #view-todo .page-h{max-width:1160px;margin-left:auto;margin-right:auto}  /* 和内容那两栏对齐 */
   /* --- 技能计划 --- */
-  .sk-wrap{display:flex;flex-direction:column;gap:14px}
-  .sk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
-  .sk-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .todo-cols .dash-card+.dash-card{margin-top:16px}
+  .todo-cols .todo-controls{margin-bottom:12px}
+  .todo-cols .todo-list:empty{display:none}
+  /* 技能卡片是"卡中卡"，所以用浅一层的底色和左侧色条区分，而不是再画一圈边框 */
+  .sk-wrap{display:flex;flex-direction:column;gap:10px}
+  .sk-card{background:var(--surface-2);border-radius:12px;padding:11px 13px;
+    border-left:3px solid var(--skc,var(--primary))}
+  .sk-top{display:flex;align-items:center;gap:7px}
+  .sk-fold{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 3px;flex:none;line-height:1}
+  .sk-mini{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+  .sk-card.fold .sk-cats,.sk-card.fold .sk-meta,.sk-card.fold .sk-bar,
+  .sk-card.fold .sk-step,.sk-card.fold .sk-add{display:none}
+  .sk-card:not(.fold) .sk-top{margin-bottom:7px}
+  .sk-card:not(.fold) .sk-mini{display:none}
+  .sk-arch-h{font-size:11.5px;color:var(--muted);cursor:pointer;padding:8px 2px 2px;user-select:none}
+  .sk-arch-h:hover{color:var(--primary)}
+  .sk-card.arch{opacity:.6}
   .sk-name{font-size:15px;font-weight:660;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .sk-name:hover{color:var(--primary)}
   .sk-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex:none}
@@ -383,7 +397,6 @@
   .todo-add select{max-width:150px}
   .todo-add select#todo-sub{max-width:130px}
   .todo-add{display:flex;gap:8px;margin-bottom:16px}
-  .todo-add .btn{width:100%;justify-content:center;padding:11px 14px;font-size:14px}
   .todo-add input[type=text]{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px}
   .todo-add input:focus{outline:2px solid var(--primary);outline-offset:0}
   .todo-add select,.todo-add input[type=date]{padding:0 10px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text)}
@@ -2952,17 +2965,21 @@ margin-left: -22px;
       <div class="page-h">待办 · 计划</div>
       <div class="todo-cols">
       <div class="todo-wrap">
-        <div class="todo-add"><button class="btn primary" id="todo-new" type="button">＋ 添加待办</button></div>
-        <div class="todo-controls" id="todo-controls"></div>
-        <div class="todo-list" id="todo-list"></div>
+        <div class="dash-card">
+          <div class="dash-h">待办 <button class="dash-add" id="todo-new" type="button">+ 添加待办</button></div>
+          <div class="todo-controls" id="todo-controls"></div>
+          <div class="todo-list" id="todo-list"></div>
+        </div>
         <div class="dash-card todo-goals">
           <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
           <div id="goal-list2"></div>
         </div>
       </div>
       <div class="sk-col">
-        <div class="dash-h" style="margin-bottom:10px">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
-        <div class="sk-wrap" id="sk-wrap"></div>
+        <div class="dash-card">
+          <div class="dash-h">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
+          <div class="sk-wrap" id="sk-wrap"></div>
+        </div>
       </div>
       </div>
     </section>
@@ -4034,10 +4051,8 @@ margin-left: -22px;
   function skSubOpts(cat,sel){var subs=cat?subsOf(cat):[];
     return '<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(sel===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");}
-  function renderSkills(){
-    var w=document.getElementById("sk-wrap");if(!w)return;
-    if(!skills.length){w.innerHTML='<div class="sk-empty">还没有技能。点上面「+ 新技能」，比如「学 SQL」，<br>再把它拆成一步步，每步填个预计时间。<br>之后点某步的「▶ 开始」，花的时间会自动记到那一步。</div>';return;}
-    w.innerHTML=skills.map(function(sk){
+  var skArchOpen=load("tt_skarch",false);
+  function skCardHTML(sk){
       var s=skillSum(sk),pct=s.total?s.done/s.total*100:0;
       var diff="";
       if(s.est&&s.act){var d=s.act-s.est;
@@ -4051,8 +4066,13 @@ margin-left: -22px;
             (st.est?("预计"+hrs(st.est)):"未估")+' · 实际<b>'+hrs(m)+'</b></span>'+
           '<button class="sk-go" data-go="'+st.id+'" title="开始正计时，时间自动记到这一步">▶</button>'+
           '<button class="sk-x" data-sdel="'+st.id+'" title="删掉这一步">✕</button></div>';}).join("");
-      return '<div class="sk-card">'+
-        '<div class="sk-top"><span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
+      var open=sk.open!==false&&!sk.arch;
+      return '<div class="sk-card'+(open?"":" fold")+(sk.arch?" arch":"")+'" style="--skc:'+(sk.cat?catColor(sk.cat):"var(--primary)")+'">'+
+        '<div class="sk-top">'+
+          '<button class="sk-fold" data-fold="'+sk.id+'" title="'+(open?"收起":"展开")+'">'+(open?"▼":"▶")+'</button>'+
+          '<span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
+          '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+'</span>'+
+          '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?"↩":"📥")+'</button>'+
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
@@ -4060,7 +4080,19 @@ margin-left: -22px;
         '<div class="sk-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
         steps+
         '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
-      '</div>';}).join("");
+      '</div>';}
+  function renderSkills(){
+    var w=document.getElementById("sk-wrap");if(!w)return;
+    var live=skills.filter(function(s){return !s.arch;}),arch=skills.filter(function(s){return s.arch;});
+    var html="";
+    if(!live.length&&!arch.length){
+      w.innerHTML='<div class="sk-empty">还没有技能。点上面「+ 新技能」，比如「学 SQL」，<br>再把它拆成一步步，每步填个预计时间。<br>之后点某步的「▶」，花的时间会自动记到那一步。</div>';return;}
+    html+=live.map(skCardHTML).join("");
+    if(!live.length)html+='<div class="sk-empty">在进行的都归档完了。</div>';
+    if(arch.length){
+      html+='<div class="sk-arch-h" data-archtog="1">'+(skArchOpen?"▾":"▸")+' 已归档 '+arch.length+'</div>';
+      if(skArchOpen)html+=arch.map(skCardHTML).join("");}
+    w.innerHTML=html;
   }
   function skillOf(id){for(var i=0;i<skills.length;i++)if(skills[i].id===id)return skills[i];return null;}
   function stepOf(id){for(var i=0;i<skills.length;i++){var ss=skills[i].steps||[];
@@ -4099,6 +4131,12 @@ margin-left: -22px;
     if(sd){var d=stepOf(sd.getAttribute("data-sdel"));if(!d)return;
       if(!await ttConfirm("删掉「"+d.st.t+"」这一步？已经记下的时间不会从日历里删掉。",{danger:true,anchor:sd}))return;
       d.sk.steps=d.sk.steps.filter(function(s2){return s2.id!==d.st.id;});saveSkills();renderSkills();return;}
+    var fo=e.target.closest("[data-fold]");
+    if(fo){var sk5=skillOf(fo.getAttribute("data-fold"));if(sk5){sk5.open=(sk5.open===false);saveSkills();renderSkills();}return;}
+    var at=e.target.closest("[data-archtog]");
+    if(at){skArchOpen=!skArchOpen;save("tt_skarch",skArchOpen);renderSkills();return;}
+    var ar=e.target.closest("[data-skarch]");
+    if(ar){var sk6=skillOf(ar.getAttribute("data-skarch"));if(sk6){sk6.arch=!sk6.arch;saveSkills();renderSkills();}return;}
     var skr=e.target.closest("[data-skren]");
     if(skr){var sk3=skillOf(skr.getAttribute("data-skren"));if(!sk3)return;
       var v3=await ttPrompt("改成：",sk3.name);if(v3===null)return;v3=v3.trim();if(v3){sk3.name=v3;saveSkills();renderSkills();}return;}
