@@ -324,6 +324,8 @@
   .col .ev.mini,.dv-col .ev.mini{padding:0 5px;border-radius:6px;display:flex;align-items:center}
   .col .ev.mini .t,.dv-col .ev.mini .t{font-size:9.5px;line-height:1}
   .ev.mini .h,.ev.mini .lbl,.ev.mini .chk,.ev.mini .gtag,.ev.mini .fish,.ev.mini .ltag{display:none}
+  .legend .li em{font-style:normal;font-size:10.5px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
+  .legend .lg-more{color:var(--muted);border-style:dashed}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
 
@@ -338,12 +340,50 @@
   .mini-bar b{color:var(--text);font-size:13px}
   .mini-bar .grow{flex:1}
   .todo-wrap{max-width:640px;margin:0 auto}
-  #view-todo .page-h{max-width:640px;margin-left:auto;margin-right:auto}  /* 内容居中，标题就别贴最左边 */
+  .todo-cols{display:flex;gap:26px;align-items:flex-start;max-width:1160px;margin:0 auto}
+  .todo-cols .todo-wrap{margin:0;max-width:none;flex:1 1 400px;min-width:0}
+  .todo-cols .sk-col{flex:1 1 420px;min-width:0}
+  @media (max-width:980px){.todo-cols{flex-direction:column}.todo-cols .sk-col{width:100%}}
+  #view-todo .page-h{max-width:1160px;margin-left:auto;margin-right:auto}  /* 和内容那两栏对齐 */
+  /* --- 技能计划 --- */
+  .sk-wrap{display:flex;flex-direction:column;gap:14px}
+  .sk-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+  .sk-top{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .sk-name{font-size:15px;font-weight:660;cursor:pointer;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sk-name:hover{color:var(--primary)}
+  .sk-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 4px;flex:none}
+  .sk-x:hover{color:#c0392b}
+  .sk-cats{display:flex;gap:6px;margin-bottom:8px}
+  .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
+  .sk-meta{font-size:11.5px;color:var(--muted);margin-bottom:8px;font-variant-numeric:tabular-nums}
+  .sk-meta b{color:var(--text);font-weight:640}
+  .sk-meta .over{color:#c0392b}.sk-meta .under{color:#2e8b57}
+  .sk-bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-bottom:10px}
+  .sk-bar i{display:block;height:100%;border-radius:99px;background:var(--primary);transition:width .3s}
+  .sk-step{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border)}
+  .sk-ck{width:16px;height:16px;flex:none;margin:0;accent-color:var(--primary);cursor:pointer}
+  .sk-t{flex:1;min-width:0;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sk-t:hover{color:var(--primary)}
+  .sk-step.done .sk-t{text-decoration:line-through;color:var(--muted)}
+  .sk-time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none;cursor:pointer;white-space:nowrap}
+  .sk-time:hover{color:var(--primary)}
+  .sk-time b{color:var(--text)}
+  .sk-go{border:none;background:var(--primary-soft);color:var(--primary);border-radius:8px;padding:3px 8px;font-size:11.5px;font-weight:640;cursor:pointer;flex:none}
+  .sk-go:hover{background:color-mix(in srgb,var(--primary) 22%,var(--bg))}
+  .sk-step.done .sk-go{visibility:hidden}
+  .sk-add{margin-top:9px;display:flex;gap:6px}
+  .sk-add input{flex:1;min-width:0;padding:6px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface-2);color:var(--text);font-size:12.5px}
+  .sk-add input.est{flex:none;width:86px}
+  .sk-empty{color:var(--muted);font-size:12.5px;line-height:1.8;text-align:center;padding:18px 6px}
+  .pomo-step{display:flex;align-items:center;gap:6px;justify-content:center;font-size:11.5px;color:var(--primary);
+    background:var(--primary-soft);border-radius:9px;padding:5px 9px;margin-top:8px}
+  .pomo-step button{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0 2px}
   .todo-goals{margin-top:22px}
   .todo-goals .dash-empty{padding:6px 0}
   .todo-add select{max-width:150px}
   .todo-add select#todo-sub{max-width:130px}
   .todo-add{display:flex;gap:8px;margin-bottom:16px}
+  .todo-add .btn{width:100%;justify-content:center;padding:11px 14px;font-size:14px}
   .todo-add input[type=text]{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px}
   .todo-add input:focus{outline:2px solid var(--primary);outline-offset:0}
   .todo-add select,.todo-add input[type=date]{padding:0 10px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text)}
@@ -2877,6 +2917,7 @@ margin-left: -22px;
             </div>
             <div class="pomo-task">
               <input type="text" id="pomo-task" placeholder="这次专注做什么？（记进日历备注）">
+            <div id="pomo-step-box"></div>
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
@@ -2908,21 +2949,21 @@ margin-left: -22px;
 
     <!-- TODO -->
     <section class="view" id="view-todo">
-      <div class="page-h">待办</div>
+      <div class="page-h">待办 · 计划</div>
+      <div class="todo-cols">
       <div class="todo-wrap">
-        <div class="todo-add">
-          <input type="text" id="todo-input" placeholder="添加一个待办，回车确认…">
-          <select id="todo-cat"></select>
-          <select id="todo-sub"></select>
-          <select id="todo-prio"><option value="mid">中</option><option value="high">高</option><option value="low">低</option></select>
-          <input type="date" id="todo-due">
-        </div>
+        <div class="todo-add"><button class="btn primary" id="todo-new" type="button">＋ 添加待办</button></div>
         <div class="todo-controls" id="todo-controls"></div>
         <div class="todo-list" id="todo-list"></div>
         <div class="dash-card todo-goals">
           <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
           <div id="goal-list2"></div>
         </div>
+      </div>
+      <div class="sk-col">
+        <div class="dash-h" style="margin-bottom:10px">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
+        <div class="sk-wrap" id="sk-wrap"></div>
+      </div>
       </div>
     </section>
 
@@ -3264,7 +3305,7 @@ margin-left: -22px;
 <!-- todo edit modal -->
 <div class="overlay" id="todo-overlay">
   <div class="modal">
-    <h3>编辑待办</h3>
+    <h3 id="todo-modal-title">编辑待办</h3>
     <div class="field"><label>内容</label><input type="text" id="td-title"></div>
     <div class="field"><div class="row">
       <div><label>大类</label><select id="td-cat"></select></div>
@@ -3965,13 +4006,106 @@ margin-left: -22px;
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
     ["calendar","todo","stats","dict","reader","tax","food","body","notes"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
-    if(tab==="todo")renderTodos();
+    if(tab==="todo"){renderTodos();renderSkills();}
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
     if(tab==="food")openFood();
     if(tab==="body")renderBody();
     if(tab==="notes")showNotes();
+  });
+
+  // ---------- 技能 / 学习计划 ----------
+  // 技能 = 一件要学会的事，拆成有顺序的若干步。它挂在「大类 · 小类」下面，
+  // 于是步骤计出来的时间照样进那个分类的统计 —— 不需要第三级分类。
+  var skills=load("tt_skills",[])||[];
+  function saveSkills(){save("tt_skills",skills);}
+  function hrs(min){return min>=60?((Math.round(min/6)/10)+"h"):(Math.round(min)+"m");}
+  function stepMin(st){                              // 这一步实际花了多久
+    var m=+st.act||0;
+    events.forEach(function(e){if(e.stepId===st.id)m+=evMinutes(e);});
+    return m;}
+  function skillSum(sk){
+    var est=0,act=0,done=0;
+    (sk.steps||[]).forEach(function(st){est+=+st.est||0;act+=stepMin(st);if(st.done)done++;});
+    return {est:est,act:act,done:done,total:(sk.steps||[]).length};}
+  function skCatOpts(sel){return '<option value="">（不归类）</option>'+
+    cats.map(function(c){return '<option value="'+c.key+'"'+(sel===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
+  function skSubOpts(cat,sel){var subs=cat?subsOf(cat):[];
+    return '<option value="">（无小类）</option>'+
+      subs.map(function(s){return '<option value="'+s.key+'"'+(sel===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");}
+  function renderSkills(){
+    var w=document.getElementById("sk-wrap");if(!w)return;
+    if(!skills.length){w.innerHTML='<div class="sk-empty">还没有技能。点上面「+ 新技能」，比如「学 SQL」，<br>再把它拆成一步步，每步填个预计时间。<br>之后点某步的「▶ 开始」，花的时间会自动记到那一步。</div>';return;}
+    w.innerHTML=skills.map(function(sk){
+      var s=skillSum(sk),pct=s.total?s.done/s.total*100:0;
+      var diff="";
+      if(s.est&&s.act){var d=s.act-s.est;
+        diff=' · <span class="'+(d>0?"over":"under")+'">'+(d>0?"超出 ":"省下 ")+hrs(Math.abs(d))+'</span>';}
+      var steps=(sk.steps||[]).map(function(st){
+        var m=stepMin(st);
+        return '<div class="sk-step'+(st.done?" done":"")+'">'+
+          '<input type="checkbox" class="sk-ck" data-ck="'+st.id+'"'+(st.done?" checked":"")+'>'+
+          '<span class="sk-t" data-ren="'+st.id+'" title="点一下改名">'+esc(st.t)+'</span>'+
+          '<span class="sk-time" data-est="'+st.id+'" title="预计 / 实际 —— 点一下改预计">'+
+            (st.est?("预计"+hrs(st.est)):"未估")+' · 实际<b>'+hrs(m)+'</b></span>'+
+          '<button class="sk-go" data-go="'+st.id+'" title="开始正计时，时间自动记到这一步">▶</button>'+
+          '<button class="sk-x" data-sdel="'+st.id+'" title="删掉这一步">✕</button></div>';}).join("");
+      return '<div class="sk-card">'+
+        '<div class="sk-top"><span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
+          '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
+        '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
+          '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
+        '<div class="sk-meta">'+s.done+'/'+s.total+' 步 · 预计 <b>'+hrs(s.est)+'</b> · 实际 <b>'+hrs(s.act)+'</b>'+diff+'</div>'+
+        '<div class="sk-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
+        steps+
+        '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
+      '</div>';}).join("");
+  }
+  function skillOf(id){for(var i=0;i<skills.length;i++)if(skills[i].id===id)return skills[i];return null;}
+  function stepOf(id){for(var i=0;i<skills.length;i++){var ss=skills[i].steps||[];
+    for(var j=0;j<ss.length;j++)if(ss[j].id===id)return {sk:skills[i],st:ss[j]};}return null;}
+  document.getElementById("sk-add").addEventListener("click",async function(){
+    var n=await ttPrompt("新技能叫什么？（比如：学 SQL）","");
+    if(n===null)return;n=n.trim();if(!n)return;
+    skills.push({id:uid(),name:n,steps:[],created:Date.now()});saveSkills();renderSkills();});
+  document.getElementById("sk-wrap").addEventListener("change",function(e){
+    var c=e.target.closest("[data-skcat]");
+    if(c){var sk=skillOf(c.getAttribute("data-skcat"));if(sk){sk.cat=c.value||null;sk.sub=null;saveSkills();renderSkills();}return;}
+    var s=e.target.closest("[data-sksub]");
+    if(s){var sk2=skillOf(s.getAttribute("data-sksub"));if(sk2){sk2.sub=s.value||null;saveSkills();}return;}});
+  document.getElementById("sk-wrap").addEventListener("keydown",function(e){
+    var inp=e.target.closest("[data-newstep]");
+    if(!inp||e.key!=="Enter")return;
+    var sk=skillOf(inp.getAttribute("data-newstep"));if(!sk)return;
+    var t=inp.value.trim();if(!t)return;
+    var estI=document.querySelector('[data-newest="'+sk.id+'"]');
+    (sk.steps=sk.steps||[]).push({id:uid(),t:t,est:estI?(+estI.value||0):0,act:0,done:false});
+    saveSkills();renderSkills();
+    var again=document.querySelector('[data-newstep="'+sk.id+'"]');if(again)again.focus();});
+  document.getElementById("sk-wrap").addEventListener("click",async function(e){
+    var ck=e.target.closest("[data-ck]");
+    if(ck){var f=stepOf(ck.getAttribute("data-ck"));if(f){f.st.done=!f.st.done;f.st.doneAt=f.st.done?Date.now():null;saveSkills();renderSkills();}return;}
+    var go=e.target.closest("[data-go]");
+    if(go){var g=stepOf(go.getAttribute("data-go"));if(g)startStep(g.sk,g.st);return;}
+    var ren=e.target.closest("[data-ren]");
+    if(ren){var r=stepOf(ren.getAttribute("data-ren"));if(!r)return;
+      var v=await ttPrompt("改成：",r.st.t);if(v===null)return;v=v.trim();if(v){r.st.t=v;saveSkills();renderSkills();}return;}
+    var es=e.target.closest("[data-est]");
+    if(es){var x=stepOf(es.getAttribute("data-est"));if(!x)return;
+      var v2=await ttPrompt("预计要花多少分钟？（留空＝不估）",String(x.st.est||""));
+      if(v2===null)return;x.st.est=+v2||0;saveSkills();renderSkills();return;}
+    var sd=e.target.closest("[data-sdel]");
+    if(sd){var d=stepOf(sd.getAttribute("data-sdel"));if(!d)return;
+      if(!await ttConfirm("删掉「"+d.st.t+"」这一步？已经记下的时间不会从日历里删掉。",{danger:true,anchor:sd}))return;
+      d.sk.steps=d.sk.steps.filter(function(s2){return s2.id!==d.st.id;});saveSkills();renderSkills();return;}
+    var skr=e.target.closest("[data-skren]");
+    if(skr){var sk3=skillOf(skr.getAttribute("data-skren"));if(!sk3)return;
+      var v3=await ttPrompt("改成：",sk3.name);if(v3===null)return;v3=v3.trim();if(v3){sk3.name=v3;saveSkills();renderSkills();}return;}
+    var skd=e.target.closest("[data-skdel]");
+    if(skd){var sk4=skillOf(skd.getAttribute("data-skdel"));if(!sk4)return;
+      if(!await ttConfirm("删掉技能「"+sk4.name+"」和它下面所有步骤？日历里已经记下的时间不受影响。",{danger:true,anchor:skd}))return;
+      skills=skills.filter(function(s3){return s3.id!==sk4.id;});saveSkills();renderSkills();return;}
   });
 
   // ---------- calendar core ----------
@@ -4201,13 +4335,40 @@ margin-left: -22px;
     renderLegend();renderDashboard();
   }
   var legendEl=document.getElementById("legend");
+  // 当前这一屏覆盖的日期范围（日/周/月各不同）—— 图例只按"看得见的这段时间"来排
+  function viewRange(){
+    var c=state.cursor;
+    if(state.view==="day")return{a:fmt(c),b:fmt(c)};
+    if(state.view==="month"){var s=new Date(c.getFullYear(),c.getMonth(),1),e=new Date(c.getFullYear(),c.getMonth()+1,0);return{a:fmt(s),b:fmt(e)};}
+    var w=startOfWeek(c);return{a:fmt(w),b:fmt(addDays(w,6))};}
+  function catUseMin(){                     // 这一屏里每个大类各用了多少分钟
+    var r=viewRange(),by={};
+    events.forEach(function(e){
+      if(e.date<r.a||e.date>r.b)return;
+      evMix(e).forEach(function(x){if(x.min)by[x.cat]=(by[x.cat]||0)+x.min;});});
+    return by;}
+  var legendMore=load("tt_legendmore",false);
   function renderLegend(){
     if(cats.some(function(c){return c.key===state.catFilter;})===false&&state.catFilter)state.catFilter=null;
+    var use=catUseMin();
+    // 用得多的排前面；这段时间一次没用的收到「更多」里，免得分类一多就占两三行
+    var used=cats.filter(function(c){return use[c.key];}).sort(function(x,y){return use[y.key]-use[x.key];});
+    var idle=cats.filter(function(c){return !use[c.key];});
+    if(state.catFilter){                     // 正在筛的那个必须看得见，哪怕这周没用过
+      var f=idle.filter(function(c){return c.key===state.catFilter;});
+      if(f.length){idle=idle.filter(function(c){return c.key!==state.catFilter;});used=used.concat(f);}}
+    var show=used.concat(legendMore?idle:[]);
+    var chip=function(c){return '<button class="li'+(state.catFilter===c.key?" on":"")+'" data-cf="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+(use[c.key]?'<em>'+fmtDur(use[c.key])+'</em>':'')+'</button>';};
     var html='<button class="li'+(state.catFilter?"":" on")+'" data-cf="__all"><i style="--c:var(--muted)"></i>全部</button>';
-    html+=cats.map(function(c){return '<button class="li'+(state.catFilter===c.key?" on":"")+'" data-cf="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</button>';}).join("");
+    html+=show.map(chip).join("");
+    if(idle.length&&!legendMore)html+='<button class="li lg-more" data-lgmore="1" title="这段时间没用到的分类">＋'+idle.length+'</button>';
+    else if(idle.length)html+='<button class="li lg-more" data-lgmore="0" title="收起没用到的">收起</button>';
     legendEl.innerHTML=html;
   }
-  legendEl.addEventListener("click",function(e){var b=e.target.closest("[data-cf]");if(!b)return;
+  legendEl.addEventListener("click",function(e){
+    var mo=e.target.closest("[data-lgmore]");
+    if(mo){legendMore=mo.getAttribute("data-lgmore")==="1";save("tt_legendmore",legendMore);renderLegend();return;}
+    var b=e.target.closest("[data-cf]");if(!b)return;
     var cf=b.getAttribute("data-cf");state.catFilter=(cf==="__all"||state.catFilter===cf)?null:cf;renderCal();});
   document.getElementById("view-seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;state.view=b.getAttribute("data-v");state.prevView=null;renderCal();});
   document.getElementById("today-btn").addEventListener("click",function(){state.cursor=new Date();renderCal();});
@@ -4714,11 +4875,7 @@ margin-left: -22px;
       gFillSubs();
       if(gs&&gCat.value&&subsOf(gCat.value).some(function(s){return s.key===gs;}))gSub.value=gs;
     }catch(e){}
-    try{                                            // 待办那两个下拉也跟着分类的增删改重建
-      var tc=todoCat.value,ts=todoSub.value;
-      fillTodoCatSelect(todoCat,has(tc)?tc:"");
-      fillTodoSubSelect(todoSub,todoCat.value,ts);
-    }catch(e){}
+
   }
   // ---- 正计时里「换任务」：一次专注拆成若干段，总计时不停 ----
   // 段的边界用「已走秒数」而不是钟表时间记，所以暂停、关网页、电脑睡眠都不会算错。
@@ -4778,6 +4935,7 @@ margin-left: -22px;
     // 番茄钟记进来的是"已经做完的时间"，不是计划 → 直接打勾
     var pf=document.getElementById("pomo-par");
     var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked),note:note||null};
+    if(pomoStep)ev.stepId=pomoStep.st;                     // 这段时间算到那一步头上
     if(segs)ev.segs=segs;
     events.push(ev);
     save("tt_events",events);
@@ -4797,6 +4955,26 @@ margin-left: -22px;
   var UPMAX=MAXMIN*60;                                    // 正计时上限 3 小时（和表盘能拖到的上限一致）
   var pomoSetBox=document.querySelector(".pomo-set"),noteUntil=0;
   function hintText(){return timerMode==="up"?"正计时 · 一圈 60 分，最多 3 小时":"拖动圆环设时长 · 一圈 60 分";}
+  // 从技能页点「▶」进来的那一步：这次计时算到它头上
+  var pomoStep=load("tt_pomostep",null);
+  function drawStepChip(){
+    var box=document.getElementById("pomo-step-box");if(!box)return;
+    box.innerHTML=pomoStep?('<div class="pomo-step">🧩 '+esc(pomoStep.sk+" · "+pomoStep.t)+
+      '<button type="button" id="pomo-step-x" title="这段不算到那一步">✕</button></div>'):"";
+    var x=document.getElementById("pomo-step-x");
+    if(x)x.addEventListener("click",function(){pomoStep=null;save("tt_pomostep",null);drawStepChip();});}
+  function startStep(sk,st){
+    if(pTimer&&!window.confirm("现在有计时在跑，要换成「"+st.t+"」吗？（当前这段先结束并记下来）"))return;
+    if(pTimer)finishUp();
+    pomoStep={sk:sk.name,t:st.t,st:st.id};save("tt_pomostep",pomoStep);
+    var rb=document.querySelector('.rail button[data-tab="calendar"]');if(rb)rb.click();
+    if(timerMode!=="up"){                                  // 学东西按正计时来，不倒数
+      var upBtn=document.querySelector('#pomo-mode-seg button[data-tm="up"]');if(upBtn)upBtn.click();}
+    pomoTask.value=st.t;
+    if(sk.cat){pomoCat.value=sk.cat;fillPomoSubs();if(sk.sub)try{pomoSub.value=sk.sub;}catch(e){}pomoManual=true;}
+    else{pomoManual=false;autoPomoCat();}                   // 技能没归类就还按名字猜
+    drawStepChip();startTimer();drawPomo();
+    try{document.querySelector(".pomo-side").scrollIntoView({behavior:"smooth",block:"center"});}catch(e){}}
   function drawPomo(){
     try{liveRefresh();}catch(e){}                          // 日历上那一块跟着长（开始/暂停/结束也靠它清理）
     var tk=(pomoTask.value||"").trim();
@@ -4881,7 +5059,10 @@ margin-left: -22px;
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
   function finishUp(endMs){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
-    pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);drawPomo();}
+    pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);
+    pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
+    try{if(state.tab==="todo")renderSkills();}catch(e){}
+    drawPomo();}
   function onComplete(endMs){stopTimer();try{beep();}catch(e){}
     if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
@@ -4949,18 +5130,15 @@ margin-left: -22px;
 
   // ---------- todos ----------
   var prioColor={high:"var(--cat-focus)",mid:"var(--cat-goal)",low:"var(--cat-life)"},prioName={high:"高",mid:"中",low:"低"};
-  var todoList=document.getElementById("todo-list"),todoInput=document.getElementById("todo-input"),todoPrio=document.getElementById("todo-prio"),todoDue=document.getElementById("todo-due"),todoCat=document.getElementById("todo-cat"),todoSub=document.getElementById("todo-sub");
-  todoCat.addEventListener("change",function(){fillTodoSubSelect(todoSub,todoCat.value,"");});
+  var todoList=document.getElementById("todo-list");
   function fillTodoCatSelect(sel,val){sel.innerHTML='<option value="">无类别</option>'+cats.map(function(c){return '<option value="'+c.key+'"'+(val===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
   function fillTodoSubSelect(sel,cat,val){
     if(!sel)return;
     var subs=cat?subsOf(cat):[];
     sel.innerHTML='<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(val===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");
-    sel.disabled=!subs.length;
-    // 这个大类底下压根没有小类，就别在那一排里杵一个空壳
-    if(sel.id==="todo-sub")sel.style.display=subs.length?"":"none";}
-  fillTodoCatSelect(todoCat,"");fillTodoSubSelect(todoSub,"","");
+    sel.disabled=!subs.length;}
+
   var todoFilter=null,showArchived=false,todoTimeFilter="all";
   function renderTodos(){
     var todayStr=fmt(new Date()),order={high:0,mid:1,low:2};
@@ -5000,8 +5178,7 @@ margin-left: -22px;
     var c=e.target.closest("[data-tf]");if(c){var v=c.getAttribute("data-tf");todoFilter=(v==="__all")?null:v;showArchived=false;renderTodos();return;}
     if(e.target.closest("[data-arch]")){showArchived=!showArchived;renderTodos();}
   });
-  function addTodo(){var v=todoInput.value.trim();if(!v)return;todos.push({id:uid(),title:v,prio:todoPrio.value,due:todoDue.value||"",cat:todoCat.value||null,sub:todoSub&&todoSub.value||null,done:false});save("tt_todos",todos);todoInput.value="";todoDue.value="";renderTodos();}
-  todoInput.addEventListener("keydown",function(e){if(e.key==="Enter")addTodo();});
+  document.getElementById("todo-new").addEventListener("click",function(){openTodoModal(null);});
   todoList.addEventListener("click",function(e){
     var row=e.target.closest(".ti");if(!row)return;var id=row.getAttribute("data-id");var act=e.target.closest("[data-act]");
     if(act&&act.getAttribute("data-act")==="toggle"){todos=todos.map(function(t){return t.id===id?Object.assign({},t,{done:!t.done}):t;});save("tt_todos",todos);renderTodos();return;}
@@ -5012,12 +5189,29 @@ margin-left: -22px;
   });
   var tOverlay=document.getElementById("todo-overlay"),tdTitle=document.getElementById("td-title"),tdPrio=document.getElementById("td-prio"),tdDue=document.getElementById("td-due"),tdCat=document.getElementById("td-cat"),tdSub=document.getElementById("td-sub"),tdEditId=null;
   tdCat.addEventListener("change",function(){fillTodoSubSelect(tdSub,tdCat.value,"");});
-  function openTodoModal(id){var t=todos.filter(function(x){return x.id===id;})[0];if(!t)return;tdEditId=id;tdTitle.value=t.title;tdPrio.value=t.prio;tdDue.value=t.due||"";fillTodoCatSelect(tdCat,t.cat||"");fillTodoSubSelect(tdSub,t.cat||"",t.sub||"");tOverlay.classList.add("on");setTimeout(function(){tdTitle.focus();},30);}
+  // id 传 null＝新建
+  function openTodoModal(id){
+    var t=id?todos.filter(function(x){return x.id===id;})[0]:null;
+    if(id&&!t)return;
+    tdEditId=id||null;
+    document.getElementById("todo-modal-title").textContent=t?"编辑待办":"新建待办";
+    document.getElementById("td-delete").style.display=t?"":"none";
+    tdTitle.value=t?t.title:"";
+    tdPrio.value=t?t.prio:"mid";
+    tdDue.value=t?(t.due||""):"";
+    fillTodoCatSelect(tdCat,t?(t.cat||""):"");
+    fillTodoSubSelect(tdSub,t?(t.cat||""):"",t?(t.sub||""):"");
+    tOverlay.classList.add("on");setTimeout(function(){tdTitle.focus();},30);}
   function closeTodoModal(){tOverlay.classList.remove("on");}
   document.getElementById("td-cancel").addEventListener("click",closeTodoModal);
   tOverlay.addEventListener("click",function(e){if(e.target===tOverlay)closeTodoModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&tOverlay.classList.contains("on"))closeTodoModal();});
-  document.getElementById("td-save").addEventListener("click",function(){var v=tdTitle.value.trim();if(!v){tdTitle.focus();return;}todos=todos.map(function(t){return t.id===tdEditId?Object.assign({},t,{title:v,prio:tdPrio.value,due:tdDue.value||"",cat:tdCat.value||null,sub:tdSub&&tdSub.value||null}):t;});save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
+  document.getElementById("td-save").addEventListener("click",function(){
+    var v=tdTitle.value.trim();if(!v){tdTitle.focus();return;}
+    var patch={title:v,prio:tdPrio.value,due:tdDue.value||"",cat:tdCat.value||null,sub:tdSub&&tdSub.value||null};
+    if(tdEditId)todos=todos.map(function(t){return t.id===tdEditId?Object.assign({},t,patch):t;});
+    else todos.push(Object.assign({id:uid(),done:false},patch));
+    save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
   document.getElementById("td-delete").addEventListener("click",function(){todos=todos.filter(function(t){return t.id!==tdEditId;});save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
 
   // ---------- stats ----------
@@ -5457,7 +5651,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -5482,6 +5676,7 @@ margin-left: -22px;
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
+    skills=load("tt_skills",[])||[];if(state.tab==="todo")try{renderSkills();}catch(e){}
     bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
     if(state.tab==="body")try{renderBody();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     try{renderCatSettings();refreshCatSelects();}catch(e){}
