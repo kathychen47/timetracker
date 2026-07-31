@@ -340,13 +340,19 @@
   .mini-bar b{color:var(--text);font-size:13px}
   .mini-bar .grow{flex:1}
   .todo-wrap{max-width:640px;margin:0 auto}
-  .todo-cols{display:flex;gap:26px;align-items:flex-start;max-width:1160px;margin:0 auto}
-  .todo-cols .todo-wrap{margin:0;max-width:none;flex:1 1 400px;min-width:0}
-  .todo-cols .sk-col{flex:1 1 420px;min-width:0}
-  @media (max-width:980px){.todo-cols{flex-direction:column}.todo-cols .sk-col{width:100%}}
-  #view-todo .page-h{max-width:1160px;margin-left:auto;margin-right:auto}  /* 和内容那两栏对齐 */
+  /* 三竖列：待办 / 目标 / 技能。技能那列宽一点，因为里面有分类下拉和步骤行 */
+  .todo-cols{display:flex;gap:20px;align-items:stretch;width:100%}
+  .todo-cols .tcol{flex:1 1 0;min-width:0}
+  .todo-cols .tcol.wide{flex:1.35 1 0}
+  /* 每一列自己滚，页面就不会被最长的那一列拽着无限往下长 */
+  .todo-cols .dash-card{display:flex;flex-direction:column;max-height:calc(100vh - 132px)}
+  .todo-cols .dash-card>.dash-h,.todo-cols .todo-controls{flex:none}
+  .todo-cols .scroller{overflow-y:auto;min-height:0;flex:1 1 auto;margin-right:-4px;padding-right:4px}
+  @media (max-width:1080px){
+    .todo-cols{flex-direction:column}
+    .todo-cols .dash-card{max-height:none}
+    .todo-cols .scroller{overflow:visible}}
   /* --- 技能计划 --- */
-  .todo-cols .dash-card+.dash-card{margin-top:16px}
   .todo-cols .todo-controls{margin-bottom:12px}
   .todo-cols .todo-list:empty{display:none}
   /* 技能卡片是"卡中卡"，所以用浅一层的底色和左侧色条区分，而不是再画一圈边框 */
@@ -2970,23 +2976,25 @@ margin-left: -22px;
     <section class="view" id="view-todo">
       <div class="page-h">待办 · 计划</div>
       <div class="todo-cols">
-      <div class="todo-wrap">
-        <div class="dash-card">
-          <div class="dash-h">待办 <button class="dash-add" id="todo-new" type="button">+ 添加待办</button></div>
-          <div class="todo-controls" id="todo-controls"></div>
-          <div class="todo-list" id="todo-list"></div>
+        <div class="tcol">
+          <div class="dash-card">
+            <div class="dash-h">待办 <button class="dash-add" id="todo-new" type="button">+ 添加待办</button></div>
+            <div class="todo-controls" id="todo-controls"></div>
+            <div class="todo-list scroller" id="todo-list"></div>
+          </div>
         </div>
-        <div class="dash-card todo-goals">
-          <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
-          <div id="goal-list2"></div>
+        <div class="tcol">
+          <div class="dash-card">
+            <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
+            <div class="scroller" id="goal-list2"></div>
+          </div>
         </div>
-      </div>
-      <div class="sk-col">
-        <div class="dash-card">
-          <div class="dash-h">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
-          <div class="sk-wrap" id="sk-wrap"></div>
+        <div class="tcol wide">
+          <div class="dash-card">
+            <div class="dash-h">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
+            <div class="sk-wrap scroller" id="sk-wrap"></div>
+          </div>
         </div>
-      </div>
       </div>
     </section>
 
@@ -5430,9 +5438,10 @@ margin-left: -22px;
         return;}
       lead+='<text x="'+tx+'" y="'+(l.y-4).toFixed(1)+'" class="dn-nm" text-anchor="'+anc+'">'+esc(l.nm)+'</text>'+
         '<text x="'+tx+'" y="'+(l.y+14).toFixed(1)+'" class="dn-val" text-anchor="'+anc+'">'+esc(l.val)+'</text>';});
+    var lab=(centerLabel||"").trim();
     return '<div class="dn-wrap"><svg class="dn-svg" viewBox="0 0 '+W+' '+H+'">'+arcs+lead+
-      '<text x="'+cx+'" y="'+(cy-2)+'" class="dn-tot">'+totH+'h</text>'+
-      '<text x="'+cx+'" y="'+(cy+17)+'" class="dn-totlab">'+esc(centerLabel)+'</text></svg></div>';}
+      '<text x="'+cx+'" y="'+(lab?(cy-2):(cy+10))+'" class="dn-tot">'+totH+'h</text>'+
+      (lab?('<text x="'+cx+'" y="'+(cy+17)+'" class="dn-totlab">'+esc(lab)+'</text>'):"")+'</svg></div>';}
   function renderStatsView(){
     var wrap=document.getElementById("stats-wrap");
     var p=statPeriod(),evs=statEvents(p);
@@ -5491,7 +5500,7 @@ margin-left: -22px;
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
       '</div>'+
       '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3>'+
-        donutSVG(segs,totalMin,totH,groupByCat?"合计":catName(statState.cat),segName)+'</div>'+
+        donutSVG(segs,totalMin,totH,groupByCat?"":catName(statState.cat),segName)+'</div>'+
       '<div class="panel"><h3>'+trendTitle+'</h3><div class="bars">'+trendHTML+'</div></div>'+
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
