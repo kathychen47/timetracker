@@ -1233,6 +1233,8 @@
   .dn-lead{fill:none;stroke-width:1.4;opacity:.65}
   .dn-nm{fill:var(--text);font-size:16px;font-weight:650}
   .dn-val{fill:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+  .dn-pk{fill:var(--text);font-size:12.5px;font-weight:600}
+  .dn-pkv{fill:var(--muted);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
   .dn-tot{fill:var(--text);font-size:31px;font-weight:700;text-anchor:middle}
   .dn-totlab{fill:var(--muted);font-size:13.5px;text-anchor:middle}
   /* 身体数据 */
@@ -5027,9 +5029,23 @@ margin-left: -22px;
   // 用 SVG 而不是 conic-gradient，是因为要精确知道每块的中点角度才能把线接上去。
   function donutSVG(segs,totalMin,totH,centerLabel,nameOf){
     if(!segs.length||!totalMin)return '<div class="stat-empty">这个范围还没有安排事件</div>';
-    var W=760,H=372,cx=W/2,cy=176,R=104,r=66,ELB=20,GAP=32;
+    var W=760,H=372,cx=W/2,cy=176,R=104,r=66,ELB=20;
     function px(ang,rad){return[cx+rad*Math.sin(ang),cy-rad*Math.cos(ang)];}
-    var arcs="",lead="",labs=[],acc=0;
+    function pctTxt(p){return (p<0.5?"<1":Math.round(p))+"%";}
+    function segClear(ax,ay,bx2,by){        // 这一段折线离圆心够不够远（<R 就是画到环上去了）
+      var dx=bx2-ax,dy=by-ay,L2=dx*dx+dy*dy;
+      var t=L2?((cx-ax)*dx+(cy-ay)*dy)/L2:0;t=Math.max(0,Math.min(1,t));
+      return Math.hypot(ax+t*dx-cx,ay+t*dy-cy)>=R+2;}
+    // 1% 的扇形只有 3.6°，几个挤在一起时各拉一条线必然打结。
+    // 所以把小块并成一组、统一列在右边；前三大永远单独标，免得把主角也打包了。
+    var SMALL=5;
+    var packed=segs.filter(function(s){return s.pct<SMALL;});
+    var byBig=packed.slice().sort(function(x,y){return y.pct-x.pct;});
+    while(segs.length-packed.length<2&&byBig.length){      // 至少留两块单独标，别整张图只剩一个「其他」
+      var out=byBig.shift();packed=packed.filter(function(s){return s!==out;});}
+    var grouped=packed.length>=2,inPack={};
+    if(grouped)packed.forEach(function(s){inPack[s.k]=1;});
+    var arcs="",lead="",labs=[],acc=0,gA0=null,gA1=0,gMin=0,gPct=0;
     segs.forEach(function(s){
       var a0=acc/100*2*Math.PI,a1=(acc+s.pct)/100*2*Math.PI;acc+=s.pct;
       var full=(s.pct>=99.999);
@@ -5042,21 +5058,37 @@ margin-left: -22px;
           'A'+R+' '+R+' 0 '+big+' 1 '+o1[0].toFixed(1)+' '+o1[1].toFixed(1)+
           'L'+i1[0].toFixed(1)+' '+i1[1].toFixed(1)+
           'A'+r+' '+r+' 0 '+big+' 0 '+i0[0].toFixed(1)+' '+i0[1].toFixed(1)+'Z" fill="'+s.col+'"/>';}
+      if(grouped&&inPack[s.k]){                 // 小块：不各自标，攒到一组里
+        if(gA0===null)gA0=a0;
+        gA1=a1;gMin+=s.m;gPct+=s.pct;return;}
       var mid=full?Math.PI*0.5:(a0+a1)/2,right=Math.sin(mid)>=0;
       var p1=px(mid,R+4),p2=px(mid,R+ELB);
-      labs.push({y:p2[1],p1:p1,right:right,col:s.col,
-        nm:nameOf(s.k),val:fmtDur(s.m)+" · "+Math.round(s.pct)+"%"});});
+      labs.push({y:p2[1],p1:p1,ang:mid,right:right,col:s.col,hh:16,
+        nm:nameOf(s.k),val:fmtDur(s.m)+" · "+pctTxt(s.pct)});});
+    if(grouped){
+      var gm=(gA0+gA1)/2,gp1=px(gm,R+4);
+      // 这一组固定放"圆环上方/下方"那条高度上，横线就不会从环上横穿过去
+      var gy=(Math.cos(gm)>=0)?(cy-R-16):(cy+R+16);
+      // 你要的是右边；但小块要是长在正左边，硬拉到右边那条线会从饼上横切过去 —— 那就还是走左边
+      var gRight=segClear(gp1[0],gp1[1],cx+Math.max(Math.abs(gp1[0]-cx)+10,12),gy);
+      labs.push({y:gy,p1:gp1,ang:gm,right:gRight,col:"#9aa3af",
+        hh:(32+packed.length*15)/2,pack:packed,pm:gMin,ppct:gPct});}
     // 同侧标签按 y 排开，避免叠在一起：先往下顶，顶穿底边就整体往上收，最后压间距保证塞得下
     var TOP=26,BOT=H-20;
     [true,false].forEach(function(side){
       var g=labs.filter(function(l){return l.right===side;}).sort(function(a,b){return a.y-b.y;});
       if(!g.length)return;
-      var gap=(g.length>1)?Math.min(GAP,(BOT-TOP)/(g.length-1)):GAP;
-      for(var i=1;i<g.length;i++)if(g[i].y-g[i-1].y<gap)g[i].y=g[i-1].y+gap;
-      if(g[g.length-1].y>BOT){g[g.length-1].y=BOT;
-        for(var j=g.length-2;j>=0;j--)if(g[j+1].y-g[j].y<gap)g[j].y=g[j+1].y-gap;}
-      if(g[0].y<TOP){g[0].y=TOP;
-        for(var k=1;k<g.length;k++)if(g[k].y-g[k-1].y<gap)g[k].y=g[k-1].y+gap;}});
+      var last=g.length-1;
+      if(!last){g[0].y=Math.max(TOP+g[0].hh,Math.min(BOT-g[0].hh,g[0].y));return;}
+      var need=[];for(var i=1;i<g.length;i++)need.push(g[i-1].hh+g[i].hh+8);
+      var tot=0;need.forEach(function(v){tot+=v;});
+      var room=BOT-TOP-g[0].hh-g[last].hh;
+      if(tot>room&&tot>0){var sc=room/tot;need=need.map(function(v){return v*sc;});}  // 实在塞不下就压间距
+      for(var i2=1;i2<g.length;i2++)if(g[i2].y-g[i2-1].y<need[i2-1])g[i2].y=g[i2-1].y+need[i2-1];
+      if(g[last].y+g[last].hh>BOT){g[last].y=BOT-g[last].hh;
+        for(var j=last-1;j>=0;j--)if(g[j+1].y-g[j].y<need[j])g[j].y=g[j+1].y-need[j];}
+      if(g[0].y-g[0].hh<TOP){g[0].y=TOP+g[0].hh;
+        for(var k=1;k<g.length;k++)if(g[k].y-g[k-1].y<need[k-1])g[k].y=g[k-1].y+need[k-1];}});
     labs.forEach(function(l){
       var sd=l.right?1:-1,ex=cx+sd*(R+ELB+16);
       // 拐点必须按"错开之后"的 y 现算：横线要在这个高度上从圆环外面起步，
@@ -5064,9 +5096,23 @@ margin-left: -22px;
       var dy=Math.abs(l.y-cy),cl=(dy<R+6)?Math.sqrt((R+6)*(R+6)-dy*dy):0;
       var bx=cx+sd*Math.max(Math.abs(l.p1[0]-cx)+10,cl+12);
       bx=l.right?Math.min(bx,ex-10):Math.max(bx,ex+10);
-      lead+='<polyline points="'+l.p1[0].toFixed(1)+','+l.p1[1].toFixed(1)+' '+bx.toFixed(1)+','+l.y.toFixed(1)+' '+ex+','+l.y.toFixed(1)+'" class="dn-lead" style="stroke:'+l.col+'"/>'+
+      // 起点默认就在环边上。万一这条斜线会蹭到圆环（标签被挤到别处去了），
+      // 就先沿着半径往外走一段再拐 —— 沿半径走永远不会碰到环。
+      var q=[l.p1[0],l.p1[1]];
+      for(var rr=R+ELB+8;rr<=230&&!segClear(q[0],q[1],bx,l.y);rr+=14)q=px(l.ang,rr);
+      var via=(q[0]===l.p1[0]&&q[1]===l.p1[1])?"":(" "+q[0].toFixed(1)+","+q[1].toFixed(1));
+      lead+='<polyline points="'+l.p1[0].toFixed(1)+','+l.p1[1].toFixed(1)+via+' '+bx.toFixed(1)+','+l.y.toFixed(1)+' '+ex+','+l.y.toFixed(1)+'" class="dn-lead" style="stroke:'+l.col+'"/>'+
         '<circle cx="'+ex+'" cy="'+l.y.toFixed(1)+'" r="3" fill="'+l.col+'"/>';
       var tx=l.right?(ex+8):(ex-8),anc=l.right?"start":"end";
+      if(l.pack){                               // 打包的那一组：抬头一行，下面每个小块各一行
+        var ty=l.y-l.hh+12,gx=l.right?tx:(tx-160);
+        lead+='<text x="'+(l.right?tx:tx)+'" y="'+ty.toFixed(1)+'" class="dn-nm" text-anchor="'+anc+'">其他 '+l.pack.length+' 项</text>'+
+          '<text x="'+(l.right?tx:tx)+'" y="'+(ty+16).toFixed(1)+'" class="dn-val" text-anchor="'+anc+'">'+esc(fmtDur(l.pm)+" · "+pctTxt(l.ppct))+'</text>';
+        l.pack.forEach(function(s,i){var ry=ty+34+i*15;
+          lead+='<circle cx="'+(gx+4).toFixed(1)+'" cy="'+(ry-4).toFixed(1)+'" r="3.2" fill="'+s.col+'"/>'+
+            '<text x="'+(gx+13).toFixed(1)+'" y="'+ry.toFixed(1)+'" class="dn-pk" text-anchor="start">'+esc(nameOf(s.k))+
+            '<tspan class="dn-pkv" dx="6">'+esc(fmtDur(s.m)+" · "+pctTxt(s.pct))+'</tspan></text>';});
+        return;}
       lead+='<text x="'+tx+'" y="'+(l.y-4).toFixed(1)+'" class="dn-nm" text-anchor="'+anc+'">'+esc(l.nm)+'</text>'+
         '<text x="'+tx+'" y="'+(l.y+14).toFixed(1)+'" class="dn-val" text-anchor="'+anc+'">'+esc(l.val)+'</text>';});
     return '<div class="dn-wrap"><svg class="dn-svg" viewBox="0 0 '+W+' '+H+'">'+arcs+lead+
