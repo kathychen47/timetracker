@@ -338,6 +338,11 @@
   .mini-bar b{color:var(--text);font-size:13px}
   .mini-bar .grow{flex:1}
   .todo-wrap{max-width:640px;margin:0 auto}
+  #view-todo .page-h{max-width:640px;margin-left:auto;margin-right:auto}  /* 内容居中，标题就别贴最左边 */
+  .todo-goals{margin-top:22px}
+  .todo-goals .dash-empty{padding:6px 0}
+  .todo-add select{max-width:150px}
+  .todo-add select#todo-sub{max-width:130px}
   .todo-add{display:flex;gap:8px;margin-bottom:16px}
   .todo-add input[type=text]{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:14px}
   .todo-add input:focus{outline:2px solid var(--primary);outline-offset:0}
@@ -2914,10 +2919,10 @@ margin-left: -22px;
         </div>
         <div class="todo-controls" id="todo-controls"></div>
         <div class="todo-list" id="todo-list"></div>
-      </div>
-      <div class="dash-card" style="margin-top:16px">
-        <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
-        <div id="goal-list2"></div>
+        <div class="dash-card todo-goals">
+          <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
+          <div id="goal-list2"></div>
+        </div>
       </div>
     </section>
 
@@ -4950,9 +4955,11 @@ margin-left: -22px;
   function fillTodoSubSelect(sel,cat,val){
     if(!sel)return;
     var subs=cat?subsOf(cat):[];
-    sel.innerHTML='<option value="">'+(subs.length?"（无小类）":"—")+'</option>'+
+    sel.innerHTML='<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(val===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");
-    sel.disabled=!subs.length;}
+    sel.disabled=!subs.length;
+    // 这个大类底下压根没有小类，就别在那一排里杵一个空壳
+    if(sel.id==="todo-sub")sel.style.display=subs.length?"":"none";}
   fillTodoCatSelect(todoCat,"");fillTodoSubSelect(todoSub,"","");
   var todoFilter=null,showArchived=false,todoTimeFilter="all";
   function renderTodos(){
