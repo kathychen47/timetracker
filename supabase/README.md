@@ -34,6 +34,12 @@ secret 和 refresh token 都在 Supabase 里，浏览器碰不到。
 左边 **Authentication → Sign In / Providers → Google**，把里面已经填好的
 **Client ID** 和 **Client Secret** 复制出来。
 
+> Client Secret 要是显示成一堆圆点复制不出来，就去
+> [Google Cloud Console → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+> 点开那个 OAuth client（`707528813420-…`）拿。
+> 注意 Management API 读到的 `external_google_secret` 是 **Supabase 加密后的形态**
+> （64 位 hex），不是真的 secret，拿去用会得到 `invalid_client`。
+
 ⚠️ 一定要用这里的这一对。refresh token 是 Supabase 这套 OAuth 流程拿到的，
 换 token 时必须用**同一个** client，用别的会报 `invalid_client`。
 
@@ -53,11 +59,21 @@ secret 和 refresh token 都在 Supabase 里，浏览器碰不到。
 左边 **Edge Functions → Deploy a new function**，名字必须是 **`gcal-token`**，
 把 [`functions/gcal-token/index.ts`](functions/gcal-token/index.ts) 整个粘进去 → Deploy。
 
-装了 Supabase CLI 的话也可以：
+部署好之后，进这个函数的 **Details → Verify JWT** 关掉（`verify_jwt: false`）。
 
-```bash
-supabase functions deploy gcal-token --project-ref xypppmvwpbkytzdwbytc
-```
+> 为什么要关：浏览器跨域前会先发一个**不带凭证**的 OPTIONS 预检，
+> 开着网关校验的话这一下会被拒（503），函数在网页里根本调不通。
+> 安全性不受影响 —— 函数自己第一件事就是拿 JWT 去 `/auth/v1/user` 验，
+> 不合格直接 401。可以自己试：
+>
+> ```bash
+> curl -X POST https://<ref>.supabase.co/functions/v1/gcal-token >      -H "Authorization: Bearer 随便编一个"     # → 401 bad_jwt
+> ```
+
+⚠️ 改这个函数时**不要加任何 `import`**。Edge Runtime 启动时带 `--no-remote`，
+直接部署的代码不会去下载远程依赖，写了 `import ... from "https://..."`
+会直接 `BOOT_ERROR` 起不来（CLI 部署会预先打包，所以 CLI 没这个限制）。
+现在这份是零依赖的，全用裸 `fetch`。
 
 ### 5. 重新登录一次
 
