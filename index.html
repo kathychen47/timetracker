@@ -1233,6 +1233,10 @@
   .dn-lead{fill:none;stroke-width:1.4;opacity:.65}
   .dn-nm{fill:var(--text);font-size:16px;font-weight:650}
   .dn-val{fill:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+  .goal-track{font-size:12px;color:var(--muted);margin:5px 0 2px}
+  .goal-track b{color:var(--gc,var(--primary));font-size:13px;font-variant-numeric:tabular-nums}
+  .goal-item.track{border-left:3px solid color-mix(in srgb,var(--gc,var(--primary)) 55%,transparent);padding-left:9px}
+  #todo-sub{min-width:96px}
   .dn-pk{fill:var(--text);font-size:12.5px;font-weight:600}
   .dn-pkv{fill:var(--muted);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums}
   .dn-tot{fill:var(--text);font-size:31px;font-weight:700;text-anchor:middle}
@@ -2897,11 +2901,16 @@ margin-left: -22px;
         <div class="todo-add">
           <input type="text" id="todo-input" placeholder="添加一个待办，回车确认…">
           <select id="todo-cat"></select>
+          <select id="todo-sub"></select>
           <select id="todo-prio"><option value="mid">中</option><option value="high">高</option><option value="low">低</option></select>
           <input type="date" id="todo-due">
         </div>
         <div class="todo-controls" id="todo-controls"></div>
         <div class="todo-list" id="todo-list"></div>
+      </div>
+      <div class="dash-card" style="margin-top:16px">
+        <div class="dash-h">目标 <button class="dash-add" id="goal-add-btn2">+ 新目标</button></div>
+        <div id="goal-list2"></div>
       </div>
     </section>
 
@@ -3245,7 +3254,10 @@ margin-left: -22px;
   <div class="modal">
     <h3>编辑待办</h3>
     <div class="field"><label>内容</label><input type="text" id="td-title"></div>
-    <div class="field"><label>类别</label><select id="td-cat"></select></div>
+    <div class="field"><div class="row">
+      <div><label>大类</label><select id="td-cat"></select></div>
+      <div><label>小类（可选）</label><select id="td-sub"></select></div>
+    </div></div>
     <div class="field"><div class="row">
       <div><label>优先级</label><select id="td-prio"><option value="high">高</option><option value="mid">中</option><option value="low">低</option></select></div>
       <div><label>截止日期</label><input type="date" id="td-due"></div>
@@ -3268,6 +3280,7 @@ margin-left: -22px;
       <div><label>类型</label><select id="g-type"><option value="time">时长(小时)</option><option value="count">次数</option></select></div>
       <div><label>目标值</label><input type="number" id="g-target" min="1" value="5"></div>
     </div></div>
+    <label class="pomo-log" style="justify-content:flex-start;margin:-4px 0 10px" title="不设目标值，只把日历里对得上的记录累计起来"><input type="checkbox" id="g-track"> 📈 只记录投入，不设目标（累计时长和次数，不倒数）</label>
     <div class="field" id="g-unit-field"><label>单位（次数型 · 如 次 / 杯 / 页 / 趟）</label><input type="text" id="g-unit" placeholder="次"></div>
     <div class="field"><div class="row">
       <div><label>周期</label><select id="g-period"><option value="week">每周</option><option value="month">每月</option><option value="year">每年</option><option value="custom">自定义区间</option></select></div>
@@ -3954,7 +3967,7 @@ margin-left: -22px;
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
   var todoBandCollapsed=load("tt_todoband",false);
   function todosOn(ds){return todos.filter(function(t){return t.due===ds&&!t.archived;});}
-  function todoColor(t){return (t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--cat-goal)";}
+  function todoColor(t){return (t.cat&&parentObj(t.cat))?(t.sub?subColor(t.cat,t.sub):catColor(t.cat)):"var(--cat-goal)";}
   function todoChipHTML(t){return '<div class="ad-todo'+(t.done?" done":"")+'" data-todo="'+t.id+'" style="--c:'+todoColor(t)+'"><span class="adk" data-todocheck><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></span><b>'+esc(t.title)+'</b></div>';}
   // 正计时跑着的时候，日历上先画一块"正在进行"。它只在渲染时插进来，不进 events ——
   // 所以统计不会重复算，浏览器崩了/直接关掉也不会留下半截垃圾事件。真正落库是结束时那一下。
@@ -4312,22 +4325,33 @@ margin-left: -22px;
   function goalProgress(g){
     var st=goalPeriodStart(g),en=goalPeriodEnd(g);
     var matched=events.filter(function(e){var d=parse(e.date);return d>=st&&d<=en&&matchesGoal(e,g);});
-    if(g.type==="time"){var mins=matched.reduce(function(a,e){return a+((g.cat||g.sub)?evMinFor(e,g.cat||"__all",g.sub||"__all"):evMinutes(e));},0);
-      return{cur:mins,target:g.target*60,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};}
-    return{cur:matched.length,target:g.target,disp:matched.length+"/"+g.target+(g.unit||"次")};
+    var mins=matched.reduce(function(a,e){return a+((g.cat||g.sub)?evMinFor(e,g.cat||"__all",g.sub||"__all"):evMinutes(e));},0);
+    var cnt=matched.length;
+    // 记录型：没有目标值，只累计。时长和次数都给出来 —— 花了多少时间、来回多少趟，都是"精力"的一面。
+    if(g.track)return{cur:(g.type==="time"?mins:cnt),target:0,mins:mins,cnt:cnt,track:true,
+      disp:(Math.round(mins/6)/10)+"h · "+cnt+(g.unit||"次")};
+    if(g.type==="time")return{cur:mins,target:g.target*60,mins:mins,cnt:cnt,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};
+    return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+(g.unit||"次")};
   }
+  function goalHosts(){return [goalList,document.getElementById("goal-list2")].filter(Boolean);}
   function renderGoals(){
-    if(!goals.length){goalList.innerHTML='<div class="dash-empty">还没有目标，点右上「+ 新目标」</div>';return;}
-    goalList.innerHTML=goals.map(function(g){
+    var html;
+    if(!goals.length)html='<div class="dash-empty">还没有目标，点右上「+ 新目标」</div>';
+    else html=goals.map(function(g){
       var pr=goalProgress(g),pct=pr.target>0?Math.min(100,pr.cur/pr.target*100):0,gc=g.cat?catColor(g.cat):"var(--primary)";
       var subtxt=periodName(g.period)+(g.cat?" · "+catName(g.cat):"")+(g.sub?" › "+subName(g.cat,g.sub):"");
       var plus=g.type==="count"?'<button class="goal-plus" data-plus="'+g.id+'">打卡 +1</button>':'';
-      return '<div class="goal-item" data-gedit="'+g.id+'" style="--gc:'+gc+';cursor:pointer" title="点开查看详情/编辑/删除"><div class="goal-top"><span class="gt">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
-        '<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
-        '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+'</span>'+plus+'</div></div>';
+      // 记录型：没有"还差多少"这回事，所以不画进度条，改成把累计摊开写
+      var mid=pr.track
+        ?'<div class="goal-track">📈 累计投入 <b>'+(Math.round(pr.mins/6)/10)+'h</b> · <b>'+pr.cnt+'</b> 条记录</div>'
+        :'<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>';
+      return '<div class="goal-item'+(pr.track?" track":"")+'" data-gedit="'+g.id+'" style="--gc:'+gc+';cursor:pointer" title="点开查看详情/编辑/删除"><div class="goal-top"><span class="gt">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
+        mid+
+        '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+(pr.track?" · 只记录":"")+'</span>'+plus+'</div></div>';
     }).join("");
+    goalHosts().forEach(function(h){h.innerHTML=html;});
   }
-  goalList.addEventListener("click",function(e){
+  function goalHostClick(e){
     var pl=e.target.closest("[data-plus]");
     if(pl){var g=goals.filter(function(x){return x.id===pl.getAttribute("data-plus");})[0];if(g){
       if(!window.confirm("确认给「"+g.title+"」打卡一次？"))return;
@@ -4337,27 +4361,35 @@ margin-left: -22px;
       if(gcalAuto.goal)try{gcalApply(_gev,true);}catch(e){}          // 没 token 就先记着，续上了补
       renderCal();}return;}
     var ed=e.target.closest("[data-gedit]");if(ed){var gg=goals.filter(function(x){return x.id===ed.getAttribute("data-gedit");})[0];if(gg)renderGoalDetail(gg);}
-  });
-  document.getElementById("goal-add-btn").addEventListener("click",function(){openGoalModal(null);});
+  }
+  goalHosts().forEach(function(h){h.addEventListener("click",goalHostClick);});
+  ["goal-add-btn","goal-add-btn2"].forEach(function(id){
+    var b=document.getElementById(id);if(b)b.addEventListener("click",function(){openGoalModal(null);});});
   var gOverlay=document.getElementById("goal-overlay"),gTitleI=document.getElementById("g-title"),gType=document.getElementById("g-type"),
       gTarget=document.getElementById("g-target"),gPeriod=document.getElementById("g-period"),gCat=document.getElementById("g-cat"),gSub=document.getElementById("g-sub"),gKeyword=document.getElementById("g-keyword"),gDel=document.getElementById("g-delete"),gEditId=null;
   gCat.innerHTML='<option value="">（不限）</option>'+cats.map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("");
   function gFillSubs(){var subs=gCat.value?subsOf(gCat.value):[];gSub.innerHTML='<option value="">（不限）</option>'+subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("");gSub.disabled=!subs.length;}
   function openGoalModal(g){if(!g&&g!==null)return;gEditId=g?g.id:null;
     document.getElementById("goal-modal-title").textContent=g?"编辑目标":"新目标";gDel.style.display=g?"inline":"none";
+    document.getElementById("g-track").checked=!!(g&&g.track);
     gTitleI.value=g?g.title:"";gType.value=g?g.type:"time";gTarget.value=g?g.target:5;gPeriod.value=g?g.period:"week";gCat.value=g?(g.cat||""):"";gFillSubs();gSub.value=g?(g.sub||""):"";gKeyword.value=g?(g.keyword||""):"";
     document.getElementById("g-unit").value=g?(g.unit||""):"";document.getElementById("g-from").value=g?(g.from||""):"";document.getElementById("g-to").value=g?(g.to||""):"";gToggleFields();
     gOverlay.classList.add("on");setTimeout(function(){gTitleI.focus();},30);}
   function closeGoalModal(){gOverlay.classList.remove("on");}
-  function gToggleFields(){document.getElementById("g-unit-field").style.display=(gType.value==="count"?"":"none");document.getElementById("g-range-field").style.display=(gPeriod.value==="custom"?"":"none");}
+  function gToggleFields(){
+    var tr=document.getElementById("g-track").checked;
+    document.getElementById("g-unit-field").style.display=(gType.value==="count"?"":"none");
+    document.getElementById("g-range-field").style.display=(gPeriod.value==="custom"?"":"none");
+    gTarget.parentNode.style.display=tr?"none":"";}     // 记录型没有"目标值"这一栏
   gType.addEventListener("change",gToggleFields);gPeriod.addEventListener("change",gToggleFields);
+  document.getElementById("g-track").addEventListener("change",gToggleFields);
   gCat.addEventListener("change",gFillSubs);
   document.getElementById("g-cancel").addEventListener("click",closeGoalModal);
   gOverlay.addEventListener("click",function(e){if(e.target===gOverlay)closeGoalModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&gOverlay.classList.contains("on"))closeGoalModal();});
   document.getElementById("g-save").addEventListener("click",function(){
     var t=gTitleI.value.trim();if(!t){gTitleI.focus();return;}
-    var obj={id:gEditId||uid(),title:t,type:gType.value,target:+gTarget.value||1,period:gPeriod.value,cat:gCat.value||null,sub:gSub.value||null,keyword:gKeyword.value.trim()||null,unit:document.getElementById("g-unit").value.trim()||null,from:document.getElementById("g-from").value||null,to:document.getElementById("g-to").value||null};
+    var obj={id:gEditId||uid(),title:t,type:gType.value,track:document.getElementById("g-track").checked,target:+gTarget.value||1,period:gPeriod.value,cat:gCat.value||null,sub:gSub.value||null,keyword:gKeyword.value.trim()||null,unit:document.getElementById("g-unit").value.trim()||null,from:document.getElementById("g-from").value||null,to:document.getElementById("g-to").value||null};
     if(gEditId)goals=goals.map(function(x){return x.id===gEditId?obj:x;});else goals.push(obj);
     save("tt_goals",goals);closeGoalModal();renderGoals();});
   gDel.addEventListener("click",function(){goals=goals.filter(function(x){return x.id!==gEditId;});save("tt_goals",goals);closeGoalModal();renderGoals();});
@@ -4370,7 +4402,10 @@ margin-left: -22px;
     document.getElementById("gd-title").textContent="目标 · "+g.title;
     var pr=goalProgress(g),pct=pr.target>0?Math.round(pr.cur/pr.target*100):0;
     var assoc=(g.cat?catName(g.cat):"不限类别")+(g.sub?" › "+subName(g.cat,g.sub):"")+(g.keyword?" · 标题含“"+g.keyword+"”":"");
-    document.getElementById("gd-summary").innerHTML=periodName(g.period)+"目标 "+(g.type==="time"?g.target+"h":g.target+(g.unit||"次"))+" · "+(g.period==="custom"?"区间内":"本"+periodWord(g.period))+"已完成 "+pr.disp+"（"+pct+"%）<br>关联："+esc(assoc);
+    document.getElementById("gd-summary").innerHTML=(g.track
+      ?("📈 记录型（不设目标）· "+(g.period==="custom"?"区间内":"本"+periodWord(g.period))+"累计投入 <b>"+(Math.round(pr.mins/6)/10)+"h</b> · <b>"+pr.cnt+"</b> 条记录")
+      :(periodName(g.period)+"目标 "+(g.type==="time"?g.target+"h":g.target+(g.unit||"次"))+" · "+(g.period==="custom"?"区间内":"本"+periodWord(g.period))+"已完成 "+pr.disp+"（"+pct+"%）")
+      )+"<br>关联："+esc(assoc);
     var gc=g.cat?catColor(g.cat):"var(--primary)";
     var weeks=26,today=new Date();today.setHours(0,0,0,0);var endW=startOfWeek(today),startW=addDays(endW,-(weeks-1)*7);
     var counts={};events.forEach(function(e){if(matchesGoal(e,g))counts[e.date]=(counts[e.date]||0)+(g.type==="time"?evMinutes(e):1);});
@@ -4659,6 +4694,11 @@ margin-left: -22px;
       gFillSubs();
       if(gs&&gCat.value&&subsOf(gCat.value).some(function(s){return s.key===gs;}))gSub.value=gs;
     }catch(e){}
+    try{                                            // 待办那两个下拉也跟着分类的增删改重建
+      var tc=todoCat.value,ts=todoSub.value;
+      fillTodoCatSelect(todoCat,has(tc)?tc:"");
+      fillTodoSubSelect(todoSub,todoCat.value,ts);
+    }catch(e){}
   }
   // ---- 正计时里「换任务」：一次专注拆成若干段，总计时不停 ----
   // 段的边界用「已走秒数」而不是钟表时间记，所以暂停、关网页、电脑睡眠都不会算错。
@@ -4889,9 +4929,16 @@ margin-left: -22px;
 
   // ---------- todos ----------
   var prioColor={high:"var(--cat-focus)",mid:"var(--cat-goal)",low:"var(--cat-life)"},prioName={high:"高",mid:"中",low:"低"};
-  var todoList=document.getElementById("todo-list"),todoInput=document.getElementById("todo-input"),todoPrio=document.getElementById("todo-prio"),todoDue=document.getElementById("todo-due"),todoCat=document.getElementById("todo-cat");
+  var todoList=document.getElementById("todo-list"),todoInput=document.getElementById("todo-input"),todoPrio=document.getElementById("todo-prio"),todoDue=document.getElementById("todo-due"),todoCat=document.getElementById("todo-cat"),todoSub=document.getElementById("todo-sub");
+  todoCat.addEventListener("change",function(){fillTodoSubSelect(todoSub,todoCat.value,"");});
   function fillTodoCatSelect(sel,val){sel.innerHTML='<option value="">无类别</option>'+cats.map(function(c){return '<option value="'+c.key+'"'+(val===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
-  fillTodoCatSelect(todoCat,"");
+  function fillTodoSubSelect(sel,cat,val){
+    if(!sel)return;
+    var subs=cat?subsOf(cat):[];
+    sel.innerHTML='<option value="">'+(subs.length?"（无小类）":"—")+'</option>'+
+      subs.map(function(s){return '<option value="'+s.key+'"'+(val===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");
+    sel.disabled=!subs.length;}
+  fillTodoCatSelect(todoCat,"");fillTodoSubSelect(todoSub,"","");
   var todoFilter=null,showArchived=false,todoTimeFilter="all";
   function renderTodos(){
     var todayStr=fmt(new Date()),order={high:0,mid:1,low:2};
@@ -4931,7 +4978,7 @@ margin-left: -22px;
     var c=e.target.closest("[data-tf]");if(c){var v=c.getAttribute("data-tf");todoFilter=(v==="__all")?null:v;showArchived=false;renderTodos();return;}
     if(e.target.closest("[data-arch]")){showArchived=!showArchived;renderTodos();}
   });
-  function addTodo(){var v=todoInput.value.trim();if(!v)return;todos.push({id:uid(),title:v,prio:todoPrio.value,due:todoDue.value||"",cat:todoCat.value||null,done:false});save("tt_todos",todos);todoInput.value="";todoDue.value="";renderTodos();}
+  function addTodo(){var v=todoInput.value.trim();if(!v)return;todos.push({id:uid(),title:v,prio:todoPrio.value,due:todoDue.value||"",cat:todoCat.value||null,sub:todoSub&&todoSub.value||null,done:false});save("tt_todos",todos);todoInput.value="";todoDue.value="";renderTodos();}
   todoInput.addEventListener("keydown",function(e){if(e.key==="Enter")addTodo();});
   todoList.addEventListener("click",function(e){
     var row=e.target.closest(".ti");if(!row)return;var id=row.getAttribute("data-id");var act=e.target.closest("[data-act]");
@@ -4941,13 +4988,14 @@ margin-left: -22px;
     if(act&&act.getAttribute("data-act")==="unarch"){todos=todos.map(function(t){return t.id===id?Object.assign({},t,{archived:false}):t;});save("tt_todos",todos);renderTodos();return;}
     openTodoModal(id);
   });
-  var tOverlay=document.getElementById("todo-overlay"),tdTitle=document.getElementById("td-title"),tdPrio=document.getElementById("td-prio"),tdDue=document.getElementById("td-due"),tdCat=document.getElementById("td-cat"),tdEditId=null;
-  function openTodoModal(id){var t=todos.filter(function(x){return x.id===id;})[0];if(!t)return;tdEditId=id;tdTitle.value=t.title;tdPrio.value=t.prio;tdDue.value=t.due||"";fillTodoCatSelect(tdCat,t.cat||"");tOverlay.classList.add("on");setTimeout(function(){tdTitle.focus();},30);}
+  var tOverlay=document.getElementById("todo-overlay"),tdTitle=document.getElementById("td-title"),tdPrio=document.getElementById("td-prio"),tdDue=document.getElementById("td-due"),tdCat=document.getElementById("td-cat"),tdSub=document.getElementById("td-sub"),tdEditId=null;
+  tdCat.addEventListener("change",function(){fillTodoSubSelect(tdSub,tdCat.value,"");});
+  function openTodoModal(id){var t=todos.filter(function(x){return x.id===id;})[0];if(!t)return;tdEditId=id;tdTitle.value=t.title;tdPrio.value=t.prio;tdDue.value=t.due||"";fillTodoCatSelect(tdCat,t.cat||"");fillTodoSubSelect(tdSub,t.cat||"",t.sub||"");tOverlay.classList.add("on");setTimeout(function(){tdTitle.focus();},30);}
   function closeTodoModal(){tOverlay.classList.remove("on");}
   document.getElementById("td-cancel").addEventListener("click",closeTodoModal);
   tOverlay.addEventListener("click",function(e){if(e.target===tOverlay)closeTodoModal();});
   document.addEventListener("keydown",function(e){if(e.key==="Escape"&&tOverlay.classList.contains("on"))closeTodoModal();});
-  document.getElementById("td-save").addEventListener("click",function(){var v=tdTitle.value.trim();if(!v){tdTitle.focus();return;}todos=todos.map(function(t){return t.id===tdEditId?Object.assign({},t,{title:v,prio:tdPrio.value,due:tdDue.value||"",cat:tdCat.value||null}):t;});save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
+  document.getElementById("td-save").addEventListener("click",function(){var v=tdTitle.value.trim();if(!v){tdTitle.focus();return;}todos=todos.map(function(t){return t.id===tdEditId?Object.assign({},t,{title:v,prio:tdPrio.value,due:tdDue.value||"",cat:tdCat.value||null,sub:tdSub&&tdSub.value||null}):t;});save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
   document.getElementById("td-delete").addEventListener("click",function(){todos=todos.filter(function(t){return t.id!==tdEditId;});save("tt_todos",todos);closeTodoModal();renderTodos();renderCal();});
 
   // ---------- stats ----------
