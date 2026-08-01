@@ -402,6 +402,10 @@
   .sk-x:hover{color:#c0392b}
   .sk-cats{display:flex;gap:6px;margin-bottom:8px}
   .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
+  .sk-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin:2px 0 8px;cursor:pointer;
+    background:var(--surface);border-radius:8px;padding:6px 9px;white-space:pre-wrap}
+  .sk-note:hover{color:var(--text)}
+  .sk-card.fold .sk-note{display:none}
   .sk-prog{display:flex;flex-direction:column;gap:5px;margin:2px 0 10px}
   .spr{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
   .spk{flex:0 0 24px}
@@ -525,7 +529,10 @@
   #tt-pop .tt-msg{color:var(--text)}
   #tt-pop .tt-in{width:100%;box-sizing:border-box;margin-top:10px;padding:8px 11px;border:1px solid var(--border);
     border-radius:9px;background:var(--bg);color:var(--text);font-size:14px;font-family:inherit}
-  #tt-pop .tt-in:focus{outline:none;border-color:var(--primary)}
+  #tt-pop .tt-in:focus,#tt-pop .tt-ta:focus{outline:none;border-color:var(--primary)}
+  #tt-pop .tt-ta{width:100%;box-sizing:border-box;margin-top:10px;padding:8px 11px;border:1px solid var(--border);
+    border-radius:9px;background:var(--surface-2);color:var(--text);font:inherit;font-size:12.5px;line-height:1.6;resize:vertical}
+  #tt-pop:has(.tt-ta:not([style*="none"])){width:min(560px,92vw)}
   #tt-pop .tt-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
   #tt-pop .tt-btns .btn{padding:6px 14px;font-size:13px}
   #tt-pop .tt-ok.danger{background:var(--danger);border-color:transparent;color:#fff}
@@ -3871,7 +3878,7 @@ margin-left: -22px;
   function ttPopBuild(){
     if(ttPopEl)return ttPopEl;
     ttPopEl=document.createElement("div");ttPopEl.id="tt-pop";
-    ttPopEl.innerHTML='<div class="tt-msg"></div><input class="tt-in" type="text"><div class="tt-btns">'+
+    ttPopEl.innerHTML='<div class="tt-msg"></div><input class="tt-in" type="text"><textarea class="tt-ta" rows="8"></textarea><div class="tt-btns">'+
       '<button class="btn tt-cancel" type="button">取消</button><button class="btn primary tt-ok" type="button">确定</button></div>';
     document.body.appendChild(ttPopEl);
     ttPopEl.querySelector(".tt-cancel").addEventListener("click",function(){ttPopDone(null);});
@@ -3907,15 +3914,21 @@ margin-left: -22px;
     ttPopAnchor=opts.anchor||window.__ttLastClick||null;
     ttPopEl.querySelector(".tt-msg").innerHTML=String(msg).replace(/</g,"&lt;").replace(/\n/g,"<br>");
     var inp=ttPopEl.querySelector(".tt-in"),cancel=ttPopEl.querySelector(".tt-cancel"),ok=ttPopEl.querySelector(".tt-ok");
-    if(opts.type==="prompt"){inp.style.display="";inp.value=opts.def||"";}else inp.style.display="none";
+    var ta=ttPopEl.querySelector(".tt-ta");
+    var multi=(opts.type==="prompt"&&opts.multiline);
+    // 多行的用 textarea：单行 input 会把粘进来的换行吃掉，一份计划粘进去就废了
+    inp.style.display=(opts.type==="prompt"&&!multi)?"":"none";
+    ta.style.display=multi?"":"none";
+    if(opts.type==="prompt"){(multi?ta:inp).value=opts.def||"";}
     cancel.style.display=(opts.type==="alert")?"none":"";
     ok.textContent=opts.okText||(opts.type==="alert"?"知道了":"确定");
     ok.classList.toggle("danger",!!opts.danger);
     ttPopEl.classList.add("on");ttPopPlace();
-    if(opts.type==="prompt")setTimeout(function(){inp.focus();inp.select();},30);
+    if(opts.type==="prompt")setTimeout(function(){var el=multi?ta:inp;el.focus();if(!multi)el.select();},30);
     return new Promise(function(res){ttPopResolve=res;});}
   function ttConfirm(msg,opts){return ttPopShow(msg,Object.assign({type:"confirm"},opts||{})).then(function(v){return v===true;});}
   function ttPrompt(msg,def,opts){return ttPopShow(msg,Object.assign({type:"prompt",def:def},opts||{})).then(function(v){return v===null?null:String(v);});}
+  function ttPromptLong(msg,def,opts){return ttPrompt(msg,def,Object.assign({multiline:true},opts||{}));}
   function ttAlert(msg,opts){return ttPopShow(msg,Object.assign({type:"alert"},opts||{}));}
   document.addEventListener("click",function(e){
     if(e.target&&e.target.closest&&!e.target.closest("#tt-pop"))window.__ttLastClick=e.target;},true);
@@ -4213,6 +4226,7 @@ margin-left: -22px;
           '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+(sk.arch&&skDays(sk)?" · "+skDays(sk)+"天":"")+'</span>'+
           '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
+        (sk.note?('<div class="sk-note" data-sknote="'+sk.id+'" title="点一下改">'+esc(sk.note)+'</div>'):"")+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
         '<div class="sk-prog">'+
@@ -4302,26 +4316,29 @@ margin-left: -22px;
       if(!isFinite(est)||est<0)est=0;
       return {id:uid(),t:n.slice(0,80),est:Math.min(600,est),act:0,done:false};}).filter(Boolean).slice(0,20);
     if(!steps.length)throw new Error("AI 没给出步骤");
-    return {name:String(o.name||"").trim().slice(0,40),steps:steps};}
+    return {name:String(o.name||"").trim().slice(0,40),note:String(o.note||"").trim().slice(0,300),steps:steps};}
   document.getElementById("sk-ai").addEventListener("click",async function(){
     var btn=this;
     if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return;}
-    var want=await ttPrompt("想学什么？说得越具体越好\n比如：SQL，从零到能写窗口函数和调优","");
+    var want=await ttPromptLong("想学什么？或者直接把你已经写好的计划整段粘进来。\n两种都行：给个主题我来拆，给了计划我就照着整理，步骤和时间原样保留。","");
     if(want===null)return;want=want.trim();if(!want)return;
     var old=btn.textContent;btn.textContent="拆解中…";btn.disabled=true;
-    var prompt="把下面这件想学的事拆成一份可执行的学习计划。\n\n"+
-      "要学的：「"+want+"」\n\n"+
-      "要求：\n"+
-      "- 6~10 个步骤，按先后顺序排列\n"+
-      "- 每一步都是一件能坐下来做完的具体事，不要「打好基础」「深入理解」这类空话\n"+
-      "- 每步给一个预计分钟数（整数，30 到 240 之间）\n"+
-      "- 步骤名不超过 20 个字\n"+
-      "- 只输出 JSON，不要任何解释、不要代码围栏\n\n"+
-      ' 格式：{"name":"技能名","steps":[{"t":"步骤名","est":90}]}';
+    var prompt="下面是用户输入的内容，可能是一个想学的主题，也可能是一份已经写好的学习计划。\n\n"+
+      "===\n"+want+"\n===\n\n"+
+      "先判断是哪一种：\n"+
+      "【已经是计划】（能看出分好的步骤/阶段）→ 照着整理成 JSON，不要另编一份。\n"+
+      "  · 步骤的内容和顺序原样保留，名字可以精简到 20 字以内\n"+
+      "  · 里面写了时长的按它来（「2 到 3 小时」取中值 150 分；「8 到 12 小时」取 600 分）\n"+
+      "  · 没写时长的才由你估\n"+
+      "  · 附带的说明、停止条件这类不是步骤的内容，放进 note 字段\n"+
+      "【只是一个主题】→ 拆成 6~10 个步骤，每步是能坐下来做完的具体事，\n"+
+      "  不要「打好基础」「深入理解」这类空话，每步给 30~240 分钟的预计。\n\n"+
+      "两种情况都要：只输出 JSON，不要任何解释、不要代码围栏。\n\n"+
+      ' 格式：{"name":"技能名","note":"备注，没有就留空","steps":[{"t":"步骤名","est":90}]}';
     try{
       var txt=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
       var plan=parseSkillPlan(txt);
-      skills.push({id:uid(),name:plan.name||want.slice(0,40),steps:plan.steps,created:Date.now()});
+      skills.push({id:uid(),name:plan.name||want.slice(0,40),note:plan.note||"",steps:plan.steps,created:Date.now()});
       saveSkills();renderSkills();
       try{renderSkillMini();}catch(e){}
     }catch(err){
@@ -4371,6 +4388,10 @@ margin-left: -22px;
       if(sk6.arch){sk6.archAt=Date.now();if(!sk6.created)sk6.created=skFirstTs(sk6)||Date.now();}
       else sk6.archAt=null;
       saveSkills();renderSkills();}return;}
+    var sn=e.target.closest("[data-sknote]");
+    if(sn){var sk7=skillOf(sn.getAttribute("data-sknote"));if(!sk7)return;
+      var nv=await ttPromptLong("这个技能的备注（比如停止条件）：",sk7.note||"",{anchor:sn});
+      if(nv===null)return;sk7.note=nv.trim().slice(0,300);saveSkills();renderSkills();return;}
     var skr=e.target.closest("[data-skren]");
     if(skr){var sk3=skillOf(skr.getAttribute("data-skren"));if(!sk3)return;
       var v3=await ttPrompt("改成：",sk3.name);if(v3===null)return;v3=v3.trim();if(v3){sk3.name=v3;saveSkills();renderSkills();}return;}
