@@ -350,7 +350,7 @@
   .todo-cols .tcol{flex:1 1 0;min-width:0}
   .todo-cols .tcol.wide{flex:1.35 1 0}
   /* 每一列自己滚，页面就不会被最长的那一列拽着无限往下长 */
-  .todo-cols .dash-card{display:flex;flex-direction:column;height:calc(100vh - 132px);min-height:340px}
+  .todo-cols .dash-card{display:flex;flex-direction:column;height:var(--tch,calc(100vh - 150px));min-height:300px}
   .todo-cols .dash-card>.dash-h,.todo-cols .todo-controls{flex:none}
   .todo-cols .scroller{overflow-y:auto;min-height:0;flex:1 1 auto;margin-right:-4px;padding-right:4px;
     display:flex;flex-direction:column}
@@ -374,6 +374,17 @@
   .sk-card.fold .sk-step,.sk-card.fold .sk-add{display:none}
   .sk-card:not(.fold) .sk-top{margin-bottom:7px}
   .sk-card:not(.fold) .sk-mini{display:none}
+  .skm{margin-bottom:11px;border-radius:9px}.skm:last-child{margin-bottom:0}
+  .skm.go{cursor:pointer;margin:0 -8px 11px;padding:7px 8px}
+  .skm.go:last-child{margin-bottom:0}
+  .skm.go:hover{background:var(--surface-2)}
+  .skm-next{font-size:11px;color:var(--primary);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .skm-next.done{color:var(--muted)}
+  .skm-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:5px}
+  .skm-n{font-size:12.5px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .skm-v{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+  #skmini-card{cursor:pointer}
+  .tf-chips.gpf{margin-bottom:10px}
   .sk-review{color:var(--muted);opacity:.8;margin-left:8px}
   .sk-done{color:var(--muted);font-size:11px}
   .sk-done b{color:var(--text)}
@@ -2939,6 +2950,7 @@ margin-left: -22px;
             <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
             <div id="goal-list"></div>
           </div>
+
         </aside>
 
         <div class="cal-main">
@@ -2999,13 +3011,17 @@ margin-left: -22px;
               <div class="s"><div class="k">今日时长</div><div class="v" id="stat-min">0<small> 分</small></div></div>
             </div>
           </div></div>
+          <div class="dash-card" id="skmini-card">
+            <div class="dash-h">技能进度 <button class="dash-add" id="skmini-go" type="button">去计划页 →</button></div>
+            <div id="skill-mini"></div>
+          </div>
         </aside>
       </div>
     </section>
 
     <!-- TODO -->
     <section class="view" id="view-todo">
-      <div class="page-h">待办 · 计划</div>
+      <div class="page-h">计划</div>
       <div class="todo-cols">
         <div class="tcol">
           <div class="dash-card">
@@ -3834,7 +3850,7 @@ margin-left: -22px;
   // ---------- i18n (界面中/英) ----------
   var lang=load("tt_lang","zh");
   var I18N={en:{
-    "日历":"Calendar","待办":"To-do","统计":"Stats","AI 助手":"AI Assistant","设置":"Settings","切换明暗":"Toggle theme",
+    "日历":"Calendar","待办":"To-do","计划":"Plan","统计":"Stats","AI 助手":"AI Assistant","设置":"Settings","切换明暗":"Toggle theme",
     "上一个":"Previous","下一个":"Next","上月":"Prev month","下月":"Next month","今天":"Today","+ 事件":"+ Event","全部":"All",
     "临近截止":"Due soon","目标进度":"Goals","+ 新目标":"+ New goal","相关记录":"Related records","打卡 +1":"Check-in +1",
     "本周":"This week","本月":"This month","今年":"This year",
@@ -4068,7 +4084,7 @@ margin-left: -22px;
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
     ["calendar","todo","stats","dict","reader","tax","food","body","notes"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
-    if(tab==="todo"){renderTodos();renderSkills();}
+    if(tab==="todo"){renderTodos();renderSkills();setTimeout(function(){try{fitTodoCols();}catch(e){}},0);}
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
@@ -4132,7 +4148,16 @@ margin-left: -22px;
         steps+
         '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
       '</div>';}
+  // 卡片高度不能拍脑袋算：顶栏、标题、边距加起来多少，各浏览器各缩放都不一样。
+  // 直接量这一块离视口顶部多远，剩下多少给多少，底边就正好卡在屏幕里。
+  function fitTodoCols(){
+    var el=document.querySelector(".todo-cols");if(!el)return;
+    if(window.innerWidth<=1080){el.style.removeProperty("--tch");return;}   // 窄屏是堆起来的，按内容高
+    var top=el.getBoundingClientRect().top;
+    el.style.setProperty("--tch",Math.max(300,Math.round(window.innerHeight-top-18))+"px");}
+  window.addEventListener("resize",function(){try{fitTodoCols();}catch(e){}});
   function renderSkills(){
+    try{fitTodoCols();}catch(e){}
     var w=document.getElementById("sk-wrap");if(!w)return;
     var live=skills.filter(function(s){return !s.arch;}),arch=skills.filter(function(s){return s.arch;});
     var html="";
@@ -4551,7 +4576,7 @@ margin-left: -22px;
   });
 
   // ---------- dashboard ----------
-  function renderDashboard(){renderMiniCal();renderDue();renderGoals();renderMemos();}
+  function renderDashboard(){renderMiniCal();renderDue();renderGoals();renderSkillMini();renderMemos();}
   function renderMiniCal(){
     var grid=document.getElementById("mc-grid"),today=new Date();
     document.getElementById("mc-title").textContent=miniCursor.getFullYear()+"年"+(miniCursor.getMonth()+1)+"月";
@@ -4643,9 +4668,43 @@ margin-left: -22px;
     var n=0;goals.forEach(function(g){if(!g.arch&&goalExpired(g)){g.arch=true;g.archAt=Date.now();n++;}});
     if(n)save("tt_goals",goals);}
   function goalHosts(){return [goalList,document.getElementById("goal-list2")].filter(Boolean);}
+  // 日历边栏的概况：只显示在学的、最近动过的几个，点一下跳去计划页
+  function renderSkillMini(){
+    var box=document.getElementById("skill-mini");if(!box)return;
+    var live=(typeof skills!=="undefined"?skills:[]).filter(function(s){return !s.arch;});
+    if(!live.length){box.innerHTML='<div class="dash-empty">还没有技能计划</div>';return;}
+    var rows=live.map(function(sk){return {sk:sk,s:skillSum(sk)};})
+      .sort(function(x,y){return y.s.act-x.s.act;}).slice(0,4);
+    box.innerHTML=rows.map(function(r){
+      var pct=r.s.total?r.s.done/r.s.total*100:0;
+      var nx=(r.sk.steps||[]).filter(function(s){return !s.done;})[0];
+      return '<div class="skm'+(nx?" go":"")+'"'+(nx?(' data-skgo="'+nx.id+'" title="开始下一步：'+esc(nx.t)+'"'):' data-skmini="1"')+
+        ' style="--gc:'+(r.sk.cat?catColor(r.sk.cat):"var(--primary)")+'">'+
+        '<div class="skm-top"><span class="skm-n">'+esc(r.sk.name)+'</span>'+
+          '<span class="skm-v">'+r.s.done+'/'+r.s.total+' · '+hrs(r.s.act)+'</span></div>'+
+        '<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
+        (nx?('<div class="skm-next">▶ 下一步：'+esc(nx.t)+'</div>'):'<div class="skm-next done">全部做完了</div>')+'</div>';}).join("")+
+      (live.length>rows.length?('<div class="dash-empty" style="padding:6px 0 0">还有 '+(live.length-rows.length)+' 个</div>'):"");}
+  (function(){
+    var c=document.getElementById("skmini-card");if(!c)return;
+    c.addEventListener("click",function(e){
+      var g=e.target.closest("[data-skgo]");
+      if(g){var f=stepOf(g.getAttribute("data-skgo"));if(f)startStep(f.sk,f.st);return;}
+      if(!e.target.closest("#skmini-go")&&!e.target.closest("[data-skmini]"))return;
+      var b=document.querySelector('.rail button[data-tab="todo"]');if(b)b.click();});})();
+  var goalPF=load("tt_goalpf","all");
   function renderGoals(){
     autoArchGoals();
-    var live=goals.filter(function(g){return !g.arch;}),gone=goals.filter(function(g){return g.arch;});
+    var all=goals.filter(function(g){return !g.arch;}),gone=goals.filter(function(g){return g.arch;});
+    var periods=[];all.forEach(function(g){if(periods.indexOf(g.period)<0)periods.push(g.period);});
+    if(periods.indexOf(goalPF)<0&&goalPF!=="all")goalPF="all";      // 那一档的目标被删光了就退回全部
+    var live=(goalPF==="all")?all:all.filter(function(g){return g.period===goalPF;});
+    // 目标不多、或者周期都一样时，这排筛选纯属占地方
+    var pfBar=(all.length>=4&&periods.length>1)?('<div class="tf-chips gpf">'+
+      [["all","全部"]].concat(periods.map(function(p){return [p,periodName(p)];})).map(function(o){
+        var n=(o[0]==="all")?all.length:all.filter(function(g){return g.period===o[0];}).length;
+        return '<button class="tf-chip'+(goalPF===o[0]?" on":"")+'" data-gpf="'+o[0]+'">'+esc(o[1])+' '+n+'</button>';}).join("")+
+      '</div>'):"";
     var html;
     if(!goals.length)html='<div class="dash-empty">还没有目标，点右上「+ 新目标」</div>';
     else html=live.map(function(g){
@@ -4664,7 +4723,8 @@ margin-left: -22px;
         mid+
         '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+(pr.track?" · 只记录":"")+'</span>'+plus+'</div></div>';
     }).join("");
-    if(goals.length&&!live.length)html='<div class="dash-empty">在跑的目标都归档完了。</div>';
+    if(goals.length&&!live.length)html='<div class="dash-empty">'+(all.length?"这一档下面没有目标。":"在跑的目标都归档完了。")+'</div>';
+    html=pfBar+html;
     if(gone.length){
       html+='<div class="sk-arch-h" data-goarchtog="1">'+(goalArchOpen?"▾":"▸")+' 已归档 '+gone.length+'</div>';
       if(goalArchOpen)html+=gone.map(function(g){
@@ -4676,6 +4736,8 @@ margin-left: -22px;
     goalHosts().forEach(function(h){h.innerHTML=html;});
   }
   async function goalHostClick(e){
+    var pf=e.target.closest("[data-gpf]");
+    if(pf){goalPF=pf.getAttribute("data-gpf");save("tt_goalpf",goalPF);renderGoals();return;}
     var gt=e.target.closest("[data-goarchtog]");
     if(gt){goalArchOpen=!goalArchOpen;save("tt_goalarch",goalArchOpen);renderGoals();return;}
     var ga=e.target.closest("[data-garch]");
