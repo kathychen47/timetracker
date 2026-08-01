@@ -78,6 +78,11 @@
   .dash{display:flex;flex-direction:column;gap:14px}
   .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:14px}
+  [data-foldc]{cursor:pointer;user-select:none}
+  [data-foldc]::before{content:"▾";display:inline-block;font-size:9px;margin-right:5px;opacity:.55;transition:transform .15s}
+  .cfold [data-foldc]::before{transform:rotate(-90deg)}
+  .cfold>*:not([data-foldc]),.cfold>.dash-card2>*:not([data-foldc]){display:none}
+  .cfold{padding-bottom:12px}
   .dash-h{font-size:12px;font-weight:640;color:var(--muted);letter-spacing:.6px;text-transform:uppercase;
     display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 
@@ -2943,11 +2948,11 @@ margin-left: -22px;
             <div class="mc-grid" id="mc-grid"></div>
           </div>
           <div class="dash-card">
-            <div class="dash-h">临近截止</div>
+            <div class="dash-h" data-foldc="due">临近截止</div>
             <div id="due-list"></div>
           </div>
           <div class="dash-card">
-            <div class="dash-h">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
+            <div class="dash-h" data-foldc="goal">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
             <div id="goal-list"></div>
           </div>
 
@@ -2978,7 +2983,7 @@ margin-left: -22px;
 
         <aside class="pomo-col">
           <div class="dash-card pomo-side"><div class="dash-card2">
-            <div class="pomo-side-h">番茄钟</div>
+            <div class="pomo-side-h" data-foldc="pomo">番茄钟</div>
             <div class="pomo-mode-seg seg" id="pomo-mode-seg">
               <button data-tm="down" class="on">倒计时</button>
               <button data-tm="up">正计时</button>
@@ -3012,7 +3017,7 @@ margin-left: -22px;
             </div>
           </div></div>
           <div class="dash-card" id="skmini-card">
-            <div class="dash-h">技能进度 <button class="dash-add" id="skmini-go" type="button">去计划页 →</button></div>
+            <div class="dash-h" data-foldc="skmini">技能进度 <button class="dash-add" id="skmini-go" type="button">去计划页 →</button></div>
             <div id="skill-mini"></div>
           </div>
         </aside>
@@ -4576,7 +4581,20 @@ margin-left: -22px;
   });
 
   // ---------- dashboard ----------
-  function renderDashboard(){renderMiniCal();renderDue();renderGoals();renderSkillMini();renderMemos();}
+  function renderDashboard(){renderMiniCal();renderDue();renderGoals();renderSkillMini();renderMemos();applyFolds();}
+  // 边栏的卡片可以折起来：标题点一下收/放，记在本地，下次打开还是那样
+  var cardFolds=load("tt_folds",{})||{};
+  function applyFolds(){
+    document.querySelectorAll("[data-foldc]").forEach(function(h){
+      var k=h.getAttribute("data-foldc"),card=h.parentNode;
+      if(card&&card.classList.contains("dash-card2"))card=card.parentNode;   // 番茄钟外面还套了一层
+      if(card)card.classList.toggle("cfold",!!cardFolds[k]);
+      h.setAttribute("title",cardFolds[k]?"展开":"收起");});}
+  document.addEventListener("click",function(e){
+    var h=e.target.closest("[data-foldc]");
+    if(!h||e.target.closest("button"))return;                 // 点标题里的「+ 新目标」不算折叠
+    var k=h.getAttribute("data-foldc");
+    cardFolds[k]=!cardFolds[k];save("tt_folds",cardFolds);applyFolds();});
   function renderMiniCal(){
     var grid=document.getElementById("mc-grid"),today=new Date();
     document.getElementById("mc-title").textContent=miniCursor.getFullYear()+"年"+(miniCursor.getMonth()+1)+"月";
@@ -5238,8 +5256,13 @@ margin-left: -22px;
   // 计时靠"墙上时钟"而不是每秒减一：切到后台被浏览器降频也不会走慢；关掉网页也能接着算
   var pEndAt=0,pStartAt=0,pBase=0,pTitleOld=null;
   function savePomoRun(){
-    if(!pTimer){save("tt_pomorun",null);return;}
-    save("tt_pomorun",{mode:timerMode,p2:pMode2,endAt:pEndAt,startAt:pStartAt,base:pBase,total:pTotal,
+    // 暂停也要存！原来这里是 if(!pTimer) 就清空，而 stopTimer 正是先把 pTimer 置空再调这个 ——
+    // 于是一按暂停存档就没了，刷新后走过的时间全丢。真正该清空的是「结束」和「重置」，
+    // 那两处自己会 save("tt_pomorun",null)，不需要这里代劳。
+    var walked=(timerMode==="up")?(pElapsed>0):(pLeft>0&&pLeft<pTotal);
+    if(!pTimer&&!walked){save("tt_pomorun",null);return;}      // 没跑过也没暂停 → 确实没什么可存
+    save("tt_pomorun",{mode:timerMode,p2:pMode2,run:!!pTimer,endAt:pEndAt,startAt:pStartAt,base:pBase,
+      left:pLeft,elapsed:pElapsed,total:pTotal,
       task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",tocal:!!pomoToCal.checked,
       segs:pSegs,segStart:pSegStart,at:Date.now()});}
   function pomoTitle(){
@@ -5296,12 +5319,20 @@ margin-left: -22px;
     pSegs=(r.segs&&r.segs.length)?r.segs.slice():[];pSegStart=+r.segStart||0;segSig="";  // 换任务切出来的段一起恢复
     if(timerMode==="up"){
       pBase=+r.base||0;pStartAt=+r.startAt||Date.now();
+      if(r.run===false){                                      // 上次是暂停着离开的：冻在那儿，别把离开这段算进去
+        pElapsed=pBase;startBtn.textContent="开始";drawPomo();renderSegs();
+        pomoNote("上次暂停在 "+secLabel(pElapsed)+"，点「开始」接着走");
+        return;}
       pElapsed=pBase+Math.max(0,Math.round((Date.now()-pStartAt)/1000));
       if(pElapsed>=UPMAX){                                    // 离开期间已经超过 3 小时 → 按到点那一刻结算
         pElapsed=UPMAX;finishUp(upHitMs());
         pomoNote("正计时到了 3 小时上限，已按当时的时间结束并记好了 ✓");return;}
       pTimer=setInterval(pomoTick,500);startBtn.textContent="暂停";pomoTick();
       pomoNote("正计时接着走：离开这段时间也算进去了");
+      return;}
+    if(r.run===false){                                        // 倒计时暂停着离开：剩多少还是多少
+      pLeft=Math.max(0,+r.left||0);startBtn.textContent="开始";drawPomo();
+      pomoNote("上次暂停时还剩 "+secLabel(pLeft)+"，点「开始」接着走");
       return;}
     var left=Math.round(((+r.endAt||0)-Date.now())/1000);
     if(left>0){
