@@ -352,8 +352,8 @@
   .todo-wrap{max-width:640px;margin:0 auto}
   /* 三竖列：待办 / 目标 / 技能。技能那列宽一点，因为里面有分类下拉和步骤行 */
   .todo-cols{display:flex;gap:20px;align-items:stretch;width:100%}
-  .todo-cols .tcol{flex:1 1 0;min-width:0}
-  .todo-cols .tcol.wide{flex:1.35 1 0}
+  .todo-cols .tcol{flex:1 1 0;min-width:0;order:2}
+  .todo-cols .tcol.wide{flex:1.35 1 0;order:1}   /* 技能放最左边 */
   /* 每一列自己滚，页面就不会被最长的那一列拽着无限往下长 */
   .todo-cols .dash-card{display:flex;flex-direction:column;height:var(--tch,calc(100vh - 150px));min-height:300px}
   .todo-cols .dash-card>.dash-h,.todo-cols .todo-controls{flex:none}
@@ -1334,8 +1334,16 @@
   .nb-doc-title{flex:1;min-width:180px;font-size:18px;font-weight:650;padding:7px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text)}
   .nb-doc-title:focus{border-color:var(--border);background:var(--bg);outline:none}
   .nb-doc-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
-  .nb-cols{display:flex;gap:16px;align-items:flex-start}
-  .nb-side{flex:0 0 176px;position:sticky;top:8px}
+  .nb-cols{display:flex;gap:16px;align-items:flex-start;position:relative}
+  .nb-side{flex:0 0 176px;position:sticky;top:8px;overflow:hidden;transition:flex-basis .18s ease,opacity .14s}
+  /* 收起：整栏往左滑走，不是折成一行 —— 主体跟着变宽 */
+  .nb-cols.sidehid{gap:0}
+  .nb-cols.sidehid .nb-side{flex-basis:0;opacity:0;pointer-events:none}
+  .nb-sidetog{position:absolute;left:-11px;top:5px;z-index:3;width:20px;height:26px;padding:0;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:7px;
+    cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .nb-sidetog:hover{color:var(--primary);border-color:var(--primary)}
+  .nb-cols.sidehid .nb-sidetog{left:-11px}
   .nb-main{flex:1;min-width:0}
   .nb-fd{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:9px;cursor:pointer;
     font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden}
@@ -2947,15 +2955,15 @@ margin-left: -22px;
 <div class="app">
   <nav class="rail">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
-    <button class="on" data-tab="calendar" aria-label="日历" title="日历"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"></rect><path d="M3 9h18M8 2v4M16 2v4"></path></svg></button>
-    <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"></path><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"></path></svg></button>
-    <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"></path><rect x="7" y="12" width="3" height="6"></rect><rect x="12" y="8" width="3" height="10"></rect><rect x="17" y="5" width="3" height="13"></rect></svg></button>
-    <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7v13"></path><path d="M3 5.5A2 2 0 0 1 5 4h5a2 2 0 0 1 2 2v13a2 2 0 0 0-2-2H5a2 2 0 0 1-2-2z"></path><path d="M21 5.5A2 2 0 0 0 19 4h-5a2 2 0 0 0-2 2v13a2 2 0 0 1 2-2h5a2 2 0 0 0 2-2z"></path></svg></button>
-    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"></path><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3-5 3-5-1.1-5-3"></path></svg></button>
-    <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18M4 3v6a3 3 0 0 0 6 0V3"></path><path d="M17.5 3C15.6 5 14.5 7.4 14.5 10.5h6C20.5 7.4 19.4 5 17.5 3z"></path><path d="M17.5 10.5V21"></path></svg></button>
-    <button data-tab="notes" aria-label="笔记" title="笔记 · 便签与读书笔记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M15 3v4h4M8 11h8M8 15h5"></path></svg></button>
-    <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-5 4 3 5-6 4 4"></path><circle cx="8" cy="12" r="1.4"></circle><circle cx="12" cy="15" r="1.4"></circle><circle cx="17" cy="9" r="1.4"></circle></svg></button>
-    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M9 7.5h7M9 11h5"></path></svg></button>
+    <button class="on" data-tab="calendar" aria-label="日历" title="日历"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect><path d="M3 9.5h18M8 2.5v4M16 2.5v4"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"></path></svg></button>
+    <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l2 2 3.5-3.5"></path><path d="M4 13l2 2 3.5-3.5"></path><path d="M4 19.5l2 2 3.5-3.5"></path><path d="M13 6h7M13 12.5h7M13 19h7"></path></svg></button>
+    <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"></path><rect x="7" y="12" width="3" height="5" rx="1"></rect><rect x="12.5" y="8" width="3" height="9" rx="1"></rect><rect x="18" y="4.5" width="3" height="12.5" rx="1"></rect></svg></button>
+    <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5v14"></path><path d="M12 6.5C10.5 5 8.5 4.2 5.5 4.2A1.5 1.5 0 0 0 4 5.7v11.6a1.5 1.5 0 0 0 1.5 1.5c3 0 5 .8 6.5 2.2"></path><path d="M12 6.5c1.5-1.5 3.5-2.3 6.5-2.3A1.5 1.5 0 0 1 20 5.7v11.6a1.5 1.5 0 0 1-1.5 1.5c-3 0-5 .8-6.5 2.2"></path></svg></button>
+    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-1.6L14 21l-3-1.6L8 21l-3-1.6z"></path><path d="M9 8.5h6M9 12h6M9 15.5h3"></path></svg></button>
+    <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg></button>
+    <button data-tab="notes" aria-label="笔记" title="笔记 · 便签与读书笔记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9.5L20 8v12a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 5 20V5a1.5 1.5 0 0 1 1-1.5z"></path><path d="M15 3.5V8h4.5"></path><path d="M8.5 12.5h7M8.5 16h5"></path></svg></button>
+    <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5l4.5-5 3.5 3.5 4-6L21 13"></path><circle cx="7.5" cy="9.5" r="1.6"></circle><circle cx="18" cy="9" r="1.6"></circle><path d="M3 20.5h18"></path></svg></button>
+    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg></button>
     <div class="grow"></div>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
     <button id="settings-btn" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
@@ -3165,7 +3173,8 @@ margin-left: -22px;
           <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
           <button class="btn" id="nb-csv" title="导成 CSV，可用 Excel 打开">⬇️ CSV</button>
         </div>
-        <div class="nb-cols">
+        <div class="nb-cols" id="nb-cols">
+          <button class="nb-sidetog" id="nb-sidetog" type="button" title="收起 / 展开本子栏">‹</button>
           <aside class="nb-side" id="nb-side"></aside>
           <div class="nb-main">
             <div class="nb-filters rn-filters" id="nb-filters"></div>
@@ -7702,7 +7711,10 @@ margin-left: -22px;
   var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all",rdView=load("tt_rdview","grid");
   function saveFolders(){save("tt_rdfolders",rdFolders);}
   function bdbOpen(){return new Promise(function(res,rej){
-    var r=indexedDB.open("ttbooks",3);
+    var r=indexedDB.open("ttbooks",3),done=false;
+    // 别的标签页开着旧版本时，升级会被挡住：这个请求既不成功也不失败，会一直吊着。
+    r.onblocked=function(){if(!done){done=true;rej(new Error("blocked"));}};
+    setTimeout(function(){if(!done){done=true;rej(new Error("timeout"));}},8000);
     r.onupgradeneeded=function(){var db=r.result;
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});
       if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});
@@ -7783,7 +7795,12 @@ margin-left: -22px;
       rdNote("✓ 以后导入的书会往「"+h.name+"」里存一份");
       await bookDirSyncAll();
       bookDirUI();
-    }catch(e){if(e&&e.name!=="AbortError")ttAlert("选文件夹失败："+(e&&e.message||e));}}
+    }catch(e){
+      if(!e||e.name==="AbortError")return;                 // 你自己取消的，不用报
+      if(e.name==="SecurityError")ttAlert("浏览器不让弹文件夹选择框（一般是这一下没被当成用户点击）。再点一次试试。");
+      else if(String(e.message||"").indexOf("blocked")>=0||String(e.message||"").indexOf("timeout")>=0)
+        ttAlert("数据库正在升级，被这个网站的其它标签页挡住了。\n\n把其它标签页关掉，刷新一下再点。");
+      else ttAlert("选文件夹失败："+(e.name?(e.name+"："):"")+(e.message||e));}}
   async function bookDirWrite(name,blob){        // 写一份出去；失败不影响导入本身
     var h=await bookDirOK(false);if(!h)return false;
     try{
@@ -7807,7 +7824,8 @@ margin-left: -22px;
     var base=String(m.name||"未命名").replace(/[\\/:*?"<>|]/g,"_").slice(0,80);
     return base+(base.toLowerCase().slice(-ext.length)===ext?"":ext);}
   async function bookDirRestore(){               // 反过来：从文件夹把书库里没有的捡回来
-    var h=await bookDirOK(true);
+    var h=null;
+    try{h=await bookDirOK(true);}catch(e){}
     if(!h){ttAlert("还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。");return;}
     var metas=await bAll(),known={};
     metas.forEach(function(m){known[bookFileName(m)]=1;});
@@ -7828,13 +7846,25 @@ margin-left: -22px;
                     :"选一个本地文件夹，导入的书自动往那儿存一份";}
   (function(){
     var b=document.getElementById("rd-dir");if(!b)return;
-    b.addEventListener("click",async function(){
-      if(!bookDirH)await bookDirLoad();
-      if(!bookDirH)return bookDirPick();
+    b.addEventListener("click",function(){
+      // 这里绝不能有 await：showDirectoryPicker 必须在用户手势里同步发起，
+      // 中间只要让出一次事件循环，浏览器就当这不是用户点的了。
+      if(!bookDirH){bookDirPick();return;}
+      bookDirMenu();});
+    async function bookDirMenu(){
       var v=await ttPrompt("本地文件夹：「"+bookDirH.name+"」\n\n打 1 = 从文件夹找回书库里没有的书\n打 2 = 换一个文件夹\n留空取消","",{anchor:b});
       if(v===null)return;v=v.trim();
-      if(v==="1")bookDirRestore();else if(v==="2")bookDirPick();});
-    bookDirLoad().then(bookDirUI);})();
+      if(v==="1")bookDirRestore();else if(v==="2")bookDirPick();}
+    bookDirLoad().then(bookDirUI,function(){bookDirUI();});})();
+  // 本子栏收起 / 展开（记住）
+  (function(){
+    var t=document.getElementById("nb-sidetog"),c=document.getElementById("nb-cols");
+    if(!t||!c)return;
+    function paint(){var hid=load("tt_nbsidehid",false);
+      c.classList.toggle("sidehid",!!hid);t.textContent=hid?"›":"‹";
+      t.title=hid?"展开本子栏":"收起本子栏";}
+    t.addEventListener("click",function(){save("tt_nbsidehid",!load("tt_nbsidehid",false));paint();});
+    paint();})();
   async function importBooks(files,quiet){
     for(var i=0;i<files.length;i++){var f=files[i],t=bookType(f.name);
       if(!t){rdNote("不支持的格式："+f.name);continue;}
