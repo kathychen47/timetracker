@@ -4347,6 +4347,15 @@ margin-left: -22px;
     if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return;}
     var want=await ttPromptLong("想学什么？或者直接把你已经写好的计划整段粘进来。\n两种都行：给个主题我来拆，给了计划我就照着整理，步骤和时间原样保留。","");
     if(want===null)return;want=want.trim();if(!want)return;
+    // 粘进来的本身就是 JSON 的话，直接导入 —— 不经过模型就没有"它今天怎么发挥"这回事
+    if(want.indexOf("{")>=0&&want.indexOf("}")>0){
+      try{
+        var direct=parseSkillPlan(want);
+        skills.push({id:uid(),name:direct.name||"新技能",note:direct.note||"",steps:direct.steps,created:Date.now()});
+        saveSkills();renderSkills();try{renderSkillMini();}catch(e){}
+        return;
+      }catch(e){}                                  // 不是合法的计划 JSON → 照旧交给 AI
+    }
     var old=btn.textContent;btn.textContent="拆解中…";btn.disabled=true;
     var prompt="下面是用户输入的内容，可能是一个想学的主题，也可能是一份已经写好的学习计划。\n\n"+
       "===\n"+want+"\n===\n\n"+
