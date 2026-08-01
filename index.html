@@ -375,7 +375,7 @@
   .sk-top{display:flex;align-items:center;gap:7px}
   .sk-fold{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;padding:2px 3px;flex:none;line-height:1}
   .sk-mini{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
-  .sk-card.fold .sk-cats,.sk-card.fold .sk-meta,.sk-card.fold .sk-bar,
+  .sk-card.fold .sk-cats,.sk-card.fold .sk-prog,.sk-card.fold .sk-done,
   .sk-card.fold .sk-step,.sk-card.fold .sk-add{display:none}
   .sk-card:not(.fold) .sk-top{margin-bottom:7px}
   .sk-card:not(.fold) .sk-mini{display:none}
@@ -390,9 +390,8 @@
   .skm-v{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
   #skmini-card{cursor:pointer}
   .tf-chips.gpf{margin-bottom:10px}
+  .dash-h #sk-ai,.dash-h #todo-ai{margin-left:10px}
   .sk-review{color:var(--muted);opacity:.8;margin-left:8px}
-  .sk-done{color:var(--muted);font-size:11px}
-  .sk-done b{color:var(--text)}
   .sk-arch-h{font-size:11.5px;color:var(--muted);cursor:pointer;padding:8px 2px 2px;user-select:none}
   .sk-arch-h:hover{color:var(--primary)}
   .sk-card.arch{opacity:.6}
@@ -403,11 +402,17 @@
   .sk-x:hover{color:#c0392b}
   .sk-cats{display:flex;gap:6px;margin-bottom:8px}
   .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
-  .sk-meta{font-size:11.5px;color:var(--muted);margin-bottom:8px;font-variant-numeric:tabular-nums}
-  .sk-meta b{color:var(--text);font-weight:640}
-  .sk-meta .over{color:#c0392b}.sk-meta .under{color:#2e8b57}
-  .sk-bar{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-bottom:10px}
-  .sk-bar i{display:block;height:100%;border-radius:99px;background:var(--primary);transition:width .3s}
+  .sk-prog{display:flex;flex-direction:column;gap:5px;margin:2px 0 10px}
+  .spr{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .spk{flex:0 0 24px}
+  .spb{flex:1;height:6px;border-radius:99px;background:var(--surface);overflow:hidden;min-width:0}
+  .spb i{display:block;height:100%;border-radius:99px;background:var(--primary);transition:width .3s}
+  .spb i.t{background:color-mix(in srgb,var(--skc,var(--primary)) 75%,var(--text))}
+  .spb i.t.over{background:#c0392b}
+  .spv{flex:0 0 auto;min-width:52px;text-align:right;color:var(--text)}
+  .spv.over{color:#c0392b}
+  .sk-done{font-size:11px;color:var(--muted);margin:-4px 0 8px}
+  .sk-done b{color:var(--text)}
   .sk-step{display:flex;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--border)}
   .sk-ck{width:16px;height:16px;flex:none;margin:0;accent-color:var(--primary);cursor:pointer}
   .sk-t{flex:1;min-width:0;font-size:13px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -844,6 +849,11 @@
   .nb-selbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;margin-bottom:10px;
     background:var(--primary-soft);border-radius:11px;font-size:13px}
   .nb-selbar b{font-weight:700;color:var(--primary)}
+  /* 没选中是空心框，选中了才打勾 —— 按钮自己就说明了它现在是什么状态 */
+  #nb-pick{display:inline-flex;align-items:center;gap:5px}
+  #nb-pick svg{width:15px;height:15px;flex:none}
+  #nb-pick .ck-tick,#nb-pick.on .ck-box{display:none}
+  #nb-pick.on .ck-tick{display:block}
   .nb-selbar .btn{padding:4px 11px;font-size:12.5px}
   .nb-selbar .btn.del{color:#c0392b;border-color:#e3b4ad}
   .nb-selbar .btn.del:hover:not(:disabled){background:#fdecea}
@@ -1266,6 +1276,8 @@
   .bars .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px;height:100%}
   .bars .bar .amt{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
   .bars .bar .col2{width:66%;max-width:32px;border-radius:6px 6px 0 0;min-height:2px;background:var(--primary)}
+  .bars .bar .col2.stack{background:var(--surface-2);overflow:hidden;display:flex;flex-direction:column-reverse}
+  .bars .bar .col2.stack i{display:block;width:100%}
   .bars .bar .col2.pomo{background:var(--cat-focus)}
   .bars .bar .lb{font-size:11px;color:var(--muted)}
   .stat-empty{color:var(--muted);font-size:13px;text-align:center;padding:20px}
@@ -3030,7 +3042,7 @@ margin-left: -22px;
       <div class="todo-cols">
         <div class="tcol">
           <div class="dash-card">
-            <div class="dash-h">待办 <button class="dash-add" id="todo-new" type="button">+ 添加待办</button></div>
+            <div class="dash-h">待办 <button class="dash-add" id="todo-new" type="button">+ 添加待办</button><button class="dash-add" id="todo-ai" type="button" title="说一句要干的事，AI 拆成几条待办">✨ AI 拆</button></div>
             <div class="todo-controls" id="todo-controls"></div>
             <div class="todo-list scroller" id="todo-list"></div>
           </div>
@@ -3043,7 +3055,7 @@ margin-left: -22px;
         </div>
         <div class="tcol wide">
           <div class="dash-card">
-            <div class="dash-h">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button></div>
+            <div class="dash-h">技能 · 学习计划 <button class="dash-add" id="sk-add" type="button">+ 新技能</button><button class="dash-add" id="sk-ai" type="button" title="说一句想学什么，AI 拆成一步步">✨ AI 拆解</button></div>
             <div class="sk-wrap scroller" id="sk-wrap"></div>
           </div>
         </div>
@@ -3131,7 +3143,7 @@ margin-left: -22px;
             <button data-ng="book">📚 按书</button>
           </div>
           <span class="grow"></span>
-          <button class="btn" id="nb-pick" title="勾选多条，一起删">☑️ 选择</button>
+          <button class="btn" id="nb-pick" title="勾选多条，一起删"><svg class="ck-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect></svg><svg class="ck-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg>选择</button>
           <button class="btn" id="nb-zen" title="沉浸式写作：全屏、隐藏所有按钮（鼠标移到顶端唤回工具栏，Esc 退出）">⛶ 沉浸</button>
           <button class="btn" id="nb-new">＋ 写一条</button>
           <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
@@ -4146,10 +4158,15 @@ margin-left: -22px;
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
-        '<div class="sk-meta">'+s.done+'/'+s.total+' 步 · 预计 <b>'+hrs(s.est)+'</b> · 实际 <b>'+hrs(s.act)+'</b>'+diff+
-          (sk.arch?('<br><span class="sk-done">✓ '+new Date(sk.archAt||Date.now()).toLocaleDateString()+' 归档'+
-            (skDays(sk)?(' · 从开工到学会 <b>'+skDays(sk)+'</b> 天，净投入 <b>'+hrs(s.act)+'</b>'):"")+'</span>'):"")+'</div>'+
-        '<div class="sk-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
+        '<div class="sk-prog">'+
+          '<div class="spr"><span class="spk">步骤</span><span class="spb"><i style="width:'+pct.toFixed(0)+'%"></i></span>'+
+            '<span class="spv">'+s.done+'/'+s.total+'</span></div>'+
+          '<div class="spr"><span class="spk">时间</span><span class="spb"><i class="'+(s.est&&s.act>s.est?"t over":"t")+'" style="width:'+
+            (s.est?Math.min(100,s.act/s.est*100).toFixed(0):(s.act?100:0))+'%"></i></span>'+
+            '<span class="spv'+(s.est&&s.act>s.est?" over":"")+'">'+hrs(s.act)+(s.est?(" / "+hrs(s.est)):" · 未估")+'</span></div>'+
+        '</div>'+
+        (sk.arch?('<div class="sk-done">✓ '+new Date(sk.archAt||Date.now()).toLocaleDateString()+' 归档'+
+          (skDays(sk)?(' · 从开工到学会 <b>'+skDays(sk)+'</b> 天，净投入 <b>'+hrs(s.act)+'</b>'):"")+'</div>'):"")+
         steps+
         '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
       '</div>';}
@@ -4206,6 +4223,53 @@ margin-left: -22px;
   function skillOf(id){for(var i=0;i<skills.length;i++)if(skills[i].id===id)return skills[i];return null;}
   function stepOf(id){for(var i=0;i<skills.length;i++){var ss=skills[i].steps||[];
     for(var j=0;j<ss.length;j++)if(ss[j].id===id)return {sk:skills[i],st:ss[j]};}return null;}
+  // AI 拆解：说一句想学什么，让它给出有先后顺序的步骤和预计时间。
+  // 要求只回 JSON —— 模型爱加解释和代码围栏，所以下面解析时都得剥干净再认。
+  // 模型爱加解释和代码围栏，取 JSON 前先剥干净
+  function aiJSON(raw){
+    var t=String(raw||"").trim();
+    var fence=t.indexOf("```");                 // 剥掉模型爱加的代码围栏
+    if(fence>=0){t=t.slice(fence+3).replace(/^json\s*/i,"");var f2=t.indexOf("```");if(f2>=0)t=t.slice(0,f2);t=t.trim();}
+    var s=t.indexOf("{"),e=t.lastIndexOf("}");
+    if(s<0||e<=s)throw new Error("AI 没有按格式回答");
+    return JSON.parse(t.slice(s,e+1));}
+  function aiReady(){
+    if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return false;}
+    return true;}
+  function aiAsk(prompt){return (aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt);}
+  function parseSkillPlan(raw){
+    var o=aiJSON(raw);
+    var steps=(o.steps||[]).map(function(x){
+      var n=String(x&&x.t||"").trim();if(!n)return null;
+      var est=Math.round(+((x&&x.est)||0));
+      if(!isFinite(est)||est<0)est=0;
+      return {id:uid(),t:n.slice(0,80),est:Math.min(600,est),act:0,done:false};}).filter(Boolean).slice(0,20);
+    if(!steps.length)throw new Error("AI 没给出步骤");
+    return {name:String(o.name||"").trim().slice(0,40),steps:steps};}
+  document.getElementById("sk-ai").addEventListener("click",async function(){
+    var btn=this;
+    if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return;}
+    var want=await ttPrompt("想学什么？说得越具体越好\n比如：SQL，从零到能写窗口函数和调优","");
+    if(want===null)return;want=want.trim();if(!want)return;
+    var old=btn.textContent;btn.textContent="拆解中…";btn.disabled=true;
+    var prompt="把下面这件想学的事拆成一份可执行的学习计划。\n\n"+
+      "要学的：「"+want+"」\n\n"+
+      "要求：\n"+
+      "- 6~10 个步骤，按先后顺序排列\n"+
+      "- 每一步都是一件能坐下来做完的具体事，不要「打好基础」「深入理解」这类空话\n"+
+      "- 每步给一个预计分钟数（整数，30 到 240 之间）\n"+
+      "- 步骤名不超过 20 个字\n"+
+      "- 只输出 JSON，不要任何解释、不要代码围栏\n\n"+
+      ' 格式：{"name":"技能名","steps":[{"t":"步骤名","est":90}]}';
+    try{
+      var txt=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
+      var plan=parseSkillPlan(txt);
+      skills.push({id:uid(),name:plan.name||want.slice(0,40),steps:plan.steps,created:Date.now()});
+      saveSkills();renderSkills();
+      try{renderSkillMini();}catch(e){}
+    }catch(err){
+      ttAlert("拆解失败："+(err&&err.message||err)+"\n\n可以再试一次，或者点「+ 新技能」自己写。");
+    }finally{btn.textContent=old;btn.disabled=false;}});
   document.getElementById("sk-add").addEventListener("click",async function(){
     var n=await ttPrompt("新技能叫什么？（比如：学 SQL）","");
     if(n===null)return;n=n.trim();if(!n)return;
@@ -5425,6 +5489,30 @@ margin-left: -22px;
     if(e.target.closest("[data-arch]")){showArchived=!showArchived;renderTodos();}
   });
   document.getElementById("todo-new").addEventListener("click",function(){openTodoModal(null);});
+  // 一句话 → 几条待办。只让它给标题和优先级，日期分类还是你自己定 —— AI 猜日期十有八九是错的。
+  document.getElementById("todo-ai").addEventListener("click",async function(){
+    var btn=this;if(!aiReady())return;
+    var want=await ttPrompt("要干什么？我拆成几条待办\n比如：下周三前把实验报告交了","");
+    if(want===null)return;want=want.trim();if(!want)return;
+    var old=btn.textContent;btn.textContent="拆解中…";btn.disabled=true;
+    var prompt="把下面这件事拆成几条可以直接动手的待办。\n\n"+
+      "事情：「"+want+"」\n\n"+
+      "要求：\n"+
+      "- 3~7 条，按先做后做排列\n"+
+      "- 每条都是一个动作，不超过 20 个字\n"+
+      "- prio 只能是 high / mid / low\n"+
+      "- 只输出 JSON，不要解释、不要代码围栏\n\n"+
+      ' 格式：{"todos":[{"t":"待办","prio":"mid"}]}';
+    try{
+      var o=aiJSON(await aiAsk(prompt));
+      var got=(o.todos||[]).map(function(x){
+        var t=String(x&&x.t||"").trim();if(!t)return null;
+        var p=String(x&&x.prio||"mid");if(["high","mid","low"].indexOf(p)<0)p="mid";
+        return {id:uid(),title:t.slice(0,60),prio:p,due:"",cat:null,sub:null,done:false};}).filter(Boolean).slice(0,12);
+      if(!got.length)throw new Error("AI 没给出待办");
+      todos=todos.concat(got);save("tt_todos",todos);renderTodos();renderCal();
+    }catch(err){ttAlert("拆解失败："+(err&&err.message||err));}
+    finally{btn.textContent=old;btn.disabled=false;}});
   todoList.addEventListener("click",function(e){
     var row=e.target.closest(".ti");if(!row)return;var id=row.getAttribute("data-id");var act=e.target.closest("[data-act]");
     if(act&&act.getAttribute("data-act")==="toggle"){todos=todos.map(function(t){return t.id===id?Object.assign({},t,{done:!t.done}):t;});save("tt_todos",todos);renderTodos();return;}
@@ -5645,21 +5733,31 @@ margin-left: -22px;
         '<span class="rb"><i style="width:'+Math.max(1.5,s.m/mx*100).toFixed(1)+'%;background:'+s.col+'"></i></span>'+
         '<span class="rv">'+fmtDur(s.m)+'<em>'+(s.pct<0.5?"<1":Math.round(s.pct))+'%</em></span></div>';}).join("")+'</div>';}
   // 折线：和柱状同一份数据，只是更容易看出走势
-  function trendLineSVG(labels,vals){
+  function trendLineSVG(labels,vals,stack,colOf,nameOf){
     var W=640,H=170,padL=6,padR=6,padT=16,padB=22;
     var mx=Math.max.apply(null,vals.concat([1]));
     var n=vals.length,iw=(W-padL-padR),gy=H-padB;
     var x=function(i){return n<2?(W/2):(padL+iw*i/(n-1));};
     var y=function(v){return padT+(gy-padT)*(1-v/mx);};
     var pts=vals.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ");
-    var area="M"+x(0).toFixed(1)+","+gy+" L"+pts.split(" ").join(" L")+" L"+x(n-1).toFixed(1)+","+gy+"Z";
+    // 有分层数据就画堆叠面积：从下往上一层层累加，最上沿正好是总量那条线
+    var layers="";
+    if(stack&&stack.order&&stack.order.length){
+      var cum=vals.map(function(){return 0;});
+      stack.order.slice().reverse().forEach(function(k){
+        var lo=cum.slice();
+        cum=cum.map(function(c,i){return c+((stack.rows[i]||{})[k]||0);});
+        var up=cum.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);});
+        var dn=lo.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).reverse();
+        layers+='<path d="M'+up.join(" L")+" L"+dn.join(" L")+'Z" fill="'+colOf(k)+'" opacity=".82"><title>'+esc(nameOf(k))+'</title></path>';});}
+    var area=layers?"":("M"+x(0).toFixed(1)+","+gy+" L"+pts.split(" ").join(" L")+" L"+x(n-1).toFixed(1)+","+gy+"Z");
     var dots=vals.map(function(v,i){return '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="2.6"/>';}).join("");
     var top=vals.indexOf(mx);
     var labs=labels.map(function(l,i){
       if(n>14&&i%Math.ceil(n/8)!==0&&i!==n-1)return "";
       return '<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+'" class="tl-x">'+esc(l)+'</text>';}).join("");
     return '<svg class="tl-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
-      '<path class="tl-area" d="'+area+'"/><polyline class="tl-line" points="'+pts+'"/>'+
+      (area?('<path class="tl-area" d="'+area+'"/>'):layers)+'<polyline class="tl-line" points="'+pts+'"/>'+
       '<g class="tl-dot">'+dots+'</g>'+
       (mx>0?('<text x="'+x(top).toFixed(1)+'" y="'+Math.max(11,y(mx)-6).toFixed(1)+'" class="tl-top">'+fmtDur(mx)+'</text>'):"")+
       labs+'</svg>';}
@@ -5686,14 +5784,33 @@ margin-left: -22px;
     var acc=0,stops=[];segs.forEach(function(s,i){s.pct=totalMin?s.m/totalMin*100:0;s.col=segColor(s.k,i);s.start=acc;stops.push(s.col+" "+acc.toFixed(2)+"% "+(acc+s.pct).toFixed(2)+"%");acc+=s.pct;});
     var donutBg=totalMin?"conic-gradient("+stops.join(",")+")":"var(--surface-2)";
     var legend=segs.length?segs.map(function(s){return '<div class="dl" data-k="'+s.k+'"><i style="background:'+s.col+'"></i><span class="nm">'+esc(segName(s.k))+'</span><span class="vv">'+fmtDur(s.m)+' · '+Math.round(s.pct)+'%</span></div>';}).join(""):'<div class="stat-empty">这个范围还没有安排事件</div>';
-    var buckets=statBuckets(p),trendHTML,trendTitle,trendVals=null,trendLabs=null;
+    // 一个桶（一天/一月）里，各分类各占多少分钟
+    function bucketByKey(b){
+      var by={};
+      evs.forEach(function(e){
+        if(b.ym?e.date.indexOf(b.ym)!==0:e.date!==b.s)return;
+        evMix(e).forEach(function(x){
+          if(!x.min)return;
+          if(statState.cat!=="__all"&&x.cat!==statState.cat)return;
+          if(statState.sub!=="__all"&&(x.sub||null)!==statState.sub)return;
+          var k=groupByCat?x.cat:(x.sub||"__none");by[k]=(by[k]||0)+x.min;});});
+      return by;}
+    var order=segs.map(function(s){return s.k;});          // 叠放顺序＝整段区间的排名，各柱子层次一致
+    var buckets=statBuckets(p),trendHTML,trendTitle,trendVals=null,trendLabs=null,trendStack=null;
     if(buckets){var vals=buckets.map(function(b){return bucketMin(b,evs);}),mx=Math.max.apply(null,vals.concat([1]));
       trendVals=vals;trendLabs=buckets.map(function(b){return b.label;});
-      trendHTML=buckets.map(function(b,i){var m=vals[i],h=m?Math.max(3,Math.round(m/mx*110)):0;return '<div class="bar"><div class="amt">'+(m?fmtDur(m):"")+'</div><div class="col2" style="height:'+h+'px"></div><div class="lb">'+b.label+'</div></div>';}).join("");
+      trendStack={order:order,rows:buckets.map(bucketByKey)};
+      trendHTML=buckets.map(function(b,i){
+        var m=vals[i],h=m?Math.max(3,Math.round(m/mx*110)):0,by=trendStack.rows[i];
+        var inner=m?order.map(function(k){
+          var v=by[k];if(!v)return "";
+          return '<i style="height:'+(v/m*100).toFixed(2)+'%;background:'+segColor(k)+'" title="'+esc(segName(k)+" "+fmtDur(v))+'"></i>';}).join(""):"";
+        return '<div class="bar"><div class="amt">'+(m?fmtDur(m):"")+'</div><div class="col2 stack" style="height:'+h+'px">'+inner+'</div><div class="lb">'+b.label+'</div></div>';}).join("");
       trendTitle="趋势（按"+(p.unit==="year"?"月":(p.unit==="custom"&&buckets[0]&&buckets[0].ym?"月":"天"))+"）";
     }else{var byc={};evs.forEach(function(e){evMix(e).forEach(function(x){if(x.min)byc[x.cat]=(byc[x.cat]||0)+x.min;});});
       var keys=Object.keys(byc).sort(function(a,b){return byc[b]-byc[a];}),mx2=Math.max.apply(null,keys.map(function(k){return byc[k];}).concat([1]));
       trendVals=keys.map(function(k){return byc[k];});trendLabs=keys.map(function(k){return catName(k);});
+      trendStack=null;                                     // 这一档本来就是按分类分的，不用再叠
       trendHTML=keys.length?keys.map(function(k){var m=byc[k],h=Math.max(3,Math.round(m/mx2*110));return '<div class="bar"><div class="amt">'+fmtDur(m)+'</div><div class="col2" style="height:'+h+'px;background:'+catColor(k)+'"></div><div class="lb">'+esc(catName(k))+'</div></div>';}).join(""):'<div class="stat-empty">这天没有事件</div>';
       trendTitle="各大类时长（当天）";}
     var modes=[["day","日"],["week","周"],["month","月"],["year","年"],["custom","自定义"]];
@@ -5728,7 +5845,7 @@ margin-left: -22px;
           (statState.dist==="rank"?rankHTML(segs,totalMin,segName):donutSVG(segs,totalMin,totH,groupByCat?"":catName(statState.cat),segName))+'</div>'+
         '<div class="panel"><h3>'+trendTitle+
           '<span class="seg mini" id="stat-trend"><button data-t="bar"'+(statState.trend==="bar"?' class="on"':'')+'>柱状</button><button data-t="line"'+(statState.trend==="line"?' class="on"':'')+'>折线</button></span></h3>'+
-          (statState.trend==="line"&&trendVals?trendLineSVG(trendLabs,trendVals):'<div class="bars">'+trendHTML+'</div>')+'</div>'+
+          (statState.trend==="line"&&trendVals?trendLineSVG(trendLabs,trendVals,trendStack,segColor,segName):'<div class="bars">'+trendHTML+'</div>')+'</div>'+
       '</div>'+
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
