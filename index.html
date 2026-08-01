@@ -123,7 +123,12 @@
   .memo .mdel:hover{color:var(--danger)}
   .dash-add{border:none;background:transparent;color:var(--primary);font-size:12px;cursor:pointer;font-weight:600;letter-spacing:0}
   .goal-item{margin-bottom:13px}.goal-item:last-child{margin-bottom:0}
-  .goal-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px}
+  .goal-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .goal-top .gt{flex:1}
+  .goal-item .sk-x{opacity:0;transition:opacity .12s}
+  .goal-item:hover .sk-x,.goal-item.arch .sk-x{opacity:1}
+  .goal-item.arch{opacity:.62}
+  .g-hit{color:#2e8b57;margin-right:4px;font-weight:700}
   .goal-top .gt{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
   .goal-top .gv{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
   .goal-bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden}
@@ -345,12 +350,15 @@
   .todo-cols .tcol{flex:1 1 0;min-width:0}
   .todo-cols .tcol.wide{flex:1.35 1 0}
   /* 每一列自己滚，页面就不会被最长的那一列拽着无限往下长 */
-  .todo-cols .dash-card{display:flex;flex-direction:column;max-height:calc(100vh - 132px)}
+  .todo-cols .dash-card{display:flex;flex-direction:column;height:calc(100vh - 132px);min-height:340px}
   .todo-cols .dash-card>.dash-h,.todo-cols .todo-controls{flex:none}
-  .todo-cols .scroller{overflow-y:auto;min-height:0;flex:1 1 auto;margin-right:-4px;padding-right:4px}
+  .todo-cols .scroller{overflow-y:auto;min-height:0;flex:1 1 auto;margin-right:-4px;padding-right:4px;
+    display:flex;flex-direction:column}
+  /* 空的时候把那句提示放到框正中，而不是孤零零吊在顶上 */
+  .todo-cols .scroller>.dash-empty,.todo-cols .scroller>.sk-empty,.todo-cols .scroller>.todo-empty{margin:auto 0}
   @media (max-width:1080px){
     .todo-cols{flex-direction:column}
-    .todo-cols .dash-card{max-height:none}
+    .todo-cols .dash-card{height:auto;max-height:none}
     .todo-cols .scroller{overflow:visible}}
   /* --- 技能计划 --- */
   .todo-cols .todo-controls{margin-bottom:12px}
@@ -366,6 +374,9 @@
   .sk-card.fold .sk-step,.sk-card.fold .sk-add{display:none}
   .sk-card:not(.fold) .sk-top{margin-bottom:7px}
   .sk-card:not(.fold) .sk-mini{display:none}
+  .sk-review{color:var(--muted);opacity:.8;margin-left:8px}
+  .sk-done{color:var(--muted);font-size:11px}
+  .sk-done b{color:var(--text)}
   .sk-arch-h{font-size:11.5px;color:var(--muted);cursor:pointer;padding:8px 2px 2px;user-select:none}
   .sk-arch-h:hover{color:var(--primary)}
   .sk-card.arch{opacity:.6}
@@ -1204,6 +1215,26 @@
   .sc .v{font-size:25px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
   .sc .v small{font-size:13px;font-weight:500;color:var(--muted)}
   .panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 18px}
+  /* 分布和趋势并排，一屏看完；窄了再堆起来 */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:1080px){.stat-grid{grid-template-columns:1fr}}
+  .panel h3 .seg.mini{float:right;padding:2px;margin-top:-3px}
+  .seg.mini button{font-size:11.5px;padding:3px 9px;border-radius:6px;font-weight:500}
+  /* 横条排行 */
+  .rank{display:flex;flex-direction:column;gap:7px;padding:4px 0 2px}
+  .rk{display:flex;align-items:center;gap:9px;font-size:12.5px}
+  .rk .rn{flex:0 0 82px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text);font-weight:550}
+  .rk .rb{flex:1;height:9px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:0}
+  .rk .rb i{display:block;height:100%;border-radius:99px}
+  .rk .rv{flex:0 0 92px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums;font-size:12px}
+  .rk .rv em{font-style:normal;color:var(--muted);margin-left:6px;font-size:11px}
+  /* 折线 */
+  .tl-svg{width:100%;height:170px;display:block;overflow:visible}
+  .tl-area{fill:color-mix(in srgb,var(--primary) 14%,transparent);stroke:none}
+  .tl-line{fill:none;stroke:var(--primary);stroke-width:2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}
+  .tl-dot circle{fill:var(--primary)}
+  .tl-x{fill:var(--muted);font-size:9px;text-anchor:middle}
+  .tl-top{fill:var(--text);font-size:10px;font-weight:640;text-anchor:middle}
   .panel h3{margin:0 0 14px;font-size:14px;font-weight:640}
   .dist{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
   .donut{width:150px;height:150px;border-radius:50%;flex:none;position:relative}
@@ -4089,12 +4120,14 @@ margin-left: -22px;
           '<button class="sk-fold" data-fold="'+sk.id+'" title="'+(open?"收起":"展开")+'">'+(open?"▼":"▶")+'</button>'+
           '<i class="sk-dot"></i>'+
           '<span class="sk-name" data-skren="'+sk.id+'" title="点一下改名">'+esc(sk.name)+'</span>'+
-          '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+'</span>'+
+          '<span class="sk-mini">'+s.done+'/'+s.total+' · '+hrs(s.act)+(sk.arch&&skDays(sk)?" · "+skDays(sk)+"天":"")+'</span>'+
           '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
-        '<div class="sk-meta">'+s.done+'/'+s.total+' 步 · 预计 <b>'+hrs(s.est)+'</b> · 实际 <b>'+hrs(s.act)+'</b>'+diff+'</div>'+
+        '<div class="sk-meta">'+s.done+'/'+s.total+' 步 · 预计 <b>'+hrs(s.est)+'</b> · 实际 <b>'+hrs(s.act)+'</b>'+diff+
+          (sk.arch?('<br><span class="sk-done">✓ '+new Date(sk.archAt||Date.now()).toLocaleDateString()+' 归档'+
+            (skDays(sk)?(' · 从开工到学会 <b>'+skDays(sk)+'</b> 天，净投入 <b>'+hrs(s.act)+'</b>'):"")+'</span>'):"")+'</div>'+
         '<div class="sk-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
         steps+
         '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
@@ -4108,10 +4141,38 @@ margin-left: -22px;
     html+=live.map(skCardHTML).join("");
     if(!live.length)html+='<div class="sk-empty">在进行的都归档完了。</div>';
     if(arch.length){
-      html+='<div class="sk-arch-h" data-archtog="1">'+(skArchOpen?"▾":"▸")+' 已归档 '+arch.length+'</div>';
+      html+='<div class="sk-arch-h" data-archtog="1">'+(skArchOpen?"▾":"▸")+' 已归档 '+arch.length+archReview(arch)+'</div>';
       if(skArchOpen)html+=arch.map(skCardHTML).join("");}
     w.innerHTML=html;
   }
+  // 这个技能最早的一条记录是什么时候（老数据没有 created 时用它兜底）
+  function skFirstTs(sk){
+    var ids={};(sk.steps||[]).forEach(function(s){ids[s.id]=1;});
+    var best=null;
+    events.forEach(function(e){if(!ids[e.stepId])return;
+      var t=parse(e.date).getTime();if(best===null||t<best)best=t;});
+    return best;}
+  function skDays(sk){
+    var from=sk.created||skFirstTs(sk),to=sk.archAt;
+    if(!from||!to)return 0;
+    return Math.max(1,Math.round((to-from)/86400000));}
+  function skAccu(sk){                       // 实际 / 预计 - 1：正数＝比预想的花得多
+    var s=skillSum(sk);
+    if(!s.est||!s.act)return null;
+    return s.act/s.est-1;}
+  function archReview(list){                 // 归档那一栏顶上的小结
+    var days=[],accs=[],act=0;
+    list.forEach(function(sk){
+      var d=skDays(sk);if(d)days.push(d);
+      var A=skAccu(sk);if(A!==null)accs.push(A);
+      act+=skillSum(sk).act;});
+    var out=[];
+    if(days.length)out.push("平均 "+Math.round(days.reduce(function(x,y){return x+y;},0)/days.length)+" 天学会");
+    if(act)out.push("共投入 "+hrs(act));
+    if(accs.length){
+      var m=accs.reduce(function(x,y){return x+y;},0)/accs.length;
+      out.push(Math.abs(m)<0.08?"估时挺准":("预计普遍偏"+(m>0?"低":"高")+" "+Math.round(Math.abs(m)*100)+"%"));}
+    return out.length?('<span class="sk-review">'+esc(out.join(" · "))+'</span>'):"";}
   function skillOf(id){for(var i=0;i<skills.length;i++)if(skills[i].id===id)return skills[i];return null;}
   function stepOf(id){for(var i=0;i<skills.length;i++){var ss=skills[i].steps||[];
     for(var j=0;j<ss.length;j++)if(ss[j].id===id)return {sk:skills[i],st:ss[j]};}return null;}
@@ -4154,7 +4215,11 @@ margin-left: -22px;
     var at=e.target.closest("[data-archtog]");
     if(at){skArchOpen=!skArchOpen;save("tt_skarch",skArchOpen);renderSkills();return;}
     var ar=e.target.closest("[data-skarch]");
-    if(ar){var sk6=skillOf(ar.getAttribute("data-skarch"));if(sk6){sk6.arch=!sk6.arch;saveSkills();renderSkills();}return;}
+    if(ar){var sk6=skillOf(ar.getAttribute("data-skarch"));if(sk6){
+      sk6.arch=!sk6.arch;
+      if(sk6.arch){sk6.archAt=Date.now();if(!sk6.created)sk6.created=skFirstTs(sk6)||Date.now();}
+      else sk6.archAt=null;
+      saveSkills();renderSkills();}return;}
     var skr=e.target.closest("[data-skren]");
     if(skr){var sk3=skillOf(skr.getAttribute("data-skren"));if(!sk3)return;
       var v3=await ttPrompt("改成：",sk3.name);if(v3===null)return;v3=v3.trim();if(v3){sk3.name=v3;saveSkills();renderSkills();}return;}
@@ -4570,11 +4635,20 @@ margin-left: -22px;
     if(g.type==="time")return{cur:mins,target:g.target*60,mins:mins,cnt:cnt,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};
     return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+(g.unit||"次")};
   }
+  var goalArchOpen=load("tt_goalarch",false);
+  function goalExpired(g){                 // 只有"自定义区间"才有过期这回事
+    if(g.period!=="custom"||!g.to)return false;
+    return parse(g.to)<new Date(new Date().toDateString());}
+  function autoArchGoals(){                // 区间结束的一次性目标自动收起来，省得越堆越多
+    var n=0;goals.forEach(function(g){if(!g.arch&&goalExpired(g)){g.arch=true;g.archAt=Date.now();n++;}});
+    if(n)save("tt_goals",goals);}
   function goalHosts(){return [goalList,document.getElementById("goal-list2")].filter(Boolean);}
   function renderGoals(){
+    autoArchGoals();
+    var live=goals.filter(function(g){return !g.arch;}),gone=goals.filter(function(g){return g.arch;});
     var html;
     if(!goals.length)html='<div class="dash-empty">还没有目标，点右上「+ 新目标」</div>';
-    else html=goals.map(function(g){
+    else html=live.map(function(g){
       var pr=goalProgress(g),pct=pr.target>0?Math.min(100,pr.cur/pr.target*100):0,gc=g.cat?catColor(g.cat):"var(--primary)";
       var subtxt=periodName(g.period)+(g.cat?" · "+catName(g.cat):"")+(g.sub?" › "+subName(g.cat,g.sub):"");
       var plus=g.type==="count"?'<button class="goal-plus" data-plus="'+g.id+'">打卡 +1</button>':'';
@@ -4582,13 +4656,36 @@ margin-left: -22px;
       var mid=pr.track
         ?'<div class="goal-track">📈 累计投入 <b>'+(Math.round(pr.mins/6)/10)+'h</b> · <b>'+pr.cnt+'</b> 条记录</div>'
         :'<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>';
-      return '<div class="goal-item'+(pr.track?" track":"")+'" data-gedit="'+g.id+'" style="--gc:'+gc+';cursor:pointer" title="点开查看详情/编辑/删除"><div class="goal-top"><span class="gt">'+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span></div>'+
+      var hit=(!pr.track&&pr.target>0&&pr.cur>=pr.target);
+      return '<div class="goal-item'+(pr.track?" track":"")+(g.arch?" arch":"")+'" style="--gc:'+gc+'">'+
+        '<div class="goal-top"><span class="gt" data-gedit="'+g.id+'" title="点开查看详情/编辑">'+(hit?'<b class="g-hit">✓</b>':"")+esc(g.title)+'</span><span class="gv">'+pr.disp+'</span>'+
+        '<button class="sk-x" data-garch="'+g.id+'" title="'+(g.arch?"取消归档":"归档：收起来但不删")+'">'+(g.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
+        '<button class="sk-x" data-gdel2="'+g.id+'" title="删掉这个目标">✕</button></div>'+
         mid+
         '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+(pr.track?" · 只记录":"")+'</span>'+plus+'</div></div>';
     }).join("");
+    if(goals.length&&!live.length)html='<div class="dash-empty">在跑的目标都归档完了。</div>';
+    if(gone.length){
+      html+='<div class="sk-arch-h" data-goarchtog="1">'+(goalArchOpen?"▾":"▸")+' 已归档 '+gone.length+'</div>';
+      if(goalArchOpen)html+=gone.map(function(g){
+        var pr2=goalProgress(g);
+        return '<div class="goal-item arch" style="--gc:'+(g.cat?catColor(g.cat):"var(--primary)")+'">'+
+          '<div class="goal-top"><span class="gt" data-gedit="'+g.id+'">'+esc(g.title)+'</span><span class="gv">'+pr2.disp+'</span>'+
+          '<button class="sk-x" data-garch="'+g.id+'" title="取消归档">'+SVG_UNARCH+'</button>'+
+          '<button class="sk-x" data-gdel2="'+g.id+'" title="删掉这个目标">✕</button></div></div>';}).join("");}
     goalHosts().forEach(function(h){h.innerHTML=html;});
   }
-  function goalHostClick(e){
+  async function goalHostClick(e){
+    var gt=e.target.closest("[data-goarchtog]");
+    if(gt){goalArchOpen=!goalArchOpen;save("tt_goalarch",goalArchOpen);renderGoals();return;}
+    var ga=e.target.closest("[data-garch]");
+    if(ga){var g1=goals.filter(function(x){return x.id===ga.getAttribute("data-garch");})[0];
+      if(g1){g1.arch=!g1.arch;g1.archAt=g1.arch?Date.now():null;save("tt_goals",goals);renderGoals();}return;}
+    var gd=e.target.closest("[data-gdel2]");
+    if(gd){var g2=goals.filter(function(x){return x.id===gd.getAttribute("data-gdel2");})[0];
+      if(!g2)return;
+      if(!await ttConfirm("删掉目标「"+g2.title+"」？（日历里的记录不受影响）",{danger:true,anchor:gd}))return;
+      goals=goals.filter(function(x){return x.id!==g2.id;});save("tt_goals",goals);renderGoals();return;}
     var pl=e.target.closest("[data-plus]");
     if(pl){var g=goals.filter(function(x){return x.id===pl.getAttribute("data-plus");})[0];if(g){
       if(!window.confirm("确认给「"+g.title+"」打卡一次？"))return;
@@ -5303,6 +5400,10 @@ margin-left: -22px;
     function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.top="-999px";document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand("copy");ok();}catch(e){}document.body.removeChild(ta);}}
 
   var statState={mode:"week",cursor:new Date(),from:"",to:"",cat:"__all",sub:"__all"};
+  var statView=load("tt_statview",null)||{};
+  statState.dist=statView.dist||"donut";     // donut | rank
+  statState.trend=statView.trend||"bar";     // bar | line
+  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend});}
   var SUBPAL=["#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#ec8b76","#9aa1b0"];
   function statPeriod(){var m=statState.mode,c=statState.cursor;
     if(m==="day"){var s=new Date(c.getFullYear(),c.getMonth(),c.getDate());return{start:s,end:s,label:fmt(s)+" 周"+WD[(s.getDay()+6)%7],unit:"day"};}
@@ -5442,6 +5543,33 @@ margin-left: -22px;
     return '<div class="dn-wrap"><svg class="dn-svg" viewBox="0 0 '+W+' '+H+'">'+arcs+lead+
       '<text x="'+cx+'" y="'+(lab?(cy-2):(cy+10))+'" class="dn-tot">'+totH+'h</text>'+
       (lab?('<text x="'+cx+'" y="'+(cy+17)+'" class="dn-totlab">'+esc(lab)+'</text>'):"")+'</svg></div>';}
+  // 分类一多，扇形就切成一堆看不清的小块；横条排行按时长排，一行一个，矮且好比
+  function rankHTML(segs,totalMin,nameOf){
+    if(!segs.length)return '<div class="stat-empty">这个范围还没有安排事件</div>';
+    var mx=segs[0].m||1;
+    return '<div class="rank">'+segs.map(function(s){
+      return '<div class="rk"><span class="rn" title="'+esc(nameOf(s.k))+'">'+esc(nameOf(s.k))+'</span>'+
+        '<span class="rb"><i style="width:'+Math.max(1.5,s.m/mx*100).toFixed(1)+'%;background:'+s.col+'"></i></span>'+
+        '<span class="rv">'+fmtDur(s.m)+'<em>'+(s.pct<0.5?"<1":Math.round(s.pct))+'%</em></span></div>';}).join("")+'</div>';}
+  // 折线：和柱状同一份数据，只是更容易看出走势
+  function trendLineSVG(labels,vals){
+    var W=640,H=170,padL=6,padR=6,padT=16,padB=22;
+    var mx=Math.max.apply(null,vals.concat([1]));
+    var n=vals.length,iw=(W-padL-padR),gy=H-padB;
+    var x=function(i){return n<2?(W/2):(padL+iw*i/(n-1));};
+    var y=function(v){return padT+(gy-padT)*(1-v/mx);};
+    var pts=vals.map(function(v,i){return x(i).toFixed(1)+","+y(v).toFixed(1);}).join(" ");
+    var area="M"+x(0).toFixed(1)+","+gy+" L"+pts.split(" ").join(" L")+" L"+x(n-1).toFixed(1)+","+gy+"Z";
+    var dots=vals.map(function(v,i){return '<circle cx="'+x(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="2.6"/>';}).join("");
+    var top=vals.indexOf(mx);
+    var labs=labels.map(function(l,i){
+      if(n>14&&i%Math.ceil(n/8)!==0&&i!==n-1)return "";
+      return '<text x="'+x(i).toFixed(1)+'" y="'+(H-6)+'" class="tl-x">'+esc(l)+'</text>';}).join("");
+    return '<svg class="tl-svg" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+      '<path class="tl-area" d="'+area+'"/><polyline class="tl-line" points="'+pts+'"/>'+
+      '<g class="tl-dot">'+dots+'</g>'+
+      (mx>0?('<text x="'+x(top).toFixed(1)+'" y="'+Math.max(11,y(mx)-6).toFixed(1)+'" class="tl-top">'+fmtDur(mx)+'</text>'):"")+
+      labs+'</svg>';}
   function renderStatsView(){
     var wrap=document.getElementById("stats-wrap");
     var p=statPeriod(),evs=statEvents(p);
@@ -5465,12 +5593,14 @@ margin-left: -22px;
     var acc=0,stops=[];segs.forEach(function(s,i){s.pct=totalMin?s.m/totalMin*100:0;s.col=segColor(s.k,i);s.start=acc;stops.push(s.col+" "+acc.toFixed(2)+"% "+(acc+s.pct).toFixed(2)+"%");acc+=s.pct;});
     var donutBg=totalMin?"conic-gradient("+stops.join(",")+")":"var(--surface-2)";
     var legend=segs.length?segs.map(function(s){return '<div class="dl" data-k="'+s.k+'"><i style="background:'+s.col+'"></i><span class="nm">'+esc(segName(s.k))+'</span><span class="vv">'+fmtDur(s.m)+' · '+Math.round(s.pct)+'%</span></div>';}).join(""):'<div class="stat-empty">这个范围还没有安排事件</div>';
-    var buckets=statBuckets(p),trendHTML,trendTitle;
+    var buckets=statBuckets(p),trendHTML,trendTitle,trendVals=null,trendLabs=null;
     if(buckets){var vals=buckets.map(function(b){return bucketMin(b,evs);}),mx=Math.max.apply(null,vals.concat([1]));
+      trendVals=vals;trendLabs=buckets.map(function(b){return b.label;});
       trendHTML=buckets.map(function(b,i){var m=vals[i],h=m?Math.max(3,Math.round(m/mx*110)):0;return '<div class="bar"><div class="amt">'+(m?fmtDur(m):"")+'</div><div class="col2" style="height:'+h+'px"></div><div class="lb">'+b.label+'</div></div>';}).join("");
       trendTitle="趋势（按"+(p.unit==="year"?"月":(p.unit==="custom"&&buckets[0]&&buckets[0].ym?"月":"天"))+"）";
     }else{var byc={};evs.forEach(function(e){evMix(e).forEach(function(x){if(x.min)byc[x.cat]=(byc[x.cat]||0)+x.min;});});
       var keys=Object.keys(byc).sort(function(a,b){return byc[b]-byc[a];}),mx2=Math.max.apply(null,keys.map(function(k){return byc[k];}).concat([1]));
+      trendVals=keys.map(function(k){return byc[k];});trendLabs=keys.map(function(k){return catName(k);});
       trendHTML=keys.length?keys.map(function(k){var m=byc[k],h=Math.max(3,Math.round(m/mx2*110));return '<div class="bar"><div class="amt">'+fmtDur(m)+'</div><div class="col2" style="height:'+h+'px;background:'+catColor(k)+'"></div><div class="lb">'+esc(catName(k))+'</div></div>';}).join(""):'<div class="stat-empty">这天没有事件</div>';
       trendTitle="各大类时长（当天）";}
     var modes=[["day","日"],["week","周"],["month","月"],["year","年"],["custom","自定义"]];
@@ -5499,12 +5629,21 @@ margin-left: -22px;
           '<div class="sc-sub">按 '+days+' 天有记录</div></div>'+
         '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
       '</div>'+
-      '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）</h3>'+
-        donutSVG(segs,totalMin,totH,groupByCat?"":catName(statState.cat),segName)+'</div>'+
-      '<div class="panel"><h3>'+trendTitle+'</h3><div class="bars">'+trendHTML+'</div></div>'+
+      '<div class="stat-grid">'+
+        '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）'+
+          '<span class="seg mini" id="stat-dist"><button data-d="donut"'+(statState.dist==="donut"?' class="on"':'')+'>环形</button><button data-d="rank"'+(statState.dist==="rank"?' class="on"':'')+'>排行</button></span></h3>'+
+          (statState.dist==="rank"?rankHTML(segs,totalMin,segName):donutSVG(segs,totalMin,totH,groupByCat?"":catName(statState.cat),segName))+'</div>'+
+        '<div class="panel"><h3>'+trendTitle+
+          '<span class="seg mini" id="stat-trend"><button data-t="bar"'+(statState.trend==="bar"?' class="on"':'')+'>柱状</button><button data-t="line"'+(statState.trend==="line"?' class="on"':'')+'>折线</button></span></h3>'+
+          (statState.trend==="line"&&trendVals?trendLineSVG(trendLabs,trendVals):'<div class="bars">'+trendHTML+'</div>')+'</div>'+
+      '</div>'+
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
         '</div><div id="exp-report"></div></div>';
+    var dsw=wrap.querySelector("#stat-dist");
+    if(dsw)dsw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.dist=b.getAttribute("data-d");saveStatView();renderStatsView();});
+    var tsw=wrap.querySelector("#stat-trend");
+    if(tsw)tsw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.trend=b.getAttribute("data-t");saveStatView();renderStatsView();});
     wrap.querySelector("#stat-mode").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.mode=b.getAttribute("data-m");renderStatsView();});
     var pv=wrap.querySelector("#stat-prev"),nx=wrap.querySelector("#stat-next");
     if(pv)pv.addEventListener("click",function(){statShift(-1);renderStatsView();});
