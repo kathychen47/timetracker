@@ -5071,6 +5071,18 @@ margin-left: -22px;
   }
   function evTitlePH(){                              // 占位符现算：让你一眼看到"不填的话它会叫什么"
     if(fTitle)fTitle.placeholder="不填就叫「"+catLabelOf(selCat,selSub)+"」";}
+  // 标题是不是"跟着分类自动凑出来的"（番茄钟记的、或者你留空自动补的）。
+  // 是 → 改分类时让它一起改回去；不是（你自己打的字）→ 一个字都不动。
+  function evTitleAuto(){
+    var v=(fTitle.value||"").trim();
+    if(!v)return true;                                  // 空的：本来就靠占位符现算
+    if(v===catLabelOf(selCat,selSub))return true;
+    var cn=catName(selCat)||"",sn=selSub?subName(selCat,selSub):"";
+    return (!!cn&&v===cn)||(!!sn&&v===sn);}             // 老记录里只写了大类名或小类名的也认
+  function evTitleFix(auto){
+    if(auto&&fTitle.value.trim())fTitle.value=catLabelOf(selCat,selSub);
+    evTitlePH();}
+  function evTitleSync(fn){var auto=evTitleAuto();fn();evTitleFix(auto);}   // 先看，再改，再跟上
   function setParent(k,manual){selCat=k;selSub=null;if(manual)catManual=true;renderParents();renderSubs();}
   var addPanel=document.getElementById("cat-add"),addTitle=document.getElementById("cat-add-title"),
     catNameI=document.getElementById("cat-name"),colorsWrap=document.getElementById("cat-colors-wrap"),
@@ -5097,29 +5109,35 @@ margin-left: -22px;
       if(cats.length<=1){ttAlert("至少保留一个大类");return;}
       var cobj=parentObj(k);
       if(!await ttConfirm("删除大类「"+(cobj?cobj.name:"")+"」？用了它的事件不会被删除，只会显示为默认颜色。",{danger:true,anchor:dp}))return;
+      var au1=evTitleAuto();
       cats=cats.filter(function(c){return c.key!==k;});save("tt_cats",cats);
-      if(selCat===k){selCat=cats[0].key;selSub=null;}renderParents();renderSubs();renderManage();afterCatEdit();}
+      if(selCat===k){selCat=cats[0].key;selSub=null;}renderParents();renderSubs();renderManage();evTitleFix(au1);afterCatEdit();}
     else if(ds){var sk=ds.getAttribute("data-dels");var p=parentObj(selCat);var sobj=null;
       if(p)(p.subs||[]).forEach(function(x){if(x.key===sk)sobj=x;});
       if(!await ttConfirm("删除小类「"+(sobj?sobj.name:"")+"」？",{danger:true,anchor:ds}))return;
+      var au2=evTitleAuto();
       if(p){p.subs=(p.subs||[]).filter(function(x){return x.key!==sk;});save("tt_cats",cats);}
-      if(selSub===sk)selSub=null;renderSubs();renderManage();afterCatEdit();}
+      if(selSub===sk)selSub=null;renderSubs();renderManage();evTitleFix(au2);afterCatEdit();}
   });
   document.getElementById("cat-add-cancel").addEventListener("click",closeAddPanel);
   document.getElementById("cat-add-save").addEventListener("click",function(){
     var nm=catNameI.value.trim();if(!nm)return;
+    evTitleSync(function(){
     if(addMode==="parent"){var key="c"+uid();cats.push({key:key,name:nm,color:selAddColor,kw:[nm],subs:[]});save("tt_cats",cats);selCat=key;selSub=null;catManual=true;renderParents();renderSubs();}
     else{var p=parentObj(selCat);if(p){p.subs=p.subs||[];var sk="s"+uid();p.subs.push({key:sk,name:nm,kw:[nm]});save("tt_cats",cats);selSub=sk;catManual=true;renderSubs();}}
+    });
     closeAddPanel();afterCatEdit();
   });
   // 在事件弹窗里改了分类，设置页的列表和番茄钟/目标的下拉也要跟着更新
   function afterCatEdit(){try{renderCatSettings();}catch(e){}try{refreshCatSelects();}catch(e){}}
   catsBox.addEventListener("click",function(e){
     if(e.target.closest('[data-add="parent"]')){openAddPanel("parent");return;}
-    var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-cat")){editSegs=null;renderEvSegs();setParent(ch.getAttribute("data-cat"),true);}});
+    var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-cat")){editSegs=null;renderEvSegs();
+      evTitleSync(function(){setParent(ch.getAttribute("data-cat"),true);});}});
   subsBox.addEventListener("click",function(e){
     if(e.target.closest('[data-add="sub"]')){openAddPanel("sub");return;}
-    var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-sub")){var sk=ch.getAttribute("data-sub");selSub=(selSub===sk?null:sk);catManual=true;editSegs=null;renderEvSegs();renderSubs();}});
+    var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-sub")){var sk=ch.getAttribute("data-sub");editSegs=null;renderEvSegs();
+      evTitleSync(function(){selSub=(selSub===sk?null:sk);catManual=true;renderSubs();});}});
   fTitle.addEventListener("input",function(){if(!catManual){var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();}});
 
   // 连过一次 Google 就一直把这一行显示出来 —— token 只活 1 小时，
