@@ -1334,6 +1334,22 @@
   .nb-doc-title{flex:1;min-width:180px;font-size:18px;font-weight:650;padding:7px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text)}
   .nb-doc-title:focus{border-color:var(--border);background:var(--bg);outline:none}
   .nb-doc-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
+  .nb-cols{display:flex;gap:16px;align-items:flex-start}
+  .nb-side{flex:0 0 176px;position:sticky;top:8px}
+  .nb-main{flex:1;min-width:0}
+  .nb-fd{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:9px;cursor:pointer;
+    font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden}
+  .nb-fd:hover{background:var(--surface-2)}
+  .nb-fd.on{background:var(--primary-soft);color:var(--primary);font-weight:640}
+  .nb-fd .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+  .nb-fd .ct{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+  .nb-fd.on .ct{color:var(--primary)}
+  .nb-fd svg{width:14px;height:14px;flex:none;opacity:.75}
+  .nb-sec{font-size:10.5px;color:var(--muted);letter-spacing:.5px;margin:12px 0 4px 9px;text-transform:uppercase}
+  .nb-fd .ren{opacity:0;border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:11px;padding:0 2px;flex:none}
+  .nb-fd:hover .ren{opacity:1}
+  @media (max-width:900px){.nb-cols{flex-direction:column}.nb-side{flex:none;width:100%;position:static;
+    display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}.nb-sec{display:none}}
   .nb-doc-tags{display:flex;flex-wrap:wrap;gap:5px}
   .nb-doc-body{flex:1;min-height:340px;width:100%;box-sizing:border-box;padding:14px 16px;border:1px solid var(--border);border-radius:12px;
     background:var(--bg);color:var(--text);font-size:15px;line-height:1.85;resize:vertical;font-family:var(--font)}
@@ -2963,9 +2979,9 @@ margin-left: -22px;
             <div class="dash-h" data-foldc="due">临近截止</div>
             <div id="due-list"></div>
           </div>
-          <div class="dash-card">
-            <div class="dash-h" data-foldc="goal">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
-            <div id="goal-list"></div>
+          <div class="dash-card" id="skmini-card">
+            <div class="dash-h" data-foldc="skmini">技能进度 <button class="dash-add" id="skmini-go" type="button">去计划页 →</button></div>
+            <div id="skill-mini"></div>
           </div>
 
         </aside>
@@ -3028,9 +3044,9 @@ margin-left: -22px;
               <div class="s"><div class="k">今日时长</div><div class="v" id="stat-min">0<small> 分</small></div></div>
             </div>
           </div></div>
-          <div class="dash-card" id="skmini-card">
-            <div class="dash-h" data-foldc="skmini">技能进度 <button class="dash-add" id="skmini-go" type="button">去计划页 →</button></div>
-            <div id="skill-mini"></div>
+          <div class="dash-card">
+            <div class="dash-h" data-foldc="goal">目标进度 <button class="dash-add" id="goal-add-btn">+ 新目标</button></div>
+            <div id="goal-list"></div>
           </div>
         </aside>
       </div>
@@ -3149,8 +3165,13 @@ margin-left: -22px;
           <button class="btn" id="nb-md" title="把当前筛选的笔记导成 Markdown">⬇️ MD</button>
           <button class="btn" id="nb-csv" title="导成 CSV，可用 Excel 打开">⬇️ CSV</button>
         </div>
-        <div class="nb-filters rn-filters" id="nb-filters"></div>
-        <div class="nb-body" id="nb-body"></div>
+        <div class="nb-cols">
+          <aside class="nb-side" id="nb-side"></aside>
+          <div class="nb-main">
+            <div class="nb-filters rn-filters" id="nb-filters"></div>
+            <div class="nb-body" id="nb-body"></div>
+          </div>
+        </div>
     </section>
     <section class="view" id="view-body">
       <div class="page-h">身体数据 <span class="rd-sub">体重 / 围度 / 体脂 · 看变化曲线</span></div>
@@ -6057,7 +6078,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_nbfolders"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -8497,6 +8518,17 @@ margin-left: -22px;
     notes=notes.filter(function(r){return r.id!==row.id;});saveNotes();}
   // ---- 视图 ----
   var nbQ="",nbGroup=load("tt_nbgroup","time"),nbF=load("tt_nbfilter","all");
+  // 本子：一条笔记只属于一个（标签才是可以打好几个的那种）
+  var nbFolders=load("tt_nbfolders",[])||[],nbFd=load("tt_nbfd","all");
+  var IC_ALL="<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 6h16M4 12h16M4 18h10\"></path></svg>",IC_FD="<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"></path></svg>",IC_BK="<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z\"></path></svg>";
+  function saveFolders(){save("tt_nbfolders",nbFolders);}
+  function nbFolderName(id){for(var i=0;i<nbFolders.length;i++)if(nbFolders[i].id===id)return nbFolders[i].name;return "";}
+  // 书里划的笔记天然按书分，不用你手动归档；bk: 开头的就是这一类
+  function nbFdMatch(r){
+    if(nbFd==="all")return true;
+    if(nbFd==="none")return !r.folder&&!r.bid;
+    if(nbFd.indexOf("bk:")===0)return r.bid===nbFd.slice(3);
+    return r.folder===nbFd;}
   var nbSel=null;                                  // null = 没在勾选；否则是 {id:true} 这样一份勾选表
   function nbSelCount(){var n=0;if(nbSel)Object.keys(nbSel).forEach(function(k){if(nbSel[k])n++;});return n;}
   function nbSelBarHTML(){
@@ -8506,12 +8538,27 @@ margin-left: -22px;
       '<button class="btn" type="button" data-selall="1">全选（当前筛选下的）</button>'+
       '<button class="btn" type="button" data-selnone="1">全不选</button>'+
       '<span class="grow"></span>'+
+      '<button class="btn" type="button" data-selmove="1"'+(n?"":" disabled")+'>移到本子…</button>'+
       '<button class="btn del" type="button" data-seldel="1"'+(n?"":" disabled")+'>🗑 删除所选</button>'+
       '<button class="btn" type="button" data-seloff="1">退出选择</button></div>';}
   function nbPickToggle(on){
     nbSel=(on===undefined?(nbSel?null:{}):(on?{}:null));
     var b=document.getElementById("nb-pick");if(b)b.classList.toggle("on",!!nbSel);
     renderNotebook();}
+  // 移到某个本子：直接打名字，没有就新建 —— 比再做一个下拉省事
+  async function nbMoveSelected(anchor){
+    var ids=Object.keys(nbSel||{}).filter(function(k){return nbSel[k];});
+    if(!ids.length)return;
+    var v=await ttPrompt("移到哪个本子？打名字即可，没有会新建。\n留空＝移出本子（变成未归类）",
+      (nbFd&&nbFd!=="all"&&nbFd!=="none"&&nbFd.indexOf("bk:")!==0)?nbFolderName(nbFd):"",{anchor:anchor});
+    if(v===null)return;v=v.trim();
+    var fid="";
+    if(v){
+      var hit=nbFolders.filter(function(f){return f.name===v;})[0];
+      if(hit)fid=hit.id;else{fid="f"+uid();nbFolders.push({id:fid,name:v.slice(0,20)});saveFolders();}}
+    var pick={};ids.forEach(function(i){pick[i]=1;});
+    notes.forEach(function(r){if(pick[r.id])r.folder=fid;});
+    save("tt_notes",notes);nbSel={};renderNotebook();}
   async function nbDelSelected(anchor){
     var ids=Object.keys(nbSel||{}).filter(function(k){return nbSel[k];});
     if(!ids.length)return;
@@ -8521,6 +8568,7 @@ margin-left: -22px;
     nbSel={};renderNotebook();}
   function nbMatch(r){
     var q=nbQ.trim().toLowerCase();
+    if(!nbFdMatch(r))return false;
     if(nbF==="doc"&&r.t!=="doc")return false;
     if(nbF==="frombook"&&!r.bid)return false;
     if(nbF.indexOf("dc:")===0&&!(r.t==="doc"&&r.cat===nbF.slice(3)))return false;
@@ -8546,6 +8594,51 @@ margin-left: -22px;
     if(ts>=t0-6*day)return "最近 7 天";
     if(ts>=new Date(now.getFullYear(),now.getMonth(),1).getTime())return "本月";
     return new Date(ts).getFullYear()+" 年 "+(new Date(ts).getMonth()+1)+" 月";}
+  // 左侧栏：全部 / 未归类 / 自建的本子 / 书里划的（按书自动成格）
+  function nbSide(){
+    var box=document.getElementById("nb-side");if(!box)return;
+    var cnt={all:0,none:0},bybk={},bkname={};
+    notes.forEach(function(r){
+      cnt.all++;
+      if(r.bid){bybk[r.bid]=(bybk[r.bid]||0)+1;bkname[r.bid]=r.bname||"未命名的书";}
+      else if(r.folder)cnt[r.folder]=(cnt[r.folder]||0)+1;
+      else cnt.none++;});
+    function row(key,icon,name,n,ren){
+      return '<div class="nb-fd'+(nbFd===key?" on":"")+'" data-fd="'+esc(key)+'">'+icon+
+        '<span class="nm">'+esc(name)+'</span>'+
+        (ren?('<button class="ren" data-fdren="'+esc(ren)+'" title="改名 / 删除">⋯</button>'):"")+
+        '<span class="ct">'+(n||0)+'</span></div>';}
+    var html=row("all",IC_ALL,"全部",cnt.all)+row("none",IC_FD,"未归类",cnt.none);
+    if(nbFolders.length){
+      html+='<div class="nb-sec">我的本子</div>';
+      nbFolders.forEach(function(f){html+=row(f.id,IC_FD,f.name,cnt[f.id]||0,f.id);});}
+    var bks=Object.keys(bybk);
+    if(bks.length){
+      html+='<div class="nb-sec">书里划的</div>';
+      bks.sort(function(x,y){return bybk[y]-bybk[x];}).forEach(function(b){
+        html+=row("bk:"+b,IC_BK,bkname[b],bybk[b]);});}
+    html+='<div class="nb-fd" data-fdnew="1" style="color:var(--primary);margin-top:6px">＋ 新本子</div>';
+    box.innerHTML=html;}
+  (function(){
+    var box=document.getElementById("nb-side");if(!box)return;
+    box.addEventListener("click",async function(e){
+      var rn=e.target.closest("[data-fdren]");
+      if(rn){
+        var id=rn.getAttribute("data-fdren"),cur=folderName(id);
+        var v=await ttPrompt("本子改名（留空＝删掉这个本子，里面的笔记会变成「未归类」，不会被删）：",cur,{anchor:rn});
+        if(v===null)return;v=v.trim();
+        if(!v){
+          nbFolders=nbFolders.filter(function(f){return f.id!==id;});
+          notes.forEach(function(r){if(r.folder===id)r.folder="";});
+          save("tt_notes",notes);if(nbFd===id){nbFd="all";save("tt_nbfd",nbFd);}
+        }else nbFolders.forEach(function(f){if(f.id===id)f.name=v.slice(0,20);});
+        saveFolders();renderNotebook();return;}
+      if(e.target.closest("[data-fdnew]")){
+        var n=await ttPrompt("新本子叫什么？（比如：方法论 / 灵感）","");
+        if(n===null)return;n=n.trim();if(!n)return;
+        nbFolders.push({id:"f"+uid(),name:n.slice(0,20)});saveFolders();renderNotebook();return;}
+      var fd=e.target.closest("[data-fd]");
+      if(fd){nbFd=fd.getAttribute("data-fd");save("tt_nbfd",nbFd);renderNotebook();}});})();
   function nbFilters(){
     var all=notes,cols=[],seen={},tags={},box=document.getElementById("nb-filters");
     if(!box)return;
@@ -8612,6 +8705,7 @@ margin-left: -22px;
       '<button data-nbedit="'+esc(r.id)+'" title="写/改笔记">✎</button>'+
       '<button data-nbdel="'+esc(r.id)+'" title="删除">✕</button></div></div>';}
   function renderNotebook(){
+    try{nbSide();}catch(e){}
     var body=document.getElementById("nb-body");if(!body)return;
     nbFlush=null;                               // 上一屏的输入框要作废，别再往它身上存
     var nbv=document.getElementById("view-notes");
@@ -8668,7 +8762,8 @@ margin-left: -22px;
   function nbDocRemember(){save("tt_nbdoc",nbDoc||"");}
   function nbDocNew(){
     var r={id:"d"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"doc",c:"",x:"",
-      title:"",note:"",cat:"",sub:"",tags:[],ts:Date.now(),upd:Date.now()};
+      title:"",note:"",cat:"",sub:"",tags:[],
+      folder:(nbFd&&nbFd!=="all"&&nbFd!=="none"&&nbFd.indexOf("bk:")!==0)?nbFd:"",ts:Date.now(),upd:Date.now()};
     notes.push(r);saveNotes();nbDoc=r.id;nbDocRemember();renderNotebook();}
   function nbDocOpen(id){nbSel=null;nbDoc=id;nbDocRemember();renderNotebook();}
   function nbDocClose(){nbSaveNow();nbDoc=null;nbDocRemember();renderNotebook();}
@@ -8911,7 +9006,8 @@ margin-left: -22px;
   async function nbNewNote(anchor){
     var v=await ttPrompt("随手记一条：","",{anchor:anchor});
     if(v===null||!v.trim())return;
-    notes.push({id:"n"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"nt",c:"",x:"",note:v.trim(),tags:[],ts:Date.now()});
+    notes.push({id:"n"+uid(),bid:"",bname:"",btype:"",sc:"",pg:0,t:"nt",c:"",x:"",note:v.trim(),tags:[],
+      folder:(nbFd&&nbFd!=="all"&&nbFd!=="none"&&nbFd.indexOf("bk:")!==0)?nbFd:"",ts:Date.now()});
     saveNotes();renderNotebook();}
   async function nbJump(id){
     var r=noteById(id);if(!r)return;
@@ -9991,6 +10087,8 @@ margin-left: -22px;
         if(sa){nbList().forEach(function(r){nbSel[r.id]=true;});renderNotebook();return;}
         if(sn){nbSel={};renderNotebook();return;}
         if(sd){nbDelSelected(sd);return;}
+        var sm=e.target.closest("[data-selmove]");
+        if(sm){nbMoveSelected(sm);return;}
         if(so){nbPickToggle(false);return;}
         var row=e.target.closest("[data-nbdoc],[data-nb]");
         if(row){e.preventDefault();
