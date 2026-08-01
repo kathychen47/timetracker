@@ -4308,15 +4308,40 @@ margin-left: -22px;
     if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return false;}
     return true;}
   function aiAsk(prompt){return (aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt);}
+  // 模型爱换字段名（t / title / step / name / task…），这里全认
+  function pick(o,keys){
+    for(var i=0;i<keys.length;i++){
+      var v=o&&o[keys[i]];
+      if(v!==undefined&&v!==null&&String(v).trim()!=="")return v;}
+    return "";}
+  // 步骤数组也可能藏在 steps / plan / tasks / items 里，或者整个就是个数组
+  function findSteps(o){
+    if(Array.isArray(o))return o;
+    var named=["steps","plan","tasks","items","stages","list","计划","步骤"];
+    for(var i=0;i<named.length;i++){var v=o&&o[named[i]];
+      if(Array.isArray(v))return v;
+      if(v&&typeof v==="object"){var deep=findSteps(v);if(deep.length)return deep;}}
+    // 实在找不到就退一步：拿第一个"由对象组成的数组"
+    for(var k in o){var w=o[k];
+      if(Array.isArray(w)&&w.length&&typeof w[0]==="object")return w;}
+    return [];}
   function parseSkillPlan(raw){
     var o=aiJSON(raw);
-    var steps=(o.steps||[]).map(function(x){
-      var n=String(x&&x.t||"").trim();if(!n)return null;
-      var est=Math.round(+((x&&x.est)||0));
+    var arr=findSteps(o);
+    var steps=arr.map(function(x){
+      // 数组里直接是字符串的情况也认
+      var n=(typeof x==="string")?x:String(pick(x,["t","title","step","name","task","step_name","内容","步骤","标题","名称"])||"");
+      if(!n&&x&&typeof x==="object"){                 // 键名完全没见过 → 拿第一个字符串值当名字
+        for(var kk in x){if(typeof x[kk]==="string"&&x[kk].trim()){n=x[kk];break;}}}
+      n=n.trim();if(!n)return null;
+      var raw2=(typeof x==="string")?0:pick(x,["est","estimate","minutes","min","est_min","duration","预计","时长"]);
+      var est=Math.round(parseFloat(raw2)||0);      // "90 分钟" 这种也能取到 90
       if(!isFinite(est)||est<0)est=0;
       return {id:uid(),t:n.slice(0,80),est:Math.min(600,est),act:0,done:false};}).filter(Boolean).slice(0,20);
     if(!steps.length)throw new Error("AI 没给出步骤");
-    return {name:String(o.name||"").trim().slice(0,40),note:String(o.note||"").trim().slice(0,300),steps:steps};}
+    return {name:String(pick(o,["name","title","skill","技能"])||"").trim().slice(0,40),
+      note:String(pick(o,["note","notes","备注","说明","stop","stopping"])||"").trim().slice(0,300),
+      steps:steps};}
   document.getElementById("sk-ai").addEventListener("click",async function(){
     var btn=this;
     if(aiProvider!=="ollama"&&!apiKey){ttAlert("先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）");return;}
@@ -4335,14 +4360,18 @@ margin-left: -22px;
       "  不要「打好基础」「深入理解」这类空话，每步给 30~240 分钟的预计。\n\n"+
       "两种情况都要：只输出 JSON，不要任何解释、不要代码围栏。\n\n"+
       ' 格式：{"name":"技能名","note":"备注，没有就留空","steps":[{"t":"步骤名","est":90}]}';
+    var txt="";
     try{
-      var txt=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
+      txt=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
       var plan=parseSkillPlan(txt);
       skills.push({id:uid(),name:plan.name||want.slice(0,40),note:plan.note||"",steps:plan.steps,created:Date.now()});
       saveSkills();renderSkills();
       try{renderSkillMini();}catch(e){}
     }catch(err){
-      ttAlert("拆解失败："+(err&&err.message||err)+"\n\n可以再试一次，或者点「+ 新技能」自己写。");
+      var head=String(txt||"").replace(/\s+/g," ").slice(0,140);
+      ttAlert("拆解失败："+(err&&err.message||err)+
+        (head?("\n\nAI 原话开头：\n"+head):"")+
+        "\n\n可以再试一次，或者点「+ 新技能」自己写。");
     }finally{btn.textContent=old;btn.disabled=false;}});
   document.getElementById("sk-add").addEventListener("click",async function(){
     var n=await ttPrompt("新技能叫什么？（比如：学 SQL）","");
