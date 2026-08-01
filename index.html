@@ -3203,6 +3203,7 @@ margin-left: -22px;
       <div id="rd-shelf">
         <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / Word / TXT 等，选中单词即可查词</span></div>
         <div class="rd-import">
+          <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
           <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
           <button class="btn" id="rd-newfolder">＋ 新建文件夹</button>
           <div class="seg" id="rd-view" style="margin-left:auto">
@@ -7701,11 +7702,12 @@ margin-left: -22px;
   var rdFolders=load("tt_rdfolders",[])||[],rdFolder=load("tt_rdfolder","")||"all",rdView=load("tt_rdview","grid");
   function saveFolders(){save("tt_rdfolders",rdFolders);}
   function bdbOpen(){return new Promise(function(res,rej){
-    var r=indexedDB.open("ttbooks",2);
+    var r=indexedDB.open("ttbooks",3);
     r.onupgradeneeded=function(){var db=r.result;
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});
       if(!db.objectStoreNames.contains("blob"))db.createObjectStore("blob",{keyPath:"id"});
-      if(!db.objectStoreNames.contains("trans"))db.createObjectStore("trans",{keyPath:"k"});};
+      if(!db.objectStoreNames.contains("trans"))db.createObjectStore("trans",{keyPath:"k"});
+      if(!db.objectStoreNames.contains("fs"))db.createObjectStore("fs",{keyPath:"k"});};   // 存本地文件夹的句柄
     r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};
     r.onblocked=function(){rej(new Error("书库正在别的标签页里升级，刷新一下再试"));};});}
   function ensureBDB(){return BDB?Promise.resolve(BDB):bdbOpen().then(function(d){BDB=d;return d;});}
@@ -7756,7 +7758,84 @@ margin-left: -22px;
     return null;}
   function fmtSize(b){return b>1048576?(b/1048576).toFixed(1)+" MB":Math.round(b/1024)+" KB";}
 
-  async function importBooks(files){
+  // ---------- 书的本地文件夹（只写不读，本地误删不影响书库）----------
+  var bookDirH=null;
+  function fsSupported(){return typeof window.showDirectoryPicker==="function";}
+  async function bookDirLoad(){
+    if(bookDirH)return bookDirH;
+    try{var rec=await bGet("fs","bookdir");if(rec&&rec.h)bookDirH=rec.h;}catch(e){}
+    return bookDirH;}
+  async function bookDirOK(ask){                 // 句柄存下来了，权限也得还在（浏览器重启后会退回 prompt）
+    var h=await bookDirLoad();if(!h)return null;
+    try{
+      var p=await h.queryPermission({mode:"readwrite"});
+      if(p==="granted")return h;
+      if(p==="prompt"&&ask){
+        var p2=await h.requestPermission({mode:"readwrite"});
+        if(p2==="granted")return h;}
+    }catch(e){}
+    return null;}
+  async function bookDirPick(){
+    if(!fsSupported()){ttAlert("这个浏览器不支持选本地文件夹。\nChrome / Edge 桌面版可以；Safari 和手机浏览器都不行。");return;}
+    try{
+      var h=await window.showDirectoryPicker({mode:"readwrite",id:"ttbooks"});
+      bookDirH=h;await bPut("fs",{k:"bookdir",h:h});
+      rdNote("✓ 以后导入的书会往「"+h.name+"」里存一份");
+      await bookDirSyncAll();
+      bookDirUI();
+    }catch(e){if(e&&e.name!=="AbortError")ttAlert("选文件夹失败："+(e&&e.message||e));}}
+  async function bookDirWrite(name,blob){        // 写一份出去；失败不影响导入本身
+    var h=await bookDirOK(false);if(!h)return false;
+    try{
+      var fh=await h.getFileHandle(name,{create:true});
+      var w=await fh.createWritable();await w.write(blob);await w.close();
+      return true;
+    }catch(e){return false;}}
+  async function bookDirSyncAll(){               // 把书库里还没写出去的都补一份
+    var h=await bookDirOK(true);if(!h)return;
+    var have={};
+    try{for await(var ent of h.values())if(ent.kind==="file")have[ent.name]=1;}catch(e){return;}
+    var metas=await bAll(),n=0;
+    for(var i=0;i<metas.length;i++){
+      var m=metas[i],fn=bookFileName(m);
+      if(have[fn])continue;
+      var rec=await bGet("blob",m.id);
+      if(rec&&rec.blob&&await bookDirWrite(fn,rec.blob))n++;}
+    if(n)rdNote("✓ 往文件夹里补了 "+n+" 本");}
+  function bookFileName(m){
+    var ext={pdf:".pdf",epub:".epub",docx:".docx",txt:".txt",md:".md",html:".html"}[m.type]||"";
+    var base=String(m.name||"未命名").replace(/[\\/:*?"<>|]/g,"_").slice(0,80);
+    return base+(base.toLowerCase().slice(-ext.length)===ext?"":ext);}
+  async function bookDirRestore(){               // 反过来：从文件夹把书库里没有的捡回来
+    var h=await bookDirOK(true);
+    if(!h){ttAlert("还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。");return;}
+    var metas=await bAll(),known={};
+    metas.forEach(function(m){known[bookFileName(m)]=1;});
+    var picked=[];
+    try{for await(var ent of h.values()){
+      if(ent.kind!=="file"||known[ent.name])continue;
+      if(!bookType(ent.name))continue;
+      picked.push(await ent.getFile());}
+    }catch(e){ttAlert("读文件夹失败："+(e&&e.message||e));return;}
+    if(!picked.length){rdNote("文件夹里没有书库缺的书");return;}
+    if(!await ttConfirm("从文件夹里找到 "+picked.length+" 本书库里没有的，导进来？"))return;
+    await importBooks(picked,true);}
+  function bookDirUI(){
+    var b=document.getElementById("rd-dir");if(!b)return;
+    if(!fsSupported()){b.style.display="none";return;}
+    b.textContent=bookDirH?("🗂 "+bookDirH.name):"🗂 本地文件夹";
+    b.title=bookDirH?("导入的书会往「"+bookDirH.name+"」存一份 · 点这里可以改文件夹或把书找回来")
+                    :"选一个本地文件夹，导入的书自动往那儿存一份";}
+  (function(){
+    var b=document.getElementById("rd-dir");if(!b)return;
+    b.addEventListener("click",async function(){
+      if(!bookDirH)await bookDirLoad();
+      if(!bookDirH)return bookDirPick();
+      var v=await ttPrompt("本地文件夹：「"+bookDirH.name+"」\n\n打 1 = 从文件夹找回书库里没有的书\n打 2 = 换一个文件夹\n留空取消","",{anchor:b});
+      if(v===null)return;v=v.trim();
+      if(v==="1")bookDirRestore();else if(v==="2")bookDirPick();});
+    bookDirLoad().then(bookDirUI);})();
+  async function importBooks(files,quiet){
     for(var i=0;i<files.length;i++){var f=files[i],t=bookType(f.name);
       if(!t){rdNote("不支持的格式："+f.name);continue;}
       rdNote("导入 "+f.name+" …");
@@ -7764,6 +7843,7 @@ margin-left: -22px;
       try{
         await bPut("blob",{id:id,blob:f});
         await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null,folder:(rdFolder&&rdFolder!=="all")?rdFolder:""});
+        if(!quiet)try{await bookDirWrite(f.name,f);}catch(e){}   // 顺手往本地文件夹存一份，失败也不耽误导入
       }catch(e){rdNote("导入失败："+String(e&&e.message||e));return;}}
     rdNote("✓ 导入完成");renderShelf();}
 
