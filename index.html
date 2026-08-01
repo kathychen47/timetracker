@@ -1393,6 +1393,31 @@
   .dn-lead{fill:none;stroke-width:1.4;opacity:.65}
   .dn-nm{fill:var(--text);font-size:16px;font-weight:650}
   .dn-val{fill:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+  /* 血糖 */
+  .glu-add{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .glu-add input{padding:8px 11px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2);color:var(--text);font-size:13px}
+  .glu-add #glu-v{width:96px;font-size:15px;font-weight:640}
+  .glu-add #glu-note{flex:1;min-width:120px}
+  .glu-bts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .glu-bt{background:var(--surface-2);border-radius:10px;padding:6px 11px;font-size:12px;display:flex;align-items:baseline;gap:6px}
+  .glu-bt .n{color:var(--muted)}
+  .glu-bt .v{font-weight:700;font-variant-numeric:tabular-nums}
+  .glu-bt .c{color:var(--muted);font-size:11px}
+  .glu-day{font-size:11.5px;color:var(--muted);margin:12px 0 4px;font-weight:640}
+  .glu-row{display:flex;align-items:center;gap:10px;padding:7px 2px;border-top:1px solid var(--border);font-size:13px}
+  .glu-row .gt-tag{flex:0 0 62px;color:var(--muted);font-size:11.5px}
+  .glu-row .gt-v{font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 92px}
+  .glu-row .gt-v em{font-style:normal;font-weight:500;font-size:10.5px;color:var(--muted);margin-left:3px}
+  .glu-row .gt-l{flex:0 0 34px;font-size:11px}
+  .glu-row .gt-t{color:var(--muted);font-size:11.5px;font-variant-numeric:tabular-nums;flex:0 0 44px}
+  .glu-row .gt-n{flex:1;min-width:0;color:var(--muted);font-size:11.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .glu-row .sk-x{margin-left:auto;opacity:0}
+  .glu-row:hover .sk-x{opacity:1}
+  /* 高低一眼看出来：正常不上色，免得满屏花花绿绿 */
+  .gt-v.high,.gt-l.high{color:#c0392b}
+  .gt-v.warn,.gt-l.warn{color:#d98324}
+  .gt-v.low,.gt-l.low{color:#2b6cb0}
+  .gt-l.ok{color:var(--muted)}
   .goal-track{font-size:12px;color:var(--muted);margin:5px 0 2px}
   .goal-track b{color:var(--gc,var(--primary));font-size:13px;font-variant-numeric:tabular-nums}
   .goal-item.track{border-left:3px solid color-mix(in srgb,var(--gc,var(--primary)) 55%,transparent);padding-left:9px}
@@ -3185,6 +3210,7 @@ margin-left: -22px;
     <section class="view" id="view-body">
       <div class="page-h">身体数据 <span class="rd-sub">体重 / 围度 / 体脂 · 看变化曲线</span></div>
       <div class="body-wrap" id="body-wrap"></div>
+      <div class="panel" id="glu-card" style="max-width:920px;margin:16px auto 0"></div>
     </section>
 
     <section class="view" id="view-food">
@@ -4137,7 +4163,7 @@ margin-left: -22px;
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
     if(tab==="food")openFood();
-    if(tab==="body")renderBody();
+    if(tab==="body"){renderBody();try{gluRenderCard();}catch(e){}}
     if(tab==="notes")showNotes();
   });
 
@@ -6088,7 +6114,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_nbfolders"];
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_nbfolders","tt_glu","tt_glucfg"];
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
@@ -6114,8 +6140,9 @@ margin-left: -22px;
     words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
     skills=load("tt_skills",[])||[];if(state.tab==="todo")try{renderSkills();}catch(e){}
+    gluRecs=load("tt_glu",[])||[];var _gc=load("tt_glucfg",null);if(_gc&&typeof _gc==="object")gluCfg=_gc;
     bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
-    if(state.tab==="body")try{renderBody();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    if(state.tab==="body")try{renderBody();gluRenderCard();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
     try{renderCatSettings();refreshCatSelects();}catch(e){}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
@@ -11433,6 +11460,28 @@ margin-left: -22px;
     {k:"chest",n:"胸围",   u:"cm", c:"#c77fd0", good:""},
     {k:"h",    n:"身高",   u:"cm", c:"#9aa1b0", good:"", noChart:1}   // 基本不变，还会把别的曲线压扁 → 不进图
   ];
+  // ---------- 血糖 ----------
+  // 一天可以记好几条，每条自带时间和一个时段标签 —— 所以单独一张表，不塞进 tt_body 的一天一行里
+  var gluRecs=load("tt_glu",[])||[],gluCfg=load("tt_glucfg",null)||{};
+  var GLU_TAGS=["空腹","餐1","餐2","早餐后","午餐后","晚餐后","睡前","随机"];
+  if(!gluCfg.tags||!gluCfg.tags.length)gluCfg.tags=GLU_TAGS.slice();
+  if(!gluCfg.unit)gluCfg.unit="mmol";                 // mmol/L（国内常用）或 mg/dL
+  gluRecs.forEach(function(r){if(!r.id)r.id=uid();});
+  function saveGlu(){save("tt_glu",gluRecs);}
+  function saveGluCfg(){save("tt_glucfg",gluCfg);}
+  function gluUnit(){return gluCfg.unit==="mgdl"?"mg/dL":"mmol/L";}
+  function gluToMmol(v){return gluCfg.unit==="mgdl"?(v/18):v;}   // 内部一律按 mmol/L 判断高低
+  // 参考区间按时段分：空腹和餐后本来就不是一个标准，用同一条线判断没意义
+  function gluLevel(r){
+    var v=gluToMmol(+r.v||0),fasting=(r.tag==="空腹"||r.tag==="睡前");
+    if(!v)return "";
+    if(v<3.9)return "low";
+    if(fasting)return v<=6.1?"ok":(v<=7?"warn":"high");
+    return v<=7.8?"ok":(v<=11.1?"warn":"high");}
+  function gluLevelText(l){return l==="low"?"偏低":l==="ok"?"正常":l==="warn"?"偏高":l==="high"?"高":"";}
+  function gluSorted(){return gluRecs.slice().sort(function(x,y){
+    var kx=(x.date||"")+" "+(x.time||""),ky=(y.date||"")+" "+(y.time||"");
+    return kx<ky?1:(kx>ky?-1:0);});}                 // 新的在前
   var bodyRecs=load("tt_body",[])||[],bodyCfg=load("tt_bodycfg",null)||{};
   bodyRecs.forEach(function(r){if(!r.id)r.id=uid();if(r.time===undefined)r.time="";});   // 老记录补 id/时间
   if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];
@@ -11564,6 +11613,90 @@ margin-left: -22px;
     var h=bodyDeltasHTML(bodyShown());
     box.innerHTML=h||'<div class="stat-empty">还没有记录</div>';
     bindBodyMetricToggles(box);}
+  // ---------- 血糖界面 ----------
+  var gluTag=load("tt_glutag","空腹"),gluDays=load("tt_gludays","30");
+  function gluStats(days){
+    var lim=(days==="all")?"":fmt(addDays(new Date(),-(+days-1)));
+    var rows=gluRecs.filter(function(r){return !lim||r.date>=lim;});
+    var by={},n=0,sum=0,hi=0,lo=0;
+    rows.forEach(function(r){
+      var v=gluToMmol(+r.v||0);if(!v)return;
+      n++;sum+=v;
+      var l=gluLevel(r);if(l==="high"||l==="warn")hi++;if(l==="low")lo++;
+      (by[r.tag||"随机"]=by[r.tag||"随机"]||[]).push(r);});
+    return {rows:rows,n:n,avg:n?sum/n:0,hi:hi,lo:lo,by:by};}
+  function gluRenderCard(){
+    var box=document.getElementById("glu-card");if(!box)return;
+    var s=gluStats(gluDays),u=gluUnit();
+    var tagChips=gluCfg.tags.map(function(t){
+      return '<button class="tf-chip'+(gluTag===t?" on":"")+'" data-glutag="'+esc(t)+'">'+esc(t)+'</button>';}).join("")+
+      '<button class="tf-chip" data-glutagnew="1" title="加一个自己的时段">＋</button>';
+    var dayChips=[["7","7天"],["30","30天"],["90","3个月"],["all","全部"]].map(function(o){
+      return '<button class="tf-chip'+(gluDays===o[0]?" on":"")+'" data-gludays="'+o[0]+'">'+o[1]+'</button>';}).join("");
+    // 按天分组列出来
+    var list="",curDate="";
+    gluSorted().filter(function(r){return s.rows.indexOf(r)>=0;}).slice(0,120).forEach(function(r){
+      if(r.date!==curDate){curDate=r.date;list+='<div class="glu-day">'+esc(r.date)+'</div>';}
+      var l=gluLevel(r);
+      list+='<div class="glu-row" data-glu="'+esc(r.id)+'">'+
+        '<span class="gt-tag">'+esc(r.tag||"随机")+'</span>'+
+        '<span class="gt-v '+l+'">'+esc(String(r.v))+'<em>'+u+'</em></span>'+
+        '<span class="gt-l '+l+'">'+gluLevelText(l)+'</span>'+
+        '<span class="gt-t">'+esc(r.time||"")+'</span>'+
+        (r.note?'<span class="gt-n">'+esc(r.note)+'</span>':"")+
+        '<button class="sk-x" data-gludel="'+esc(r.id)+'" title="删掉这条">✕</button></div>';});
+    if(!list)list='<div class="dash-empty">这段时间还没有记录</div>';
+    // 各时段的平均，分开看才有意义
+    var byTag=Object.keys(s.by).map(function(t){
+      var arr=s.by[t],av=arr.reduce(function(x,r){return x+gluToMmol(+r.v||0);},0)/arr.length;
+      var shown=(gluCfg.unit==="mgdl")?(av*18):av;
+      return '<div class="glu-bt"><span class="n">'+esc(t)+'</span><span class="v">'+(Math.round(shown*10)/10)+'</span><span class="c">'+arr.length+' 次</span></div>';}).join("");
+    var avgShown=(gluCfg.unit==="mgdl")?(s.avg*18):s.avg;
+    box.innerHTML=
+      '<div class="dash-h">血糖 <span style="font-weight:400;color:var(--muted)">'+u+'</span>'+
+        '<button class="dash-add" data-gluunit="1">换单位</button></div>'+
+      '<div class="glu-add">'+
+        '<input type="number" id="glu-v" step="0.1" min="0" placeholder="数值">'+
+        '<input type="time" id="glu-t" value="'+nowHM()+'">'+
+        '<input type="date" id="glu-d" value="'+fmt(new Date())+'">'+
+        '<input type="text" id="glu-note" placeholder="备注（可选）">'+
+        '<button class="btn primary" id="glu-save">记一笔</button>'+
+      '</div>'+
+      '<div class="tf-chips" style="margin:8px 0 2px">'+tagChips+'</div>'+
+      '<div class="stat-cards" style="margin:12px 0 10px">'+
+        '<div class="sc"><div class="k">平均</div><div class="v">'+(s.n?(Math.round(avgShown*10)/10):"—")+'<small> '+u+'</small></div></div>'+
+        '<div class="sc"><div class="k">测量次数</div><div class="v">'+s.n+'<small> 次</small></div></div>'+
+        '<div class="sc"><div class="k">偏高</div><div class="v">'+s.hi+'<small> 次</small></div></div>'+
+        '<div class="sc"><div class="k">偏低</div><div class="v">'+s.lo+'<small> 次</small></div></div>'+
+      '</div>'+
+      '<div class="tf-chips" style="margin-bottom:8px">'+dayChips+'</div>'+
+      (byTag?('<div class="glu-bts">'+byTag+'</div>'):"")+
+      '<div class="glu-list">'+list+'</div>';}
+  (function(){
+    var box=document.getElementById("glu-card");if(!box)return;
+    box.addEventListener("click",async function(e){
+      var t=e.target.closest("[data-glutag]");
+      if(t){gluTag=t.getAttribute("data-glutag");save("tt_glutag",gluTag);gluRenderCard();return;}
+      if(e.target.closest("[data-glutagnew]")){
+        var n=await ttPrompt("加一个时段标签（比如：运动后 / 加餐后）","");
+        if(n===null)return;n=n.trim();if(!n)return;
+        if(gluCfg.tags.indexOf(n)<0){gluCfg.tags.push(n);saveGluCfg();}
+        gluTag=n;save("tt_glutag",gluTag);gluRenderCard();return;}
+      var d=e.target.closest("[data-gludays]");
+      if(d){gluDays=d.getAttribute("data-gludays");save("tt_gludays",gluDays);gluRenderCard();return;}
+      if(e.target.closest("[data-gluunit]")){
+        gluCfg.unit=(gluCfg.unit==="mgdl")?"mmol":"mgdl";saveGluCfg();gluRenderCard();return;}
+      var del=e.target.closest("[data-gludel]");
+      if(del){var id=del.getAttribute("data-gludel");
+        if(!await ttConfirm("删掉这条血糖记录？",{danger:true,anchor:del}))return;
+        gluRecs=gluRecs.filter(function(r){return r.id!==id;});saveGlu();gluRenderCard();return;}
+      if(e.target.closest("#glu-save")){
+        var vi=document.getElementById("glu-v"),v=parseFloat(vi.value);
+        if(!(v>0)){vi.focus();return;}
+        gluRecs.push({id:uid(),date:document.getElementById("glu-d").value||fmt(new Date()),
+          time:document.getElementById("glu-t").value||nowHM(),v:v,tag:gluTag,
+          note:(document.getElementById("glu-note").value||"").trim()});
+        saveGlu();gluRenderCard();return;}});})();
   function renderBody(){
     var wrap=document.getElementById("body-wrap");if(!wrap)return;
     var all=bodyAll(),shown=bodyShown(),WM=bodyDef("w");
