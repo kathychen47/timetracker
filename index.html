@@ -402,6 +402,14 @@
   .sk-x:hover{color:#c0392b}
   .sk-cats{display:flex;gap:6px;margin-bottom:8px}
   .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
+  .sk-plan{margin:0 0 8px}
+  .sk-planh{font-size:11px;color:var(--muted);cursor:pointer;user-select:none;padding:2px 0}
+  .sk-planh:hover{color:var(--primary)}
+  .sk-planh em{font-style:normal;opacity:.7}
+  .sk-plantx{font-size:11.5px;color:var(--text);line-height:1.75;white-space:pre-wrap;cursor:pointer;
+    background:var(--surface);border-radius:8px;padding:9px 11px;margin-top:5px;
+    max-height:260px;overflow:auto}
+  .sk-card.fold .sk-plan{display:none}
   .sk-note{font-size:11.5px;color:var(--muted);line-height:1.65;margin:2px 0 8px;cursor:pointer;
     background:var(--surface);border-radius:8px;padding:6px 9px;white-space:pre-wrap}
   .sk-note:hover{color:var(--text)}
@@ -4227,6 +4235,11 @@ margin-left: -22px;
           '<button class="sk-x" data-skarch="'+sk.id+'" title="'+(sk.arch?"取消归档":"归档：收起来但不删")+'">'+(sk.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
           '<button class="sk-x" data-skdel="'+sk.id+'" title="删掉这个技能">✕</button></div>'+
         (sk.note?('<div class="sk-note" data-sknote="'+sk.id+'" title="点一下改">'+esc(sk.note)+'</div>'):"")+
+        '<div class="sk-plan'+(sk.planOpen?" open":"")+'">'+
+          '<div class="sk-planh" data-skplantog="'+sk.id+'">'+(sk.planOpen?"▾":"▸")+' 原文'+
+            (sk.plan?"":' <em>（还没有，点一下粘进来）'+"</em>")+'</div>'+
+          (sk.planOpen?('<div class="sk-plantx" data-skplan="'+sk.id+'" title="点一下改">'+esc(sk.plan||"（空）")+'</div>'):"")+
+        '</div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
           '<select data-sksub="'+sk.id+'" title="小类">'+skSubOpts(sk.cat,sk.sub)+'</select></div>'+
         '<div class="sk-prog">'+
@@ -4340,7 +4353,7 @@ margin-left: -22px;
       return {id:uid(),t:n.slice(0,80),est:Math.min(600,est),act:0,done:false};}).filter(Boolean).slice(0,20);
     if(!steps.length)throw new Error("AI 没给出步骤");
     return {name:String(pick(o,["name","title","skill","技能"])||"").trim().slice(0,40),
-      note:String(pick(o,["note","notes","备注","说明","stop","stopping"])||"").trim().slice(0,300),
+      note:String(pick(o,["note","notes","备注","说明","stop","stopping"])||"").trim().slice(0,1000),
       steps:steps};}
   document.getElementById("sk-ai").addEventListener("click",async function(){
     var btn=this;
@@ -4351,7 +4364,7 @@ margin-left: -22px;
     if(want.indexOf("{")>=0&&want.indexOf("}")>0){
       try{
         var direct=parseSkillPlan(want);
-        skills.push({id:uid(),name:direct.name||"新技能",note:direct.note||"",steps:direct.steps,created:Date.now()});
+        skills.push({id:uid(),name:direct.name||"新技能",note:direct.note||"",plan:want,steps:direct.steps,created:Date.now()});
         saveSkills();renderSkills();try{renderSkillMini();}catch(e){}
         return;
       }catch(e){}                                  // 不是合法的计划 JSON → 照旧交给 AI
@@ -4373,7 +4386,7 @@ margin-left: -22px;
     try{
       txt=await ((aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt));
       var plan=parseSkillPlan(txt);
-      skills.push({id:uid(),name:plan.name||want.slice(0,40),note:plan.note||"",steps:plan.steps,created:Date.now()});
+      skills.push({id:uid(),name:plan.name||want.slice(0,40),note:plan.note||"",plan:want,steps:plan.steps,created:Date.now()});
       saveSkills();renderSkills();
       try{renderSkillMini();}catch(e){}
     }catch(err){
@@ -4426,6 +4439,16 @@ margin-left: -22px;
       if(sk6.arch){sk6.archAt=Date.now();if(!sk6.created)sk6.created=skFirstTs(sk6)||Date.now();}
       else sk6.archAt=null;
       saveSkills();renderSkills();}return;}
+    var pt=e.target.closest("[data-skplantog]");
+    if(pt){var sk8=skillOf(pt.getAttribute("data-skplantog"));if(!sk8)return;
+      if(!sk8.plan&&!sk8.planOpen){                    // 还没有原文 → 直接让你粘，不用先展开再点一次
+        var pv=await ttPromptLong("把完整计划粘进来（原样保存，不会被改动）：","",{anchor:pt});
+        if(pv===null)return;sk8.plan=pv;sk8.planOpen=!!pv;saveSkills();renderSkills();return;}
+      sk8.planOpen=!sk8.planOpen;saveSkills();renderSkills();return;}
+    var pe=e.target.closest("[data-skplan]");
+    if(pe){var sk9=skillOf(pe.getAttribute("data-skplan"));if(!sk9)return;
+      var pv2=await ttPromptLong("完整计划原文：",sk9.plan||"",{anchor:pe});
+      if(pv2===null)return;sk9.plan=pv2;saveSkills();renderSkills();return;}
     var sn=e.target.closest("[data-sknote]");
     if(sn){var sk7=skillOf(sn.getAttribute("data-sknote"));if(!sk7)return;
       var nv=await ttPromptLong("这个技能的备注（比如停止条件）：",sk7.note||"",{anchor:sn});
