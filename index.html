@@ -335,7 +335,18 @@
   .ev.short .h,.ev.short .lbl{display:none}
   .col .ev.mini,.dv-col .ev.mini{padding:0 5px;border-radius:6px;display:flex;align-items:center}
   .col .ev.mini .t,.dv-col .ev.mini .t{font-size:9.5px;line-height:1}
-  .ev.mini .h,.ev.mini .lbl,.ev.mini .chk,.ev.mini .gtag,.ev.mini .fish,.ev.mini .ltag{display:none}
+  .ev .stag{position:absolute;right:3px;top:3px;font-size:8.5px;font-weight:700;line-height:12px;
+    padding:0 3px;border-radius:4px;letter-spacing:.3px}
+  .ev .stag.ok{color:#2C8F68;background:#E7F7EF;border:1px solid #C6E9D8}
+  .ev .stag.wait{color:#B4720B;background:#FFF1DC;border:1px dashed #E8C48A}
+  .ev.mini .h,.ev.mini .lbl,.ev.mini .chk,.ev.mini .gtag,.ev.mini .fish,.ev.mini .ltag,.ev.mini .stag{display:none}
+  /* 有几条没传上去 —— 摆在日历顶上，不用点开某一条才知道 */
+  #gcal-pend{display:none;align-items:center;gap:8px;font-size:12px;color:#B4720B;
+    background:#FFF1DC;border:1px solid #E8C48A;border-radius:9px;padding:4px 10px}
+  #gcal-pend.on{display:flex}
+  #gcal-pend button{border:none;background:#B4720B;color:#fff;border-radius:7px;
+    padding:3px 9px;font-size:11.5px;cursor:pointer}
+  #gcal-pend button:hover{background:#95600a}
   .legend .li em{font-style:normal;font-size:10.5px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
   .legend .lg-more{color:var(--muted);border-style:dashed}
   .ev.faded{opacity:.12}
@@ -3074,6 +3085,7 @@ margin-left: -22px;
                   <button data-v="week" class="on">周</button>
                   <button data-v="month">月</button>
                 </div>
+                <div id="gcal-pend"><span id="gcal-pend-t"></span><button type="button" id="gcal-pend-go">重新授权</button></div>
                 <button class="btn primary" id="add-btn">+ 事件</button>
               </div>
             </div>
@@ -4657,12 +4669,19 @@ margin-left: -22px;
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.live?'<span class="ltag" title="正计时进行中">⏱</span>'
       :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG());
+    // 右上角：这条到底进没进 Google。以前完全看不出来，只能自己去 Google 翻，
+    // 还容易翻错周（Google 一周从周日起，这边从周一起），翻不到就以为同步坏了。
+    var gm="";
+    if(!e.gcal&&!e.live){
+      if(e.gwant===true)gm='<span class="stag wait" title="还没传上去 —— Google 授权过期了（每次只管 1 小时），续上会自动补传">G</span>';
+      else if(e.gwant===false)gm='<span class="stag wait" title="还没从 Google 删掉 —— 授权续上后会自动处理">G</span>';
+      else if(e.gid)gm='<span class="stag ok" title="已经在 Google 日历里了">G</span>';}
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
     return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):e.start)+'</div>'+lbl+fish+corner+'</div>';}
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):e.start)+'</div>'+lbl+fish+corner+gm+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -4755,6 +4774,7 @@ margin-left: -22px;
     document.getElementById("view-seg").querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-v")===state.view);});
     if(state.view==="day")renderDay();else if(state.view==="month")renderMonth();else renderWeek();
     renderLegend();renderDashboard();
+    try{refreshGcalPend();}catch(e){}    // 开页面第一眼就看得到有没有欠着的
   }
   var legendEl=document.getElementById("legend");
   // 当前这一屏覆盖的日期范围（日/周/月各不同）—— 图例只按"看得见的这段时间"来排
@@ -5216,14 +5236,25 @@ margin-left: -22px;
   function gcalApply(o,want){                     // 有 token 直接同步；没有就先记着，等续上了补
     if(gToken){delete o.gwant;gcalSync(o,want);return;}
     if(!gcalEver())return;
-    o.gwant=!!want;save("tt_events",events);}
+    o.gwant=!!want;save("tt_events",events);
+    try{refreshGcalPend();}catch(e){}}
   function gcalFlush(){                           // 重新授权成功后，把欠的一次性补上
     if(!gToken)return;
     var todo=events.filter(function(e){return typeof e.gwant!=="undefined";});
-    if(!todo.length)return;
+    if(!todo.length){try{refreshGcalPend();}catch(e){}return;}
     todo.forEach(function(e){var w=!!e.gwant;delete e.gwant;gcalSync(e,w);});
-    save("tt_events",events);}
+    save("tt_events",events);
+    try{refreshGcalPend();}catch(e){}
+    try{if(state.tab==="calendar")renderCal();}catch(e){}    // 琥珀色的 G 变绿，你看得见它真的传上去了
+    try{ttAlert("和 Google 日历对齐了 "+todo.length+" 条 ✓");}catch(e){}}
+  // 有多少条在排队等着传。0 就整条藏起来 —— 平时不该占地方。
+  function refreshGcalPend(){
+    var box=document.getElementById("gcal-pend");if(!box)return;
+    var n=gcalPend();
+    box.classList.toggle("on",n>0);
+    if(n>0)document.getElementById("gcal-pend-t").textContent="⇡ "+n+" 条还没同步到 Google";}
   function refreshGcalRow(){
+    try{refreshGcalPend();}catch(e){}
     var row=document.getElementById("ev-gcal-row"),hint=document.getElementById("ev-gcal-hint");
     if(!row||!hint)return;
     if(!gToken&&!gcalEver()){row.style.display="none";return;}
@@ -5281,6 +5312,9 @@ margin-left: -22px;
       '（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
   function closeModal(){overlay.classList.remove("on");}
   document.getElementById("ev-cancel").addEventListener("click",closeModal);
+  (function(){var gp=document.getElementById("gcal-pend-go");
+    if(gp)gp.addEventListener("click",function(){
+      gcalRenew().then(function(t){if(t)gcalFlush();else gcalConnect();});});})();
   document.getElementById("ev-gcal-row").addEventListener("click",function(e){
     if(e.target.closest("[data-gauth]")){e.preventDefault();gcalConnect();}});
   overlay.addEventListener("click",function(e){if(e.target===overlay)closeModal();});
