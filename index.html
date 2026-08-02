@@ -5436,7 +5436,9 @@ margin-left: -22px;
   function renderSegs(){
     if(!segsBox)return;
     var list=(timerMode==="up")?allSegs():[],multi=list.length>1;
-    var sig=multi?list.map(function(s){return s.t+"|"+s.cat+"|"+secLabel(s.sec);}).join(","):"";
+    // "空"要有它自己的签名。用 "" 的话就会和 clearSegs 里的 segSig="" 撞上，
+    // 那次 renderSegs 直接 return，上一轮的段落条就永远留在屏幕上了。
+    var sig=multi?list.map(function(s){return s.t+"|"+s.cat+"|"+secLabel(s.sec);}).join(","):"__none__";
     if(sig===segSig)return; segSig=sig;                      // 分钟数没变就不重绘，免得每半秒闪一下
     segsBox.classList.toggle("on",multi);
     if(!multi){segsBox.innerHTML="";return;}
@@ -5536,7 +5538,7 @@ margin-left: -22px;
       if(!noting)pomoHint.textContent=hintText();
       pomoHint.style.visibility=(noting||idleDial||(timerMode==="up"&&!pTimer&&!pElapsed))?"visible":"hidden";}
     if(timerMode==="up"){var e2=Math.min(pElapsed,UPMAX),m=Math.floor(e2/60),s=e2%60;pTime.textContent=pad(m)+":"+pad(s);
-      pMode.textContent="计时中"+(tk?" · "+tk:"");ring.classList.remove("brk");
+      pMode.textContent=(pTimer?"计时中":(pElapsed>0?"已暂停":"正计时"))+(tk?" · "+tk:"");ring.classList.remove("brk");
       var mins=e2/60,lap=Math.min(Math.floor(mins/60)+1,MAXMIN/60),cp=(e2>=UPMAX)?100:(mins%60)/60*100; // 一圈 60 分，第二三圈颜色变深
       var cur=lapShade(lap),rest=lap>=2?lapShade(lap-1):"var(--surface-2)";
       ring.style.background="conic-gradient("+cur+" 0 "+cp.toFixed(1)+"%,"+rest+" "+cp.toFixed(1)+"% 100%)";
