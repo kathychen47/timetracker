@@ -3326,7 +3326,7 @@ margin-left: -22px;
           </select>
           <label class="rec-ck"><input type="checkbox" id="rec-cal"> 结束后记入日历</label>
           <span class="rec-time" id="rec-time"></span>
-          <label class="btn" style="cursor:pointer" title="已经有的会议录音、讲座音频、视频都行">📁 导入文件转写<input type="file" id="rec-file" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov" hidden></label>
+          <label class="btn" style="cursor:pointer" title="MP3 / M4A / WAV / FLAC / OGG / WebM，以及 MP4、MOV 这类视频（只取声音）">📁 导入文件转写<input type="file" id="rec-file" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov" hidden></label>
           <span class="wt-note" id="rec-hint" style="margin:0"></span>
         </div>
         <div class="rec-bar rec-eng">
@@ -4688,18 +4688,41 @@ margin-left: -22px;
   // 音频 → 16kHz 单声道 Float32。Whisper 只吃这个。
   // 先按文件原本的采样率解出来，再用 OfflineAudioContext 重采样 ——
   // 直接 new AudioContext({sampleRate:16000}) 在 Safari 上会被忽略。
+  var OKFMT="稳的：MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM。\n视频（MP4 / MOV / WebM）多数也行 —— 会自动只取声音那一轨。\n不行的多半是 WMA、AMR，还有某些相机/录音笔的私有格式。";
+  // 先拿时长。<audio> 只读元数据，不解码整段 —— 既能判断"这个文件浏览器认不认",
+  // 又能在真解码之前估出内存，免得一个两小时的会议把标签页撑死。
+  function probeAudio(blob){return new Promise(function(res){
+    var el=document.createElement("audio"),u=URL.createObjectURL(blob),done=false;
+    function fin(d){if(done)return;done=true;try{URL.revokeObjectURL(u);}catch(e){}res(d);}
+    el.preload="metadata";
+    el.onloadedmetadata=function(){fin(isFinite(el.duration)?el.duration:0);};
+    el.onerror=function(){fin(-1);};                     // -1 = 浏览器根本解不开
+    setTimeout(function(){fin(0);},8000);                // 探不出来就当未知，别卡在这儿
+    el.src=u;});}
   async function toPCM16k(blob){
+    var dur=await probeAudio(blob);
+    if(dur<0)throw new Error("这个文件浏览器解不开（转写和播放用的是同一套解码器）。\n\n"+OKFMT);
+    // 解码后是按原采样率存的 Float32：一小时 48k 立体声就 1.4GB，两小时必崩
+    if(dur>0){
+      var gb=dur*48000*2*4/1073741824;
+      if(gb>1.2&&!await ttConfirm("这段有 "+Math.round(dur/60)+" 分钟。解码时要占大约 "+gb.toFixed(1)+"GB 内存，"+
+        "标签页有可能崩掉。\n\n建议先切成半小时一段再导。还要继续吗？",{danger:true,okText:"继续"}))
+        throw new Error("你取消了");}
     var ab=await blob.arrayBuffer();
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)throw new Error("这个浏览器没有 Web Audio");
     var tmp=new AC(),buf;
-    try{buf=await tmp.decodeAudioData(ab);}finally{try{tmp.close();}catch(e){}}
+    try{buf=await tmp.decodeAudioData(ab);}
+    catch(e){throw new Error("这个文件解不开：'"+String(e&&e.message||e)+"'\n\n"+OKFMT);}
+    finally{try{tmp.close();}catch(e){}}
+    ab=null;                                             // 原始数据不用了，早点让它走
     var OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
     var n=Math.max(1,Math.round(buf.duration*16000));
     var off=new OAC(1,n,16000);                          // 1 声道 → 自动混音，不用自己求平均
     var src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start();
     var done=await off.startRendering();
-    return {pcm:done.getChannelData(0),dur:buf.duration};}
+    var d=buf.duration;buf=null;                         // 16k 单声道只有原来的 1/12，大头可以放了
+    return {pcm:done.getChannelData(0),dur:d};}
 
   function wProg(txt,pct){
     var box=document.getElementById("rec-wp"),bar=document.getElementById("rec-wpbar"),t=document.getElementById("rec-wpt");
@@ -4728,7 +4751,10 @@ margin-left: -22px;
               wProg("下载模型 "+wModelMB(model)+"MB（只有第一次）…",avg);}
             else if(p.status==="ready")wProg("准备中…",null);
             return;}
-          if(d.type==="run"){wProg((dev==="webgpu"?"GPU":"CPU")+" 转写中 · "+Math.round(a.dur)+" 秒音频…",null);return;}
+          if(d.type==="run"){
+            // 粗估：GPU 大约音频时长的 1/8，CPU 大约 1/2。给个数总比让你干等强。
+            var eta=Math.max(1,Math.round(a.dur*(dev==="webgpu"?0.12:0.5)/60));
+            wProg((dev==="webgpu"?"GPU":"CPU")+" 转写中 · "+tsLabel(a.dur)+" 的音频 · 大概 "+eta+" 分钟…",null);return;}
           if(d.type==="err"){off();wkrBusy=false;wProg(null);rej(new Error(d.msg));return;}
           if(d.type==="done"){
             off();wkrBusy=false;wProg(null);
