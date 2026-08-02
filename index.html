@@ -62,6 +62,17 @@
   .rail button.on{background:var(--primary-soft);color:var(--primary)}
   .rail button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
   .rail .grow{flex:1}
+  /* 展开：直接显示文字。图标再怎么画，9 个也不可能个个一眼认出来 ——
+     文字才是彻底的答案，图标只是省地方。 */
+  .rail .rl{display:none;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rail.wide{width:150px;align-items:stretch;padding-left:8px;padding-right:8px}
+  .rail.wide .logo{align-self:center}
+  .rail.wide button{width:100%;height:36px;display:flex;align-items:center;gap:10px;padding:0 9px;justify-content:flex-start}
+  .rail.wide button svg{flex:none}
+  .rail.wide .rl{display:block}
+  .rail.wide #rail-wide svg{transform:rotate(180deg)}
+  .rail button.rail-w{color:var(--muted);opacity:.7;margin-top:4px}
+  .rail button.rail-w:hover{opacity:1}
   .rail button[draggable=true]{cursor:grab}
   .rail button.dragging{opacity:.4;cursor:grabbing}
   .rail button.drop-before{box-shadow:0 -2px 0 var(--primary)}
@@ -1032,6 +1043,9 @@
   .dict-search input{flex:1;padding:11px 14px;border:1px solid var(--border);border-radius:11px;background:var(--surface);color:var(--text);font-size:15px}
   .dict-search input:focus{outline:none;border-color:var(--primary)}
   .dict-result{min-height:40px}
+  /* 只作用在查词页；阅读弹窗里的 .dict-def 有自己的字号，别被这条盖掉 */
+  #dict-result .dict-def{font-size:var(--dfs,14px)}
+  .dict-fs button{font-size:12.5px;padding:0 9px;min-width:34px}
   .dict-sugg{margin:-6px 0 12px}
   .dict-sugg .sg{padding:9px 14px;border:1px solid var(--border);border-top:none;background:var(--surface);cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:10px}
   .dict-sugg .sg:first-child{border-top:1px solid var(--border);border-radius:10px 10px 0 0}
@@ -3091,16 +3105,16 @@ margin-left: -22px;
 <div class="app">
   <nav class="rail">
     <div class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div>
-    <button class="on" data-tab="calendar" aria-label="日历" title="日历"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect><path d="M3 9.5h18M8 2.5v4M16 2.5v4"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"></path></svg></button>
-    <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l2 2 3.5-3.5"></path><path d="M4 13l2 2 3.5-3.5"></path><path d="M4 19.5l2 2 3.5-3.5"></path><path d="M13 6h7M13 12.5h7M13 19h7"></path></svg></button>
-    <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"></path><rect x="7" y="12" width="3" height="5" rx="1"></rect><rect x="12.5" y="8" width="3" height="9" rx="1"></rect><rect x="18" y="4.5" width="3" height="12.5" rx="1"></rect></svg></button>
-    <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5v14"></path><path d="M12 6.5C10.5 5 8.5 4.2 5.5 4.2A1.5 1.5 0 0 0 4 5.7v11.6a1.5 1.5 0 0 0 1.5 1.5c3 0 5 .8 6.5 2.2"></path><path d="M12 6.5c1.5-1.5 3.5-2.3 6.5-2.3A1.5 1.5 0 0 1 20 5.7v11.6a1.5 1.5 0 0 1-1.5 1.5c-3 0-5 .8-6.5 2.2"></path></svg></button>
-    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-1.6L14 21l-3-1.6L8 21l-3-1.6z"></path><path d="M9 8.5h6M9 12h6M9 15.5h3"></path></svg></button>
-    <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg></button>
-    <button data-tab="notes" aria-label="笔记" title="笔记 · 便签与读书笔记"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5h9.5L20 8v12a1.5 1.5 0 0 1-1.5 1.5h-12A1.5 1.5 0 0 1 5 20V5a1.5 1.5 0 0 1 1-1.5z"></path><path d="M15 3.5V8h4.5"></path><path d="M8.5 12.5h7M8.5 16h5"></path></svg></button>
-    <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg></button>
-    <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5l4.5-5 3.5 3.5 4-6L21 13"></path><circle cx="7.5" cy="9.5" r="1.6"></circle><circle cx="18" cy="9" r="1.6"></circle><path d="M3 20.5h18"></path></svg></button>
-    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg></button>
+    <button class="on" data-tab="calendar" aria-label="日历" title="日历"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="18" height="16.5" rx="3"></rect><path d="M3 9.5h18M8 2.5v4M16 2.5v4"></path><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"></path></svg><span class="rl">日历</span></button>
+    <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l2 2 3.5-3.5"></path><path d="M4 13l2 2 3.5-3.5"></path><path d="M4 19.5l2 2 3.5-3.5"></path><path d="M13 6h7M13 12.5h7M13 19h7"></path></svg><span class="rl">待办</span></button>
+    <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"></path><rect x="7" y="12" width="3" height="5" rx="1"></rect><rect x="12.5" y="8" width="3" height="9" rx="1"></rect><rect x="18" y="4.5" width="3" height="12.5" rx="1"></rect></svg><span class="rl">统计</span></button>
+    <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.8"></circle><path d="M15.4 15.4L20.5 20.5"></path><path d="M7.6 8.7h5.8M7.6 12.2h3.4"></path></svg><span class="rl">词典</span></button>
+    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-1.6L14 21l-3-1.6L8 21l-3-1.6z"></path><path d="M9 8.5h6M9 12h6M9 15.5h3"></path></svg><span class="rl">税务</span></button>
+    <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg><span class="rl">菜谱</span></button>
+    <button class="rail-w" id="rail-wide" type="button" aria-label="展开/收起导航" title="展开导航（显示文字）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg><span class="rl">收起</span></button>
+    <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
+    <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-1.4-1-8.2-5.6-8.2-11A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 8.2 2.2c0 5.4-6.8 10-8.2 11z"></path><path d="M6.6 11.4h2.6l1.5-2.7 1.9 5 1.4-2.3h3.4"></path></svg><span class="rl">身体</span></button>
+    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg><span class="rl">看书 · 笔记</span></button>
     <div class="grow"></div>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
     <button id="settings-btn" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
@@ -3249,6 +3263,10 @@ margin-left: -22px;
             <div class="seg dict-acc" id="dict-acc" title="发音口音">
               <button data-acc="en-GB" class="on">英</button>
               <button data-acc="en-US">美</button>
+            </div>
+            <div class="seg dict-fs" title="正文字号">
+              <button id="dict-fs-d" type="button">A−</button>
+              <button id="dict-fs-u" type="button">A＋</button>
             </div>
             <button class="btn" id="dict-go">查</button>
           </div>
@@ -3404,11 +3422,12 @@ margin-left: -22px;
     <!-- READER -->
     <section class="view" id="view-reader">
       <div id="rd-shelf">
-        <div class="page-h">看书 <span class="rd-sub">导入 PDF / EPUB / Word / TXT 等，选中单词即可查词</span></div>
+        <div class="page-h">看书 · 笔记 <span class="rd-sub">导入 PDF / EPUB / Word / TXT 等，选中单词即可查词；标注和笔记都在这一块</span></div>
         <div class="rd-import">
           <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
           <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
           <button class="btn" id="rd-newfolder">＋ 新建文件夹</button>
+          <button class="btn" id="rd-tonotes" title="读和写是一件事 —— 笔记就在这儿">📓 笔记本</button>
           <div class="seg" id="rd-view" style="margin-left:auto">
             <button data-rv="grid" class="on" title="封面视图">▦</button>
             <button data-rv="list" title="列表视图">☰</button>
@@ -4349,11 +4368,23 @@ margin-left: -22px;
   })();
 
   // ---------- rail nav ----------
-  document.querySelector(".rail").addEventListener("click",function(e){
-    var b=e.target.closest("button[data-tab]");if(!b)return;
+  // 笔记和看书是同一个板块，只有一个图标。所以"哪个图标亮"不能直接用"点了哪个按钮"，
+  // 得从页签反查 —— tab 是 notes 时亮的仍然是「看书」。
+  function railKeyOf(tab){return (tab==="notes")?"reader":tab;}
+  (function(){var r=document.querySelector(".rail"),b=document.getElementById("rail-wide");
+    if(!r||!b)return;
+    function paint(on){r.classList.toggle("wide",on);
+      b.title=on?"收起导航（只留图标）":"展开导航（显示文字）";
+      b.querySelector(".rl").textContent=on?"收起":"展开";}
+    paint(!!load("tt_railwide",false));
+    b.addEventListener("click",function(){var on=!r.classList.contains("wide");
+      save("tt_railwide",on);paint(on);});})();
+  function showTab(tab){
     if(zenOn)toggleZen(false);                            // 先按"当前页签"把状态存好，再切走
-    var tab=b.getAttribute("data-tab");state.tab=tab;save("tt_tab",tab);
-    document.querySelectorAll(".rail button[data-tab]").forEach(function(x){x.classList.toggle("on",x===b);});
+    state.tab=tab;save("tt_tab",tab);
+    var lit=railKeyOf(tab);
+    document.querySelectorAll(".rail button[data-tab]").forEach(function(x){
+      x.classList.toggle("on",x.getAttribute("data-tab")===lit);});
     ["calendar","todo","stats","dict","reader","tax","food","body","notes","rec"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo"){renderTodos();renderSkills();setTimeout(function(){try{fitTodoCols();}catch(e){}},0);}
@@ -4364,6 +4395,10 @@ margin-left: -22px;
     if(tab==="body"){renderBody();try{gluRenderCard();}catch(e){}}
     if(tab==="notes")showNotes();
     if(tab==="rec")openRec();
+  }
+  document.querySelector(".rail").addEventListener("click",function(e){
+    var b=e.target.closest("button[data-tab]");if(!b)return;
+    showTab(b.getAttribute("data-tab"));
   });
 
   // ---------- 🎙 录音转写：边录边出字，回放时逐句对照 ----------
@@ -7679,6 +7714,12 @@ margin-left: -22px;
     var nk=matches.length?matches[0][1].k:key;
     box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+wordNoteHTML(nk)+html;}
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
+  // 正文字号自己调。默认 14 —— 和以前一样，不动已有的观感。
+  function dictFsApply(){var v=+load("tt_dfs",14)||14;
+    v=Math.max(11,Math.min(22,v));
+    var el=document.getElementById("dict-result");if(el)el.style.setProperty("--dfs",v+"px");
+    return v;}
+  function dictFsStep(d){save("tt_dfs",Math.max(11,Math.min(22,(+load("tt_dfs",14)||14)+d)));dictFsApply();}
 
   function dictCardHTML(store,rec){
     var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store==="oald"?disp:w;
@@ -8491,6 +8532,10 @@ margin-left: -22px;
     q.addEventListener("keydown",function(e){if(e.key==="Enter"){if(timer)clearTimeout(timer);doLookup(q.value);}});
     document.getElementById("dict-go").addEventListener("click",function(){doLookup(q.value);});
     document.getElementById("dict-sugg").addEventListener("click",function(e){var sg=e.target.closest(".sg");if(sg){q.value=sg.getAttribute("data-w");doLookup(q.value);q.focus();}});
+    var fsd=document.getElementById("dict-fs-d"),fsu=document.getElementById("dict-fs-u");
+    if(fsd)fsd.addEventListener("click",function(){dictFsStep(-1);});
+    if(fsu)fsu.addEventListener("click",function(){dictFsStep(1);});
+    dictFsApply();
     var acc=document.getElementById("dict-acc");
     if(acc){acc.addEventListener("click",function(e){var b=e.target.closest("button[data-acc]");if(!b)return;pronAccent=b.getAttribute("data-acc");save("tt_pronacc",pronAccent);acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});});
       acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-acc")===pronAccent);});}
@@ -9840,7 +9885,8 @@ margin-left: -22px;
         if(b!==last){html+='<div class="nb-gh"><b>'+esc(b)+'</b></div>';last=b;}
         html+=nbItemHTML(r);});}
     body.innerHTML=html;}
-  function gotoTab(t){var b=document.querySelector('.rail button[data-tab="'+t+'"]');if(b)b.click();}
+  function gotoTab(t){                                   // 笔记没有自己的图标，click 那条路走不通了
+    try{showTab(t);}catch(e){var b=document.querySelector('.rail button[data-tab="'+t+'"]');if(b)b.click();}}
   function openNotebook(){gotoTab("notes");}          // 笔记本已经是顶栏页签了
   function showNotes(){                                // 切到笔记页签时跑
     readerBind();                                      // 笔记本的按钮和查词弹窗都在这里面绑
@@ -11166,6 +11212,8 @@ margin-left: -22px;
         bGet("meta",id).then(function(m){if(!m)return;m.folder=fid;return bPut("meta",m);}).then(renderShelf);});
       // 📓 笔记本
       document.getElementById("nb-back").addEventListener("click",closeNotebook);
+      var tn=document.getElementById("rd-tonotes");
+      if(tn&&!tn.__b){tn.__b=1;tn.addEventListener("click",function(){gotoTab("notes");});}
       document.getElementById("nb-new").addEventListener("click",function(){nbDocNew();});
       document.getElementById("nb-md").addEventListener("click",function(){nbExport("md",this);});
       document.getElementById("nb-csv").addEventListener("click",function(){nbExport("csv",this);});
@@ -12904,7 +12952,7 @@ margin-left: -22px;
       return;
     }
     var savedTab=load("tt_tab","calendar");
-    if(savedTab&&savedTab!=="calendar"){var b=document.querySelector('.rail button[data-tab="'+savedTab+'"]');if(b)b.click();}
+    if(savedTab&&savedTab!=="calendar"){try{showTab(savedTab);}catch(e){}}   // 笔记没有按钮，得直接切
   })();
 })();
 </script>
