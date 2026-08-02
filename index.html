@@ -10066,6 +10066,13 @@ margin-left: -22px;
     setMode(nbMode,false);                                       // 记住上次用的是哪档
     // 阅读模式：正常的 DOM 选区
     vw.addEventListener("mouseup",function(){setTimeout(noteSelHandler,10);});
+    // 所见即所得也是 DOM 选区（contenteditable），和预览同一套。
+    // 这一档以前一个都没接 —— 边写边查是它最该有的用法，反倒漏了。
+    lv.addEventListener("mouseup",function(){setTimeout(noteSelHandler,10);});
+    lv.addEventListener("dblclick",function(){setTimeout(noteSelHandler,10);});   // 双击选词：mouseup 有时抢在选中之前
+    lv.addEventListener("touchend",function(){setTimeout(noteSelHandler,80);},{passive:true});
+    vw.addEventListener("dblclick",function(){setTimeout(noteSelHandler,10);});
+    vw.addEventListener("touchend",function(){setTimeout(noteSelHandler,80);},{passive:true});
     // 编辑模式：textarea 里的选区 window.getSelection() 读不到，只能用 selectionStart/End，
     // 位置也没有现成的 rect，用鼠标/手指落点现造一个。
     function taLookup(pt){
