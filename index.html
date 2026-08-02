@@ -221,6 +221,8 @@
   .ev .chk svg{width:9px;height:9px;color:var(--primary-ink);opacity:0}
   .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
   .ev.done .chk svg{opacity:1;color:var(--bg)}
+  /* 中间暂停过：块从头画到尾，洞那一段是空的。描一圈边，让它读起来还是"一条"而不是两条 */
+  .ev.gapped{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 34%,transparent)}
   .ev.gcal{border:1px dashed color-mix(in srgb,var(--c) 55%,var(--border))}
   /* 正计时进行中：日历上先占着位置，跟着秒数往下长 */
   .ev.live{border:1.5px dashed color-mix(in srgb,var(--c) 65%,transparent);transition:height .5s linear;
@@ -402,6 +404,10 @@
   .sk-x:hover{color:#c0392b}
   .sk-cats{display:flex;gap:6px;margin-bottom:8px}
   .sk-cats select{flex:1;min-width:0;padding:4px 7px;font-size:11.5px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--muted)}
+  .evs.gap{opacity:.6}
+  .evs.gap i{background:var(--border);border:1px dashed var(--muted);box-sizing:border-box}
+  .evs.gap .nm{font-style:italic}
+  .pomo-seglist span.gap{opacity:.55;font-style:italic}
   .sk-plan{margin:0 0 8px}
   .sk-planh{font-size:11px;color:var(--muted);cursor:pointer;user-select:none;padding:2px 0}
   .sk-planh:hover{color:var(--primary)}
@@ -4196,7 +4202,7 @@ margin-left: -22px;
   function hrs(min){return min>=60?((Math.round(min/6)/10)+"h"):(Math.round(min)+"m");}
   function stepMin(st){                              // 这一步实际花了多久
     var m=+st.act||0;
-    events.forEach(function(e){if(e.stepId===st.id)m+=evMinutes(e);});
+    events.forEach(function(e){if(e.stepId===st.id)m+=evNetMin(e);});
     return m;}
   function skillSum(sk){
     var est=0,act=0,done=0;
@@ -4476,19 +4482,24 @@ margin-left: -22px;
     if(timerMode!=="up")return null;                      // 只有正计时有这个"边做边长"的语义
     if(!pTimer&&!pElapsed)return null;                    // 暂停时保留（冻住），归零后消失
     if(!pomoToCal||!pomoToCal.checked)return null;         // 你没勾"记入日历"就别画
-    var sec=Math.min(pElapsed,UPMAX);if(sec<1)return null;
+    var wsec=Math.min(pElapsed,UPMAX);if(wsec<1)return null;
+    var ss=allSegs(),gap=0;ss.forEach(function(s){if(s.gap)gap+=(+s.sec||0);});
+    var sec=wsec+gap;                                     // 块占的高度 = 墙上时间（含中间那些洞）
     var end=new Date(),start=new Date(end.getTime()-sec*1000);
     if(fmt(start)!==fmt(end)){                            // 跨零点：只画今天这一截
       start=new Date(end.getFullYear(),end.getMonth(),end.getDate(),0,0,0);
-      sec=Math.max(1,Math.round((end-start)/1000));}
+      sec=Math.max(1,Math.round((end-start)/1000));wsec=Math.min(wsec,sec);}
     var pc=pomoCat.value,ps=pomoSub.value||null,pf=document.getElementById("pomo-par");
     var e={id:"__live",date:fmt(start),
       start:pad(start.getHours())+":"+pad(start.getMinutes()),
       end:pad(end.getHours())+":"+pad(end.getMinutes()),
       title:catLabelOf(pc,ps),note:(pomoTask.value||"").trim()||null,
-      cat:pc,sub:ps,done:false,live:true,sec:sec,par:!!(pf&&pf.checked)};
-    var ss=allSegs();if(ss&&ss.length>1)e.segs=ss;         // 换过任务的话，色块跟着分段一起长
+      cat:pc,sub:ps,done:false,live:true,sec:sec,wsec:wsec,par:!!(pf&&pf.checked)};
+    if(ss&&ss.length>1)e.segs=ss;                          // 换过任务 / 中间停过：色块跟着一起长
     return e;}
+  function liveLabel(e){                                   // 块上那行小字：走了多久，其中停了多久
+    var g=Math.max(0,(+e.sec||0)-(+e.wsec||e.sec||0));
+    return e.start+" · 已"+secLabel(e.wsec||e.sec)+(g>=GAPMIN?("（停 "+secLabel(g)+"）"):"");}
   function liveH(e){var p=evPos(e);return Math.max(EVMINH,Math.min(e.sec/3600*PH,GH-p.top));}  // 和普通块同一个地板，停表时不会突然缩一下
   // key 里故意不放 start：它是"现在 - 已走秒数"算出来的，四舍五入会在整分处来回跳一格，
   // 放进去就会平白无故整张重画。真正需要重画的是它出现/消失/换了名字或分类。
@@ -4500,7 +4511,8 @@ margin-left: -22px;
     var n=calBody.querySelector(".ev.live");
     if(!n)return;                                         // 当前视图里看不见它，什么都不用做
     n.style.height=liveH(e).toFixed(1)+"px";              // 只动这一块的高度，不重画整张日历
-    var h=n.querySelector(".h");if(h)h.textContent=e.start+" · 已"+secLabel(e.sec);}
+    if(e.segs){var g=segGrad(e);if(g)n.style.background=g;}   // 暂停时洞在长：渐变的比例也得跟着改
+    var h=n.querySelector(".h");if(h)h.textContent=liveLabel(e);}
   function eventsOn(ds){
     var local=events.filter(function(e){return e.date===ds;});
     var lv=liveEv();if(lv&&lv.date===ds)local=local.concat([lv]);
@@ -4509,21 +4521,32 @@ margin-left: -22px;
     return local.concat(g);
   }
   function toMin(s){var p=s.split(":");return(+p[0])*60+(+p[1]);}
-  function evMinutes(e){var s=toMin(e.start),en=toMin(e.end);return en>s?en-s:0;}
+  function evMinutes(e){var s=toMin(e.start),en=toMin(e.end);return en>s?en-s:0;}   // 墙上时间：块画多高看它
+  // 正计时中途暂停，会在段里留下一个 {gap:true}。它占日历上的位置（那个洞），
+  // 但不是专注时间 —— 所有"我做了多久"的地方都要用 evNetMin，别用 evMinutes。
+  function evGapSec(e){var g=0,ss=(e&&e.segs)||[];ss.forEach(function(s){if(s.gap)g+=(+s.sec||0);});return g;}
+  function evNetMin(e){
+    var ss=evSegs(e);if(!ss)return evMinutes(e);
+    var tot=0,work=0;ss.forEach(function(s){var x=+s.sec||0;tot+=x;if(!s.gap)work+=x;});
+    if(tot<=0||work>=tot)return evMinutes(e);
+    return Math.round(evMinutes(e)*work/tot);}
   // 一条事件可以由若干「段」组成（正计时里点「换任务」切出来的）。段是先后发生、互不重叠的，
   // 所以这条事件的时长可以按各段实测秒数分账给不同分类，加起来仍等于实际时长，不会虚高。
   function evSegs(e){var ss=e&&e.segs;if(!ss||ss.length<2)return null;
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});return tot>0?ss:null;}
-  function evMix(e){                       // → [{cat,sub,min}]，同分类合并；min 之和恰好等于 evMinutes(e)
+  function evMix(e){                       // → [{cat,sub,min}]，同分类合并；min 之和恰好等于 evNetMin(e)
     var m=evMinutes(e),ss=evSegs(e);
     if(!ss)return [{cat:e.cat,sub:e.sub||null,min:m}];
-    var tot=0,by={},order=[];ss.forEach(function(s){tot+=(+s.sec||0);});
-    ss.forEach(function(s){var k=(s.cat||"")+"|"+(s.sub||"");
+    var net=evNetMin(e),work=0,by={},order=[];
+    ss.forEach(function(s){if(!s.gap)work+=(+s.sec||0);});
+    if(work<=0)return [];                                      // 整条都是洞：不该发生，真发生了也别算进统计
+    ss.forEach(function(s){if(s.gap)return;                    // 暂停不属于任何分类
+      var k=(s.cat||"")+"|"+(s.sub||"");
       if(!by[k]){by[k]={cat:s.cat,sub:s.sub||null,sec:0};order.push(k);}
       by[k].sec+=(+s.sec||0);});
-    var out=order.map(function(k){var x=by[k],exact=m*x.sec/tot;
+    var out=order.map(function(k){var x=by[k],exact=net*x.sec/work;
       return {cat:x.cat,sub:x.sub,min:Math.floor(exact),r:exact-Math.floor(exact)};});
-    var left=m-out.reduce(function(a,x){return a+x.min;},0);   // 最大余数法补齐，保证总和分毫不差
+    var left=net-out.reduce(function(a,x){return a+x.min;},0);   // 最大余数法补齐，保证总和分毫不差
     out.slice().sort(function(a,b){return b.r-a.r;}).forEach(function(x){if(left>0){x.min++;left--;}});
     return out.map(function(x){return {cat:x.cat,sub:x.sub,min:x.min};});}
   function evMinFor(e,ck,sk){              // 这条事件算给某大类/小类的分钟数（"__all" 或空 = 不筛）
@@ -4548,14 +4571,15 @@ margin-left: -22px;
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});
     var s0=toMin(e.start),m=evMinutes(e),acc=0;
     return ss.map(function(s){var a=s0+m*acc/tot;acc+=(+s.sec||0);var b=s0+m*acc/tot;
-      return {t:s.t||"",cat:s.cat,sub:s.sub||null,sec:+s.sec||0,min:Math.max(0,Math.round(b-a)),
+      return {t:s.t||"",gap:!!s.gap,cat:s.cat,sub:s.sub||null,sec:+s.sec||0,min:Math.max(0,Math.round(b-a)),
         start:mmStr(Math.round(a)),end:mmStr(Math.round(b))};});}
   function segGrad(e){                     // 日历色块：纵向按各段时长分色（上→下 = 时间先后）
     var ss=evSegs(e);if(!ss)return "";
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});
     var acc=0,stops=[];
     ss.forEach(function(s){var a=acc/tot*100;acc+=(+s.sec||0);var b=acc/tot*100;
-      var c="color-mix(in srgb,"+subColor(s.cat,s.sub)+" 50%,var(--bg))";
+      var c=s.gap?"color-mix(in srgb,var(--c) 7%,var(--bg))"      // 洞：同色但几乎空，一眼看出"这段没做事"
+        :"color-mix(in srgb,"+subColor(s.cat,s.sub)+" 50%,var(--bg))";
       stops.push(c+" "+a.toFixed(2)+"% "+b.toFixed(2)+"%");});
     return "linear-gradient(180deg,"+stops.join(",")+")";}
   var EVMINH=9;                                   // 块最矮 9px（≈12 分钟）——再矮就点不动了
@@ -4592,9 +4616,10 @@ margin-left: -22px;
       :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG());
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
+    if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
     return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?e.start+" · 已"+secLabel(e.sec):e.start)+'</div>'+lbl+fish+corner+'</div>';}
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):e.start)+'</div>'+lbl+fish+corner+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -4873,7 +4898,7 @@ margin-left: -22px;
   function goalProgress(g){
     var st=goalPeriodStart(g),en=goalPeriodEnd(g);
     var matched=events.filter(function(e){var d=parse(e.date);return d>=st&&d<=en&&matchesGoal(e,g);});
-    var mins=matched.reduce(function(a,e){return a+((g.cat||g.sub)?evMinFor(e,g.cat||"__all",g.sub||"__all"):evMinutes(e));},0);
+    var mins=matched.reduce(function(a,e){return a+((g.cat||g.sub)?evMinFor(e,g.cat||"__all",g.sub||"__all"):evNetMin(e));},0);
     var cnt=matched.length;
     // 记录型：没有目标值，只累计。时长和次数都给出来 —— 花了多少时间、来回多少趟，都是"精力"的一面。
     if(g.track)return{cur:(g.type==="time"?mins:cnt),target:0,mins:mins,cnt:cnt,track:true,
@@ -5025,7 +5050,7 @@ margin-left: -22px;
       )+"<br>关联："+esc(assoc);
     var gc=g.cat?catColor(g.cat):"var(--primary)";
     var weeks=26,today=new Date();today.setHours(0,0,0,0);var endW=startOfWeek(today),startW=addDays(endW,-(weeks-1)*7);
-    var counts={};events.forEach(function(e){if(matchesGoal(e,g))counts[e.date]=(counts[e.date]||0)+(g.type==="time"?evMinutes(e):1);});
+    var counts={};events.forEach(function(e){if(matchesGoal(e,g))counts[e.date]=(counts[e.date]||0)+(g.type==="time"?evNetMin(e):1);});
     var cells="";
     for(var w=0;w<weeks;w++){for(var d=0;d<7;d++){var day=addDays(startW,w*7+d),ds=fmt(day),val=counts[ds]||0,lv=levelOf(g,val),fut=day>today;
       var bg=fut?"transparent":(lv===0?"var(--surface-2)":"color-mix(in srgb,"+gc+" "+(18+lv*19)+"%,var(--bg))");
@@ -5035,7 +5060,7 @@ margin-left: -22px;
     document.getElementById("gd-legend").innerHTML=lg;
     var evs=events.filter(function(e){return matchesGoal(e,g);}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,40);
     document.getElementById("gd-events").innerHTML=evs.length?evs.map(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];
-      return '<div class="gd-ev"><span>'+e.date+' '+wd+'</span><span class="ge-t">'+esc(e.title)+'</span><span class="ge-v">'+(g.type==="time"?evMinutes(e)+"分":"1 次")+'</span><button class="ge-del" data-gdel="'+e.id+'" title="删除这条记录" aria-label="删除">×</button></div>';}).join(""):'<div class="dash-empty">还没有相关记录，去日历添加或点「打卡 +1」</div>';
+      return '<div class="gd-ev"><span>'+e.date+' '+wd+'</span><span class="ge-t">'+esc(e.title)+'</span><span class="ge-v">'+(g.type==="time"?evNetMin(e)+"分":"1 次")+'</span><button class="ge-del" data-gdel="'+e.id+'" title="删除这条记录" aria-label="删除">×</button></div>';}).join(""):'<div class="dash-empty">还没有相关记录，去日历添加或点「打卡 +1」</div>';
     gdOverlay.classList.add("on");
   }
   function closeGD(){gdOverlay.classList.remove("on");}
@@ -5200,11 +5225,17 @@ margin-left: -22px;
     var st=editSegs?segTimes({start:fStart.value,end:fEnd.value,segs:editSegs}):null;
     if(!st){f.style.display="none";box.innerHTML="";return;}
     f.style.display="";
+    var gp=0;st.forEach(function(s){if(s.gap)gp+=(+s.sec||0);});
     box.innerHTML=st.map(function(s){
+      if(s.gap)return '<div class="evs gap"><i></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
+        '<span class="nm">暂停</span><span class="cg">不计入统计</span><span class="mn">'+secLabel(s.sec)+'</span></div>';
       return '<div class="evs"><i style="background:'+subColor(s.cat,s.sub)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
         '<span class="nm">'+esc(s.t||"（未命名）")+'</span><span class="cg">'+esc(catName(s.cat))+(s.sub?" › "+esc(subName(s.cat,s.sub)):"")+'</span>'+
         '<span class="mn">'+secLabel(s.sec)+'</span></div>';}).join("")+
-      '<div class="evs-note">统计里这条按各段实测时长分账，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
+      '<div class="evs-note">统计里这条按各段实测时长分账'+
+      (gp?('，这段区间占 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分，其中<b>暂停 '+Math.round(evMinutes({start:fStart.value,end:fEnd.value})*gp/st.reduce(function(a,s){return a+s.sec;},0))+' 分不算专注</b>')
+        :('，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分'))+
+      '（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
   function closeModal(){overlay.classList.remove("on");}
   document.getElementById("ev-cancel").addEventListener("click",closeModal);
   document.getElementById("ev-gcal-row").addEventListener("click",function(e){
@@ -5334,20 +5365,31 @@ margin-left: -22px;
   // ---- 正计时里「换任务」：一次专注拆成若干段，总计时不停 ----
   // 段的边界用「已走秒数」而不是钟表时间记，所以暂停、关网页、电脑睡眠都不会算错。
   var pSegs=[],pSegStart=0,segSig="";
+  // 暂停超过 GAPMIN 秒才记成洞。再短的洞画出来是零点几个像素，只会把段列表弄乱，
+  // 不如照旧从前面挤掉 —— 差几十秒，肉眼和统计都看不出来。
+  // 单个洞封顶 2 小时。停到这个份上，「这还算同一次专注吗」已经很可疑了 ——
+  // 不封顶的话，暂停着过一夜会造出一条跨天的坏记录。
+  var GAPMIN=30,GAPMAX=7200,pPauseAt=0,pPauseT=null;
+  function curPauseSec(){return pPauseAt?Math.min(GAPMAX,Math.max(0,Math.round((Date.now()-pPauseAt)/1000))):0;}
+  function cancelPause(){if(pPauseT){clearInterval(pPauseT);pPauseT=null;}pPauseAt=0;}
+  function endPause(){var g=curPauseSec();cancelPause();      // 继续走：把这个洞正式落进段里
+    if(g>=GAPMIN)pSegs.push({gap:true,t:"暂停",sec:g});return g;}
   var segsBox=document.getElementById("pomo-segs"),switchBtn=document.getElementById("pomo-switch");
   function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||"专注");}
   function curSegLabel(){return (pomoTask.value||"").trim()||catLabelOf(pomoCat.value,pomoSub.value||null);}
   function curSegSec(){return Math.max(0,pElapsed-pSegStart);}
   function mergeSegs(list){var out=[];                       // 连着的同任务同分类合成一段
     list.forEach(function(s){var p=out[out.length-1];
-      if(p&&p.cat===s.cat&&(p.sub||null)===(s.sub||null)&&p.t===s.t){p.sec+=s.sec;return;}
-      out.push({t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec});});
+      if(p&&p.gap&&s.gap){p.sec+=s.sec;return;}               // 连着两个洞就是一个洞
+      if(p&&!p.gap&&!s.gap&&p.cat===s.cat&&(p.sub||null)===(s.sub||null)&&p.t===s.t){p.sec+=s.sec;return;}
+      out.push(s.gap?{gap:true,t:"暂停",sec:s.sec}:{t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec});});
     return out;}
   function allSegs(){var out=pSegs.slice(),sec=curSegSec();
     if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});  // 几秒也照记
+    var g=curPauseSec();if(g>=GAPMIN)out.push({gap:true,t:"暂停",sec:g});   // 正在长的那个洞
     return mergeSegs(out);}
   function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+"秒"):(Math.round(sec/60)+"分");}
-  function clearSegs(){pSegs=[];pSegStart=0;segSig="";renderSegs();}
+  function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();}
   function renderSegs(){
     if(!segsBox)return;
     var list=(timerMode==="up")?allSegs():[],multi=list.length>1;
@@ -5355,10 +5397,11 @@ margin-left: -22px;
     if(sig===segSig)return; segSig=sig;                      // 分钟数没变就不重绘，免得每半秒闪一下
     segsBox.classList.toggle("on",multi);
     if(!multi){segsBox.innerHTML="";return;}
+    var segCol=function(s){return s.gap?"var(--border)":subColor(s.cat,s.sub);};
     segsBox.innerHTML='<div class="pomo-segbar">'+
-      list.map(function(s){return '<span style="flex:'+s.sec+';background:'+subColor(s.cat,s.sub)+'"></span>';}).join("")+
+      list.map(function(s){return '<span style="flex:'+s.sec+';background:'+segCol(s)+'"></span>';}).join("")+
       '</div><div class="pomo-seglist">'+
-      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+'"><i style="background:'+subColor(s.cat,s.sub)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
+      list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+(s.gap?" gap":"")+'"><i style="background:'+segCol(s)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
       '</div>';}
   function switchTask(){
     if(!pTimer||timerMode!=="up")return;
@@ -5371,21 +5414,28 @@ margin-left: -22px;
   if(switchBtn)switchBtn.addEventListener("click",switchTask);
   function logFocusToCalendar(focusSec,endMs){
     var typed=(pomoTask.value||"").trim();
-    var segs=(timerMode==="up")?allSegs():null;if(segs&&segs.length<2)segs=null;
+    var segs=(timerMode==="up")?allSegs():null,gapSec=0,trail=0;
+    if(segs){                                              // 停在暂停上就直接收尾 → 末尾不留洞，结束时间往回拨
+      while(segs.length&&segs[segs.length-1].gap){trail+=(+segs[segs.length-1].sec||0);segs.pop();}
+      segs.forEach(function(s){if(s.gap)gapSec+=(+s.sec||0);});}
+    if(segs&&segs.length<2)segs=null;
     // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
-    if(segs)segs.forEach(function(s){if(s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
+    if(segs)segs.forEach(function(s){if(!s.gap&&s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
     else if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
     if(!pomoToCal.checked)return;
     var pc=pomoCat.value,ps=pomoSub.value||null;
     var note=typed;                      // 你打的字进「备注」，标题统一是「大类 · 小类」
     if(segs){
       var by={},best=null;                                   // 主分类 = 占时最长的那个，决定色块底色和筛选
-      segs.forEach(function(s){var k=(s.cat||"")+"|"+(s.sub||"");by[k]=(by[k]||0)+s.sec;});
+      segs.forEach(function(s){if(s.gap)return;var k=(s.cat||"")+"|"+(s.sub||"");by[k]=(by[k]||0)+s.sec;});
       Object.keys(by).forEach(function(k){if(!best||by[k]>by[best])best=k;});
-      pc=best.split("|")[0];ps=best.split("|")[1]||null;
-      note=segs.map(function(s){return s.t+" "+secLabel(s.sec);}).join(" · ");}   // 换过任务：备注里把每段列清楚
+      if(best){pc=best.split("|")[0];ps=best.split("|")[1]||null;}
+      note=segs.map(function(s){return s.gap?("暂停 "+secLabel(s.sec)):(s.t+" "+secLabel(s.sec));}).join(" · ");}
     var task=catLabelOf(pc,ps);
-    var end=new Date(endMs||Date.now()),start=new Date(end.getTime()-focusSec*1000);
+    var end=new Date((endMs||Date.now())-trail*1000);       // 最后是停着结束的 → 结束时间是"最后一次做事"那会儿
+    var start=new Date(end.getTime()-(focusSec+gapSec)*1000);  // 起点回到你真正按下开始的时刻
+    var day0=new Date(end.getFullYear(),end.getMonth(),end.getDate(),0,0,0);
+    if(start<day0)start=day0;                               // 但不越过零点 —— 这条记录是画在 end 那一天的
     // 番茄钟记进来的是"已经做完的时间"，不是计划 → 直接打勾
     var pf=document.getElementById("pomo-par");
     var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked),note:note||null};
@@ -5501,10 +5551,15 @@ margin-left: -22px;
     drawPomo();pomoTitle();}
   function stopTimer(){
     if(pTimer){clearInterval(pTimer);pTimer=null;
-      if(timerMode==="up")pBase=pElapsed;}                       // 暂停：把已走的时间记下来
-    startBtn.textContent="开始";savePomoRun();pomoTitle();}
+      if(timerMode==="up"){pBase=pElapsed;                       // 暂停：把已走的时间记下来
+        var cs=curSegSec();                                      // 先把手上这一段封口，洞才排得进它后面
+        if(cs>0){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:cs});pSegStart=pElapsed;}
+        if(pElapsed>0){pPauseAt=Date.now();                      // 洞从这一刻开始往下长
+          pPauseT=setInterval(function(){try{liveRefresh();}catch(e){}},1000);}}}
+    startBtn.textContent="开始";savePomoRun();pomoTitle();try{drawPomo();}catch(e){}}
   function startTimer(){
     if(pTimer)return;
+    endPause();
     var now=Date.now();
     if(timerMode==="up"){pStartAt=now;pBase=pElapsed;}
     else pEndAt=now+pLeft*1000;
@@ -5517,7 +5572,9 @@ margin-left: -22px;
     save("tt_pomorun",null);drawPomo();}
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
-  function finishUp(endMs){stopTimer();if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
+  function finishUp(endMs){var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
+    if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
+    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
     pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);
     pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
     try{if(state.tab==="todo")renderSkills();}catch(e){}
@@ -5717,9 +5774,9 @@ margin-left: -22px;
       if(st){st.forEach(function(s){         // 分段事件：一段一行，钟点按段顺序推算，方便进 Excel 透视
         var mn=s.min||Math.round(s.sec/60*100)/100;   // 不满 1 分钟的段写成小数，别在表里变成 0
         lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn,e.par?"是":""].join(","));});return;}
-      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evMinutes(e),e.par?"是":""].join(","));});
+      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evNetMin(e),e.par?"是":""].join(","));});
     return "﻿"+lines.join("\r\n");}
-  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evMinutes(e)+"分)\n";});return s;}
+  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evNetMin(e)+"分)\n";});return s;}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
     if(!rows.length)return '<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+'</div></div><div class="stat-empty">该范围内没有记录</div>';
     var h='<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+' · 共 '+fmtDur(total)+' · '+rows.length+' 项</div></div>';
@@ -5729,8 +5786,8 @@ margin-left: -22px;
       if(keys.length>1||keys[0]!=="__none"){h+='<div class="rep-break">';keys.forEach(function(k){var nm=k==="__none"?"（未细分）":subName(ck,k),m=bySub[k];h+='<div class="rb"><span>'+esc(nm)+'</span><span>'+fmtDur(m)+' · '+Math.round(m/total*100)+'%</span></div>';});h+='</div>';}}
     h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>';
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];var cn=evCatLabel(e).replace(" · "," › ");
-      var st=segTimes(e),det=st?'<div class="rep-segs">'+st.map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+secLabel(s.sec)+'</em>';}).join(" · ")+'</div>':'';
-      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evMinutes(e)+'分</td></tr>';});
+      var st=segTimes(e),det=st?'<div class="rep-segs">'+st.filter(function(s){return !s.gap;}).map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+secLabel(s.sec)+'</em>';}).join(" · ")+'</div>':'';
+      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evNetMin(e)+'分</td></tr>';});
     return h+'</tbody></table></div>';}
   function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){ttAlert("此环境不支持直接下载，请改用「复制文本」");}}
   function copyText(txt,btn){function ok(){if(btn){var o=btn.textContent;btn.textContent="已复制";setTimeout(function(){btn.textContent=o;},1400);}}
@@ -6371,7 +6428,7 @@ margin-left: -22px;
     if(aiProvider!=="ollama"&&!apiKey){aiMsg('还没设置 Gemini API Key —— 点左边 ⚙️ 粘进去保存（或把「AI 服务」切成本地 Ollama）。',"err");return;}
     aiMsg('思考中…');
     var today=new Date(),ws=startOfWeek(today),wkMin=0;
-    events.forEach(function(e){var d=parse(e.date);if(d>=ws&&d<=today)wkMin+=evMinutes(e);});
+    events.forEach(function(e){var d=parse(e.date);if(d>=ws&&d<=today)wkMin+=evNetMin(e);});
     var pend=todos.filter(function(t){return !t.done;}).length;
     var sys="你是个人时间管理 App 的助手。今天 "+fmt(today)+"（周"+WD[(today.getDay()+6)%7]+"）。"+
       "可用大类："+cats.map(function(c){return c.name;}).join("、")+"。"+
