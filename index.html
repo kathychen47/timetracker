@@ -1046,6 +1046,12 @@
   /* 只作用在查词页；阅读弹窗里的 .dict-def 有自己的字号，别被这条盖掉 */
   #dict-result .dict-def{font-size:var(--dfs,14px)}
   .dict-fs button{font-size:12.5px;padding:0 9px;min-width:34px}
+  .dict-src.trpick{cursor:pointer;border-bottom:1px dashed var(--border)}
+  .dict-src.trpick:hover{color:var(--primary);border-bottom-color:var(--primary)}
+  .dict-treng{font-size:12.5px;white-space:nowrap;color:var(--muted)}
+  #dict-trauto{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 40%,var(--border))}
+  #dict-trauto.off{color:var(--muted);border-color:var(--border);opacity:.75}
+  .dict-treng:hover{color:var(--primary);border-color:var(--primary)}
   .dict-sugg{margin:-6px 0 12px}
   .dict-sugg .sg{padding:9px 14px;border:1px solid var(--border);border-top:none;background:var(--surface);cursor:pointer;font-size:14px;display:flex;justify-content:space-between;gap:10px}
   .dict-sugg .sg:first-child{border-top:1px solid var(--border);border-radius:10px 10px 0 0}
@@ -3264,6 +3270,8 @@ margin-left: -22px;
               <button data-acc="en-GB" class="on">英</button>
               <button data-acc="en-US">美</button>
             </div>
+            <button class="btn dict-treng" id="dict-trauto" type="button"></button>
+            <button class="btn dict-treng" id="dict-treng" type="button"></button>
             <div class="seg dict-fs" title="正文字号">
               <button id="dict-fs-d" type="button">A−</button>
               <button id="dict-fs-u" type="button">A＋</button>
@@ -4698,12 +4706,16 @@ margin-left: -22px;
   function wModelMB(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].mb;return 0;}
 
   function wkrSrc(){return [
-    'import { pipeline, env } from "'+TJS+'";',
-    'env.allowLocalModels=false;',
-    'let pipe=null,cur="";',
+    // 别用顶上的静态 import：它失败是模块解析期的错，浏览器多半不派发 error 事件，
+    // 主线程只会看到"什么都没发生"。放进 try 里动态 import，失败才报得回来。
+    'let pipe=null,cur="",TF=null;',
+    'async function lib(){if(!TF)TF=await import("'+TJS+'");return TF;}',
+    'self.postMessage({type:"boot"});',
     'self.onmessage=async (e)=>{',
     '  const {audio,model,lang,device}=e.data;',
     '  try{',
+    '    const {pipeline,env}=await lib();',
+    '    env.allowLocalModels=false;',
     '    if(!pipe||cur!==model+"|"+device){',
     '      if(pipe){try{await pipe.dispose();}catch(_){}}',
     '      cur=model+"|"+device;',
@@ -4785,11 +4797,18 @@ margin-left: -22px;
     var model=wModel(),dev=wDevice();
     return toPCM16k(blob).then(function(a){
       return new Promise(function(res,rej){
-        var w=wkrGet(),seen={},t0=Date.now();
-        function off(){w.removeEventListener("message",onmsg);w.removeEventListener("error",onerr);}
+        var w=wkrGet(),seen={},t0=Date.now(),wd=null;
+        // 看门狗：worker 那头彻底不吭声时（拿不到 transformers.js 最常见），
+        // 不能让 Promise 永远挂着 —— 那会把 wkrBusy 永久卡住，整个功能就"没了"。
+        function bark(ms,why){if(wd)clearTimeout(wd);wd=setTimeout(function(){
+          off();wkrBusy=false;wProg(null);
+          try{w.terminate();}catch(e){}if(wkr===w)wkr=null;
+          rej(new Error(why));},ms);}
+        function off(){if(wd)clearTimeout(wd);w.removeEventListener("message",onmsg);w.removeEventListener("error",onerr);}
         function onmsg(e){
           var d=e.data||{};
-          if(d.type==="load"){
+          if(d.type==="boot"){bark(45000,"等了 45 秒也没能加载转写引擎 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。换个网络再试。");return;}
+          if(d.type==="load"){bark(120000,"下载模型卡住了（两分钟没进展）。换个网络，或在引擎那儿选个小一点的模型。");
             var p=d.p||{};
             if(p.status==="progress"&&p.file){
               seen[p.file]=p.progress||0;
@@ -4797,7 +4816,7 @@ margin-left: -22px;
               wProg("下载模型 "+wModelMB(model)+"MB（只有第一次）…",avg);}
             else if(p.status==="ready")wProg("准备中…",null);
             return;}
-          if(d.type==="run"){
+          if(d.type==="run"){bark(30*60*1000,"转写超过 30 分钟还没结束，先停了。试试选 tiny 模型，或把音频切短一点。");
             // 粗估：GPU 大约音频时长的 1/8，CPU 大约 1/2。给个数总比让你干等强。
             var eta=Math.max(1,Math.round(a.dur*(dev==="webgpu"?0.12:0.5)/60));
             wProg((dev==="webgpu"?"GPU":"CPU")+" 转写中 · "+tsLabel(a.dur)+" 的音频 · 大概 "+eta+" 分钟…",null);return;}
@@ -4809,6 +4828,7 @@ margin-left: -22px;
           rej(new Error("转写线程起不来："+((ev&&ev.message)||"多半是网络拿不到 transformers.js")));}
         w.addEventListener("message",onmsg);w.addEventListener("error",onerr);
         wProg("准备中…",null);
+        bark(20000,"转写线程 20 秒没有任何反应 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。");
         w.postMessage({audio:a.pcm,model:model,lang:lang||undefined,device:dev});});
     }).catch(function(err){wkrBusy=false;wProg(null);throw err;});}
 
@@ -7693,9 +7713,10 @@ margin-left: -22px;
       // 输入的是词组/句子 —— 直接给翻译
       var multi=isCJK(q)?(q.length>4):(q.trim().split(/\s+/).length>1);
       if(multi){
+        if(!trAuto){box.innerHTML=trAskHTML(q);return;}
         box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
         try{var tres=await translateText(q);
-          box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tres.by)+'</span></div>'+
+          box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(q)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tres.by)+'</span></div>'+
             '<div class="rd-tr">'+esc(tres.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div></div>';
         }catch(e){box.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎。</div>';}
         return;}
@@ -7707,7 +7728,7 @@ margin-left: -22px;
         '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
       try{var tr2=await translateText(q);
         var fb=document.getElementById("dict-fallback");
-        if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr2.by)+'</span></div>'+
+        if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(q)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr2.by)+'</span></div>'+
           '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';
         if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);}
       catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
@@ -8107,7 +8128,7 @@ margin-left: -22px;
         var mine=def.querySelector(".dict-card.mynote"),keep=mine?mine.outerHTML:"";   // 自己写的解释留着，别被翻译顶掉
         def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译中…</div>';
         try{var tr=await translateText(w);
-          def.innerHTML=keep+'<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
+          def.innerHTML=keep+'<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
             '<div class="rd-tr">'+esc(tr.text)+'</div></div>';}
         catch(e){def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译也失败了</div>';}
         if(!keep)def.innerHTML+='<div class="rd-mine"><button class="dict-add" data-note="'+esc(w)+'">✎ 自己写释义</button>'+
@@ -8519,8 +8540,11 @@ margin-left: -22px;
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
   function closeFlash(){stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
-  try{bindRec();}catch(e){}
-  try{bindWhisper();}catch(e){}
+  // 这两个以前是 catch(e){} 全吞。绑定挂了的话，按钮就是死的，而且一点线索都没有。
+  try{bindRec();}catch(e){console.error("录音页绑定失败",e);}
+  try{bindWhisper();}catch(e){console.error("Whisper 绑定失败",e);
+    try{var _rw=document.getElementById("rec-whisper");
+      if(_rw)_rw.addEventListener("click",function(){ttAlert("转写功能没能初始化："+(e&&e.message||e));});}catch(_){}}
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
       var b=e.target.closest("button[data-dt]");if(!b)return;
@@ -8538,6 +8562,11 @@ margin-left: -22px;
     if(fsd)fsd.addEventListener("click",function(){dictFsStep(-1);});
     if(fsu)fsu.addEventListener("click",function(){dictFsStep(1);});
     dictFsApply();
+    var teg=document.getElementById("dict-treng");
+    if(teg)teg.addEventListener("click",function(){trPick(teg,function(){refreshLookup();});});
+    var tau=document.getElementById("dict-trauto");
+    if(tau)tau.addEventListener("click",function(){trToggleAuto();refreshLookup();});
+    trPaintEng();trPaintAuto();
     var acc=document.getElementById("dict-acc");
     if(acc){acc.addEventListener("click",function(e){var b=e.target.closest("button[data-acc]");if(!b)return;pronAccent=b.getAttribute("data-acc");save("tt_pronacc",pronAccent);acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});});
       acc.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-acc")===pronAccent);});}
@@ -8782,12 +8811,15 @@ margin-left: -22px;
     if(!toZh&&!srcZh)return null;                      // 英译英：同上
     return toZh?LTR.zh:LTR.en;}
   function ltrSrc(model){return [
-    'import { pipeline, env } from "'+TJS+'";',
-    'env.allowLocalModels=false;',
-    'let pipe=null,cur="";',
+    // 和 Whisper 那个一样：静态 import 失败不派发 error，只会挂死。动态 import 才报得出来。
+    'let pipe=null,cur="",TF=null;',
+    'async function lib(){if(!TF)TF=await import("'+TJS+'");return TF;}',
+    'self.postMessage({type:"boot"});',
     'self.onmessage=async (e)=>{',
     '  const {texts,model}=e.data;',
     '  try{',
+    '    const {pipeline,env}=await lib();',
+    '    env.allowLocalModels=false;',
     '    if(!pipe||cur!==model){',
     '      if(pipe){try{await pipe.dispose();}catch(_){}}',
     '      cur=model;',
@@ -8810,17 +8842,21 @@ margin-left: -22px;
         if(ltrW)ltrW.terminate();
         ltrW=new Worker(URL.createObjectURL(new Blob([ltrSrc(model)],{type:"text/javascript"})),{type:"module"});
         ltrW.__m=model;}
-      var w=ltrW,seen={};
-      function off(){w.removeEventListener("message",on);w.removeEventListener("error",er);}
+      var w=ltrW,seen={},wd=null;
+      function bark(ms,why){if(wd)clearTimeout(wd);wd=setTimeout(function(){
+        off();try{w.terminate();}catch(e){}if(ltrW===w)ltrW=null;rej(new Error(why));},ms);}
+      function off(){if(wd)clearTimeout(wd);w.removeEventListener("message",on);w.removeEventListener("error",er);}
       function on(e){var d=e.data||{};
+        if(d.type==="boot"){bark(45000,"等了 45 秒也没能加载翻译引擎 —— 多半是拿不到 transformers.js。先用 Google 那个吧。");return;}
         if(d.type==="load"&&d.p&&d.p.status==="progress"&&d.p.file){
           seen[d.p.file]=d.p.progress||0;var ks=Object.keys(seen);
           if(onp)onp(0,texts.length,"下载翻译模型 ~110MB（只有第一次）… "+Math.round(ks.reduce(function(s,k){return s+seen[k];},0)/ks.length)+"%");return;}
-        if(d.type==="tick"){if(onp)onp(d.n,texts.length,"");return;}
+        if(d.type==="tick"){bark(180000,"翻译卡住了（三分钟没进展），先停了。");if(onp)onp(d.n,texts.length,"");return;}
         if(d.type==="err"){off();rej(new Error(d.msg));return;}
         if(d.type==="done"){off();res(d.out);return;}}
       function er(ev){off();rej(new Error("本地翻译起不来："+((ev&&ev.message)||"多半是拿不到 transformers.js")));}
       w.addEventListener("message",on);w.addEventListener("error",er);
+      bark(20000,"翻译线程 20 秒没有任何反应 —— 多半是拿不到 transformers.js。");
       w.postMessage({texts:texts,model:model});});
     ltrBusy=p.then(function(){ltrBusy=null;},function(){ltrBusy=null;});
     return p;}
@@ -8829,6 +8865,64 @@ margin-left: -22px;
     if(!model)return Promise.resolve(texts.slice());   // 本来就是目标语言，原样返回
     return ltrRun(texts,model,onp);}
 
+  // 引擎在哪儿都能换 —— 埋在设置里的开关不叫"偶尔用"
+  var TRENG=[
+    {v:"google",n:"Google 翻译",h:"不用 key · 按 IP 限速"},
+    {v:"local",n:"本地模型",h:"无限量 · 断网可用 · 首次下 ~110MB"},
+    {v:"mymemory",n:"MyMemory",h:"不用 key · 每日有量"},
+    {v:"ai",n:"我的 AI",h:"最准 · 走 Gemini 额度"}];
+  function trEngName(v){for(var i=0;i<TRENG.length;i++)if(TRENG[i].v===v)return TRENG[i].n;return v;}
+  // 自动翻译的开关。关掉 ≠ 不能翻，是"不自动翻" —— 卡片照出，按钮摆着，你想翻再点。
+  // 自动翻的代价不只是等，还在烧额度（Google 按 IP、AI 按 key）。
+  var trAuto=load("tt_trauto",true)!==false;
+  function trPaintAuto(){
+    var b=document.getElementById("dict-trauto");if(!b)return;
+    b.textContent=trAuto?"翻译 开":"翻译 关";
+    b.classList.toggle("off",!trAuto);
+    b.title=trAuto?"选中整句会自动翻译 · 点一下关掉":"现在不自动翻，卡片上有按钮想翻再点 · 点一下打开";}
+  function trToggleAuto(){trAuto=!trAuto;save("tt_trauto",trAuto);trPaintAuto();}
+  // 不自动翻时给一张"要不要翻"的卡片，点了才真去翻
+  function trAskHTML(text){
+    return '<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译</span>'+
+      '<button class="dict-add" data-trgo="'+esc(text)+'">🌐 翻译这段</button></div>'+
+      '<div class="dict-hint">自动翻译关着（右上角「翻译 关」可以打开）。'+
+      '现在用的是 '+esc(trEngName(trEngine))+'。</div></div>';}
+  document.addEventListener("click",function(e){
+    var b=e.target&&e.target.closest&&e.target.closest("[data-trgo]");if(!b)return;
+    e.stopPropagation();
+    var txt=b.getAttribute("data-trgo")||"",card=b.closest(".dict-card");if(!card)return;
+    card.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div>';
+    translateText(txt).then(function(r){
+      card.innerHTML='<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(txt)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(r.by)+'</span></div>'+
+        '<div class="rd-tr">'+esc(r.text)+'</div>';},
+      function(err){card.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err&&err.message||err))+'</div>';});
+  },true);
+  function trPaintEng(){
+    var c=document.getElementById("dict-treng");
+    if(c){c.textContent=trEngName(trEngine)+" ▾";c.title="翻译引擎 · 点一下换（现在是"+trEngName(trEngine)+"）";}
+    var s=document.getElementById("tr-engine");if(s)s.value=trEngine;}
+  function trPick(anchor,after){
+    return ttMenu(TRENG.map(function(e){
+      return {v:e.v,label:e.n+" · "+e.h,check:trEngine===e.v};}),{anchor:anchor}).then(function(v){
+      if(v===null||v===trEngine)return false;
+      trEngine=v;save("tt_trengine",trEngine);trPaintEng();
+      if(after)after();
+      return true;});}
+  // 译文卡片上那行「翻译 · X」点了就能换引擎，换完当场重翻这一条
+  document.addEventListener("click",function(e){
+    var t=e.target&&e.target.closest&&e.target.closest("[data-trpick]");
+    if(!t)return;
+    e.stopPropagation();
+    var txt=t.getAttribute("data-trpick")||"";
+    trPick(t,function(){
+      if(!txt)return;
+      var card=t.closest(".dict-card");if(!card)return;
+      var body=card.querySelector(".rd-tr");if(body)body.textContent="重翻中…";
+      translateText(txt).then(function(r){
+        if(body)body.textContent=r.text;
+        t.textContent="翻译 · "+r.by;t.setAttribute("data-trpick",txt);},
+        function(err){if(body)body.textContent="翻译失败："+String(err&&err.message||err);});});
+  },true);
   function translateText(text){
     var tl=trLang,name=LANGN[tl]||tl;
     if(trEngine==="local"){
@@ -10820,7 +10914,7 @@ margin-left: -22px;
       bd.innerHTML='<div class="dict-hint">词典没收录，正在翻译，请稍等…</div>';
       applyPopSize(true);placeRdPop(rect);
       try{var tr=await translateText(w0);
-        bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译 · '+esc(tr.by)+'</span></div>'+
+        bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w0)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
           '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>'+mine;
         if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)&&!trashHas(me.w)){   // 开了自动收藏：查不到的也收
           addUnknownWord(me.w,me.disp,tr.text);
@@ -11260,6 +11354,9 @@ margin-left: -22px;
       star.title=sv?"已收藏（点取消）":"加入生词本";}
     document.getElementById("rd-pop-note").style.display=can?"":"none";
     var bd=document.getElementById("rd-pop-bd");
+    if(!trAuto){                                       // 关着：卡片照出，按钮摆着，你想翻再点
+      bd.innerHTML=trAskHTML(t);
+      rdPop.style.display="";applyPopSize(false);placeRdPop(rect);rdPopIdle(9000);return;}
     bd.innerHTML='<div class="dict-hint">正在翻译，请稍等…</div>';
     rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
     if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 等 AI 期间不倒计时
