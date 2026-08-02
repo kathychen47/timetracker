@@ -1123,15 +1123,23 @@
   @media (prefers-reduced-motion:reduce){#rec-go.rec-on{animation:none}}
   .rec-live{max-height:260px;overflow:auto;background:var(--surface);border:1px solid var(--border);
     border-radius:12px;padding:10px 12px;margin-bottom:14px}
-  .rec-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
+  /* 录音列表。别叫 .rec-item —— 上面 542 行那个"跳到某处"的按钮已经占了这个名字 */
+  .vo-item{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);
     border-radius:11px;padding:10px 13px;margin-bottom:8px;cursor:pointer}
-  .rec-item:hover{border-color:var(--primary)}
-  .ri-h{flex:1;min-width:0}
-  .ri-t{display:block;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .ri-m{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
-  .ri-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;flex:none;opacity:0;transition:opacity .12s}
-  .rec-item:hover .ri-x{opacity:1}
-  .ri-x:hover{color:var(--danger)}
+  .vo-item:hover{border-color:var(--primary)}
+  .vo-h{flex:1;min-width:0}
+  .vo-t{display:block;font-weight:600;font-size:14.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vo-m{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+  .vo-x{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:15px;flex:none;opacity:0;transition:opacity .12s}
+  .vo-item:hover .vo-x{opacity:1}
+  .vo-x:hover{color:var(--danger)}
+  /* Whisper：引擎设置和进度 */
+  .rec-eng{margin:-4px 0 12px;padding:8px 11px;background:var(--surface);border:1px solid var(--border);border-radius:11px}
+  .rec-engk{font-size:11.5px;color:var(--muted);font-weight:600}
+  .rec-wp{display:flex;align-items:center;gap:10px;margin-bottom:12px;font-size:12px;color:var(--muted)}
+  .rec-wpt{flex:none}
+  .rec-wpb{flex:1;height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+  .rec-wpb i{display:block;height:100%;width:0;background:var(--primary);border-radius:99px;transition:width .3s}
   .rec-dbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
   .rec-dbar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
   .rec-title{flex:1;min-width:160px;font-size:16px;font-weight:650;padding:6px 10px;border:1px solid transparent;
@@ -3318,8 +3326,21 @@ margin-left: -22px;
           </select>
           <label class="rec-ck"><input type="checkbox" id="rec-cal"> 结束后记入日历</label>
           <span class="rec-time" id="rec-time"></span>
+          <label class="btn" style="cursor:pointer" title="已经有的会议录音、讲座音频、视频都行">📁 导入文件转写<input type="file" id="rec-file" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov" hidden></label>
           <span class="wt-note" id="rec-hint" style="margin:0"></span>
         </div>
+        <div class="rec-bar rec-eng">
+          <span class="rec-engk">Whisper 引擎</span>
+          <select id="rec-model" title="模型越大越准，也越慢、下载越大"></select>
+          <select id="rec-dev" title="用显卡还是 CPU">
+            <option value="auto">自动</option>
+            <option value="webgpu">显卡（快）</option>
+            <option value="wasm">CPU（稳）</option>
+          </select>
+          <span class="wt-note" id="rec-devnote" style="margin:0"></span>
+        </div>
+        <div class="rec-wp" id="rec-wp" hidden><span class="rec-wpt" id="rec-wpt"></span>
+          <span class="rec-wpb"><i id="rec-wpbar"></i></span></div>
         <div class="rec-live" id="rec-live" hidden></div>
         <div id="rec-list"></div>
       </div>
@@ -3337,6 +3358,7 @@ margin-left: -22px;
             <option value="2">2×</option>
           </select>
           <label class="rec-ck"><input type="checkbox" id="rec-follow" checked> 跟读</label>
+          <button class="btn" id="rec-whisper" title="用 Whisper 重新转一遍（更准，尤其是专业词和口音）">✨ 重转</button>
           <button class="btn" id="rec-export" title="导出 Markdown">⬇️</button>
         </div>
         <audio id="rec-audio" controls preload="metadata"></audio>
@@ -4477,12 +4499,13 @@ margin-left: -22px;
     if(!recs.length){box.innerHTML='<div class="dict-hint">还没有录音。点「开始录音」，说话就会出字；录完点开可以边听边看，点一句跳到那一刻。</div>';return;}
     box.innerHTML=recs.map(function(r){
       var d=new Date(r.ts),words=r.lines.reduce(function(a,l){return a+l.s.length;},0);
-      return '<div class="rec-item" data-rid="'+r.id+'">'+
-        '<div class="ri-h"><span class="ri-t">'+esc(r.title)+'</span>'+
-        '<span class="ri-m">'+fmt(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes())+
+      return '<div class="vo-item" data-rid="'+r.id+'">'+
+        '<div class="vo-h"><span class="vo-t">'+esc(r.title)+'</span>'+
+        '<span class="vo-m">'+fmt(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes())+
         ' · '+tsLabel(r.dur)+' · '+r.lines.length+' 句'+(words?(" · "+words+" 字"):"")+
+        (r.by==="whisper"?' · ✨ Whisper':(r.src==="file"?' · 📁 导入':''))+
         (r.noAudio?' · <b>只有文字</b>':'')+'</span></div>'+
-        '<button class="ri-x" data-rdel="'+r.id+'" title="删除">✕</button></div>';}).join("");}
+        '<button class="vo-x" data-rdel="'+r.id+'" title="删除">✕</button></div>';}).join("");}
 
   // ---- 打开一条：边听边看 ----
   async function recOpen(id){
@@ -4600,6 +4623,187 @@ margin-left: -22px;
   function openRec(){
     if(!document.getElementById("rec-doc")||document.getElementById("rec-doc").style.display==="none")recRenderList();
     if(!SRC)recNote("这个浏览器不做实时转写（Chrome / Edge 可以），音频还是能录。");}
+  // ---------- Whisper：把已有的音频/视频转成带时间戳的稿子 ----------
+  // 引擎用 transformers.js（huggingface，Apache-2.0）跑 OpenAI Whisper 的 ONNX 版，
+  // 全在浏览器里算，音频一个字节都不上传 —— 会议录音这点很要紧。
+  // 模型第一次要下载（base 约 77MB），之后浏览器 Cache 里留着，离线也能用。
+  //
+  // 踩过的坑写在这儿，别改回去：
+  //   · chunk_length_s 必须是 29 不能是 30。30 会让所有时间戳变成 29.98
+  //     （transformers.js #1358，恰好卡在 Whisper 的 30 秒窗口边界上）
+  //   · WebGPU 上解码器不能用 q8，会输出乱码（#1317）。GPU 走 fp32 编码器 + q4 解码器，
+  //     退回 WASM 时才用 q8。
+  //   · return_timestamps 用 true（句级）而不是 "word"：句级正好对上我们一行一句的稿子，
+  //     词级在 WebGPU 上还不稳（#820）。
+  var WMODELS=[
+    {id:"onnx-community/whisper-tiny_timestamped",name:"tiny · 最快",mb:42},
+    {id:"onnx-community/whisper-base_timestamped",name:"base · 推荐",mb:77},
+    {id:"onnx-community/whisper-small_timestamped",name:"small · 最准",mb:240}];
+  var TJS="https://cdn.jsdelivr.net/npm/@huggingface/transformers@3";
+  var wkr=null,wkrBusy=false;
+  function wDevice(){
+    var pref=load("tt_wdev","auto");
+    if(pref==="wasm")return "wasm";
+    if(pref==="webgpu")return "webgpu";
+    return (typeof navigator!=="undefined"&&navigator.gpu)?"webgpu":"wasm";}
+  function wModel(){var m=load("tt_wmodel","");
+    for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===m)return m;
+    return WMODELS[1].id;}
+  function wModelMB(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].mb;return 0;}
+
+  function wkrSrc(){return [
+    'import { pipeline, env } from "'+TJS+'";',
+    'env.allowLocalModels=false;',
+    'let pipe=null,cur="";',
+    'self.onmessage=async (e)=>{',
+    '  const {audio,model,lang,device}=e.data;',
+    '  try{',
+    '    if(!pipe||cur!==model+"|"+device){',
+    '      if(pipe){try{await pipe.dispose();}catch(_){}}',
+    '      cur=model+"|"+device;',
+    '      pipe=await pipeline("automatic-speech-recognition",model,{',
+    '        device:device,',
+    '        dtype:(device==="webgpu")?{encoder_model:"fp32",decoder_model_merged:"q4"}:"q8",',
+    '        progress_callback:(p)=>self.postMessage({type:"load",p:p}),',
+    '      });',
+    '    }',
+    '    self.postMessage({type:"run"});',
+    '    const out=await pipe(audio,{',
+    '      chunk_length_s:29,',
+    '      stride_length_s:5,',
+    '      return_timestamps:true,',
+    '      language:lang||undefined,',
+    '      task:"transcribe",',
+    '    });',
+    '    self.postMessage({type:"done",out:out});',
+    '  }catch(err){self.postMessage({type:"err",msg:String((err&&err.message)||err)});}',
+    '};'].join("\n");}
+
+  function wkrGet(){
+    if(wkr)return wkr;
+    var url=URL.createObjectURL(new Blob([wkrSrc()],{type:"text/javascript"}));
+    wkr=new Worker(url,{type:"module"});
+    return wkr;}
+
+  // 音频 → 16kHz 单声道 Float32。Whisper 只吃这个。
+  // 先按文件原本的采样率解出来，再用 OfflineAudioContext 重采样 ——
+  // 直接 new AudioContext({sampleRate:16000}) 在 Safari 上会被忽略。
+  async function toPCM16k(blob){
+    var ab=await blob.arrayBuffer();
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)throw new Error("这个浏览器没有 Web Audio");
+    var tmp=new AC(),buf;
+    try{buf=await tmp.decodeAudioData(ab);}finally{try{tmp.close();}catch(e){}}
+    var OAC=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+    var n=Math.max(1,Math.round(buf.duration*16000));
+    var off=new OAC(1,n,16000);                          // 1 声道 → 自动混音，不用自己求平均
+    var src=off.createBufferSource();src.buffer=buf;src.connect(off.destination);src.start();
+    var done=await off.startRendering();
+    return {pcm:done.getChannelData(0),dur:buf.duration};}
+
+  function wProg(txt,pct){
+    var box=document.getElementById("rec-wp"),bar=document.getElementById("rec-wpbar"),t=document.getElementById("rec-wpt");
+    if(!box)return;
+    if(txt===null){box.hidden=true;return;}
+    box.hidden=false;t.textContent=txt;
+    bar.style.width=(pct==null?0:Math.max(0,Math.min(100,pct)))+"%";
+    bar.style.opacity=(pct==null)?".35":"1";}
+
+  // 一次转写。blob 可以是录音，也可以是你导进来的文件。
+  function whisperRun(blob,lang){
+    if(wkrBusy)return Promise.reject(new Error("上一段还在转，等它转完"));
+    wkrBusy=true;
+    var model=wModel(),dev=wDevice();
+    return toPCM16k(blob).then(function(a){
+      return new Promise(function(res,rej){
+        var w=wkrGet(),seen={},t0=Date.now();
+        function off(){w.removeEventListener("message",onmsg);w.removeEventListener("error",onerr);}
+        function onmsg(e){
+          var d=e.data||{};
+          if(d.type==="load"){
+            var p=d.p||{};
+            if(p.status==="progress"&&p.file){
+              seen[p.file]=p.progress||0;
+              var ks=Object.keys(seen),avg=ks.reduce(function(s,k){return s+seen[k];},0)/ks.length;
+              wProg("下载模型 "+wModelMB(model)+"MB（只有第一次）…",avg);}
+            else if(p.status==="ready")wProg("准备中…",null);
+            return;}
+          if(d.type==="run"){wProg((dev==="webgpu"?"GPU":"CPU")+" 转写中 · "+Math.round(a.dur)+" 秒音频…",null);return;}
+          if(d.type==="err"){off();wkrBusy=false;wProg(null);rej(new Error(d.msg));return;}
+          if(d.type==="done"){
+            off();wkrBusy=false;wProg(null);
+            res({lines:wLines(d.out,a.dur),dur:a.dur,ms:Date.now()-t0});return;}}
+        function onerr(ev){off();wkrBusy=false;wProg(null);
+          rej(new Error("转写线程起不来："+((ev&&ev.message)||"多半是网络拿不到 transformers.js")));}
+        w.addEventListener("message",onmsg);w.addEventListener("error",onerr);
+        wProg("准备中…",null);
+        w.postMessage({audio:a.pcm,model:model,lang:lang||undefined,device:dev});});
+    }).catch(function(err){wkrBusy=false;wProg(null);throw err;});}
+
+  // Whisper 给的 chunks 正好一句一条，直接就是我们要的行
+  function wLines(out,dur){
+    var cs=(out&&out.chunks)||[];
+    if(!cs.length&&out&&out.text)return [{t:0,e:dur||1,s:String(out.text).trim()}];
+    var L=[];
+    cs.forEach(function(c,i){
+      var s=String(c.text||"").trim();if(!s)return;
+      var ts=c.timestamp||[],t=+ts[0];if(!isFinite(t)||t<0)t=(L.length?L[L.length-1].e:0);
+      var e=+ts[1];                                      // 最后一段的结束常常是 null
+      if(!isFinite(e)||e<=t)e=(i+1<cs.length&&cs[i+1].timestamp)?(+cs[i+1].timestamp[0]||t+1):(dur||t+1);
+      L.push({t:Math.round(t*10)/10,e:Math.round(e*10)/10,s:s});});
+    return L;}
+
+  // ---- 入口 ①：导一个已有的音频/视频文件进来 ----
+  async function whisperFile(f){
+    if(!f)return;
+    var id="r"+uid(),ok=true;
+    try{await recPut(id,f);}catch(e){ok=false;}
+    var r={id:id,title:f.name.replace(/\.[^.]+$/,""),ts:Date.now(),dur:0,
+      lang:document.getElementById("rec-lang").value||"",lines:[],size:f.size,noAudio:!ok,src:"file"};
+    try{
+      var out=await whisperRun(f,wLang());
+      r.dur=Math.round(out.dur);r.lines=out.lines;
+      recs.unshift(r);saveRecs();recRenderList();
+      recNote("转好了："+out.lines.length+" 句 · "+tsLabel(out.dur)+"（用了 "+Math.round(out.ms/1000)+" 秒）");
+      recOpen(id);
+    }catch(err){
+      try{await recDrop(id);}catch(e){}
+      ttAlert("转写失败："+String(err&&err.message||err));}}
+
+  // ---- 入口 ②：给已经录好的那条重转一遍 ----
+  async function whisperRedo(){
+    if(!recCur)return;
+    var blob=await recGet(recCur.id);
+    if(!blob){ttAlert("这台设备上没有它的音频（音频不进云端），没法重转。");return;}
+    var old=recCur.lines.slice();
+    if(old.length&&!await ttConfirm("用 Whisper 重转「"+recCur.title+"」？\n现在这 "+old.length+" 句会被换掉（包括你手改过的）。",
+      {okText:"重转",danger:true,anchor:document.getElementById("rec-whisper")}))return;
+    try{
+      var out=await whisperRun(blob,wLang());
+      recCur.lines=out.lines;if(!recCur.dur)recCur.dur=Math.round(out.dur);
+      recCur.by="whisper";saveRecs();recCurLine=-1;recPaintLines();
+      ttAlert("重转好了："+out.lines.length+" 句（用了 "+Math.round(out.ms/1000)+" 秒）");
+    }catch(err){ttAlert("转写失败："+String(err&&err.message||err));}}
+
+  function wLang(){var v=document.getElementById("rec-lang").value||"";return v.slice(0,2)||undefined;}
+
+  function bindWhisper(){
+    var sel=document.getElementById("rec-model");if(!sel)return;
+    sel.innerHTML=WMODELS.map(function(m){
+      return '<option value="'+m.id+'"'+(m.id===wModel()?" selected":"")+'>'+esc(m.name)+' · '+m.mb+'MB</option>';}).join("");
+    sel.addEventListener("change",function(){save("tt_wmodel",this.value);if(wkr){wkr.terminate();wkr=null;}});
+    var dv=document.getElementById("rec-dev");
+    dv.value=load("tt_wdev","auto");
+    dv.addEventListener("change",function(){save("tt_wdev",this.value);if(wkr){wkr.terminate();wkr=null;}wDevNote();});
+    wDevNote();
+    document.getElementById("rec-file").addEventListener("change",function(e){
+      var f=e.target.files&&e.target.files[0];e.target.value="";if(f)whisperFile(f);});
+    document.getElementById("rec-whisper").addEventListener("click",whisperRedo);}
+  function wDevNote(){
+    var el=document.getElementById("rec-devnote");if(!el)return;
+    var d=wDevice();
+    el.textContent=(d==="webgpu")?"用显卡跑（快 5–10 倍）":
+      (navigator.gpu?"用 CPU 跑（慢，但最稳）":"这台机器没有 WebGPU，只能用 CPU");}
   // ---------- 技能 / 学习计划 ----------
   // 技能 = 一件要学会的事，拆成有顺序的若干步。它挂在「大类 · 小类」下面，
   // 于是步骤计出来的时间照样进那个分类的统计 —— 不需要第三级分类。
@@ -8180,6 +8384,7 @@ margin-left: -22px;
   function closeFlash(){stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   try{bindRec();}catch(e){}
+  try{bindWhisper();}catch(e){}
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
       var b=e.target.closest("button[data-dt]");if(!b)return;
