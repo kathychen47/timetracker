@@ -1178,7 +1178,16 @@
   .wb-item:hover .wb-note{opacity:1}
   .wb-note:hover{color:var(--primary)}
   .dict-card.mynote{background:#FFFBEA;border-color:#F2E2AE}
-  .mynote-t{font-size:14px;line-height:1.7;white-space:pre-wrap;color:#5B4A12}
+  .mynote-t{font-size:14px;line-height:1.7;white-space:pre-wrap;color:#5B4A12;outline:none;
+    border-radius:8px;padding:4px 6px;margin:-4px -6px;min-height:1.7em;cursor:text}
+  .mynote-t:hover{background:rgba(0,0,0,.03)}
+  .mynote-t:focus{background:var(--bg);box-shadow:0 0 0 1.5px var(--primary)}
+  .mynote-t:empty:before,.mynote-t.empty:before{content:attr(data-ph);color:var(--muted);opacity:.75}
+  .mynote-tip{font-size:10.5px;color:var(--muted);opacity:.8}
+  .dict-note{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:9px;
+    padding:5px 9px;font-size:12.5px;cursor:pointer;white-space:nowrap;flex:none}
+  .dict-note:hover{color:var(--primary);border-color:var(--primary)}
+  .dict-note.has{background:var(--primary-soft);color:var(--primary);border-color:transparent}
   /* 跟 app 自己的主题走，不看系统偏好 —— 否则系统深色 + app 浅色时，这张卡片会变成黑框灰字 */
   :root[data-theme="dark"] .dict-card.mynote{background:#2A2617;border-color:#4A4326}
   :root[data-theme="dark"] .mynote-t{color:#E8D9A0}
@@ -7656,7 +7665,7 @@ margin-left: -22px;
       if(!dictCounts.oald&&!dictCounts.collins){box.innerHTML='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';return;}
       var sug=await fuzzySuggest(q);
       var dym=sug.length?'<div class="dym">'+sug.map(function(s){return '<span class="dym-i" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'</span>';}).join("")+'</div>':'';
-      box.innerHTML='<div class="dict-hint">词典没收录 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'')+'</div>'+dym+
+      box.innerHTML=wordNoteHTML(key)+'<div class="dict-hint">词典没收录 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'')+'</div>'+dym+
         mineBtnHTML(key,q)+
         '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
       try{var tr2=await translateText(q);
@@ -7666,7 +7675,9 @@ margin-left: -22px;
         if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);}
       catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
       return;}
-    box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+html;}
+    // 笔记挂在真正匹配上的那个词头上（查 running 命中 run 时，笔记是 run 的）
+    var nk=matches.length?matches[0][1].k:key;
+    box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+wordNoteHTML(nk)+html;}
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
 
   function dictCardHTML(store,rec){
@@ -7678,6 +7689,7 @@ margin-left: -22px;
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
       '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+starSVG(saved)+' '+(saved?'已收藏':'加入生词本')+'</button>'+
       '<button class="dict-grp" data-w="'+esc(w)+'"'+(saved?'':' style="display:none"')+' title="点一下换个分组">'+esc(saved?wbGroupName(wbGroupOf(wordOf(w))):"")+' ▾</button>'+
+      '<button class="dict-note'+(noteOf(w)?" has":"")+'" data-note="'+esc(w)+'" data-disp="'+esc(disp)+'" title="写你自己的解释 —— 直接在页面上写，想写多长都行">'+(noteOf(w)?"📝 笔记":"✎ 写笔记")+'</button>'+
       '</div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
   function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
@@ -7689,6 +7701,7 @@ margin-left: -22px;
     '<path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg>';}
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
   function wordOf(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
+  function noteOf(w){var x=wordOf(w);return (x&&x.note)?x.note:"";}
   // 收藏状态或分组变了 → 把页面上跟这个词有关的按钮就地刷一遍。
   // 不整页重画：查词结果很长，重画会把你滚到的位置弹回顶上。
   function wbPaintWord(w){
@@ -7927,16 +7940,65 @@ margin-left: -22px;
     var e=esc(String(s||"")),q=esc(String(w||"")).replace(/[.*+?^{}()|[\]\\$]/g,"\\$&");
     if(!q)return e;
     try{return e.replace(new RegExp(q,"gi"),function(m){return "<b>"+m+"</b>";});}catch(err){return e;}}
-  function wordNoteHTML(w){
-    var x=wordOf(w);if(!x)return "";
+  // 笔记就在页面上写，不弹框 —— 内容可能是一大段，小输入框放不下也看不全。
+  // 回车就是换行；点到别处（blur）自动存；Esc 撤销这次改动。
+  function noteBoxHTML(x){
     var ex=(x.ctx||[]).map(function(c){
       return '<div class="ex"><div class="s">'+ctxHl(c.s,x.disp||x.w)+'</div>'+
         (c.src?'<div class="f">'+esc(c.src)+'</div>':"")+'</div>';}).join("");
-    if(!x.note&&!ex)return "";
     return '<div class="dict-card mynote"><div class="dict-card-top"><span class="dict-src">📝 我的笔记</span>'+
-      '<button class="dict-add" data-note="'+esc(x.w)+'">编辑</button></div>'+
-      (x.note?'<div class="mynote-t">'+esc(x.note)+'</div>':"")+
+      '<span class="mynote-tip">点一下就能改 · 回车换行 · 点别处保存</span></div>'+
+      '<div class="mynote-t" contenteditable="true" spellcheck="false" data-noteed="'+esc(x.w)+'"'+
+        ' data-ph="写你自己的解释、记忆法、用法…想写多长都行">'+esc(x.note||"")+'</div>'+
       (ex?'<div class="mynote-ex"><div class="exh">📖 我在哪儿遇到它</div>'+ex+'</div>':"")+'</div>';}
+  function wordNoteHTML(w){                            // 没内容就别占地方；要写的时候由按钮现建一块
+    var x=wordOf(w);if(!x)return "";
+    if(!x.note&&!(x.ctx&&x.ctx.length))return "";
+    return noteBoxHTML(x);}
+  // 点「写笔记」：还没收藏就先收进来，块不在就现插一块，然后光标直接进去。
+  // 肯坐下来写自己的解释，本身就是"这个词我要留着"最强的信号，不该再拦一道。
+  function openNote(w,box,disp){
+    if(!box)return;
+    var x=wordOf(w);
+    if(!x){addWords([{w:w,disp:disp||w}],wbGroups.def);x=wordOf(w);
+      if(!x)return;
+      updateWbCount();try{ctxAttach(w);}catch(e){}try{wbPaintWord(w);}catch(e){}}
+    var ed=box.querySelector('[data-noteed="'+String(w).replace(/"/g,'\\"')+'"]');
+    if(!ed){
+      var old=box.querySelector(".mynote");
+      if(old)old.parentNode.removeChild(old);
+      box.insertAdjacentHTML("afterbegin",noteBoxHTML(x));
+      ed=box.querySelector("[data-noteed]");}
+    if(!ed)return;
+    ed.focus();
+    try{var r=document.createRange();r.selectNodeContents(ed);r.collapse(false);
+      var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}catch(e){}
+    try{ed.scrollIntoView({behavior:"smooth",block:"nearest"});}catch(e){}}
+  // 三个地方（查词页 / 生词本 / 划词卡）用的是同一块，所以存也统一在这儿收
+  document.addEventListener("focusin",function(e){
+    var ed=e.target&&e.target.closest&&e.target.closest("[data-noteed]");
+    if(ed)ed.setAttribute("data-was",ed.textContent||"");});
+  document.addEventListener("blur",function(e){
+    var ed=e.target&&e.target.closest&&e.target.closest("[data-noteed]");if(!ed)return;
+    var w=ed.getAttribute("data-noteed"),x=wordOf(w);if(!x)return;
+    var v=(ed.textContent||"").trim();
+    if(v===(x.note||"")){notePaint(w);return;}
+    x.note=v;saveWords();notePaint(w);},true);
+  document.addEventListener("keydown",function(e){
+    var ed=e.target&&e.target.closest&&e.target.closest("[data-noteed]");if(!ed)return;
+    // 只处理 Esc（撤销这次改动）。其余一律放行 —— 回车换行、方向键移光标都要能用。
+    // 千万别在这儿 stopPropagation：捕获阶段掐掉，事件根本到不了输入区，字就打不进去了。
+    if(e.key==="Escape"){e.preventDefault();ed.textContent=ed.getAttribute("data-was")||"";ed.blur();}},true);
+  function notePaint(w){                               // 只更新跟这个词有关的按钮，不重画整页
+    var has=!!noteOf(w);
+    document.querySelectorAll("[data-noteed]").forEach(function(el){
+      if(el.getAttribute("data-noteed")===w)el.classList.toggle("empty",!has);});
+    document.querySelectorAll(".dict-note").forEach(function(b){
+      if(b.getAttribute("data-note")!==w)return;
+      b.textContent=has?"📝 笔记":"✎ 写笔记";b.classList.toggle("has",has);});
+    document.querySelectorAll(".wb-note").forEach(function(b){
+      if(b.getAttribute("data-note")!==w)return;
+      b.textContent=has?"📝":"✎";b.title=has?"编辑笔记":"写笔记";});}
   // 词典查不到的词（专业术语、人名、缩写…）也要能收。翻译只当草稿，真正的解释你自己写。
   function addUnknownWord(w,disp,draft){
     var k=String(w||"").toLowerCase().trim();if(!k)return null;
@@ -8489,7 +8551,7 @@ margin-left: -22px;
     document.getElementById("dict-result").addEventListener("click",function(e){
       var fold=e.target.closest(".dict-fold");if(fold){var card=fold.closest(".dict-card"),st=fold.getAttribute("data-store");var c=card.classList.toggle("collapsed");dictPrefs.collapsed[st]=c;saveDictPrefs();return;}
       var nb2=e.target.closest("[data-note]");
-      if(nb2){setWordNote(nb2.getAttribute("data-note"),nb2).then(function(ok){if(ok)doLookup(q.value);});return;}
+      if(nb2){openNote(nb2.getAttribute("data-note"),document.getElementById("dict-result"),nb2.getAttribute("data-disp"));return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var gb=e.target.closest(".dict-grp");if(gb){wbMenu(gb.getAttribute("data-w"),gb);return;}
@@ -8499,7 +8561,12 @@ margin-left: -22px;
       var mv=e.target.closest(".wb-move");
       if(mv){e.stopPropagation();wbMenu(mv.getAttribute("data-w"),mv);return;}   // 别把它当成展开
       var nb=e.target.closest("[data-note]");
-      if(nb){e.stopPropagation();setWordNote(nb.getAttribute("data-note"),nb);return;}
+      if(nb){e.stopPropagation();                      // 先把这条展开，笔记块才在页面上
+        var it=nb.closest(".wb-item"),wn=nb.getAttribute("data-note");
+        // 展开是 async 的（查词典、可能还要等翻译），必须等它真的完事 —— 定时器是赌运气
+        var p=(it&&!it.classList.contains("open"))?toggleWbItem(it):Promise.resolve();
+        p.then(function(){openNote(wn,it?it.querySelector(".wb-def"):null);});
+        return;}
       var kn=e.target.closest("[data-known]");
       if(kn){e.stopPropagation();markKnown(kn.getAttribute("data-known"),kn);return;}
       var del=e.target.closest(".del");if(del){removeWord(del.getAttribute("data-w"));return;}
@@ -8521,7 +8588,7 @@ margin-left: -22px;
     document.addEventListener("keydown",function(e){
       var ov=document.getElementById("flash-overlay");
       if(!ov||!ov.classList.contains("on"))return;
-      if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
+      if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
       if(e.key===" "||e.key==="Enter"){e.preventDefault();if(!flashRevealed)revealFlash();return;}
       if(e.key==="Escape"){closeFlash();return;}
       if(e.key==="s"||e.key==="S"){var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
@@ -11340,16 +11407,12 @@ margin-left: -22px;
           if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
           if(b.hasAttribute("data-fs"))popFsStep(+b.getAttribute("data-fs"));
           else popResize(b.getAttribute("data-pz"));});}
-      document.getElementById("rd-pop-note").addEventListener("click",async function(){
+      document.getElementById("rd-pop-note").addEventListener("click",function(){
         if(!rdPopWord)return;
-        if(!isSaved(rdPopWord.w))toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
-        var ok=await setWordNote(rdPopWord.w,this);
-        if(ok){var bd=document.getElementById("rd-pop-bd");
-          var old=bd.querySelector(".mynote");
-          if(old)old.outerHTML=wordNoteHTML(rdPopWord.w);
-          else bd.insertAdjacentHTML("afterbegin",wordNoteHTML(rdPopWord.w));
-          var st=document.getElementById("rd-pop-star");
-          st.classList.add("on");st.innerHTML=starSVG(true);}});
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在写字，别把卡片倒计时关掉
+        openNote(rdPopWord.w,document.getElementById("rd-pop-bd"),rdPopWord.disp);
+        var st=document.getElementById("rd-pop-star");
+        st.classList.add("on");st.innerHTML=starSVG(true);});
       document.getElementById("rd-pop-star").addEventListener("click",function(){
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
@@ -11376,8 +11439,8 @@ margin-left: -22px;
       document.addEventListener("keydown",function(e){
         if(e.key==="Escape"){hideRdPop();if(zenOn)toggleZen(false);}
         if(state.tab!=="reader"||document.getElementById("rd-read").style.display==="none")return;
-        if(e.target&&/INPUT|TEXTAREA|SELECT/.test(e.target.tagName))return;
-        if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
+        if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
+        if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});   // 写笔记时方向键是移光标，不是翻页
       window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
     }
   }
