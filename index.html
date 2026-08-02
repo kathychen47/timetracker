@@ -550,6 +550,23 @@
   #tt-pop .tt-btns{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
   #tt-pop .tt-btns .btn{padding:6px 14px;font-size:13px}
   #tt-pop .tt-ok.danger{background:var(--danger);border-color:transparent;color:#fff}
+  /* 贴着按钮弹的小菜单（改分组那种） */
+  #tt-menu{position:fixed;z-index:210;min-width:172px;max-width:min(280px,88vw);background:var(--surface);
+    border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.16);
+    padding:6px;display:none;font-size:13.5px}
+  #tt-menu.on{display:block;animation:ttpop .13s ease-out}
+  #tt-menu .tm-i{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:8px;cursor:pointer;color:var(--text)}
+  #tt-menu .tm-i:hover{background:var(--surface-2)}
+  #tt-menu .tm-i.on{color:var(--primary);font-weight:600}
+  #tt-menu .tm-i.danger:hover{color:var(--danger)}
+  #tt-menu .tm-ck{width:13px;flex:none;color:var(--primary);font-size:12px}
+  #tt-menu .tm-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #tt-menu .tm-sep{height:1px;background:var(--border);margin:5px 6px}
+  /* 查词结果右上角那颗星旁边的分组按钮 */
+  .dict-grp{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:9px;
+    padding:5px 9px;font-size:12.5px;cursor:pointer;white-space:nowrap;flex:none;max-width:132px;
+    overflow:hidden;text-overflow:ellipsis}
+  .dict-grp:hover{color:var(--primary);border-color:var(--primary)}
 
   /* reader */
   .rd-sub{font-size:12.5px;font-weight:400;color:var(--muted);margin-left:8px}
@@ -1104,9 +1121,11 @@
   :root[data-theme="dark"] .dict-card.mynote{background:#2A2617;border-color:#4A4326}
   :root[data-theme="dark"] .mynote-t{color:#E8D9A0}
   :root[data-theme="dark"] .mynote-ex .ex .s{color:#E8D9A0}
-  .wb-move{flex:none;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
-    border-radius:7px;padding:3px 6px;font-size:11.5px;max-width:110px;opacity:0;transition:opacity .12s}
+  .wb-move{flex:none;max-width:112px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;
+    border:1px solid var(--border);background:var(--surface-2);color:var(--muted);
+    border-radius:7px;padding:3px 7px;font-size:11.5px;opacity:.62;transition:opacity .12s,color .12s}
   .wb-item:hover .wb-move,.wb-move:focus{opacity:1}
+  .wb-move:hover{color:var(--primary);border-color:var(--primary)}
   .wb-known{border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;
     padding:3px 9px;font-size:12px;cursor:pointer;white-space:nowrap;flex:none}
   .wb-known:hover{color:#2f9e6e;border-color:#2f9e6e;background:#eef9f3}
@@ -3351,6 +3370,7 @@ margin-left: -22px;
       <button class="btn" id="rd-pop-spk" title="朗读">🔊</button>
       <button class="btn" id="rd-pop-note" title="写笔记">📝</button>
       <button class="btn" id="rd-pop-star" title="加入生词本"><svg class="star-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg></button>
+      <button class="btn" id="rd-pop-grp" style="display:none;font-size:12px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="换个分组"></button>
       <button class="btn" id="rd-pop-x" title="关闭">✕</button>
     </div>
     <div class="rd-pop-cfg" id="rd-pop-cfgp" hidden>
@@ -3910,18 +3930,41 @@ margin-left: -22px;
   function ttPopDone(v){
     if(!ttPopEl)return;ttPopEl.classList.remove("on");
     var r=ttPopResolve;ttPopResolve=null;if(r)r(v);}
-  function ttPopPlace(){
-    if(!ttPopEl)return;
+  function popPlace(el,anchor){                          // 贴着锚点放，放不下就翻到上面去
+    if(!el)return;
     var z=parseFloat(getComputedStyle(document.documentElement).zoom)||1;
-    var w=ttPopEl.offsetWidth||280,h=ttPopEl.offsetHeight||120,vw=innerWidth/z,vh=innerHeight/z;
+    var w=el.offsetWidth||280,h=el.offsetHeight||120,vw=innerWidth/z,vh=innerHeight/z;
     var l,t;
-    if(ttPopAnchor&&ttPopAnchor.getBoundingClientRect){
-      var r=ttPopAnchor.getBoundingClientRect();
+    if(anchor&&anchor.getBoundingClientRect){
+      var r=anchor.getBoundingClientRect();
       l=Math.max(10,Math.min(r.left/z,vw-w-12));
       t=r.bottom/z+8;
       if(t+h>vh-10)t=Math.max(10,r.top/z-h-8);
     }else{l=(vw-w)/2;t=Math.max(20,vh*0.3);}
-    ttPopEl.style.left=l+"px";ttPopEl.style.top=t+"px";}
+    el.style.left=l+"px";el.style.top=t+"px";}
+  function ttPopPlace(){popPlace(ttPopEl,ttPopAnchor);}
+  // 一个贴着按钮弹的小菜单。items: [{v,label,check,danger}] 或 {sep:true}。选中给 v，点别处给 null。
+  var ttMenuEl=null,ttMenuResolve=null;
+  function ttMenuDone(v){
+    if(!ttMenuEl)return;ttMenuEl.classList.remove("on");
+    var r=ttMenuResolve;ttMenuResolve=null;if(r)r(v);}
+  function ttMenu(items,opts){
+    opts=opts||{};
+    if(!ttMenuEl){
+      ttMenuEl=document.createElement("div");ttMenuEl.id="tt-menu";document.body.appendChild(ttMenuEl);
+      ttMenuEl.addEventListener("click",function(e){
+        var it=e.target.closest("[data-mv]");if(it)ttMenuDone(it.getAttribute("data-mv"));});
+      document.addEventListener("mousedown",function(e){
+        if(ttMenuEl&&ttMenuEl.classList.contains("on")&&!ttMenuEl.contains(e.target))ttMenuDone(null);},true);
+      document.addEventListener("keydown",function(e){
+        if(ttMenuEl&&ttMenuEl.classList.contains("on")&&e.key==="Escape")ttMenuDone(null);});}
+    if(ttMenuResolve)ttMenuDone(null);
+    ttMenuEl.innerHTML=items.map(function(it){
+      if(it.sep)return '<div class="tm-sep"></div>';
+      return '<div class="tm-i'+(it.check?" on":"")+(it.danger?" danger":"")+'" data-mv="'+esc(String(it.v))+'">'+
+        '<span class="tm-ck">'+(it.check?"✓":"")+'</span><span class="tm-t">'+esc(it.label)+'</span></div>';}).join("");
+    ttMenuEl.classList.add("on");popPlace(ttMenuEl,opts.anchor||null);
+    return new Promise(function(res){ttMenuResolve=res;});}
   function ttPopShow(msg,opts){
     opts=opts||{};ttPopBuild();
     if(ttPopResolve)ttPopDone(null);
@@ -7000,7 +7043,9 @@ margin-left: -22px;
       '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
       '<div class="dict-actions">'+
       '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button>'+
-      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+starSVG(saved)+' '+(saved?'已收藏':'加入生词本')+'</button></div></div>'+
+      '<button class="dict-add'+(saved?' saved':'')+'" data-w="'+esc(w)+'" data-disp="'+esc(disp)+'" data-dict="'+store+'">'+starSVG(saved)+' '+(saved?'已收藏':'加入生词本')+'</button>'+
+      '<button class="dict-grp" data-w="'+esc(w)+'"'+(saved?'':' style="display:none"')+' title="点一下换个分组">'+esc(saved?wbGroupName(wbGroupOf(wordOf(w))):"")+' ▾</button>'+
+      '</div></div>'+
       '<div class="dict-def">'+rec.html+'</div></div>';}
   function renderDictOrder(){var el=document.getElementById("dict-order");if(!el)return;
     el.innerHTML=dictPrefs.order.map(function(store,i){var en=dictPrefs.enabled[store]!==false;
@@ -7010,11 +7055,52 @@ margin-left: -22px;
   function starSVG(filled){return '<svg class="star-ico'+(filled?" on":"")+'" viewBox="0 0 24 24" aria-hidden="true">'+
     '<path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg>';}
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
+  function wordOf(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
+  // 收藏状态或分组变了 → 把页面上跟这个词有关的按钮就地刷一遍。
+  // 不整页重画：查词结果很长，重画会把你滚到的位置弹回顶上。
+  function wbPaintWord(w){
+    var x=wordOf(w),saved=!!x,gn=saved?wbGroupName(wbGroupOf(x)):"";
+    document.querySelectorAll(".dict-add").forEach(function(b){
+      if(b.getAttribute("data-w")!==w)return;
+      b.classList.toggle("saved",saved);b.innerHTML=starSVG(saved)+" "+(saved?"已收藏":"加入生词本");});
+    document.querySelectorAll(".dict-grp").forEach(function(b){
+      if(b.getAttribute("data-w")!==w)return;
+      b.style.display=saved?"":"none";b.textContent=gn+" ▾";b.title="在「"+gn+"」里 · 点一下换个分组";});
+    var rs=document.getElementById("rd-pop-star"),rg=document.getElementById("rd-pop-grp");
+    if(rs&&rdPopWord&&rdPopWord.w===w){
+      rs.classList.toggle("on",saved);rs.innerHTML=starSVG(saved);rs.title=saved?"已收藏（点取消）":"加入生词本";
+      if(rg){rg.style.display=saved?"":"none";rg.textContent=gn+" ▾";rg.title="在「"+gn+"」里 · 点一下换个分组";}}}
+  function openWbGroups(){                               // 跳到生词本页面的词书那一栏
+    gotoTab("dict");
+    var tb=document.querySelector('#dict-tabs button[data-dt="study"]');if(tb)tb.click();
+    setTimeout(function(){var el=document.getElementById("wb-groups");
+      if(el)try{el.scrollIntoView({behavior:"smooth",block:"start"});}catch(e){el.scrollIntoView();}},80);}
+  // 有道那种菜单。查词页、划词卡、生词本列表共用这一个 —— 三处行为一致，只写一遍。
+  async function wbMenu(w,anchor){
+    var x=wordOf(w);if(!x)return;
+    var items=[{v:"__manage",label:"管理分组…"},{v:"__remove",label:"移除该单词",danger:true},{sep:true}];
+    wbGroups.list.forEach(function(g){items.push({v:g.id,label:g.name,check:wbGroupOf(x)===g.id});});
+    items.push({sep:true});items.push({v:"__new",label:"＋ 新建分组"});
+    var v=await ttMenu(items,{anchor:anchor});
+    if(v===null)return;
+    if(v==="__manage"){openWbGroups();return;}
+    if(v==="__remove"){
+      words=words.filter(function(y){return y.w!==w;});saveWords();trashAdd(w);
+      updateWbCount();wbPaintWord(w);wbRerender();return;}
+    if(v==="__new"){
+      var nm=await ttPrompt("新分组名称，如：雅思核心 / PhD","",{anchor:anchor});
+      if(!nm||!nm.trim())return;
+      var ng={id:"g"+uid(),name:nm.trim(),color:WBCOL[wbGroups.list.length%WBCOL.length]};
+      wbGroups.list.push(ng);saveWbGroups();v=ng.id;}
+    var x2=wordOf(w);if(!x2)return;
+    x2.group=v;saveWords();wbPaintWord(w);wbRerender();}
+  function wbRerender(){                                 // 生词本页面开着的话，顺手重画
+    try{if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}catch(e){}}
   function toggleWord(w,disp,store){
     var idx=-1;for(var i=0;i<words.length;i++)if(words[i].w===w){idx=i;break;}
     if(idx>=0){words.splice(idx,1);trashAdd(w);}        // 取消收藏 = 删掉，记一笔
     else{words.push({w:w,disp:disp||w,dict:store,ts:Date.now(),group:wbGroups.def});trashDrop(w);ctxAttach(w);}
-    saveWords();updateWbCount();
+    saveWords();updateWbCount();wbPaintWord(w);
     var inp=document.getElementById("dict-q");
     if(inp&&document.getElementById("dict-look").style.display!=="none")doLookup(inp.value);}
   function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();trashAdd(w);renderWordbook();}
@@ -7089,14 +7175,12 @@ margin-left: -22px;
     box.innerHTML=arr.map(function(x){srsInit(x);
       var st=srsStage(x),lab=STN[st],overdue=(!x.known&&!x.mastered&&x.due<=now);
       var when=x.known?"不用背了":(x.mastered?"已掌握":(overdue?"待复习":("下次 "+fmtWhen(x.due))));
-      var meta=(x.dict==="collins"?"中→英":"英→中")+(wbActive==="all"?" · "+esc(wbGroupName(wbGroupOf(x))):"")+" · "+when;
+      var meta=(x.dict==="collins"?"中→英":"英→中")+" · "+when;   // 分组由右边那颗按钮显示，别重复一遍
       return '<div class="wb-item'+(x.known?" isknown":"")+'" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
         '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+(x.known?"认识":lab[0])+'</span>'+
         '<span class="m">'+meta+'</span>'+
         '<button class="wb-note" data-note="'+esc(x.w)+'" title="'+(x.note?"编辑笔记":"写笔记")+'">'+(x.note?"📝":"✎")+'</button>'+
-        '<select class="wb-move" data-w="'+esc(x.w)+'" title="移到别的词书">'+
-          wbGroups.list.map(function(g){return '<option value="'+g.id+'"'+(wbGroupOf(x)===g.id?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
-        '</select>'+
+        '<button class="wb-move" data-w="'+esc(x.w)+'" title="在「'+esc(wbGroupName(wbGroupOf(x)))+'」里 · 点一下换个分组">'+esc(wbGroupName(wbGroupOf(x)))+' ▾</button>'+
         '<button class="wb-known" data-known="'+esc(x.w)+'" title="'+(x.known?"点一下恢复：重新排进复习":"我本来就认识：淡化、沉到最后、不再排复习（可以再点回来）")+'">'+(x.known?"↩ 恢复":"✓ 认识")+'</button>'+
         '<button class="del" data-w="'+esc(x.w)+'" title="移除（以后查到也不会再自动收）">✕</button></div><div class="wb-def" hidden></div></div>';}).join("");}
   function renderWbCharts(arr){
@@ -7762,14 +7846,12 @@ margin-left: -22px;
       if(nb2){setWordNote(nb2.getAttribute("data-note"),nb2).then(function(ok){if(ok)doLookup(q.value);});return;}
       var dym=e.target.closest(".dym-i");if(dym){q.value=dym.getAttribute("data-w");doLookup(q.value);return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
+      var gb=e.target.closest(".dict-grp");if(gb){wbMenu(gb.getAttribute("data-w"),gb);return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
       var en=e.target.closest(".dict-def .en");if(en){var t=en.textContent.trim();if(t){q.value=t;doLookup(t);window.scrollTo(0,0);}}});
-    document.getElementById("wb-list").addEventListener("change",function(e){
-      var mv=e.target.closest(".wb-move");if(!mv)return;
-      var w=mv.getAttribute("data-w"),gid=mv.value;
-      words.forEach(function(x){if(x.w===w)x.group=gid;});saveWords();renderWordbook();});
     document.getElementById("wb-list").addEventListener("click",function(e){
-      if(e.target.closest(".wb-move"))return;            // 别把下拉当成展开
+      var mv=e.target.closest(".wb-move");
+      if(mv){e.stopPropagation();wbMenu(mv.getAttribute("data-w"),mv);return;}   // 别把它当成展开
       var nb=e.target.closest("[data-note]");
       if(nb){e.stopPropagation();setWordNote(nb.getAttribute("data-note"),nb);return;}
       var kn=e.target.closest("[data-known]");
@@ -9821,6 +9903,7 @@ margin-left: -22px;
     document.getElementById("rd-pop-w").textContent=rdPopWord.disp;
     var star=document.getElementById("rd-pop-star"),saved=isSaved(rdPopWord.w);
     star.style.display="";star.classList.toggle("on",saved);star.innerHTML=starSVG(saved);star.title=saved?"已收藏（点取消）":"加入生词本";
+    wbPaintWord(rdPopWord.w);                            // 顺带把「在哪个分组」那颗按钮摆好
     if(dictPrefs.autoSpeak)pronounce(rdPopWord.disp,isCJK(rdPopWord.disp));
     var bd=document.getElementById("rd-pop-bd");bd.innerHTML='<div class="dict-hint">正在查词，请稍等…</div>';
     rdPop.style.display="";applyPopSize(true);placeRdPop(rect);
@@ -9832,6 +9915,7 @@ margin-left: -22px;
       if(addWords([{w:me.w,disp:me.disp}],wbGroups.def).added){
         updateWbCount();
         star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";
+        wbPaintWord(me.w);
         if(state.tab==="dict")renderWordbook();}}
     if(!found){                                              // 词典里没有 → 翻译 + 让你自己写释义
       var w0=rdPopWord.disp,mine=mineBtnHTML(me.w,me.disp);
@@ -10623,7 +10707,12 @@ margin-left: -22px;
       document.getElementById("rd-pop-star").addEventListener("click",function(){
         if(!rdPopWord)return;
         toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
-        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";});
+        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";
+        wbPaintWord(rdPopWord.w);});
+      document.getElementById("rd-pop-grp").addEventListener("click",function(){
+        if(!rdPopWord)return;
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在挑分组，别把卡片倒计时关掉
+        wbMenu(rdPopWord.w,this);});
       var pbd=document.getElementById("rd-pop-bd");
       pbd.addEventListener("input",function(e){
         var ta=mineTyping(e);if(!ta)return;
