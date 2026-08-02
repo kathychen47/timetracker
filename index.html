@@ -3961,8 +3961,10 @@ margin-left: -22px;
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">翻译引擎</div><div class="set-desc">Google 免费不用配置；用自己的 AI 通常更准更自然（本地 Ollama 免费无限量）。</div></div>
           <select id="tr-engine">
-            <option value="google">Google 翻译</option>
-            <option value="ai">我的 AI（更准）</option>
+            <option value="google">Google 翻译（不用 key · 按 IP 限速）</option>
+            <option value="local">本地模型（无限量 · 断网可用 · 首次下载 ~110MB）</option>
+            <option value="mymemory">MyMemory（不用 key · 每日有量）</option>
+            <option value="ai">我的 AI（最准 · 走 Gemini 额度）</option>
           </select>
         </div>
         <div class="set-item" style="margin-bottom:10px">
@@ -8733,8 +8735,110 @@ margin-left: -22px;
         if(j.error)throw new Error(String(j.error));
         var t=(j.response||"").replace(/<think>[\s\S]*?<\/think>/g,"").trim();
         if(!t)throw new Error("没返回内容");return t;});}
+  // —— MyMemory：不用注册、支持 CORS。单次上限 500 字节，所以长句要自己切开。——
+  function myMemory(text,tl){
+    var q=String(text||"");
+    if(!q.trim())return Promise.resolve("");
+    // 500 字节是硬上限（算的是字节不是字符，中文一个字 3 字节），按句子切
+    var parts=[],cur="";
+    // 按句尾切。不用 (?<=…) 后行断言 —— 它在老 Safari 上是解析期错误，整个脚本都不会执行
+    (q.match(/[^.!?。！？\n]*[.!?。！？\n]+|[^.!?。！？\n]+/g)||[q]).forEach(function(s){
+      if(cur&&byteLen(cur+s)>420){parts.push(cur);cur="";}
+      cur+=s;});
+    if(cur)parts.push(cur);
+    if(!parts.length)parts=[q];
+    // 一句本身就超 500 字节的（长引用、没标点的整段、代码）按句尾切不开 —— 硬切。
+    // 不补这一刀，这种请求会被 MyMemory 直接拒掉，而且看不出为什么。
+    var fit=[];
+    parts.forEach(function(p){
+      if(byteLen(p)<=420){fit.push(p);return;}
+      var buf="";
+      for(var i=0;i<p.length;i++){
+        if(byteLen(buf+p[i])>420){fit.push(buf);buf="";}
+        buf+=p[i];}
+      if(buf)fit.push(buf);});
+    parts=fit;
+    var out=[];
+    return seqRun(parts,function(p){
+      var u="https://api.mymemory.translated.net/get?q="+encodeURIComponent(p)+"&langpair="+encodeURIComponent("auto|"+(tl||"zh-CN"));
+      return fetch(u).then(function(r){
+        if(!r.ok){var e=new Error("HTTP "+r.status);if(r.status===429)e.rate=true;throw e;}
+        return r.json();}).then(function(j){
+        var t=j&&j.responseData&&j.responseData.translatedText;
+        if(!t)throw new Error((j&&j.responseDetails)||"没有译文");
+        out.push(t);
+        return parts.length>1?sleepMs(200):null;});
+    }).then(function(){return out.join("");});}
+  function byteLen(s){try{return new Blob([s]).size;}catch(e){return String(s).length*3;}}
+
+  // —— 本地模型：opus-mt 走 transformers.js，和 Whisper 同一套 worker 模式。——
+  // 一个模型只管一个方向，所以按"目标语言 + 源文是不是中文"挑。
+  var LTR={"zh":"Xenova/opus-mt-en-zh","en":"Xenova/opus-mt-zh-en"};
+  var ltrW=null,ltrBusy=null;
+  function ltrModel(text,tl){
+    var toZh=/^zh/.test(tl||"");
+    var srcZh=/[一-鿿]/.test(String(text||"").slice(0,200));
+    if(toZh&&srcZh)return null;                        // 中译中：不用翻
+    if(!toZh&&!srcZh)return null;                      // 英译英：同上
+    return toZh?LTR.zh:LTR.en;}
+  function ltrSrc(model){return [
+    'import { pipeline, env } from "'+TJS+'";',
+    'env.allowLocalModels=false;',
+    'let pipe=null,cur="";',
+    'self.onmessage=async (e)=>{',
+    '  const {texts,model}=e.data;',
+    '  try{',
+    '    if(!pipe||cur!==model){',
+    '      if(pipe){try{await pipe.dispose();}catch(_){}}',
+    '      cur=model;',
+    '      pipe=await pipeline("translation",model,{dtype:"q8",',
+    '        progress_callback:(p)=>self.postMessage({type:"load",p:p})});',
+    '    }',
+    '    const out=[];',
+    '    for(const t of texts){',
+    '      const r=await pipe(t,{max_new_tokens:512});',
+    '      out.push((r&&r[0]&&(r[0].translation_text||r[0].generated_text))||"");',
+    '      self.postMessage({type:"tick",n:out.length});',
+    '    }',
+    '    self.postMessage({type:"done",out:out});',
+    '  }catch(err){self.postMessage({type:"err",msg:String((err&&err.message)||err)});}',
+    '};'].join("\n");}
+  function ltrRun(texts,model,onp){
+    if(ltrBusy)return ltrBusy.then(function(){return ltrRun(texts,model,onp);});   // 排队，别同时开两个
+    var p=new Promise(function(res,rej){
+      if(!ltrW||ltrW.__m!==model){
+        if(ltrW)ltrW.terminate();
+        ltrW=new Worker(URL.createObjectURL(new Blob([ltrSrc(model)],{type:"text/javascript"})),{type:"module"});
+        ltrW.__m=model;}
+      var w=ltrW,seen={};
+      function off(){w.removeEventListener("message",on);w.removeEventListener("error",er);}
+      function on(e){var d=e.data||{};
+        if(d.type==="load"&&d.p&&d.p.status==="progress"&&d.p.file){
+          seen[d.p.file]=d.p.progress||0;var ks=Object.keys(seen);
+          if(onp)onp(0,texts.length,"下载翻译模型 ~110MB（只有第一次）… "+Math.round(ks.reduce(function(s,k){return s+seen[k];},0)/ks.length)+"%");return;}
+        if(d.type==="tick"){if(onp)onp(d.n,texts.length,"");return;}
+        if(d.type==="err"){off();rej(new Error(d.msg));return;}
+        if(d.type==="done"){off();res(d.out);return;}}
+      function er(ev){off();rej(new Error("本地翻译起不来："+((ev&&ev.message)||"多半是拿不到 transformers.js")));}
+      w.addEventListener("message",on);w.addEventListener("error",er);
+      w.postMessage({texts:texts,model:model});});
+    ltrBusy=p.then(function(){ltrBusy=null;},function(){ltrBusy=null;});
+    return p;}
+  function trLocal(texts,tl,onp){
+    var model=ltrModel(texts.join(" "),tl);
+    if(!model)return Promise.resolve(texts.slice());   // 本来就是目标语言，原样返回
+    return ltrRun(texts,model,onp);}
+
   function translateText(text){
     var tl=trLang,name=LANGN[tl]||tl;
+    if(trEngine==="local"){
+      return trLocal([String(text)],tl).then(function(r){
+        if(!r[0])throw new Error("本地模型没给出译文");
+        return {text:r[0],by:"本地模型"};},
+        function(e){return gTranslate(text,tl).then(function(t){return {text:t,by:"Google（本地模型不可用："+(e&&e.message||e)+"）"};});});}
+    if(trEngine==="mymemory"){
+      return myMemory(text,tl).then(function(t){return {text:t,by:"MyMemory"};},
+        function(e){return gTranslate(text,tl).then(function(t){return {text:t,by:"Google（MyMemory 不可用："+(e&&e.message||e)+"）"};});});}
     if(trEngine==="ai"){
       var prompt="请把下面的内容准确、自然地翻译成"+name+"。只输出译文本身，不要解释、不要重复原文、不要加引号或前缀。\n\n"+text;
       var p=(aiProvider==="ollama")?ollamaText(prompt):geminiText(prompt);
@@ -10305,8 +10409,15 @@ margin-left: -22px;
   function translateBlocks(texts,onp){
     if(!texts.length)return Promise.resolve([]);
     var tl=trLang;
+    // 本地模型没有配额，所以整本书这种大批量它最合适 —— 慢，但不会翻到一半被拦
+    if(trEngine==="local")return trLocal(texts,tl,onp).catch(function(){return trGoogle(texts,tl,onp);});
+    if(trEngine==="mymemory")return seqRun2(texts,function(t){return myMemory(t,tl);}).catch(function(){return trGoogle(texts,tl,onp);});
     if(trEngine==="ai")return trAI(texts,tl,onp).catch(function(){return trGoogle(texts,tl,onp);});
     return trGoogle(texts,tl,onp);}
+  function seqRun2(arr,fn){                            // 顺序跑并收集结果（seqRun 只跑不收）
+    var out=[];
+    return seqRun(arr,function(x){return Promise.resolve(fn(x)).then(function(r){out.push(r);});})
+      .then(function(){return out;});}
   // —— 把散落的文字碎片拼成"行"，再拼成"段落"（保留标题/分栏/缩进）——
   function groupBlocks(raw,pageW){
     if(!raw||!raw.length)return [];
