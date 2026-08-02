@@ -8308,8 +8308,13 @@ margin-left: -22px;
     var b=wbtOpen("📚 从牛津选词",'<div class="wt-note">正在读取牛津分级（首次要扫一遍词典，约十几秒）…</div>');
     getLevelIndex(function(n){b.innerHTML='<div class="wt-note">扫描中… '+n.toLocaleString()+' 条</div>';}).then(function(rec){
       var counts=LVORD.map(function(l){return rec.idx[l].length;});
+      var graded=counts.reduce(function(s,n){return s+n;},0);
       b.innerHTML=
-        '<div class="wt-row"><label class="t">选等级（牛津 5000 词，按 CEFR 分级）</label><div class="wt-lv" id="wt-lv">'+
+        '<div class="wt-row"><label class="t">选等级</label>'+
+        // 说清楚这 5000 是什么 —— 不然会被当成"这本词典只有 5000 个词"
+        '<div class="wt-note" style="margin:-2px 0 8px">这是牛津官方的 <b>Oxford 3000/5000</b> 核心词表（'+graded.toLocaleString()+' 词，带 CEFR 等级标记）。'+
+        '<br>词典本身有 <b>'+(dictCounts.oald||0).toLocaleString()+'</b> 条 —— 查词不受这个表限制，只是其余的词牛津没有标等级，没法按难度挑。</div>'+
+        '<div class="wt-lv" id="wt-lv">'+
         LVORD.map(function(l,i){var on=pre?pre.indexOf(l)>=0:(l==="b2"||l==="c1");
           return '<label class="'+(on?"on":"")+'"><input type="checkbox" value="'+l+'"'+(on?" checked":"")+'>'+LVNAME[l]+' ('+counts[i]+')</label>';}).join("")+
         '</div></div>'+
