@@ -1183,6 +1183,13 @@
   .rl .rt:hover{color:var(--primary);text-decoration:underline}
   .rl .rs{flex:1;min-width:0;font-size:14px;color:var(--text);outline:none;border-radius:6px}
   .rl .rs:focus{background:var(--bg);box-shadow:0 0 0 1px var(--primary)}
+  .rl .rs{cursor:pointer}
+  .rl .rs[contenteditable=true]{cursor:text}
+  .rw{border-radius:4px;padding:0 1px;margin:0 -1px;transition:background .12s}
+  .rw:hover{background:color-mix(in srgb,var(--primary) 16%,transparent)}
+  /* 读到的那个词：一个半透明的框，跟着音频走 */
+  .rw.on{background:color-mix(in srgb,var(--primary) 26%,transparent);
+    box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 45%,transparent)}
   .rl mark{background:#FFF1A8;color:inherit;border-radius:3px;padding:0 1px}
   /* wordbook */
   #wb-count{font-size:11px;opacity:.7}
@@ -4601,25 +4608,59 @@ margin-left: -22px;
       shown++;
       return '<div class="rl'+(i===recCurLine?" cur":"")+'" data-li="'+i+'">'+
         '<button class="rt" data-seek="'+i+'" title="跳到 '+tsLabel(l.t)+'">'+tsLabel(l.t)+'</button>'+
-        '<span class="rs" contenteditable="true" spellcheck="false" data-ed="'+i+'">'+recMark(l.s)+'</span></div>';}).join("")||
+        '<span class="rs" data-ed="'+i+'" title="双击改这一句">'+wordsHTML(l,i)+'</span></div>';}).join("")||
       '<div class="dict-hint">没有匹配的句子。</div>';
     if(recQ)document.getElementById("rec-meta").textContent=shown+" / "+recCur.lines.length+" 句";
     else document.getElementById("rec-meta").textContent=tsLabel(recCur.dur)+" · "+recCur.lines.length+" 句";}
+  // 一句 → 一串带时间的词。有真词级时间戳就用真的，没有就按字数在句内摊开。
+  // 中文没有空格，所以按字切；英文按词切；空白单独成块（不参与计时，但要占位置）。
+  function lineWords(l){
+    if(l.__w&&l.__w.k===l.s)return l.__w.a;             // 同一句不重复切
+    var toks=String(l.s||"").match(/[一-鿿]|[^\s一-鿿]+|\s+/g)||[];
+    var t0=+l.t||0,t1=+l.e||0;if(!(t1>t0))t1=t0+Math.max(0.6,String(l.s||"").length*0.06);
+    var real=(l.w&&l.w.length)?l.w:null;                // 将来真词级时间戳来了就走这条
+    var tot=0;toks.forEach(function(s){if(!/^\s+$/.test(s))tot+=s.length;});
+    if(!tot)tot=1;
+    var acc=0,wi=0,out=toks.map(function(s){
+      if(/^\s+$/.test(s))return {s:s,sp:true};
+      var a0=t0+(t1-t0)*acc/tot;acc+=s.length;
+      var a1=t0+(t1-t0)*acc/tot;
+      if(real&&real[wi]){a0=+real[wi].t;a1=+real[wi].e;}
+      wi++;
+      return {s:s,t:Math.round(a0*100)/100,e:Math.round(a1*100)/100};});
+    l.__w={k:l.s,a:out};                                // 缓存在内存里，不写进存档
+    return out;}
+  function wordsHTML(l,li){
+    return lineWords(l).map(function(w,k){
+      if(w.sp)return esc(w.s);
+      return '<span class="rw" data-li="'+li+'" data-wk="'+k+'" data-wt="'+w.t+'" '+
+        'title="'+tsLabel(w.t)+' · 点一下从这儿放">'+recMark(w.s)+'</span>';}).join("");}
   function recFindLine(t){                              // 最后一句"开始时间 ≤ 现在"的
     var L=recCur?recCur.lines:[],lo=0,hi=L.length-1,ans=-1;
     while(lo<=hi){var m=(lo+hi)>>1;if(L[m].t<=t){ans=m;lo=m+1;}else hi=m-1;}
     return ans;}
+  var recCurWord=null;
+  function recSyncWord(box,i,now){                      // 句内：读到哪个词就给哪个词套个框
+    var el=box.querySelector('.rl[data-li="'+i+'"]');
+    if(!el){if(recCurWord){recCurWord.classList.remove("on");recCurWord=null;}return;}
+    var ws=el.querySelectorAll(".rw"),hit=null;
+    for(var k=0;k<ws.length;k++){
+      if(parseFloat(ws[k].getAttribute("data-wt"))<=now)hit=ws[k];else break;}
+    if(hit===recCurWord)return;
+    if(recCurWord)recCurWord.classList.remove("on");
+    recCurWord=hit;if(hit)hit.classList.add("on");}
   function recSyncCur(){
     if(!recCur)return;
-    var au=document.getElementById("rec-audio"),i=recFindLine(au.currentTime);
-    if(i===recCurLine)return;
+    var au=document.getElementById("rec-audio"),now=au.currentTime,i=recFindLine(now);
     var box=document.getElementById("rec-lines");
+    if(i===recCurLine){recSyncWord(box,i,now);return;}   // 还在同一句里，只挪词
     var old=box.querySelector(".rl.cur");if(old)old.classList.remove("cur");
     recCurLine=i;
-    if(i<0)return;
+    if(i<0){if(recCurWord){recCurWord.classList.remove("on");recCurWord=null;}return;}
     var el=box.querySelector('.rl[data-li="'+i+'"]');
     if(!el)return;
     el.classList.add("cur");
+    recSyncWord(box,i,now);
     if(recFollow){
       var br=box.getBoundingClientRect(),er=el.getBoundingClientRect();
       if(er.top<br.top+10||er.bottom>br.bottom-10)
@@ -4660,16 +4701,34 @@ margin-left: -22px;
     document.getElementById("rec-follow").addEventListener("change",function(){recFollow=this.checked;});
     var lines=document.getElementById("rec-lines");
     lines.addEventListener("click",function(e){
-      var sk=e.target.closest("[data-seek]");if(!sk||!recCur)return;
-      var i=+sk.getAttribute("data-seek"),l=recCur.lines[i];if(!l)return;
-      au.currentTime=l.t;au.play().catch(function(){});});
+      if(!recCur)return;
+      if(e.target.closest("[contenteditable=true]"))return;   // 正在改这句，别抢光标
+      var w=e.target.closest(".rw");                          // 点某个词 → 从那个词开始放
+      if(w){au.currentTime=parseFloat(w.getAttribute("data-wt"))||0;au.play().catch(function(){});return;}
+      var sk=e.target.closest("[data-seek]");                 // 点时间戳 → 从这句开头放
+      if(sk){var i=+sk.getAttribute("data-seek"),l=recCur.lines[i];
+        if(l){au.currentTime=l.t;au.play().catch(function(){});}return;}
+      var row=e.target.closest(".rl");                        // 点这一行的空白处 → 也从这句开头放
+      if(row){var i2=+row.getAttribute("data-li"),l2=recCur.lines[i2];
+        if(l2){au.currentTime=l2.t;au.play().catch(function(){});}}});
+    // 点一下已经是"跳到那个词"了，所以改字挪到双击 —— 一个元素上不能既放光标又跳转
+    lines.addEventListener("dblclick",function(e){
+      if(!recCur)return;
+      var rs=e.target.closest(".rs");if(!rs)return;
+      var i=+rs.getAttribute("data-ed"),l=recCur.lines[i];if(!l)return;
+      rs.setAttribute("contenteditable","true");rs.textContent=l.s;
+      rs.focus();
+      try{var r=document.createRange();r.selectNodeContents(rs);r.collapse(false);
+        var sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);}catch(err){}});
     // 转写从来不会全对，所以每一句都能直接改 —— 改完立刻存，不用点保存
     lines.addEventListener("blur",function(e){
       var ed=e.target.closest("[data-ed]");if(!ed||!recCur)return;
       var i=+ed.getAttribute("data-ed"),l=recCur.lines[i];if(!l)return;
       var v=(ed.textContent||"").trim();
-      if(v&&v!==l.s){l.s=v;saveRecs();}
-      else if(!v)ed.textContent=l.s;},true);
+      if(v&&v!==l.s){l.s=v;l.__w=null;saveRecs();}       // 句子变了 → 词的切分作废，重新摊
+      ed.removeAttribute("contenteditable");
+      ed.innerHTML=wordsHTML(l,i);                       // 变回一个个可点的词
+      recCurWord=null;},true);
     lines.addEventListener("keydown",function(e){
       if(e.key==="Enter"&&e.target.closest("[data-ed]")){e.preventDefault();e.target.blur();}});
     window.addEventListener("beforeunload",function(e){
