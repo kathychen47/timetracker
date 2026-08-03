@@ -1737,6 +1737,11 @@
   .ev-segs .evs .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ev-segs .evs .cg{color:var(--muted);font-size:11.5px;white-space:nowrap}
   .ev-segs .evs .mn{font-weight:600;flex:none;font-variant-numeric:tabular-nums}
+  .ev-segs .evs-sel{flex:none;max-width:190px;font-size:11.5px;padding:2px 4px;border:1px solid var(--line);
+    border-radius:6px;background:var(--card);color:inherit}
+  .ev-segs .evs-x{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;
+    font-size:12px;padding:2px 5px;border-radius:5px;line-height:1}
+  .ev-segs .evs-x:hover{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
   .ev-segs .evs-note{font-size:11px;color:var(--muted);line-height:1.5}
   .rep-segs{font-size:11px;color:var(--muted);margin-top:2px}
   .rep-segs em{font-style:normal;opacity:.8}
@@ -3230,7 +3235,6 @@ margin-left: -22px;
             <div class="pomo-segs" id="pomo-segs"></div>
             <div class="pomo-btns">
               <button class="btn primary" id="pomo-start">开始</button>
-              <button class="btn" id="pomo-switch" style="display:none" title="结算当前这一段，接着做别的；总计时不停">⇄ 换任务</button>
               <button class="btn" id="pomo-reset">重置</button>
               <button class="btn" id="pomo-skip">跳过</button>
             </div>
@@ -6324,6 +6328,24 @@ margin-left: -22px;
     var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-sub")){var sk=ch.getAttribute("data-sub");editSegs=null;renderEvSegs();
       evTitleSync(function(){selSub=(selSub===sk?null:sk);catManual=true;renderSubs();});}});
   fTitle.addEventListener("input",function(){if(!catManual){var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();}});
+  (function(){var eb=document.getElementById("ev-segs");if(!eb)return;
+    eb.addEventListener("change",function(e){
+      var sel=e.target.closest("[data-segi]");if(!sel||!editSegs)return;
+      var i=+sel.getAttribute("data-segi"),s=editSegs[i];if(!s)return;
+      var wasAuto=(!s.t||s.t===catLabelOf(s.cat,s.sub));   // 名字本来就是分类名 → 跟着一起改
+      var v=String(sel.value||"").split("|");
+      s.cat=v[0];s.sub=v[1]||null;s.gap=false;
+      if(wasAuto)s.t=catLabelOf(s.cat,s.sub);
+      segsEdited();});
+    eb.addEventListener("click",function(e){
+      var x=e.target.closest("[data-segx]");if(!x||!editSegs)return;
+      var i=+x.getAttribute("data-segx"),s=editSegs[i];if(!s)return;
+      // 时间不能凭空消失：并给前一段，没有前一段就并给后一段
+      var host=editSegs[i-1]||editSegs[i+1];
+      if(!host){editSegs=null;renderEvSegs();return;}
+      host.sec=(+host.sec||0)+(+s.sec||0);
+      editSegs.splice(i,1);
+      segsEdited();});})();
 
   // 连过一次 Google 就一直把这一行显示出来 —— token 只活 1 小时，
   // 过期就把选项藏掉的话，你会以为功能没了（而不是授权掉了）。
@@ -6397,16 +6419,39 @@ margin-left: -22px;
     if(!st){f.style.display="none";box.innerHTML="";return;}
     f.style.display="";
     var gp=0;st.forEach(function(s){if(s.gap)gp+=(+s.sec||0);});
-    box.innerHTML=st.map(function(s){
+    box.innerHTML=st.map(function(s,i){
       if(s.gap)return '<div class="evs gap"><i></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
-        '<span class="nm">暂停</span><span class="cg">不计入统计</span><span class="mn">'+secLabel(s.sec)+'</span></div>';
+        '<span class="nm">暂停</span><span class="cg">不计入统计</span><span class="mn">'+secLabel(s.sec)+'</span>'+
+        '<button type="button" class="evs-x" data-segx="'+i+'" title="删掉这个暂停，时间并回相邻的段（会算成专注）">✕</button></div>';
       return '<div class="evs"><i style="background:'+subColor(s.cat,s.sub)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
-        '<span class="nm">'+esc(s.t||"（未命名）")+'</span><span class="cg">'+esc(catName(s.cat))+(s.sub?" › "+esc(subName(s.cat,s.sub)):"")+'</span>'+
-        '<span class="mn">'+secLabel(s.sec)+'</span></div>';}).join("")+
+        '<span class="nm">'+esc(s.t||"（未命名）")+'</span>'+
+        '<select class="evs-sel" data-segi="'+i+'" title="改这一段的分类">'+segCatOpts(s.cat,s.sub)+'</select>'+
+        '<span class="mn">'+secLabel(s.sec)+'</span>'+
+        '<button type="button" class="evs-x" data-segx="'+i+'" title="删掉这一段，时间并给相邻的段">✕</button></div>';}).join("")+
       '<div class="evs-note">统计里这条按各段实测时长分账'+
       (gp?('，这段区间占 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分，其中<b>暂停 '+Math.round(evMinutes({start:fStart.value,end:fEnd.value})*gp/st.reduce(function(a,s){return a+s.sec;},0))+' 分不算专注</b>')
         :('，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分'))+
-      '（不满 1 分钟的段在统计里算 0，但记录留着）。手动改上面的分类会取消分段。</div>';}
+      '（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、或者✕删掉（时间并给相邻的段）；'+
+      '改最上面那个大类会取消整条的分段。</div>';}
+  function segCatOpts(ck,sk){
+    var out="";
+    cats.forEach(function(c){
+      out+='<option value="'+c.key+'|"'+((c.key===ck&&!sk)?" selected":"")+'>'+esc(c.name)+'</option>';
+      (c.subs||[]).forEach(function(s){
+        out+='<option value="'+c.key+'|'+s.key+'"'+((c.key===ck&&s.key===sk)?" selected":"")+
+          '>'+esc(c.name)+' › '+esc(s.name)+'</option>';});});
+    return out;}
+  // 改完分段之后：相邻同类的合起来；只剩一段就不算"分段"了，整条归给它
+  function segsEdited(){
+    if(!editSegs)return;
+    editSegs=mergeSegs(editSegs);
+    var real=editSegs.filter(function(s){return !s.gap;});
+    if(real.length<2){
+      var only=real[0];
+      if(only){evTitleSync(function(){
+        selCat=only.cat;selSub=only.sub||null;catManual=true;renderParents();renderSubs();});}
+      editSegs=null;}
+    renderEvSegs();}
   function closeModal(){overlay.classList.remove("on");}
   document.getElementById("ev-cancel").addEventListener("click",closeModal);
   (function(){var gp=document.getElementById("gcal-pend-go");
@@ -6500,7 +6545,9 @@ margin-left: -22px;
         save("tt_cats",cats);afterCatEdit();
         pomoCat.value=key;}
     }
+    var oldC=pomoCatPrev,oldS=pomoSubPrev;               // 变之前的分类，前面那段属于它
     fillPomoSubs();                    // 换了大类就得重填小类（别放进上面的分支里，普通切换也要跑）
+    if(pomoCat.value!==oldC)switchTask("cat",oldC,oldS); // 切分类就是换任务，不用再点按钮
     pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
     pomoManual=true;markPomoAuto(false);savePomoLast();});
   pomoSub.addEventListener("change",async function(){
@@ -6513,9 +6560,22 @@ margin-left: -22px;
           save("tt_cats",cats);afterCatEdit();
           pomoCat.value=p.key;fillPomoSubs();pomoSub.value=sk;}}
     }
+    if((pomoSub.value||null)!==(pomoSubPrev||null))switchTask("cat",pomoCat.value,pomoSubPrev);
     pomoSubPrev=pomoSub.value;
     pomoManual=true;markPomoAuto(false);savePomoLast();});
   pomoTask.addEventListener("input",function(){autoPomoCat();drawPomo();});
+  // 同一个分类下换了件事（比如都算 PhD）→ 改任务名按回车切一刀。
+  // 只认回车，不认每次输入 —— 不然打字打一半就切了。
+  var pomoTaskPrev=pomoTask.value;
+  pomoTask.addEventListener("keydown",function(e){
+    if(e.key!=="Enter")return;
+    e.preventDefault();
+    var v=(pomoTask.value||"").trim();
+    if(pTimer&&timerMode==="up"&&v!==(pomoTaskPrev||"").trim()){
+      var was=pomoTask.value;pomoTask.value=pomoTaskPrev;   // 结算旧的那一段要用旧名字
+      switchTask("name");
+      pomoTask.value=was;}
+    pomoTaskPrev=pomoTask.value;});
   // 大类/小类改了（设置里管理、事件弹窗里新建删除、云端拉取）之后，这些下拉要重建，否则一直是打开页面那一刻的旧列表
   function refreshCatSelects(){
     var has=function(k){return cats.some(function(c){return c.key===k;});};
@@ -6548,7 +6608,7 @@ margin-left: -22px;
   function cancelPause(){if(pPauseT){clearInterval(pPauseT);pPauseT=null;}pPauseAt=0;}
   function endPause(){var g=curPauseSec();cancelPause();      // 继续走：把这个洞正式落进段里
     if(g>=GAPMIN)pSegs.push({gap:true,t:"暂停",sec:g});return g;}
-  var segsBox=document.getElementById("pomo-segs"),switchBtn=document.getElementById("pomo-switch");
+  var segsBox=document.getElementById("pomo-segs");
   function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||"专注");}
   function curSegLabel(){return (pomoTask.value||"").trim()||catLabelOf(pomoCat.value,pomoSub.value||null);}
   function curSegSec(){return Math.max(0,pElapsed-pSegStart);}
@@ -6579,18 +6639,45 @@ margin-left: -22px;
       '</div><div class="pomo-seglist">'+
       list.map(function(s,i){return '<span class="'+(i===list.length-1?"cur":"")+(s.gap?" gap":"")+'"><i style="background:'+segCol(s)+'"></i>'+esc(s.t)+' <b>'+secLabel(s.sec)+'</b></span>';}).join("")+
       '</div>';}
-  function switchTask(){
+  // 切一刀。mode="cat" 是改了分类，"name" 是改了任务名。
+  // useCat/useSub 是"变之前"的分类 —— change 事件触发时下拉已经是新值了，
+  // 要结算的那一段属于旧值，不传的话会把前面那段整个记成新分类。
+  var MINSEG=30;
+  function switchTask(mode,useCat,useSub){
     if(!pTimer||timerMode!=="up")return;
-    var sec=curSegSec(),kept=false;
-    if(sec>0){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});pSegStart=pElapsed;kept=true;}
-    pomoManual=false;pomoTask.value="";markPomoAuto(false);   // 让新任务名重新走自动识别
-    try{pomoTask.focus();}catch(e){}
-    savePomoRun();renderSegs();drawPomo();
-    pomoNote(kept?("记下「"+pSegs[pSegs.length-1].t+" "+secLabel(sec)+"」，接着做别的"):"还没走时间，直接打新任务名就行");}
-  if(switchBtn)switchBtn.addEventListener("click",switchTask);
+    var ck=useCat||pomoCat.value;
+    var sk=(typeof useSub==="undefined")?(pomoSub.value||null):(useSub||null);
+    var sec=curSegSec(),lab=(pomoTask.value||"").trim()||catLabelOf(ck,sk);
+    if(sec>=MINSEG){
+      pSegs.push({t:lab,cat:ck,sub:sk,sec:sec});pSegStart=pElapsed;
+      pomoNote("记下「"+lab+" "+secLabel(sec)+"」，接着做别的");}
+    else if(sec>0)
+      // 不到 30 秒就切走 —— 当成点错了。不落段、也不动 pSegStart，
+      // 这几秒直接算进接下来那一段，记录里不会留一条十几秒的噪音。
+      pomoNote("刚才那下不到 "+MINSEG+" 秒，当成点错了，没记成一段");
+    if(mode==="cat"){pomoTask.value="";markPomoAuto(false);}   // 换了类就是换了事，名字重打
+    savePomoRun();renderSegs();drawPomo();}
+  // 结算前再扫一遍：不到 30 秒的段并给相邻的段。
+  // 最后那一段是被"停止"结束的，走不到上面那条误触判断，只能在这儿收。
+  function dropTiny(list){
+    if(!list||list.length<2)return list;
+    var out=list.slice(),guard=0;
+    while(guard++<60){
+      var i=-1;
+      for(var k=0;k<out.length;k++)
+        if(!out[k].gap&&(+out[k].sec||0)<MINSEG){i=k;break;}
+      if(i<0)break;
+      var prev=null,next=null;
+      for(var x=i-1;x>=0;x--)if(!out[x].gap){prev=out[x];break;}
+      for(var y=i+1;y<out.length;y++)if(!out[y].gap){next=out[y];break;}
+      var host=prev||next;
+      if(!host)break;                                   // 只剩这一个真段了，留着
+      host.sec=(+host.sec||0)+(+out[i].sec||0);
+      out.splice(i,1);}
+    return mergeSegs(out);}
   function logFocusToCalendar(focusSec,endMs){
     var typed=(pomoTask.value||"").trim();
-    var segs=(timerMode==="up")?allSegs():null,gapSec=0,trail=0;
+    var segs=(timerMode==="up")?dropTiny(allSegs()):null,gapSec=0,trail=0;
     if(segs){                                              // 停在暂停上就直接收尾 → 末尾不留洞，结束时间往回拨
       while(segs.length&&segs[segs.length-1].gap){trail+=(+segs[segs.length-1].sec||0);segs.pop();}
       segs.forEach(function(s){if(s.gap)gapSec+=(+s.sec||0);});}
@@ -6661,9 +6748,6 @@ margin-left: -22px;
     var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
     if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
-    // 正计时下一直显示「换任务」（没跑的时候置灰），不然你根本不知道有这个功能
-    if(switchBtn){switchBtn.style.display=(timerMode==="up")?"":"none";switchBtn.disabled=!pTimer;
-      switchBtn.title=pTimer?"结算当前这一段，接着做别的；总计时不停":"先点开始，跑起来之后才能换任务";}
     renderSegs();
     if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
       if(!noting)pomoHint.textContent=hintText();
