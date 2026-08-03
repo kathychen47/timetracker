@@ -1190,6 +1190,10 @@
   /* 读到的那个词：一个半透明的框，跟着音频走 */
   .rw.on{background:color-mix(in srgb,var(--primary) 26%,transparent);
     box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 45%,transparent)}
+  /* 译文：接在原文下面另起一行，灰一点，别抢原文 */
+  .rl{flex-wrap:wrap}
+  .rtr{flex-basis:100%;margin-left:50px;font-size:12.5px;color:var(--muted);line-height:1.6;padding-top:1px}
+  .rec-lines.nobi .rtr{display:none}
   .rl mark{background:#FFF1A8;color:inherit;border-radius:3px;padding:0 1px}
   /* wordbook */
   #wb-count{font-size:11px;opacity:.7}
@@ -3355,6 +3359,9 @@ margin-left: -22px;
     </section>
     <section class="view" id="view-rec">
       <div class="page-h">录音转写 <span class="rd-sub">边录边出字 · 回放时逐句对照，点时间戳跳到那一刻</span></div>
+      <!-- 进度条放在两个面板外面：首页导入文件、打开某条重转/翻译，都要看得见 -->
+        <div class="rec-wp" id="rec-wp" hidden><span class="rec-wpt" id="rec-wpt"></span>
+          <span class="rec-wpb"><i id="rec-wpbar"></i></span></div>
       <div id="rec-home">
         <div class="rec-bar">
           <button class="btn primary" id="rec-go">● 开始录音</button>
@@ -3367,6 +3374,7 @@ margin-left: -22px;
             <option value="ja-JP">日本語</option>
           </select>
           <label class="rec-ck"><input type="checkbox" id="rec-cal"> 结束后记入日历</label>
+          <label class="rec-ck" title="每定稿一句就翻一句（本地模型一句要几秒，会排着队慢慢填）"><input type="checkbox" id="rec-livetr"> 边录边翻</label>
           <span class="rec-time" id="rec-time"></span>
           <label class="btn" style="cursor:pointer" title="MP3 / M4A / WAV / FLAC / OGG / WebM，以及 MP4、MOV 这类视频（只取声音）">📁 导入文件转写<input type="file" id="rec-file" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov" hidden></label>
           <span class="wt-note" id="rec-hint" style="margin:0"></span>
@@ -3381,8 +3389,6 @@ margin-left: -22px;
           </select>
           <span class="wt-note" id="rec-devnote" style="margin:0"></span>
         </div>
-        <div class="rec-wp" id="rec-wp" hidden><span class="rec-wpt" id="rec-wpt"></span>
-          <span class="rec-wpb"><i id="rec-wpbar"></i></span></div>
         <div class="rec-live" id="rec-live" hidden></div>
         <div id="rec-list"></div>
       </div>
@@ -3400,6 +3406,8 @@ margin-left: -22px;
             <option value="2">2×</option>
           </select>
           <label class="rec-ck"><input type="checkbox" id="rec-follow" checked> 跟读</label>
+          <button class="btn" id="rec-tr" title="把整篇翻一遍（本地模型没有配额，一场会也翻得完）">🌐 翻译</button>
+          <label class="rec-ck" title="收起译文只看原文"><input type="checkbox" id="rec-bi" checked> 双语</label>
           <button class="btn" id="rec-whisper" title="用 Whisper 重新转一遍（更准，尤其是专业词和口音）">✨ 重转</button>
           <button class="btn" id="rec-export" title="导出 Markdown">⬇️</button>
         </div>
@@ -4490,6 +4498,7 @@ margin-left: -22px;
           if(t<recLastEnd)t=recLastEnd;
           if(e<t+0.2)e=t+0.2;
           recLines.push({t:Math.round(t*10)/10,e:Math.round(e*10)/10,s:txt});
+          liveTrPush(recLines.length-1);              // 开了「边录边翻」才真去翻
           recLastEnd=e;recPend=null;
         }else{
           // 这一句刚开口。识别本身有延迟，往前让 0.6 秒，点回去才不会切在半个字上。
@@ -4549,7 +4558,8 @@ margin-left: -22px;
     var box=document.getElementById("rec-live");if(!box)return;
     var tail=recLines.slice(-40);
     box.innerHTML=tail.map(function(l){
-      return '<div class="rl"><span class="rt">'+tsLabel(l.t)+'</span><span class="rs">'+esc(l.s)+'</span></div>';}).join("")+
+      return '<div class="rl"><span class="rt">'+tsLabel(l.t)+'</span><span class="rs">'+esc(l.s)+'</span>'+
+        (l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div>';}).join("")+
       (interim?('<div class="rl int"><span class="rt">'+tsLabel(recElapsed())+'</span><span class="rs">'+esc(interim)+'</span></div>'):"")+
       (recLines.length||interim?"":'<div class="dict-hint">'+(SRC?"说话就会出字…":"这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。")+'</div>');
     box.scrollTop=box.scrollHeight;}
@@ -4608,7 +4618,8 @@ margin-left: -22px;
       shown++;
       return '<div class="rl'+(i===recCurLine?" cur":"")+'" data-li="'+i+'">'+
         '<button class="rt" data-seek="'+i+'" title="跳到 '+tsLabel(l.t)+'">'+tsLabel(l.t)+'</button>'+
-        '<span class="rs" data-ed="'+i+'" title="双击改这一句">'+wordsHTML(l,i)+'</span></div>';}).join("")||
+        '<span class="rs" data-ed="'+i+'" title="双击改这一句">'+wordsHTML(l,i)+'</span>'+
+        (l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div>';}).join("")||
       '<div class="dict-hint">没有匹配的句子。</div>';
     if(recQ)document.getElementById("rec-meta").textContent=shown+" / "+recCur.lines.length+" 句";
     else document.getElementById("rec-meta").textContent=tsLabel(recCur.dur)+" · "+recCur.lines.length+" 句";}
@@ -4666,12 +4677,45 @@ margin-left: -22px;
       if(er.top<br.top+10||er.bottom>br.bottom-10)
         box.scrollTop+=(er.top-br.top)-box.clientHeight*0.38;}}
 
+  // 整篇翻。走 translateBlocks —— 它会打包成批（Google 那条一批 12 段），
+  // 不是一句一个请求；本地模型则是一次性喂进 worker，没有配额可以撞。
+  var recTrBusy=false;
+  function recTrAll(){
+    if(!recCur||recTrBusy)return;
+    var idx=[],txt=[];
+    recCur.lines.forEach(function(l,i){if(!l.tr&&l.s&&l.s.trim()){idx.push(i);txt.push(l.s);}});
+    if(!idx.length){recNote2("每一句都翻过了。");return;}
+    recTrBusy=true;
+    var btn=document.getElementById("rec-tr"),old=btn?btn.textContent:"";
+    if(btn){btn.textContent="翻译中…";btn.disabled=true;}
+    wProg("翻译 "+idx.length+" 句 · "+trEngName(trEngine)+"…",0);
+    translateBlocks(txt,function(done,total,msg){
+      wProg(msg||("翻译中 "+done+" / "+total+" 句 · "+trEngName(trEngine)),total?done/total*100:null);})
+    .then(function(out){
+      var n=0;idx.forEach(function(li,k){if(out[k]){recCur.lines[li].tr=String(out[k]).trim();n++;}});
+      saveRecs();recPaintLines();recNote2("翻好 "+n+" 句。");},
+      function(err){ttAlert("翻译失败："+String(err&&err.message||err)+"\n\n可以在查词页右上角换个引擎再试。");})
+    .then(function(){recTrBusy=false;wProg(null);if(btn){btn.textContent=old;btn.disabled=false;}});}
+  function recNote2(m){var el=document.getElementById("rec-meta");if(el&&m)el.textContent=m;}
+  // 录的时候：每定稿一句排一次队。本地模型一句几秒，所以是排队，不是一股脑发出去。
+  var ltQ=[],ltOn=false;
+  function liveTrPush(i){
+    var cb=document.getElementById("rec-livetr");
+    if(!cb||!cb.checked)return;
+    ltQ.push(i);liveTrDrain();}
+  function liveTrDrain(){
+    if(ltOn||!ltQ.length)return;
+    var i=ltQ.shift(),l=recLines[i];
+    if(!l||!l.s||l.tr){liveTrDrain();return;}
+    ltOn=true;
+    translateText(l.s).then(function(r){l.tr=String(r.text||"").trim();recDrawLive();},function(){})
+      .then(function(){ltOn=false;liveTrDrain();});}
   function recExportMD(){
     if(!recCur)return;
     var d=new Date(recCur.ts);
     var s="# "+recCur.title+"\n\n"+fmt(d)+" "+pad(d.getHours())+":"+pad(d.getMinutes())+
       " · "+tsLabel(recCur.dur)+" · "+recCur.lines.length+" 句\n\n"+
-      recCur.lines.map(function(l){return "**["+tsLabel(l.t)+"]** "+l.s;}).join("\n\n")+"\n";
+      recCur.lines.map(function(l){return "**["+tsLabel(l.t)+"]** "+l.s+(l.tr?("\n"+l.tr):"");}).join("\n\n")+"\n";
     dlFile(recCur.title.replace(/[\\/:*?"<>|]/g,"_")+".md",s,"text/markdown");}
 
   function bindRec(){
@@ -4949,7 +4993,17 @@ margin-left: -22px;
     wDevNote();
     document.getElementById("rec-file").addEventListener("change",function(e){
       var f=e.target.files&&e.target.files[0];e.target.value="";if(f)whisperFile(f);});
-    document.getElementById("rec-whisper").addEventListener("click",whisperRedo);}
+    document.getElementById("rec-whisper").addEventListener("click",whisperRedo);
+    var tb=document.getElementById("rec-tr");
+    if(tb)tb.addEventListener("click",recTrAll);
+    var bi=document.getElementById("rec-bi");
+    if(bi){bi.checked=load("tt_recbi",true)!==false;
+      document.getElementById("rec-lines").classList.toggle("nobi",!bi.checked);
+      bi.addEventListener("change",function(){save("tt_recbi",bi.checked);
+        document.getElementById("rec-lines").classList.toggle("nobi",!bi.checked);});}
+    var lt=document.getElementById("rec-livetr");
+    if(lt){lt.checked=load("tt_reclivetr",false);
+      lt.addEventListener("change",function(){save("tt_reclivetr",lt.checked);});}}
   function wDevNote(){
     var el=document.getElementById("rec-devnote");if(!el)return;
     var d=wDevice();
