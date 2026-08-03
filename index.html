@@ -1194,6 +1194,28 @@
   .rl{flex-wrap:wrap}
   .rtr{flex-basis:100%;margin-left:50px;font-size:12.5px;color:var(--muted);line-height:1.6;padding-top:1px}
   .rec-lines.nobi .rtr{display:none}
+  .tm-panel{margin:10px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .st-row{display:flex;gap:10px;padding:6px 0;font-size:13px;align-items:baseline;flex-wrap:wrap}
+  .st-row b{min-width:96px;color:var(--muted);font-weight:600}
+  .st-row i{opacity:.65;font-style:normal}
+  .st-row code{font:12.5px ui-monospace,Menlo,Consolas,monospace;background:var(--bg);
+    padding:2px 6px;border-radius:5px;word-break:break-all}
+  .st-warn{color:var(--danger);font-weight:600}
+  .st-note{margin-top:8px;padding-top:8px;border-top:1px solid var(--line);
+    font-size:12.5px;color:var(--muted);line-height:1.7}
+  .tm-h{font-weight:600;margin-bottom:8px}
+  .tm-sub{font-weight:400;font-size:12.5px;color:var(--muted);margin-left:6px}
+  .tm-in{width:100%;box-sizing:border-box;font:13px/1.6 ui-monospace,Menlo,Consolas,monospace;
+    padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:inherit;resize:vertical}
+  .tm-btns{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+  .tm-list{margin-top:10px;display:flex;flex-direction:column;gap:4px;max-height:260px;overflow:auto}
+  .tm-row{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:7px;background:var(--bg);font-size:13px}
+  .tm-w{color:var(--muted);min-width:120px}
+  .tm-w i{opacity:.7}
+  .tm-a{color:var(--muted);opacity:.6}
+  .tm-r{font-weight:600;flex:1}
+  .tm-x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px}
+  .tm-x:hover{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
   .rl mark{background:#FFF1A8;color:inherit;border-radius:3px;padding:0 1px}
   /* wordbook */
   #wb-count{font-size:11px;opacity:.7}
@@ -3377,6 +3399,8 @@ margin-left: -22px;
           <label class="rec-ck" title="每定稿一句就翻一句（本地模型一句要几秒，会排着队慢慢填）"><input type="checkbox" id="rec-livetr"> 边录边翻</label>
           <span class="rec-time" id="rec-time"></span>
           <label class="btn" style="cursor:pointer" title="MP3 / M4A / WAV / FLAC / OGG / WebM，以及 MP4、MOV 这类视频（只取声音）">📁 导入文件转写<input type="file" id="rec-file" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov" hidden></label>
+          <button class="btn" id="rec-terms" title="专业词表：识别器听不出来的词，先教给它">📖 术语表</button>
+          <button class="btn" id="rec-store" title="录音存在本机哪里、占了多少、会不会被浏览器清掉">💾 存储</button>
           <span class="wt-note" id="rec-hint" style="margin:0"></span>
         </div>
         <div class="rec-bar rec-eng">
@@ -3388,6 +3412,20 @@ margin-left: -22px;
             <option value="wasm">CPU（稳）</option>
           </select>
           <span class="wt-note" id="rec-devnote" style="margin:0"></span>
+        </div>
+        <div class="tm-panel" id="rec-stpanel" hidden>
+          <div class="tm-h">💾 本机存储 <span class="tm-sub">音频只存在录它的这台设备上，不进云端（一小时约 30MB）。</span></div>
+          <div class="st-body" id="rec-stbody"></div>
+        </div>
+        <div class="tm-panel" id="rec-tmpanel" hidden>
+          <div class="tm-h">📖 术语表 <span class="tm-sub">识别器不认的专业词，在这儿教它。转写稿里改对一个词，也会自动记住。</span></div>
+          <textarea class="tm-in" id="rec-tmin" rows="4" placeholder="一行一条：&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;只写术语 → 按发音去找；写成「错的 =&gt; 对的」→ 原样替换，更准。"></textarea>
+          <div class="tm-btns">
+            <button class="btn primary" id="rec-tmimp">导入</button>
+            <button class="btn" id="rec-tmapply" title="把术语表套到所有已有的录音上">套用到全部录音</button>
+            <span class="wt-note" id="rec-tmnote" style="margin:0"></span>
+          </div>
+          <div class="tm-list" id="rec-tmlist"></div>
         </div>
         <div class="rec-live" id="rec-live" hidden></div>
         <div id="rec-list"></div>
@@ -3408,7 +3446,14 @@ margin-left: -22px;
           <label class="rec-ck"><input type="checkbox" id="rec-follow" checked> 跟读</label>
           <button class="btn" id="rec-tr" title="把整篇翻一遍（本地模型没有配额，一场会也翻得完）">🌐 翻译</button>
           <label class="rec-ck" title="收起译文只看原文"><input type="checkbox" id="rec-bi" checked> 双语</label>
+          <select id="rec-seg" title="停多久才算说完一句 —— 说话慢或爱停顿就往「整段」调">
+            <option value="tight">断句 · 紧</option>
+            <option value="normal">断句 · 标准</option>
+            <option value="para">断句 · 整段</option>
+          </select>
+          <button class="btn" id="rec-reseg" title="按当前灵敏度把这篇重新断句（可以反复调，不会越合越死）">✂️ 重新断句</button>
           <button class="btn" id="rec-whisper" title="用 Whisper 重新转一遍（更准，尤其是专业词和口音）">✨ 重转</button>
+          <button class="btn" id="rec-adl" title="把这段的音频文件存到电脑上（IndexedDB 里拿不出来，只能这样导）">🎵</button>
           <button class="btn" id="rec-export" title="导出 Markdown">⬇️</button>
         </div>
         <audio id="rec-audio" controls preload="metadata"></audio>
@@ -4437,6 +4482,223 @@ margin-left: -22px;
   var recStream=null,recMR=null,recChunks=[],recSR=null,recT0=0,recTick=null;
   var recLines=[],recOn=false,recPend=null,recLastEnd=0,recBlobType="";
   var recCur=null,recURL=null,recCurLine=-1,recFollow=true,recQ="";
+  // ---- 音频存在哪 ----
+  // 数一遍 IndexedDB 里真实占了多少。Blob.size 是元数据，不会真把音频读进内存。
+  function recUsage(){return recDB().then(function(db){return new Promise(function(res){
+    var tx=db.transaction("audio","readonly"),n=0,bytes=0;
+    var cur=tx.objectStore("audio").openCursor();
+    cur.onsuccess=function(){var c=cur.result;
+      if(!c){res({n:n,bytes:bytes});return;}
+      n++;if(c.value&&c.value.b)bytes+=c.value.b.size||0;c.continue();};
+    cur.onerror=function(){res({n:n,bytes:bytes});};});
+    }).catch(function(){return {n:0,bytes:0};});}
+  // 浏览器把 IndexedDB 落在哪个目录 —— 按 UA 推断，只能给个大概。
+  // 注意：那个目录是 LevelDB，打开看不到 .webm，要文件得用「🎵 导出音频」。
+  function storePath(){
+    var ua=navigator.userAgent||"";
+    var key=location.protocol.replace(":","")+"_"+location.hostname+"_0.indexeddb.leveldb";
+    var win=/Windows/i.test(ua),mac=/Mac OS X/i.test(ua);
+    var br=/Edg\//.test(ua)?"Edge":(/OPR\//.test(ua)?"Opera":
+      (/Firefox/i.test(ua)?"Firefox":(/Chrome|CriOS/i.test(ua)?"Chrome":
+      (/Safari/i.test(ua)?"Safari":""))));
+    if(br==="Firefox")
+      return {br:br,p:(win?"%APPDATA%\\Mozilla\\Firefox\\Profiles\\<你的配置>\\storage\\default\\"
+        :"~/Library/Application Support/Firefox/Profiles/<你的配置>/storage/default/")+
+        location.protocol.replace(":","")+"+++"+location.hostname+"/idb"};
+    if(br==="Safari")return {br:br,p:""};              // Safari 不公开路径，别瞎写
+    var vendor=br==="Edge"?["Microsoft","Edge"]:(br==="Opera"?["Opera Software","Opera Stable"]:["Google","Chrome"]);
+    if(win)return {br:br,p:"%LOCALAPPDATA%\\"+vendor[0]+"\\"+vendor[1]+"\\User Data\\Default\\IndexedDB\\"+key};
+    if(mac)return {br:br,p:"~/Library/Application Support/"+vendor[0]+"/"+vendor[1]+"/Default/IndexedDB/"+key};
+    return {br:br,p:"~/.config/"+vendor[1].toLowerCase().replace(/ /g,"-")+"/Default/IndexedDB/"+key};}
+  async function renderStore(){
+    var box=document.getElementById("rec-stbody");if(!box)return;
+    box.innerHTML='<div class="dict-hint">数一下…</div>';
+    var u=await recUsage(),est={},per=false;
+    try{est=await navigator.storage.estimate();}catch(e){}
+    try{per=await navigator.storage.persisted();}catch(e){}
+    var sp=storePath();
+    var quota=est.quota||0,total=est.usage||0;
+    box.innerHTML=
+      '<div class="st-row"><b>音频</b><span>'+u.n+' 条 · '+fmtSize(u.bytes)+'</span></div>'+
+      '<div class="st-row"><b>这个站点一共</b><span>'+fmtSize(total)+
+        (quota?(" / 浏览器给了约 "+fmtSize(quota)):"")+' <i>（还包括书、词典）</i></span></div>'+
+      '<div class="st-row"><b>常驻</b><span>'+(per?'已开启 —— 浏览器清空间时不会动它':
+        '<span class="st-warn">未开启</span> · 浏览器空间紧张时可能把录音清掉 '+
+        '<button class="btn" id="rec-stper">申请常驻</button>')+'</span></div>'+
+      '<div class="st-row"><b>存放方式</b><span>浏览器的 IndexedDB，库名 <code>ttrec</code>'+
+        '（不是普通文件夹里的音频文件）</span></div>'+
+      (sp.p?('<div class="st-row"><b>大致位置</b><span><code class="st-p" id="rec-stpath">'+esc(sp.p)+'</code> '+
+        '<button class="btn" id="rec-stcopy">复制</button></span></div>'):'')+
+      '<div class="st-note">⚠️ 那个目录是 LevelDB 数据库，打开也看不到 .webm —— '+
+        '要拿到音频文件，用每条录音右上角的「🎵 导出音频」。'+
+        (sp.br==="Safari"?" Safari 不公开这个路径。":"")+'</div>';
+    var pb=document.getElementById("rec-stper");
+    if(pb)pb.addEventListener("click",async function(){
+      try{var g=await navigator.storage.persist();
+        if(!g)ttAlert("浏览器没答应。多用几次这个站点、或者把它加成书签／安装成应用，通过率会高一些。");
+      }catch(e){ttAlert("这个浏览器不支持申请常驻。");}
+      renderStore();});
+    var cb=document.getElementById("rec-stcopy");
+    if(cb)cb.addEventListener("click",function(){copyText(sp.p,cb);});}
+  // ---- 术语表（pre-knowledge）----
+  // 识别器不认专业词：Weibull 听成 "way bull"，FMEA 听成 "female"。
+  // Chrome 的 SpeechRecognition 没有词表接口，喂不进去，只能在出字之后纠。
+  var terms=load("tt_terms",[])||[];
+  function saveTerms(){save("tt_terms",terms);}
+  function tmRx(s){return String(s).replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+  // 把一串字压成"听起来的样子"：统一同音写法 → 去元音 → 合并叠字。
+  // Weibull → wbl，way bull → wbl。够粗糙，但识别器听错的正好是这一类。
+  function sndKey(s){
+    return String(s||"").toLowerCase().replace(/[^a-z]/g,"")
+      .replace(/ph/g,"f").replace(/ck/g,"k").replace(/qu/g,"kw")
+      .replace(/c/g,"k").replace(/x/g,"ks").replace(/z/g,"s")
+      .replace(/[aeiouyh]/g,"")
+      .replace(/(.)\1+/g,"$1");}
+  function applyTerms(s){
+    if(!s||!terms.length)return s;
+    // ① 记下来的纠错对：整词替换（前后不能挨着字母数字，免得改坏别的词）
+    terms.forEach(function(t){
+      if(!t.w||!t.r)return;
+      try{s=s.replace(new RegExp("(^|[^0-9A-Za-z])"+tmRx(t.w)+"(?![0-9A-Za-z])","gi"),
+        function(m,p1){return p1+t.r;});}catch(e){}});
+    if(!/[A-Za-z]/.test(s))return s;                  // 中文没有这个毛病
+    var keyed=[];
+    terms.forEach(function(t){
+      if(!t.r)return;var k=sndKey(t.r);
+      if(k.length>=3)keyed.push({k:k,r:t.r});});      // 太短的骨架容易撞车，不用
+    if(!keyed.length)return s;
+    // ② 按发音找。从长到短试，长的优先 —— "way bull" 要盖过单个 "bull"
+    var w=s.split(/\s+/);
+    for(var n=4;n>=1;n--)
+      for(var i=0;i+n<=w.length;i++){
+        var seg=w.slice(i,i+n).join(" ");
+        var head=(seg.match(/^[^0-9A-Za-z]+/)||[""])[0];
+        var tail=(seg.match(/[^0-9A-Za-z]+$/)||[""])[0];
+        var core=seg.slice(head.length,seg.length-tail.length);
+        if(!core)continue;
+        var k=sndKey(core);if(k.length<3)continue;
+        for(var m=0;m<keyed.length;m++){
+          if(keyed[m].k!==k)continue;
+          if(core===keyed[m].r)break;                 // 本来就是对的，别动
+          w.splice(i,n,head+keyed[m].r+tail);
+          break;}}
+    return w.join(" ");}
+  function termAll(lines){                            // 整篇套一遍
+    var n=0;
+    (lines||[]).forEach(function(l){
+      var v=applyTerms(l.s);if(v===l.s)return;
+      l.s=v;l.__w=null;l.p=null;n++;});               // 正文改了，片段就对不上了
+    return n;}
+  // 你把一句里的某个词改对了 → 掐头去尾，把中间那段差异记成一对。
+  // 整句重写不算（那不是在教词，是在改句子）。
+  function learnTerm(oldS,newS){
+    var oldT=String(oldS||"").trim(),newT=String(newS||"").trim();
+    var A=oldT.split(/\s+/),B=newT.split(/\s+/);
+    if(!A.length||!B.length)return null;
+    var i=0;while(i<A.length&&i<B.length&&A[i]===B[i])i++;
+    var j=0;while(j<A.length-i&&j<B.length-i&&A[A.length-1-j]===B[B.length-1-j])j++;
+    function cut(x){return x.replace(/^[^0-9A-Za-z\u4e00-\u9fff]+/,"").replace(/[^0-9A-Za-z\u4e00-\u9fff]+$/,"");}
+    var wa=cut(A.slice(i,A.length-j).join(" ")),wb=cut(B.slice(i,B.length-j).join(" "));
+    // 中文没有空格，整句就是一个 token，上面那轮切不动 —— 这时候再按字符掐一遍。
+    // 只在两边都没有空格时做：有空格说明词级已经对齐好了，再按字符啃会啃到词中间去
+    // （"way bull" 和 "Weibull" 共同后缀是 "bull"，一路啃下去只剩 "way"/"Wei"）。
+    if(wa.indexOf(" ")<0&&wb.indexOf(" ")<0){
+      var s=0;while(s<wa.length&&s<wb.length&&wa.charAt(s)===wb.charAt(s))s++;
+      var t=0;while(t<wa.length-s&&t<wb.length-s&&
+        wa.charAt(wa.length-1-t)===wb.charAt(wb.length-1-t))t++;
+      wa=cut(wa.slice(s,wa.length-t));wb=cut(wb.slice(s,wb.length-t));}
+    if(!wa||!wb||wa.toLowerCase()===wb.toLowerCase())return null;
+    if(wa.length>40||wb.length>40)return null;
+    if(wb.split(/\s+/).length>4)return null;
+    // 差异几乎盖住整行、读音又对不上 → 这是在重写句子，不是在纠一个词。
+    // （读音对得上要放行：一行本来就只有 "way bull" 时，改成 Weibull 是正经纠词。）
+    if(wa.length>=oldT.length*0.8&&wb.length>=newT.length*0.8&&sndKey(wa)!==sndKey(wb))return null;
+    return {w:wa,r:wb};}
+  function termAdd(t){
+    if(!t||!t.r)return false;
+    for(var i=0;i<terms.length;i++)
+      if((terms[i].w||"").toLowerCase()===(t.w||"").toLowerCase()&&
+         (terms[i].r||"").toLowerCase()===(t.r||"").toLowerCase())return false;
+    terms.push({w:t.w||"",r:t.r});saveTerms();return true;}
+  // 导入：一行一条。"错的 => 对的"、"错的 -> 对的"、"错的,对的"，
+  // 或者只写术语本身（那就只能靠发音去猜它被听成了什么）。# 开头是注释。
+  function termParse(txt){
+    var out=[];
+    String(txt||"").split(/\r?\n/).forEach(function(ln){
+      ln=ln.trim();if(!ln||ln.charAt(0)==="#")return;
+      var m=ln.split(/\s*(?:=>|->|→|\t|,|，)\s*/);
+      if(m.length>=2&&m[0]&&m[1])out.push({w:m[0].trim(),r:m[1].trim()});
+      else out.push({w:"",r:ln});});
+    return out;}
+  // ---- 断句 ----
+  // 识别器定稿 ≠ 说完了。它只是听见你停了 1 秒。所以先攒着，攒成一句/一小段再落行。
+  var SEG_PRESET={tight:1.0,normal:1.8,para:3.0};
+  var SEG_MAXC=180,SEG_MAXS=30;                       // 一行的上限：再长时间戳就没意义了
+  var segBuf=[],segTimer=null;
+  function segSil(){return SEG_PRESET[load("tt_recseg","normal")]||SEG_PRESET.normal;}
+  function segEnd(s){return /[.!?。！？…]["'”’)\]]?$/.test(String(s||"").trim());}
+  // 把攒着的片段拼成一句。拼接处要处理两件事：中英文的空格、以及后半截的首字母大写。
+  // （Chrome 每一段都会首字母大写，那个大写本来就不带信息，接在句中该还原成小写）
+  function segJoin(ps){
+    var parts=[],out="";
+    for(var i=0;i<ps.length;i++){
+      var raw=String(ps[i].s||"").trim();if(!raw)continue;
+      var s=raw,sep="";
+      if(out){
+        sep=(/[\u4e00-\u9fff]$/.test(out)||/^[\u4e00-\u9fff]/.test(s))?"":" ";
+        if(!segEnd(out)&&/^[A-Z][a-z]/.test(s))s=s.charAt(0).toLowerCase()+s.slice(1);}
+      parts.push({s:s,r:raw,sep:sep,t:+ps[i].t||0,e:+ps[i].e||0});
+      out+=sep+s;}
+    return {s:out,p:parts};}
+  function segFlush(){
+    if(segTimer){clearTimeout(segTimer);segTimer=null;}
+    if(!segBuf.length)return;
+    var j=segJoin(segBuf);segBuf=[];
+    if(!j.s||!j.p.length)return;
+    var fixed=applyTerms(j.s);                        // 落行前照术语表纠一遍
+    var l={t:j.p[0].t,e:j.p[j.p.length-1].e,s:fixed};
+    // 纠过的句子跟片段对不上了，只能退回整句均摊；没纠过的照旧按片段走
+    if(j.p.length>1&&fixed===j.s)l.p=j.p;             // 留着原始片段：摊词时停顿不吃词
+    recLines.push(l);
+    liveTrPush(recLines.length-1);                    // 翻译等到整句成型才发，上下文更全
+    recDrawLive("");}
+  function segPush(p){
+    segBuf.push(p);
+    if(segTimer){clearTimeout(segTimer);segTimer=null;}
+    var j=segJoin(segBuf);
+    var secs=(+p.e||0)-(j.p.length?j.p[0].t:0);
+    if(segEnd(j.s)||j.s.length>=SEG_MAXC||secs>=SEG_MAXS){segFlush();return;}
+    segTimer=setTimeout(segFlush,segSil()*1000);
+    recDrawLive("");}
+  // 对已经录好的记录重新断句。
+  // 关键：先把所有行摊平成原始片段（合并过的拆回去），再对片段统一跑一遍。
+  // 如果只在"行与行之间"查停顿，合并过的行内部那个间隔就永远看不见 ——
+  // 灵敏度调紧了也拆不开，只能越合越死。
+  function reSeg(lines,sil){
+    var ps=[];
+    (lines||[]).forEach(function(l){
+      if(l.p&&l.p.length)l.p.forEach(function(p,k){
+        ps.push({s:p.r||p.s,t:+p.t||0,e:+p.e||0,tr:k?"":(l.tr||""),ss:k?"":l.s});});
+      else ps.push({s:l.s,t:+l.t||0,e:+l.e||0,tr:l.tr||"",ss:l.s});});
+    var out=[],buf=[];
+    function flush(){
+      if(!buf.length)return;
+      var j=segJoin(buf);
+      if(j.p.length){
+        var l={t:j.p[0].t,e:j.p[j.p.length-1].e,s:j.s};
+        if(j.p.length>1)l.p=j.p;
+        // 拼出来跟原句一字不差 → 译文照旧；否则（合过或拆过）作废，要重翻
+        if(buf[0].tr&&buf[0].ss===l.s)l.tr=buf[0].tr;
+        out.push(l);}
+      buf=[];}
+    ps.forEach(function(p){
+      if(buf.length){
+        var j=segJoin(buf),gap=(+p.t||0)-(+buf[buf.length-1].e||0);
+        if(gap>sil||segEnd(j.s)||(j.s.length+String(p.s||"").length)>SEG_MAXC||
+           ((+p.e||0)-(+buf[0].t||0))>SEG_MAXS)flush();}
+      buf.push(p);});
+    flush();
+    return out;}
 
   function recDB(){return new Promise(function(res,rej){
     var r=indexedDB.open("ttrec",1);
@@ -4497,8 +4759,8 @@ margin-left: -22px;
           var t=(recPend!==null)?recPend:recLastEnd,e=recElapsed();
           if(t<recLastEnd)t=recLastEnd;
           if(e<t+0.2)e=t+0.2;
-          recLines.push({t:Math.round(t*10)/10,e:Math.round(e*10)/10,s:txt});
-          liveTrPush(recLines.length-1);              // 开了「边录边翻」才真去翻
+          // 不直接落行 —— 交给 segPush 攒成一句/一小段
+          segPush({s:txt,t:Math.round(t*10)/10,e:Math.round(e*10)/10});
           recLastEnd=e;recPend=null;
         }else{
           // 这一句刚开口。识别本身有延迟，往前让 0.6 秒，点回去才不会切在半个字上。
@@ -4515,6 +4777,7 @@ margin-left: -22px;
     if(!recOn)return;
     recOn=false;
     if(recSR){var s=recSR;recSR=null;try{s.stop();}catch(e){}}
+    segFlush();                                        // 攒着的最后半句别丢了
     if(recTick){clearInterval(recTick);recTick=null;}
     try{recMR&&recMR.state!=="inactive"&&recMR.stop();}catch(e){}
     try{recStream&&recStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
@@ -4523,6 +4786,7 @@ margin-left: -22px;
     document.getElementById("rec-lang").disabled=false;}
 
   async function recFinish(){
+    segFlush();                                        // 兜一次：stop 之后识别器还可能补一段
     var dur=recElapsed();recT0=0;
     var blob=new Blob(recChunks,{type:recBlobType||"audio/webm"});recChunks=[];
     document.getElementById("rec-live").hidden=true;
@@ -4557,11 +4821,16 @@ margin-left: -22px;
   function recDrawLive(interim){
     var box=document.getElementById("rec-live");if(!box)return;
     var tail=recLines.slice(-40);
+    // 攒着还没落行的那半句 + 正在识别的 interim，拼成一行显示 ——
+    // 不然攒的那 1.8 秒里屏幕上什么都不动，会以为卡住了
+    var pend=segBuf.length?segJoin(segBuf).s:"";
+    var live=pend+(interim?((pend?" ":"")+interim):"");
+    var lt=segBuf.length?segBuf[0].t:recElapsed();
     box.innerHTML=tail.map(function(l){
       return '<div class="rl"><span class="rt">'+tsLabel(l.t)+'</span><span class="rs">'+esc(l.s)+'</span>'+
         (l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div>';}).join("")+
-      (interim?('<div class="rl int"><span class="rt">'+tsLabel(recElapsed())+'</span><span class="rs">'+esc(interim)+'</span></div>'):"")+
-      (recLines.length||interim?"":'<div class="dict-hint">'+(SRC?"说话就会出字…":"这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。")+'</div>');
+      (live?('<div class="rl int"><span class="rt">'+tsLabel(lt)+'</span><span class="rs">'+esc(live)+'</span></div>'):"")+
+      (recLines.length||live?"":'<div class="dict-hint">'+(SRC?"说话就会出字…":"这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。")+'</div>');
     box.scrollTop=box.scrollHeight;}
 
   // ---- 列表 ----
@@ -4625,20 +4894,30 @@ margin-left: -22px;
     else document.getElementById("rec-meta").textContent=tsLabel(recCur.dur)+" · "+recCur.lines.length+" 句";}
   // 一句 → 一串带时间的词。有真词级时间戳就用真的，没有就按字数在句内摊开。
   // 中文没有空格，所以按字切；英文按词切；空白单独成块（不参与计时，但要占位置）。
-  function lineWords(l){
-    if(l.__w&&l.__w.k===l.s)return l.__w.a;             // 同一句不重复切
-    var toks=String(l.s||"").match(/[一-鿿]|[^\s一-鿿]+|\s+/g)||[];
-    var t0=+l.t||0,t1=+l.e||0;if(!(t1>t0))t1=t0+Math.max(0.6,String(l.s||"").length*0.06);
-    var real=(l.w&&l.w.length)?l.w:null;                // 将来真词级时间戳来了就走这条
+  function spreadWords(str,t0,t1,real){
+    var toks=String(str||"").match(/[一-鿿]|[^\s一-鿿]+|\s+/g)||[];
+    if(!(t1>t0))t1=t0+Math.max(0.6,String(str||"").length*0.06);
     var tot=0;toks.forEach(function(s){if(!/^\s+$/.test(s))tot+=s.length;});
     if(!tot)tot=1;
-    var acc=0,wi=0,out=toks.map(function(s){
+    var acc=0,wi=0;
+    return toks.map(function(s){
       if(/^\s+$/.test(s))return {s:s,sp:true};
       var a0=t0+(t1-t0)*acc/tot;acc+=s.length;
       var a1=t0+(t1-t0)*acc/tot;
       if(real&&real[wi]){a0=+real[wi].t;a1=+real[wi].e;}
       wi++;
-      return {s:s,t:Math.round(a0*100)/100,e:Math.round(a1*100)/100};});
+      return {s:s,t:Math.round(a0*100)/100,e:Math.round(a1*100)/100};});}
+  function lineWords(l){
+    if(l.__w&&l.__w.k===l.s)return l.__w.a;             // 同一句不重复切
+    var out=null;
+    // 合并过的句子：每一段在自己那段时间里摊。不然词会被摊进中间的停顿里，
+    // 逐词高亮会整句往后飘 —— 这是"等说完再断句"必须一起处理的副作用。
+    if(l.p&&l.p.length>1){
+      var j="";l.p.forEach(function(p){j+=(p.sep||"")+p.s;});
+      if(j===l.s){out=[];l.p.forEach(function(p){
+        if(p.sep)out.push({s:p.sep,sp:true});
+        out=out.concat(spreadWords(p.s,+p.t||0,+p.e||0,null));});}}
+    if(!out)out=spreadWords(l.s,+l.t||0,+l.e||0,(l.w&&l.w.length)?l.w:null);
     l.__w={k:l.s,a:out};                                // 缓存在内存里，不写进存档
     return out;}
   function wordsHTML(l,li){
@@ -4769,7 +5048,10 @@ margin-left: -22px;
       var ed=e.target.closest("[data-ed]");if(!ed||!recCur)return;
       var i=+ed.getAttribute("data-ed"),l=recCur.lines[i];if(!l)return;
       var v=(ed.textContent||"").trim();
-      if(v&&v!==l.s){l.s=v;l.__w=null;saveRecs();}       // 句子变了 → 词的切分作废，重新摊
+      if(v&&v!==l.s){
+        var lt2=learnTerm(l.s,v);                        // 改对了一个词 → 记下来，下次自动改
+        l.s=v;l.__w=null;l.p=null;saveRecs();             // 句子变了 → 片段和切分都作废
+        if(lt2&&termAdd(lt2))recNote2('记住了："'+lt2.w+'" → "'+lt2.r+'"，以后自动改对（📖 术语表里可以删）');}
       ed.removeAttribute("contenteditable");
       ed.innerHTML=wordsHTML(l,i);                       // 变回一个个可点的词
       recCurWord=null;},true);
@@ -4957,7 +5239,7 @@ margin-left: -22px;
       lang:document.getElementById("rec-lang").value||"",lines:[],size:f.size,noAudio:!ok,src:"file"};
     try{
       var out=await whisperRun(f,wLang());
-      r.dur=Math.round(out.dur);r.lines=out.lines;
+      r.dur=Math.round(out.dur);r.lines=out.lines;termAll(r.lines);
       recs.unshift(r);saveRecs();recRenderList();
       recNote("转好了："+out.lines.length+" 句 · "+tsLabel(out.dur)+"（用了 "+Math.round(out.ms/1000)+" 秒）");
       recOpen(id);
@@ -4975,7 +5257,7 @@ margin-left: -22px;
       {okText:"重转",danger:true,anchor:document.getElementById("rec-whisper")}))return;
     try{
       var out=await whisperRun(blob,wLang());
-      recCur.lines=out.lines;if(!recCur.dur)recCur.dur=Math.round(out.dur);
+      recCur.lines=out.lines;termAll(recCur.lines);if(!recCur.dur)recCur.dur=Math.round(out.dur);
       recCur.by="whisper";saveRecs();recCurLine=-1;recPaintLines();
       ttAlert("重转好了："+out.lines.length+" 句（用了 "+Math.round(out.ms/1000)+" 秒）");
     }catch(err){ttAlert("转写失败："+String(err&&err.message||err));}}
@@ -5003,7 +5285,62 @@ margin-left: -22px;
         document.getElementById("rec-lines").classList.toggle("nobi",!bi.checked);});}
     var lt=document.getElementById("rec-livetr");
     if(lt){lt.checked=load("tt_reclivetr",false);
-      lt.addEventListener("change",function(){save("tt_reclivetr",lt.checked);});}}
+      lt.addEventListener("change",function(){save("tt_reclivetr",lt.checked);});}
+    var stb=document.getElementById("rec-store");
+    if(stb)stb.addEventListener("click",function(){
+      var p=document.getElementById("rec-stpanel");if(!p)return;
+      p.hidden=!p.hidden;if(!p.hidden)renderStore();});
+    var adl=document.getElementById("rec-adl");
+    if(adl)adl.addEventListener("click",async function(){
+      if(!recCur)return;
+      var b=await recGet(recCur.id);
+      if(!b){ttAlert("这台设备上没有它的音频 —— 音频不进云端，得回到录它的那台机器。");return;}
+      var ty=b.type||"audio/webm";
+      var ext=ty.indexOf("mp4")>=0?"m4a":(ty.indexOf("ogg")>=0?"ogg":(ty.indexOf("wav")>=0?"wav":"webm"));
+      downloadFile((recCur.title||"录音").replace(/[\\\/:*?"<>|]/g,"_")+"."+ext,b,ty);});
+    var tmb=document.getElementById("rec-terms");
+    if(tmb)tmb.addEventListener("click",function(){
+      var p=document.getElementById("rec-tmpanel");if(!p)return;
+      p.hidden=!p.hidden;if(!p.hidden)renderTerms();});
+    var tmi=document.getElementById("rec-tmimp");
+    if(tmi)tmi.addEventListener("click",function(){
+      var ta=document.getElementById("rec-tmin"),n=0;
+      termParse(ta.value).forEach(function(t){if(termAdd(t))n++;});
+      ta.value="";renderTerms();
+      document.getElementById("rec-tmnote").textContent=n?("加了 "+n+" 条。"):"没有新的（可能已经在表里了）。";});
+    var tml=document.getElementById("rec-tmlist");
+    if(tml)tml.addEventListener("click",function(e){
+      var x=e.target.closest("[data-tmx]");if(!x)return;
+      terms.splice(+x.getAttribute("data-tmx"),1);saveTerms();renderTerms();});
+    var tma=document.getElementById("rec-tmapply");
+    if(tma)tma.addEventListener("click",function(){
+      if(!terms.length){document.getElementById("rec-tmnote").textContent="表还是空的。";return;}
+      var n=0,files=0;
+      recs.forEach(function(r){var k=termAll(r.lines);if(k){n+=k;files++;}});
+      if(n){saveRecs();if(recCur)recPaintLines();}
+      document.getElementById("rec-tmnote").textContent=
+        n?("改了 "+n+" 句，涉及 "+files+" 条录音。"):"没有需要改的。";});
+    var sg=document.getElementById("rec-seg");
+    if(sg){sg.value=load("tt_recseg","normal")||"normal";
+      sg.addEventListener("change",function(){save("tt_recseg",sg.value);});}
+    var rsg=document.getElementById("rec-reseg");
+    if(rsg)rsg.addEventListener("click",function(){
+      if(!recCur||!recCur.lines||!recCur.lines.length)return;
+      var before=recCur.lines.length;
+      recCur.lines=reSeg(recCur.lines,segSil());
+      recCur.lines.forEach(function(l){l.__w=null;});
+      recCurLine=-1;recCurWord=null;
+      saveRecs();recPaintLines();
+      recNote2(before+" 句 → "+recCur.lines.length+" 句"+
+        (before===recCur.lines.length?"（没有可合并的）":"，合并过的句子要重新翻译"));});}
+  function renderTerms(){
+    var box=document.getElementById("rec-tmlist");if(!box)return;
+    if(!terms.length){box.innerHTML='<div class="dict-hint">还没有术语。把专业词粘进上面的框导入，'+
+      '或者在转写稿里把某个词改对 —— 改一次就记住了。</div>';return;}
+    box.innerHTML=terms.map(function(t,i){
+      return '<div class="tm-row"><span class="tm-w">'+(t.w?esc(t.w):'<i>听着像的</i>')+'</span>'+
+        '<span class="tm-a">→</span><span class="tm-r">'+esc(t.r)+'</span>'+
+        '<button class="tm-x" data-tmx="'+i+'" title="删掉这条">✕</button></div>';}).join("");}
   function wDevNote(){
     var el=document.getElementById("rec-devnote");if(!el)return;
     var d=wDevice();
@@ -7110,7 +7447,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_nbfolders","tt_glu","tt_glucfg","tt_recs"];   // tt_recs 只有文字，音频留本机
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
   function updateSbUI(){var btn=document.getElementById("set-sb-auth"),ab=document.getElementById("acct-login"),as=document.getElementById("acct-status");
     var ready=!!(sbUrl&&sbKey);
