@@ -3470,6 +3470,7 @@ margin-left: -22px;
             <option value="zh-HK">中文（粤语）</option>
             <option value="ja-JP">日本語</option>
           </select>
+          <label class="rec-ck" id="rec-sys-l" title="开会时把对方的声音也录进来（戴耳机也行）。点开始后会让你选共享哪个窗口/标签页，记得勾上「分享音频」"><input type="checkbox" id="rec-sys"> 🔊 连电脑里的声音一起录</label>
           <label class="rec-ck"><input type="checkbox" id="rec-cal"> 结束后记入日历</label>
           <label class="rec-ck" title="每定稿一句就翻一句（本地模型一句要几秒，会排着队慢慢填）"><input type="checkbox" id="rec-livetr"> 边录边翻</label>
           <span class="rec-time" id="rec-time"></span>
@@ -4818,12 +4819,47 @@ margin-left: -22px;
     for(var i=0;i<want.length;i++){try{if(window.MediaRecorder&&MediaRecorder.isTypeSupported(want[i]))return want[i];}catch(e){}}
     return "";}
 
+  // ---- 内录：把电脑里播的声音（会议对方说话）和麦克风混成一路 ----
+  // 戴耳机时对方的声音直接进你耳朵，麦克风是听不到的，所以必须另外抓一路系统/标签页音频。
+  // 浏览器里唯一的正路是 getDisplayMedia —— 它名义上是"共享屏幕"，音频是搭着来的：
+  //   · Chrome 不允许只要音频，必须同时请求 video；拿到后**不能**去 stop 视频轨，
+  //     一停整个共享就结束，音频也跟着断。所以视频轨留着跑，只是我们不用它。
+  //   · Windows：共享整个屏幕时能勾「分享系统音频」；共享某个标签页能拿到该标签页的声音。
+  //   · macOS：只有标签页的声音拿得到，系统级的抓不到（要 BlackHole 那类虚拟声卡）。
+  var recSysStream=null,recMixCtx=null;
+  async function recBuildStream(wantSys){
+    var mic=await navigator.mediaDevices.getUserMedia({audio:true});
+    if(!wantSys)return {stream:mic,mixed:false};
+    var disp=null;
+    try{disp=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});}
+    catch(e){
+      if(e&&e.name==="NotAllowedError")recNote("你取消了共享，这次只录麦克风。");
+      else recNote("这个浏览器抓不到电脑里的声音，只录麦克风。");
+      return {stream:mic,mixed:false};}
+    if(!disp.getAudioTracks().length){                 // 选了但没勾「分享音频」
+      try{disp.getTracks().forEach(function(t){t.stop();});}catch(_){}
+      ttAlert("你选的那个没有带声音 —— 弹窗左下角有个「分享音频 / Share audio」的勾，要勾上。\n\n这次先只录麦克风。");
+      return {stream:mic,mixed:false};}
+    recSysStream=disp;
+    var AC=window.AudioContext||window.webkitAudioContext;
+    recMixCtx=new AC();
+    var dest=recMixCtx.createMediaStreamDestination();
+    recMixCtx.createMediaStreamSource(mic).connect(dest);
+    recMixCtx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
+    // 你在系统弹窗里按「停止共享」时，把整个录音也收掉，不然会留下一段只有麦克风的尾巴
+    disp.getVideoTracks().forEach(function(t){t.onended=function(){if(recOn)recStop();};});
+    var out=dest.stream;
+    out.__mic=mic;                                     // 停止时要一起关掉
+    return {stream:out,mixed:true};}
   // ---- 录 ----
   async function recStart(){
     if(recOn)return;
     var btn=document.getElementById("rec-go");
-    try{recStream=await navigator.mediaDevices.getUserMedia({audio:true});}
+    var sysWanted=!!(document.getElementById("rec-sys")||{}).checked,built;
+    try{built=await recBuildStream(sysWanted);}
     catch(err){ttAlert("拿不到麦克风："+String(err&&err.message||err)+"\n\n浏览器地址栏左边有个权限图标，允许一下麦克风再试。");return;}
+    recStream=built.stream;
+    recNote(built.mixed?"🔊 麦克风 + 电脑声音，一起录着（实时字幕只认麦克风，对方那半段录完用「✨ 重转」出字）":"");
     recChunks=[];recLines=[];recPend=null;recLastEnd=0;recT0=Date.now();recOn=true;
     recBlobType=recMime();
     try{recMR=recBlobType?new MediaRecorder(recStream,{mimeType:recBlobType}):new MediaRecorder(recStream);}
@@ -4874,6 +4910,12 @@ margin-left: -22px;
     if(recTick){clearInterval(recTick);recTick=null;}
     try{recMR&&recMR.state!=="inactive"&&recMR.stop();}catch(e){}
     try{recStream&&recStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    // 混音时 recStream 是 destination 的流，真正的麦克风和屏幕共享是另外两份，得分别关掉，
+    // 不然录完了摄像头/共享指示灯还亮着，麦克风也一直占着。
+    try{if(recStream&&recStream.__mic)recStream.__mic.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    try{if(recSysStream)recSysStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
+    recSysStream=null;
+    try{if(recMixCtx){recMixCtx.close();recMixCtx=null;}}catch(e){}
     var btn=document.getElementById("rec-go");
     if(btn){btn.textContent="● 开始录音";btn.classList.remove("rec-on");}
     document.getElementById("rec-lang").disabled=false;}
@@ -5094,6 +5136,18 @@ margin-left: -22px;
     var go=document.getElementById("rec-go");
     if(!go)return;
     go.addEventListener("click",function(){recOn?recStop():recStart();});
+    // 内录：不支持的浏览器（Safari、手机）直接把这个勾去掉，别让人勾了发现没用
+    (function(){
+      var sys=document.getElementById("rec-sys"),lab=document.getElementById("rec-sys-l");
+      if(!sys)return;
+      if(!navigator.mediaDevices||!navigator.mediaDevices.getDisplayMedia){
+        if(lab)lab.style.display="none";return;}
+      sys.checked=!!load("tt_recsys",false);
+      sys.addEventListener("change",function(){save("tt_recsys",this.checked);});
+      if(/Mac OS X/i.test(navigator.userAgent||"")&&lab)
+        lab.title="开会时把对方的声音也录进来（戴耳机也行）。macOS 上只有浏览器标签页的声音抓得到 —— "+
+          "会议开在网页里就选那个标签页并勾「分享音频」；开在 Zoom/Teams 桌面版里的话 macOS 不放行，需要 BlackHole 之类的虚拟声卡。";
+    })();
     document.getElementById("rec-lang").addEventListener("change",function(){save("tt_reclang",this.value);});
     var lg=load("tt_reclang","");if(lg)try{document.getElementById("rec-lang").value=lg;}catch(e){}
     document.getElementById("rec-list").addEventListener("click",async function(e){
