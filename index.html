@@ -7197,11 +7197,12 @@ margin-left: -22px;
     if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(ok,fb);}else fb();
     function fb(){var ta=document.createElement("textarea");ta.value=txt;ta.style.position="fixed";ta.style.top="-999px";document.body.appendChild(ta);ta.focus();ta.select();try{document.execCommand("copy");ok();}catch(e){}document.body.removeChild(ta);}}
 
-  var statState={mode:"week",cursor:new Date(),from:"",to:"",cat:"__all",sub:"__all"};
+  var statState={mode:"week",cursor:new Date(),from:"",to:"",cat:"__all",sub:"__all",by:"cat"};
   var statView=load("tt_statview",null)||{};
   statState.dist=statView.dist||"donut";     // donut | rank
   statState.trend=statView.trend||"bar";     // bar | line
-  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend});}
+  statState.by=statView.by||"cat";           // cat 按大类 | sub 把所有大类下的小类一起铺开
+  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by});}
   var SUBPAL=["#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#ec8b76","#9aa1b0"];
   function statPeriod(){var m=statState.mode,c=statState.cursor;
     if(m==="day"){var s=new Date(c.getFullYear(),c.getMonth(),c.getDate());return{start:s,end:s,label:fmt(s)+" 周"+WD[(s.getDay()+6)%7],unit:"day"};}
@@ -7389,14 +7390,23 @@ margin-left: -22px;
     // "今年"更离谱——一月到现在都算，哪怕你七月才开始记。
     var dayset={};evs.forEach(function(e){if(statMin(e)>0)dayset[e.date]=1;});
     var days=Math.max(1,Object.keys(dayset).length),avgH=Math.round(totalMin/days/6)/10;
-    var groupByCat=(statState.cat==="__all");
+    // 大类全选时默认按大类汇总；切到「小类」就把所有大类下面的小类一起铺开，
+    // 键用 "大类|小类" 拼（分类 key 是 c/s 开头的 uid，不含 |，拼起来不会撞）。
+    // 不这么做的话，小类只有先点某个大类才看得见 —— 想直接找一个小类会以为它不存在。
+    var allSubs=(statState.cat==="__all"&&statState.by==="sub");
+    var groupByCat=(statState.cat==="__all"&&!allSubs);
+    function gkey(x){return allSubs?(x.cat+"|"+(x.sub||"")):(groupByCat?x.cat:(x.sub||"__none"));}
     var gmap={};evs.forEach(function(e){evMix(e).forEach(function(x){        // 分段事件按各段实测时长分账
       if(!x.min)return;
       if(statState.cat!=="__all"&&x.cat!==statState.cat)return;
       if(statState.sub!=="__all"&&(x.sub||null)!==statState.sub)return;
-      var k=groupByCat?x.cat:(x.sub||"__none");gmap[k]=(gmap[k]||0)+x.min;});});
-    function segColor(k,i){if(groupByCat)return catColor(k);if(k==="__none")return "var(--cat-life)";return subColor(statState.cat,k);}   // 小类用大类的同色系深浅
-    function segName(k){if(groupByCat)return catName(k);if(k==="__none")return "未细分";return subName(statState.cat,k);}
+      var k=gkey(x);gmap[k]=(gmap[k]||0)+x.min;});});
+    function segColor(k,i){
+      if(allSubs){var q=k.split("|");return q[1]?subColor(q[0],q[1]):catColor(q[0]);}
+      if(groupByCat)return catColor(k);if(k==="__none")return "var(--cat-life)";return subColor(statState.cat,k);}   // 小类用大类的同色系深浅
+    function segName(k){
+      if(allSubs){var q=k.split("|");return catName(q[0])+" · "+(q[1]?subName(q[0],q[1]):"未细分");}
+      if(groupByCat)return catName(k);if(k==="__none")return "未细分";return subName(statState.cat,k);}
     var segs=Object.keys(gmap).map(function(k){return{k:k,m:gmap[k]};}).sort(function(a,b){return b.m-a.m;});
     var acc=0,stops=[];segs.forEach(function(s,i){s.pct=totalMin?s.m/totalMin*100:0;s.col=segColor(s.k,i);s.start=acc;stops.push(s.col+" "+acc.toFixed(2)+"% "+(acc+s.pct).toFixed(2)+"%");acc+=s.pct;});
     var donutBg=totalMin?"conic-gradient("+stops.join(",")+")":"var(--surface-2)";
@@ -7410,7 +7420,7 @@ margin-left: -22px;
           if(!x.min)return;
           if(statState.cat!=="__all"&&x.cat!==statState.cat)return;
           if(statState.sub!=="__all"&&(x.sub||null)!==statState.sub)return;
-          var k=groupByCat?x.cat:(x.sub||"__none");by[k]=(by[k]||0)+x.min;});});
+          var k=gkey(x);by[k]=(by[k]||0)+x.min;});});
       return by;}
     var order=segs.map(function(s){return s.k;});          // 叠放顺序＝整段区间的排名，各柱子层次一致
     var buckets=statBuckets(p),trendHTML,trendTitle,trendVals=null,trendLabs=null,trendStack=null;
@@ -7458,8 +7468,9 @@ margin-left: -22px;
       '</div>'+
       '<div class="stat-grid">'+
         '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）'+
+          (statState.cat==="__all"?('<span class="seg mini" id="stat-by" title="小类：把所有大类下面的小类一起铺开"><button data-by="cat"'+(statState.by==="sub"?"":' class="on"')+'>大类</button><button data-by="sub"'+(statState.by==="sub"?' class="on"':'')+'>小类</button></span>'):"")+
           '<span class="seg mini" id="stat-dist"><button data-d="donut"'+(statState.dist==="donut"?' class="on"':'')+'>环形</button><button data-d="rank"'+(statState.dist==="rank"?' class="on"':'')+'>排行</button></span></h3>'+
-          (statState.dist==="rank"?rankHTML(segs,totalMin,segName):donutSVG(segs,totalMin,totH,groupByCat?"":catName(statState.cat),segName))+'</div>'+
+          (statState.dist==="rank"?rankHTML(segs,totalMin,segName):donutSVG(segs,totalMin,totH,groupByCat?"":(allSubs?"":catName(statState.cat)),segName))+'</div>'+
         '<div class="panel"><h3>'+trendTitle+
           '<span class="seg mini" id="stat-trend"><button data-t="bar"'+(statState.trend==="bar"?' class="on"':'')+'>柱状</button><button data-t="line"'+(statState.trend==="line"?' class="on"':'')+'>折线</button></span></h3>'+
           (statState.trend==="line"&&trendVals?trendLineSVG(trendLabs,trendVals,trendStack,segColor,segName):'<div class="bars">'+trendHTML+'</div>')+'</div>'+
@@ -7467,6 +7478,8 @@ margin-left: -22px;
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
         '</div><div id="exp-report"></div></div>';
+    var bsw=wrap.querySelector("#stat-by");
+    if(bsw)bsw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.by=b.getAttribute("data-by");saveStatView();renderStatsView();});
     var dsw=wrap.querySelector("#stat-dist");
     if(dsw)dsw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.dist=b.getAttribute("data-d");saveStatView();renderStatsView();});
     var tsw=wrap.querySelector("#stat-trend");
