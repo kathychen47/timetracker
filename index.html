@@ -1545,6 +1545,10 @@
   .fx-stbody{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;margin-bottom:14px}
   .fx-stbody .st-hd{font-weight:650;font-size:13.5px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
   .fx-stbody .st-hd .grow{flex:1}
+  .stat-gnote{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text);
+    background:var(--primary-soft);border:none;padding:11px 14px}
+  .stat-gnote b{color:var(--primary)}
+  .stat-gnote .btn{padding:4px 12px;font-size:12.5px;background:var(--surface)}
   /* 多选 */
   #fx-pick{display:inline-flex;align-items:center;gap:5px}
   #fx-pick svg{width:15px;height:15px;flex:none}
@@ -7452,13 +7456,24 @@ margin-left: -22px;
       '<button class="li'+(statState.sub==="__all"?" on":"")+'" data-ssub="__all" style="--c:'+catColor(statState.cat)+'"><i></i>全部小类</button>'+
       subs.map(function(s){return '<button class="li'+(statState.sub===s.key?" on":"")+'" data-ssub="'+s.key+'" style="--c:'+subColor(statState.cat,s.key)+'"><i></i>'+esc(s.name)+'</button>';}).join("")+
       '</div>'):'';
+    // Google 日历同步来的事件默认不进统计（statPool 里那句 if(!gcalCount) return events）。
+    // 排除本身是有道理的——你没在 app 里记的东西不该算成你的时间——但一声不吭地排除，
+    // 表现出来就是"某个大类凭空消失"，你根本无从查起。所以数出来，明说。
+    var gcalSkip=0;
+    if(!gcalCount&&gcalEvents.length){
+      var _sf=fmt(p.start),_ef=fmt(p.end),_gid={},_sig={};
+      events.forEach(function(e){if(e.gid)_gid[e.gid]=1;_sig[e.title+"|"+e.date+"|"+e.start]=1;});
+      gcalSkip=gcalEvents.filter(function(e){
+        return e.date>=_sf&&e.date<=_ef&&!_gid[e.id.slice(2)]&&!_sig[e.title+"|"+e.date+"|"+e.start];}).length;}
+    var gcalNote=gcalSkip?('<div class="panel stat-gnote">📅 这个区间还有 <b>'+gcalSkip+'</b> 个 Google 日历事件没算进来 —— '+
+      '统计默认只算你在 app 里记的。<button class="btn" id="stat-gon">把它们也算上</button></div>'):"";
     wrap.innerHTML=
       '<div class="panel stat-controls">'+
         '<div class="seg" id="stat-mode">'+modes.map(function(o){return '<button data-m="'+o[0]+'"'+(statState.mode===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join("")+'</div>'+
         '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'+
         '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
         catRow+subRow+
-      '</div>'+
+      '</div>'+gcalNote+
       '<div class="stat-cards">'+
         '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(ovMin?('<div class="sc-sub" title="这些分钟被算了不止一遍，因为同一时间安排了多件事">⧉ 含重叠 '+fmtDur(ovMin)+(parMin?'（🐟 摸鱼 '+fmtDur(parMin)+'）':'')+'</div>'):'')+'</div>'+
         '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
@@ -7478,6 +7493,11 @@ margin-left: -22px;
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
         '</div><div id="exp-report"></div></div>';
+    var gon=wrap.querySelector("#stat-gon");
+    if(gon)gon.addEventListener("click",function(){
+      gcalCount=true;save("tt_gcalcount",gcalCount);
+      try{document.getElementById("set-gcal-count").checked=true;}catch(e){}
+      renderStatsView();});
     var bsw=wrap.querySelector("#stat-by");
     if(bsw)bsw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;statState.by=b.getAttribute("data-by");saveStatView();renderStatsView();});
     var dsw=wrap.querySelector("#stat-dist");
