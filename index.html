@@ -619,24 +619,6 @@
   .rd-book.note .rd-cover{background:linear-gradient(145deg,#eaf1ff,#c9dcff);color:#2c5aa0;font-size:34px}
   :root[data-theme="dark"] .rd-book.note .rd-cover{background:linear-gradient(145deg,#2b3552,#1d2740);color:#a9c6ff}
   .rd-book.drop{border-color:var(--primary);border-style:dashed;background:var(--primary-soft)}
-  /* 展开视图：整棵树一次摊开，文件夹和里面的东西缩进排 */
-  .rd-grid.fx-tree{display:block}
-  .fx-tree{font-size:13.5px}
-  .fx-tree .row{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:8px;cursor:pointer}
-  .fx-tree .row:hover{background:var(--surface-2)}
-  .fx-tree .row.drop{background:var(--primary-soft);outline:1.5px dashed var(--primary);outline-offset:-2px}
-  .fx-tree .row.dragging{opacity:.45}
-  .fx-tree .row .ico{flex:none;width:19px;text-align:center;font-size:15px}
-  .fx-tree .row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .fx-tree .row.fd .nm{font-weight:640}
-  .fx-tree .row .s{font-size:11.5px;color:var(--muted);flex:none;font-variant-numeric:tabular-nums}
-  .fx-tree .row .x{border:none;background:transparent;color:var(--muted);cursor:pointer;opacity:0;flex:none;font-size:12px;padding:0 3px}
-  .fx-tree .row:hover .x{opacity:.7}
-  .fx-tree .row .x:hover{color:var(--danger);opacity:1}
-  .fx-tree .tw{border:none;background:transparent;color:var(--muted);cursor:pointer;padding:0;width:13px;flex:none;
-    font-size:9px;line-height:1;transition:transform .12s}
-  .fx-tree .tw.op{transform:rotate(90deg)}
-  .fx-tree .tw.pad{visibility:hidden}
   /* 列表视图 */
   .rd-grid.list{display:block}
   .rd-grid.list .rd-book{display:flex;align-items:center;gap:12px;padding:9px 12px;margin-bottom:6px;border-radius:10px}
@@ -1545,16 +1527,29 @@
   .nb-doc-title{flex:1;min-width:180px;font-size:18px;font-weight:650;padding:7px 10px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text)}
   .nb-doc-title:focus{border-color:var(--border);background:var(--bg);outline:none}
   .nb-doc-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
-  .nb-cols{display:flex;gap:16px;align-items:flex-start;position:relative}
-  .nb-side{flex:0 0 176px;position:sticky;top:8px;overflow:hidden;transition:flex-basis .18s ease,opacity .14s}
+  .nb-cols{display:flex;gap:16px;align-items:flex-start;position:relative;--sidew:176px}
+  .nb-side{flex:0 0 var(--sidew);position:sticky;top:8px;overflow:hidden;transition:flex-basis .18s ease,opacity .14s}
   /* 收起：整栏往左滑走，不是折成一行 —— 主体跟着变宽 */
-  .nb-cols.sidehid{gap:0}
-  .nb-cols.sidehid .nb-side{flex-basis:0;opacity:0;pointer-events:none}
-  .nb-sidetog{position:absolute;left:-11px;top:5px;z-index:3;width:20px;height:26px;padding:0;
-    border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:7px;
-    cursor:pointer;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center}
-  .nb-sidetog:hover{color:var(--primary);border-color:var(--primary)}
-  .nb-cols.sidehid .nb-sidetog{left:-11px}
+  .nb-cols.sidehid{gap:0;--sidew:0px}
+  .nb-cols.sidehid .nb-side{opacity:0;pointer-events:none}
+  /* 收起按钮蹲在两栏中间那道缝里（原来是 left:-11px，会压在侧栏第一行上）。
+     收起后缝没了，就退到最左边，同时给主体让出 20px，两种状态都不重叠。 */
+  .nb-sidetog{position:absolute;left:calc(var(--sidew) + 2px);top:6px;z-index:3;width:12px;height:34px;padding:0;
+    border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:6px;
+    cursor:pointer;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;
+    transition:left .18s ease}
+  .nb-sidetog:hover{color:var(--primary);border-color:var(--primary);background:var(--surface-2)}
+  .nb-cols.sidehid .nb-sidetog{left:0}
+  .nb-cols.sidehid .nb-main{padding-left:20px}
+  /* 🗂 本地文件夹的小菜单：必须是真按钮，见 bookDirPick 那里的注释 */
+  .dirmenu{position:fixed;z-index:120;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:6px;box-shadow:0 14px 38px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:2px;min-width:230px}
+  .dirmenu .hd{font-size:11.5px;color:var(--muted);padding:5px 9px 7px;border-bottom:1px solid var(--border);
+    margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .dirmenu button{border:none;background:transparent;color:var(--text);text-align:left;padding:8px 10px;
+    border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit}
+  .dirmenu button:hover{background:var(--surface-2)}
+  .dirmenu button.del{color:var(--danger)}
   .nb-main{flex:1;min-width:0}
   .nb-fd{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:9px;cursor:pointer;
     font-size:12.5px;color:var(--text);white-space:nowrap;overflow:hidden}
@@ -3555,7 +3550,6 @@ margin-left: -22px;
               <div class="seg" id="rd-view" style="margin-left:auto" title="怎么显示">
                 <button data-rv="grid" class="on" title="封面：大图标，像 Windows 的文件夹">▦ 封面</button>
                 <button data-rv="list" title="列表：一行一个，带大小和进度">☰ 列表</button>
-                <button data-rv="tree" title="展开：整棵树一次摊开，一眼看全">⌄ 展开</button>
               </div>
               <span class="rd-note" id="rd-note"></span>
             </div>
@@ -9581,7 +9575,8 @@ margin-left: -22px;
   var folders=load("tt_folders",null);
   var fxCur=load("tt_fxcur","")||"";            // 现在进到哪个文件夹（"" = 根）
   var fxOpen=load("tt_fxopen",{})||{};          // 侧栏/展开视图里哪些文件夹是打开的
-  var rdView=load("tt_rdview","grid");          // grid 封面 / list 列表 / tree 展开
+  var rdView=load("tt_rdview","grid");          // grid 封面 / list 列表（左边那棵树就是"展开"，主区不用再来一份）
+  if(rdView!=="list")rdView="grid";             // 旧版存过 "tree"，退回封面
   function saveFx(){save("tt_folders",folders);}
   function fxById(id){for(var i=0;i<folders.length;i++)if(folders[i].id===id)return folders[i];return null;}
   function folderName(id){var f=fxById(id);return f?f.name:"";}
@@ -9695,20 +9690,31 @@ margin-left: -22px;
         if(p2==="granted")return h;}
     }catch(e){}
     return null;}
-  async function bookDirPick(){
+  // showDirectoryPicker 要「临时用户激活」才肯弹。所以这个函数**不是 async**：
+  // 选择框必须在点击那一帧同步发起，前面不能有任何 await —— 等过一次（尤其是等你在弹窗里打字）
+  // 激活就没了，浏览器直接抛 SecurityError。异步的部分全放到 .then 里。
+  function bookDirPick(){
     if(!fsSupported()){ttAlert("这个浏览器不支持选本地文件夹。\nChrome / Edge 桌面版可以；Safari 和手机浏览器都不行。");return;}
-    try{
-      var h=await window.showDirectoryPicker({mode:"readwrite",id:"ttbooks"});
+    var p;
+    try{p=window.showDirectoryPicker({mode:"readwrite",id:"ttbooks"});}
+    catch(e){bookDirErr(e);return;}
+    p.then(async function(h){
       bookDirH=h;await bPut("fs",{k:"bookdir",h:h});
+      bookDirUI();
       rdNote("✓ 以后导入的书会往「"+h.name+"」里存一份");
       await bookDirSyncAll();
-      bookDirUI();
-    }catch(e){
-      if(!e||e.name==="AbortError")return;                 // 你自己取消的，不用报
-      if(e.name==="SecurityError")ttAlert("浏览器不让弹文件夹选择框（一般是这一下没被当成用户点击）。再点一次试试。");
-      else if(String(e.message||"").indexOf("blocked")>=0||String(e.message||"").indexOf("timeout")>=0)
-        ttAlert("数据库正在升级，被这个网站的其它标签页挡住了。\n\n把其它标签页关掉，刷新一下再点。");
-      else ttAlert("选文件夹失败："+(e.name?(e.name+"："):"")+(e.message||e));}}
+    },bookDirErr);}
+  function bookDirErr(e){
+    if(!e||e.name==="AbortError")return;                 // 你自己取消的，不用报
+    if(e.name==="SecurityError")ttAlert("浏览器把文件夹选择框拦掉了 —— 它只认「刚点下去那一下」。\n请直接点「🗂 本地文件夹」里的按钮，别经过输入框。");
+    else if(String(e.message||"").indexOf("blocked")>=0||String(e.message||"").indexOf("timeout")>=0)
+      ttAlert("数据库正在升级，被这个网站的其它标签页挡住了。\n\n把其它标签页关掉，刷新一下再点。");
+    else ttAlert("选文件夹失败："+(e.name?(e.name+"："):"")+(e.message||e));}
+  function bookDirForget(){
+    bookDirH=null;bookDirUI();
+    ensureBDB().then(function(d){
+      try{d.transaction("fs","readwrite").objectStore("fs").delete("bookdir");}catch(e){}
+      rdNote("已解除关联。书库里的书一本没动，本地文件夹里的文件也没动。");},function(){});}
   async function bookDirWrite(name,blob){        // 写一份出去；失败不影响导入本身
     var h=await bookDirOK(false);if(!h)return false;
     try{
@@ -9754,15 +9760,36 @@ margin-left: -22px;
                     :"选一个本地文件夹，导入的书自动往那儿存一份";}
   (function(){
     var b=document.getElementById("rd-dir");if(!b)return;
+    // 菜单必须是真按钮：每个按钮自己的 click 就是一次新的用户激活，
+    // showDirectoryPicker / requestPermission 才弹得出来。
+    // （旧版是弹个输入框让你打 1 或 2 —— 打完字激活早没了，所以「换一个文件夹」永远失败。）
+    function closeDirMenu(){
+      var m=document.getElementById("dirmenu");if(m)m.remove();
+      document.removeEventListener("mousedown",onAway,true);}
+    function onAway(e){if(!e.target.closest||!e.target.closest("#dirmenu"))closeDirMenu();}
+    function openDirMenu(){
+      closeDirMenu();
+      var m=document.createElement("div");m.className="dirmenu";m.id="dirmenu";
+      m.innerHTML='<div class="hd" title="'+esc(bookDirH.name)+'">🗂 '+esc(bookDirH.name)+'</div>'+
+        '<button type="button" data-dm="pick">📂 换一个文件夹…</button>'+
+        '<button type="button" data-dm="restore">⬇️ 从文件夹找回书库里没有的书</button>'+
+        '<button type="button" data-dm="forget" class="del">✕ 不再关联这个文件夹</button>';
+      document.body.appendChild(m);
+      var r=b.getBoundingClientRect();
+      m.style.left=Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8))+"px";
+      m.style.top=Math.min(r.bottom+6,innerHeight-m.offsetHeight-8)+"px";
+      m.addEventListener("click",function(e){
+        var t=e.target.closest("[data-dm]");if(!t)return;
+        var a=t.getAttribute("data-dm");
+        closeDirMenu();                       // 只是把菜单摘掉，没有 await，激活还在
+        if(a==="pick")bookDirPick();
+        else if(a==="restore")bookDirRestore();
+        else bookDirForget();});
+      setTimeout(function(){document.addEventListener("mousedown",onAway,true);},0);}
     b.addEventListener("click",function(){
-      // 这里绝不能有 await：showDirectoryPicker 必须在用户手势里同步发起，
-      // 中间只要让出一次事件循环，浏览器就当这不是用户点的了。
-      if(!bookDirH){bookDirPick();return;}
-      bookDirMenu();});
-    async function bookDirMenu(){
-      var v=await ttPrompt("本地文件夹：「"+bookDirH.name+"」\n\n打 1 = 从文件夹找回书库里没有的书\n打 2 = 换一个文件夹\n留空取消","",{anchor:b});
-      if(v===null)return;v=v.trim();
-      if(v==="1")bookDirRestore();else if(v==="2")bookDirPick();}
+      if(document.getElementById("dirmenu")){closeDirMenu();return;}
+      if(!bookDirH){bookDirPick();return;}   // 还没选过：直接弹选择框，这一下就是用户手势
+      openDirMenu();});
     bookDirLoad().then(bookDirUI,function(){bookDirUI();});})();
   // 本子栏收起 / 展开（记住）
   (function(){
@@ -9913,41 +9940,11 @@ margin-left: -22px;
         '<div class="s">'+esc(docWhen(r))+'</div>'+
         '<button class="x" data-docdel="'+r.id+'" title="删除这篇笔记">✕</button></div>';}).join("");
     return h;}
-  // 「展开」视图：整棵树一次摊开，文件夹和里面的东西一起缩进排
-  function fxTreeHTML(all,fid,depth){
-    var pad=function(d){return 'style="padding-left:'+(8+d*17)+'px"';};
-    var h="";
-    fxChildren(fid).forEach(function(f){
-      var op=fxOpen[f.id]!==false,n=fxCount(all,f.id,true);   // 展开视图里默认全开
-      h+='<div class="row fd" data-fdrow="'+f.id+'" data-drop="'+f.id+'" draggable="true" data-dragfd="'+f.id+'" '+pad(depth)+'>'+
-        '<button class="tw'+(op?" op":"")+'" data-tw="'+f.id+'" data-twopen="'+(op?1:0)+'" title="展开 / 收起">▶</button>'+
-        '<span class="ico">📁</span><span class="nm">'+esc(f.name)+'</span>'+
-        '<span class="s">'+(n?n+" 件":"空的")+'</span>'+
-        '<button class="x" data-delf="'+f.id+'" title="删除文件夹">✕</button></div>';
-      if(op)h+=fxTreeHTML(all,f.id,depth+1);});
-    fxBooks(all,fid).forEach(function(b){
-      h+='<div class="row" draggable="true" data-id="'+b.id+'" '+pad(depth)+'>'+
-        '<span class="tw pad"></span><span class="ico">'+(BICON[b.type]||"📘")+'</span>'+
-        '<span class="nm">'+esc(b.name)+'</span>'+
-        '<span class="s">'+fmtSize(b.size||0)+' · '+bookWhere(b)+'</span>'+
-        '<button class="x" data-del="'+b.id+'" title="删除">✕</button></div>';});
-    fxDocs(fid).forEach(function(r){
-      h+='<div class="row" draggable="true" data-doc="'+r.id+'" '+pad(depth)+'>'+
-        '<span class="tw pad"></span><span class="ico">📝</span>'+
-        '<span class="nm">'+esc(r.title||"无标题")+'</span>'+
-        '<span class="s">'+esc(docWhen(r))+'</span>'+
-        '<button class="x" data-docdel="'+r.id+'" title="删除这篇笔记">✕</button></div>';});
-    return h;}
   function renderShelfFrom(all){
     var g=document.getElementById("rd-grid");if(!g)return;
     if(fxCur&&!fxById(fxCur)){fxCur="";save("tt_fxcur","");}   // 当前文件夹被删了就退回根
     fxCrumb();
     g.classList.toggle("list",rdView==="list");
-    g.classList.toggle("fx-tree",rdView==="tree");
-    if(rdView==="tree"){
-      var t=fxTreeHTML(all,"",0);
-      g.innerHTML=t||'<div class="rd-empty">还是空的。点上面「📁 导入书」或「📝 新建笔记」开始。</div>';
-      return;}
     var h=fxCardsHTML(all,fxCur);
     if(h){g.innerHTML=h;return;}
     g.innerHTML=fxCur
@@ -12203,8 +12200,6 @@ margin-left: -22px;
         if(dd){e.stopPropagation();fxDelDoc(dd.getAttribute("data-docdel"),dd);return;}
         var del=e.target.closest("[data-del]");
         if(del){e.stopPropagation();if(!await ttConfirm("删除这本书？（划过的笔记会留在「🔍 笔记总览」里）",{danger:true,anchor:del}))return;bDel(del.getAttribute("data-del")).then(renderShelf);return;}
-        var row=e.target.closest("[data-fdrow]");
-        if(row){var rid=row.getAttribute("data-fdrow");fxToggle(rid,fxOpen[rid]!==false);return;}   // 展开视图：点整行就是折叠/展开
         var fc=e.target.closest("[data-fdcard]");
         if(fc){fxGo(fc.getAttribute("data-fdcard"));return;}
         var doc=e.target.closest("[data-doc]");
