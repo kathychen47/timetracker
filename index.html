@@ -1541,6 +1541,10 @@
   .nb-sidetog:hover{color:var(--primary);border-color:var(--primary);background:var(--surface-2)}
   .nb-cols.sidehid .nb-sidetog{left:0}
   .nb-cols.sidehid .nb-main{padding-left:20px}
+  /* 「这些书存在哪」面板 */
+  .fx-stbody{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 15px;margin-bottom:14px}
+  .fx-stbody .st-hd{font-weight:650;font-size:13.5px;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .fx-stbody .st-hd .grow{flex:1}
   /* 多选 */
   #fx-pick{display:inline-flex;align-items:center;gap:5px}
   #fx-pick svg{width:15px;height:15px;flex:none}
@@ -3574,6 +3578,7 @@ margin-left: -22px;
               <button class="btn" id="rd-newfolder" title="建在当前文件夹下面，可以一层套一层">＋ 新建文件夹</button>
               <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
               <button class="btn" id="rd-tonotes" title="按时间 / 标签 / 书来翻笔记，还能全文搜">🔍 笔记总览</button>
+              <button class="btn" id="fx-store" title="这些书存在哪、占了多少、会不会丢">💾 存储</button>
               <div class="seg" id="rd-view" style="margin-left:auto" title="怎么显示">
                 <button data-rv="grid" class="on" title="封面：大图标，像 Windows 的文件夹">▦ 封面</button>
                 <button data-rv="list" title="列表：一行一个，带大小和进度">☰ 列表</button>
@@ -3581,6 +3586,7 @@ margin-left: -22px;
               <span class="rd-note" id="rd-note"></span>
             </div>
             <div class="fx-crumb" id="fx-crumb"></div>
+            <div id="fx-stbody" class="fx-stbody" hidden></div>
             <div id="fx-selbar"></div>
             <div class="rd-grid" id="rd-grid"></div>
           </div>
@@ -10072,6 +10078,50 @@ margin-left: -22px;
     ensureCovers(all);   // 后台逐本生成封面，好一本刷一本
   }
 
+  // 「这些书到底存在哪」—— 书本体在 IndexedDB(ttbooks)，只在这台机器的这个浏览器里；
+  // 文件夹结构和笔记在 localStorage 且进云同步。这两件事分开说，不然换设备时会以为书也跟着走。
+  async function renderFxStore(){
+    var box=document.getElementById("fx-stbody");if(!box)return;
+    box.innerHTML='<div class="dict-hint">数一下…</div>';
+    var all=await bAll(),bytes=0;
+    all.forEach(function(b){bytes+=(+b.size||0);});
+    var docs=(notes||[]).filter(function(r){return r.t==="doc";}).length;
+    var hl=(notes||[]).length-docs;
+    var est={},per=false;
+    try{est=await navigator.storage.estimate();}catch(e){}
+    try{per=await navigator.storage.persisted();}catch(e){}
+    var sp=storePath(),quota=est.quota||0,used=est.usage||0;
+    box.innerHTML=
+      '<div class="st-hd">💾 这些东西存在哪<span class="grow"></span>'+
+        '<button class="btn" id="fx-st-x" title="收起">✕</button></div>'+
+      '<div class="st-row"><b>书 / PDF</b><span>'+all.length+' 本 · '+fmtSize(bytes)+
+        ' <i>（文件本体，只在这台电脑）</i></span></div>'+
+      '<div class="st-row"><b>笔记</b><span>'+docs+' 篇自己写的 · '+hl+' 条书里划的 <i>（跟着云同步走）</i></span></div>'+
+      '<div class="st-row"><b>文件夹</b><span>'+(folders?folders.length:0)+' 个 <i>（跟着云同步走）</i></span></div>'+
+      '<div class="st-row"><b>这个站点一共</b><span>'+fmtSize(used)+
+        (quota?(" / 浏览器给了约 "+fmtSize(quota)):"")+' <i>（还包括词典、录音）</i></span></div>'+
+      '<div class="st-row"><b>常驻</b><span>'+(per?'已开启 —— 浏览器清空间时不会动它':
+        '<span class="st-warn">未开启</span> · 空间紧张时浏览器可能把这些清掉 '+
+        '<button class="btn" id="fx-st-per">申请常驻</button>')+'</span></div>'+
+      '<div class="st-row"><b>存放方式</b><span>书在浏览器的 IndexedDB，库名 <code>ttbooks</code>；'+
+        '文件夹结构和笔记在 localStorage（<code>tt_folders</code> / <code>tt_notes</code>）</span></div>'+
+      (sp.p?('<div class="st-row"><b>大致位置</b><span><code class="st-p">'+esc(sp.p)+'</code> '+
+        '<button class="btn" id="fx-st-copy">复制</button></span></div>'):'')+
+      '<div class="st-note">⚠️ <b>书不进云同步</b>，只有文件夹结构和笔记会。换台设备打开，你会看到一样的文件夹，'+
+        '但里面是空的 —— 书要重新导入。<br>'+
+        '⚠️ 那个目录是 LevelDB 数据库，打开也看不到 .pdf。想在硬盘上留一份真文件，用「🗂 本地文件夹」，'+
+        '以后导入的书会自动往那儿存一份。<br>'+
+        '⚠️ 清浏览器数据（"清除浏览过的内容"里勾了 Cookie 和网站数据）会把这些一起清掉。</div>';
+    var pb=document.getElementById("fx-st-per");
+    if(pb)pb.addEventListener("click",async function(){
+      try{var g=await navigator.storage.persist();
+        if(!g)ttAlert("浏览器没答应。多用几次这个站点、或者把它加成书签／安装成应用，通过率会高一些。");
+      }catch(e){ttAlert("这个浏览器不支持申请常驻。");}
+      renderFxStore();});
+    var cb=document.getElementById("fx-st-copy");
+    if(cb)cb.addEventListener("click",function(){copyText(sp.p,cb);});
+    var xb=document.getElementById("fx-st-x");
+    if(xb)xb.addEventListener("click",function(){box.setAttribute("hidden","");});}
   function showShelf(){document.getElementById("rd-shelf").style.display="";document.getElementById("rd-read").style.display="none";
     var nbv=document.getElementById("rd-notebook");if(nbv)nbv.style.display="none";
     hideRdPop();toggleZen(false);bookTrRun=false;trProg(-1);
@@ -12365,6 +12415,10 @@ margin-left: -22px;
         var r=noteById(id);if(!r)return;
         if(!await ttConfirm("删除笔记「"+(r.title||"无标题")+"」？",{danger:true,anchor:anchor}))return;
         notes=notes.filter(function(x){return x.id!==id;});saveNotes();renderShelf();}
+      document.getElementById("fx-store").addEventListener("click",function(){
+        var box=document.getElementById("fx-stbody");
+        if(box.hasAttribute("hidden")){box.removeAttribute("hidden");renderFxStore();}
+        else box.setAttribute("hidden","");});
       // ---- 多选 ----
       document.getElementById("fx-pick").addEventListener("click",function(){fxSelMode();});
       function fxPickToggle(k,shift,all){
