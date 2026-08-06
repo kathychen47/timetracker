@@ -1541,6 +1541,25 @@
   .nb-sidetog:hover{color:var(--primary);border-color:var(--primary);background:var(--surface-2)}
   .nb-cols.sidehid .nb-sidetog{left:0}
   .nb-cols.sidehid .nb-main{padding-left:20px}
+  /* 多选 */
+  #fx-pick{display:inline-flex;align-items:center;gap:5px}
+  #fx-pick svg{width:15px;height:15px;flex:none}
+  #fx-pick .ck-tick,#fx-pick.on .ck-box{display:none}
+  #fx-pick.on .ck-tick{display:block}
+  #fx-pick.on{background:var(--primary-soft);color:var(--primary);border-color:transparent;font-weight:600}
+  .rd-book.sel{box-shadow:inset 0 0 0 2px var(--primary);background:var(--primary-soft)}
+  .rd-book .ck{position:absolute;top:7px;left:7px;width:18px;height:18px;border-radius:6px;z-index:2;
+    border:1.5px solid var(--border);background:var(--surface);display:none;align-items:center;justify-content:center;
+    font-size:12px;color:#fff;line-height:1}
+  .rd-grid.selmode .rd-book .ck{display:flex}
+  .rd-grid.selmode .rd-book .x{display:none}          /* 勾选时把每张卡自己的删除按钮收起来，别误点 */
+  .rd-book.sel .ck{background:var(--primary);border-color:var(--primary)}
+  .rd-grid.list .rd-book .ck{position:static;margin-right:2px;flex:none}
+  /* 移到哪个文件夹：直接把整棵树列出来点，比让你打名字准 */
+  .dirmenu.tree{max-height:56vh;overflow:auto;min-width:250px}
+  .dirmenu.tree button{white-space:nowrap;display:flex;align-items:center;gap:6px}
+  .dirmenu.tree button.cur{color:var(--muted);cursor:default}
+  .dirmenu.tree button.cur:hover{background:transparent}
   /* 从电脑里拖文件进来时的落点提示：整窗遮罩，pointer-events:none 保证不挡住 e.target */
   .dropzone{position:fixed;inset:10px;z-index:190;pointer-events:none;border:2.5px dashed var(--primary);
     border-radius:18px;background:color-mix(in srgb,var(--primary) 8%,transparent);
@@ -3550,6 +3569,7 @@ margin-left: -22px;
             <div class="rd-import">
               <label class="btn primary" style="cursor:pointer" title="也可以直接把文件从电脑里拖到这个页面上">＋ 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
               <label class="btn" style="cursor:pointer" title="选一整个文件夹，里面的子文件夹结构会一起搭出来">📂 导入文件夹<input type="file" id="rd-dirfile" webkitdirectory directory multiple hidden></label>
+              <button class="btn" id="fx-pick" title="多选：一次移走或删掉好几个（也可以直接按住 Ctrl / ⌘ 点）"><svg class="ck-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect></svg><svg class="ck-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg>选择</button>
               <button class="btn" id="fx-newnote" title="就建在当前这个文件夹里">📝 新建笔记</button>
               <button class="btn" id="rd-newfolder" title="建在当前文件夹下面，可以一层套一层">＋ 新建文件夹</button>
               <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
@@ -3561,6 +3581,7 @@ margin-left: -22px;
               <span class="rd-note" id="rd-note"></span>
             </div>
             <div class="fx-crumb" id="fx-crumb"></div>
+            <div id="fx-selbar"></div>
             <div class="rd-grid" id="rd-grid"></div>
           </div>
         </div>
@@ -9975,27 +9996,55 @@ margin-left: -22px;
         : '<span class="c" data-go="'+f.id+'" data-drop="'+f.id+'">'+esc(f.name)+'</span>');});
     if(fxCur)h+='<i style="margin-left:8px">·</i><span class="c" data-go="'+((fxById(fxCur)||{}).parent||"")+'">↑ 上一层</span>';
     el.innerHTML=h;}
+  // ---- 多选 ----
+  // key 形如 "b:id"（书）/"d:id"（笔记）/"f:id"（文件夹），因为三种东西的 id 各管各的，
+  // 混在一个表里必须能区分开，删除和移动走的也是三条不同的路。
+  var fxSel=null;                                   // null = 没在选择模式
+  var fxLastKey=null;                               // Shift 连选的锚点
+  function fxSelKeys(){return fxSel?Object.keys(fxSel).filter(function(k){return fxSel[k];}):[];}
+  function fxSelMode(on){
+    fxSel=(on===undefined?(fxSel?null:{}):(on?{}:null));
+    fxLastKey=null;renderShelf();}
+  // 当前这一层的顺序（Shift 连选要按屏幕上看到的顺序取区间）
+  function fxOrder(all,fid){
+    return fxChildren(fid).map(function(f){return "f:"+f.id;})
+      .concat(fxBooks(all,fid).map(function(b){return "b:"+b.id;}))
+      .concat(fxDocs(fid).map(function(r){return "d:"+r.id;}));}
+  function fxSelBar(all){
+    var box=document.getElementById("fx-selbar");if(!box)return;
+    if(!fxSel){box.innerHTML="";return;}
+    var n=fxSelKeys().length;
+    box.innerHTML='<div class="nb-selbar"><b>已选 '+n+' 项</b>'+
+      '<button class="btn" type="button" data-fsall="1">全选（这一层）</button>'+
+      '<button class="btn" type="button" data-fsnone="1">全不选</button>'+
+      '<span class="grow"></span>'+
+      '<button class="btn" type="button" data-fsmove="1"'+(n?"":" disabled")+'>📁 移到…</button>'+
+      '<button class="btn del" type="button" data-fsdel="1"'+(n?"":" disabled")+'>🗑 删除</button>'+
+      '<button class="btn" type="button" data-fsoff="1">退出选择</button></div>';}
+  function ckHTML(k){
+    return '<span class="ck">'+((fxSel&&fxSel[k])?"✓":"")+'</span>';}
   // 一个文件夹里的东西排成 HTML：子文件夹在前，然后是书，然后是我写的笔记
   function fxCardsHTML(all,fid){
+    var on=function(k){return (fxSel&&fxSel[k])?" sel":"";};
     var h=fxChildren(fid).map(function(f){
-      var n=fxCount(all,f.id,true);
-      return '<div class="rd-book fd" draggable="true" data-fdcard="'+f.id+'" data-drop="'+f.id+'" title="双击进入">'+
-        '<div class="rd-cover">📁</div><div class="n">'+esc(f.name)+'</div>'+
+      var n=fxCount(all,f.id,true),k="f:"+f.id;
+      return '<div class="rd-book fd'+on(k)+'" draggable="true" data-k="'+k+'" data-fdcard="'+f.id+'" data-drop="'+f.id+'" title="点一下进去">'+
+        ckHTML(k)+'<div class="rd-cover">📁</div><div class="n">'+esc(f.name)+'</div>'+
         ((rdView==="list")?'<span class="ext">文件夹</span>':"")+
         '<div class="s">'+(n?n+" 件":"空的")+'</div>'+
         '<button class="x" data-delf="'+f.id+'" title="删除文件夹">✕</button></div>';}).join("");
     h+=fxBooks(all,fid).map(function(b){
-      var ext=(rdView==="list")?'<span class="ext">'+esc(b.type)+'</span>':"";
+      var ext=(rdView==="list")?'<span class="ext">'+esc(b.type)+'</span>':"",k="b:"+b.id;
       var when=b.added?new Date(b.added).toLocaleDateString():"";
       var info=fmtSize(b.size||0)+' · '+bookWhere(b)+((rdView==="list"&&when)?' · '+when:'');
-      return '<div class="rd-book" draggable="true" data-id="'+b.id+'">'+
-        '<div class="rd-cover">'+coverHTML(b,BICON[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
+      return '<div class="rd-book'+on(k)+'" draggable="true" data-k="'+k+'" data-id="'+b.id+'">'+
+        ckHTML(k)+'<div class="rd-cover">'+coverHTML(b,BICON[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
         ext+'<div class="s">'+info+'</div>'+
         '<button class="x" data-del="'+b.id+'" title="删除">✕</button></div>';}).join("");
     h+=fxDocs(fid).map(function(r){
-      var pv=docPreview(r);
-      return '<div class="rd-book note" draggable="true" data-doc="'+r.id+'">'+
-        '<div class="rd-cover">'+(pv?'<div class="txt">'+esc(pv)+'</div><span class="em">📝</span>':"📝")+'</div>'+
+      var pv=docPreview(r),k="d:"+r.id;
+      return '<div class="rd-book note'+on(k)+'" draggable="true" data-k="'+k+'" data-doc="'+r.id+'">'+
+        ckHTML(k)+'<div class="rd-cover">'+(pv?'<div class="txt">'+esc(pv)+'</div><span class="em">📝</span>':"📝")+'</div>'+
         '<div class="n">'+esc(r.title||"无标题")+'</div>'+
         ((rdView==="list")?'<span class="ext">笔记</span>':"")+
         '<div class="s">'+esc(docWhen(r))+'</div>'+
@@ -10004,8 +10053,10 @@ margin-left: -22px;
   function renderShelfFrom(all){
     var g=document.getElementById("rd-grid");if(!g)return;
     if(fxCur&&!fxById(fxCur)){fxCur="";save("tt_fxcur","");}   // 当前文件夹被删了就退回根
-    fxCrumb();
+    fxCrumb();fxSelBar(all);
+    var pb=document.getElementById("fx-pick");if(pb)pb.classList.toggle("on",!!fxSel);
     g.classList.toggle("list",rdView==="list");
+    g.classList.toggle("selmode",!!fxSel);
     var h=fxCardsHTML(all,fxCur);
     if(h){g.innerHTML=h;return;}
     g.innerHTML=fxCur
@@ -12314,9 +12365,100 @@ margin-left: -22px;
         var r=noteById(id);if(!r)return;
         if(!await ttConfirm("删除笔记「"+(r.title||"无标题")+"」？",{danger:true,anchor:anchor}))return;
         notes=notes.filter(function(x){return x.id!==id;});saveNotes();renderShelf();}
+      // ---- 多选 ----
+      document.getElementById("fx-pick").addEventListener("click",function(){fxSelMode();});
+      function fxPickToggle(k,shift,all){
+        if(!fxSel)fxSel={};
+        if(shift&&fxLastKey){                       // Shift 连选：按屏幕上的顺序取一整段
+          var ord=fxOrder(all,fxCur),a=ord.indexOf(fxLastKey),b=ord.indexOf(k);
+          if(a>=0&&b>=0){if(a>b){var t=a;a=b;b=t;}
+            for(var i=a;i<=b;i++)fxSel[ord[i]]=1;
+            renderShelf();return;}}
+        if(fxSel[k])delete fxSel[k];else fxSel[k]=1;
+        fxLastKey=k;renderShelf();}
+      document.getElementById("fx-selbar").addEventListener("click",async function(e){
+        var b=e.target.closest("button");if(!b)return;
+        if(b.getAttribute("data-fsoff")){fxSelMode(false);return;}
+        if(b.getAttribute("data-fsnone")){fxSel={};fxLastKey=null;renderShelf();return;}
+        if(b.getAttribute("data-fsall")){
+          var all=await bAll();fxSel={};fxOrder(all,fxCur).forEach(function(k){fxSel[k]=1;});renderShelf();return;}
+        if(b.getAttribute("data-fsmove")){fxMoveSelected(b);return;}
+        if(b.getAttribute("data-fsdel")){fxDelSelected(b);return;}});
+      // 移到哪儿：把整棵树列出来点，比让你打名字准（打错一个字就变成新建一个文件夹了）
+      function fxPickFolder(anchor,skip){
+        return new Promise(function(res){
+          var m=document.createElement("div");m.className="dirmenu tree";m.id="dirmenu";
+          var h='<div class="hd">移到哪个文件夹？</div>'+
+            '<button type="button" data-to="">🏠 我的文件（最外层）</button>';
+          (function walk(pid,d){
+            fxChildren(pid).forEach(function(f){
+              var bad=skip&&skip.indexOf(f.id)>=0;    // 不能移进自己或自己的子孙
+              h+='<button type="button"'+(bad?' class="cur" disabled':' data-to="'+f.id+'"')+
+                ' style="padding-left:'+(10+d*14)+'px">📁 '+esc(f.name)+'</button>';
+              walk(f.id,d+1);});})("",0);
+          h+='<button type="button" data-to="__new" style="color:var(--primary)">＋ 新建一个文件夹…</button>';
+          m.innerHTML=h;document.body.appendChild(m);
+          var r=anchor.getBoundingClientRect();
+          m.style.left=Math.max(8,Math.min(r.left,innerWidth-m.offsetWidth-8))+"px";
+          m.style.top=Math.min(r.bottom+6,innerHeight-m.offsetHeight-8)+"px";
+          function done(v){m.remove();document.removeEventListener("mousedown",away,true);res(v);}
+          function away(ev){if(!ev.target.closest||!ev.target.closest("#dirmenu"))done(null);}
+          m.addEventListener("click",async function(ev){
+            var t=ev.target.closest("[data-to]");if(!t)return;
+            var v=t.getAttribute("data-to");
+            if(v==="__new"){
+              var nm=await ttPrompt("新文件夹叫什么？","");
+              if(!nm||!nm.trim()){done(null);return;}
+              done(fxMake(nm.trim(),fxCur||""));return;}
+            done(v);});
+          setTimeout(function(){document.addEventListener("mousedown",away,true);},0);});}
+      async function fxMoveSelected(anchor){
+        var keys=fxSelKeys();if(!keys.length)return;
+        // 选中的文件夹连同它们的子孙都不能当目标
+        var skip=[];keys.forEach(function(k){if(k.charAt(0)==="f")skip=skip.concat(fxSubtree(k.slice(2)));});
+        var to=await fxPickFolder(anchor,skip);
+        if(to===null)return;
+        var moved=0,noteTouched=false;
+        for(var i=0;i<keys.length;i++){
+          var k=keys[i],id=k.slice(2);
+          if(k.charAt(0)==="f"){var f=fxById(id);if(f&&fxCanMove(id,to)){f.parent=to;moved++;}}
+          else if(k.charAt(0)==="d"){var r=noteById(id);if(r){r.folder=to;r.upd=Date.now();noteTouched=true;moved++;}}
+          else{var m=await bGet("meta",id);if(m){m.folder=to;await bPut("meta",m);moved++;}}}
+        saveFx();if(noteTouched)saveNotes();
+        if(to)fxOpen[to]=true;save("tt_fxopen",fxOpen);
+        fxSel={};fxLastKey=null;renderShelf();
+        rdNote("✓ 移走了 "+moved+" 项 → 「"+(to?folderName(to):"我的文件")+"」");}
+      async function fxDelSelected(anchor){
+        var keys=fxSelKeys();if(!keys.length)return;
+        var nb=0,nd=0,nf=0;
+        keys.forEach(function(k){var c=k.charAt(0);if(c==="b")nb++;else if(c==="d")nd++;else nf++;});
+        var what=[];if(nb)what.push(nb+" 本书");if(nd)what.push(nd+" 篇笔记");if(nf)what.push(nf+" 个文件夹");
+        if(!await ttConfirm("删除 "+what.join(" + ")+"？"+
+          (nf?"\n文件夹里的东西不会删，会退回「我的文件」最外层。":"")+
+          (nb?"\n书里划过的笔记会留在「🔍 笔记总览」里。":""),{danger:true,anchor:anchor}))return;
+        var all=await bAll(),dead=[];
+        keys.forEach(function(k){if(k.charAt(0)==="f")dead=dead.concat(fxSubtree(k.slice(2)));});
+        var delBooks={},delDocs={};
+        keys.forEach(function(k){if(k.charAt(0)==="b")delBooks[k.slice(2)]=1;else if(k.charAt(0)==="d")delDocs[k.slice(2)]=1;});
+        for(var i=0;i<all.length;i++){
+          var b=all[i];
+          if(delBooks[b.id])await bDel(b.id);
+          else if(dead.indexOf(b.folder)>=0){b.folder="";await bPut("meta",b);}}   // 文件夹没了，书退回最外层
+        notes=notes.filter(function(r){return !delDocs[r.id];});
+        notes.forEach(function(r){if(dead.indexOf(r.folder)>=0)r.folder="";});
+        saveNotes();
+        if(dead.length){folders=folders.filter(function(f){return dead.indexOf(f.id)<0;});saveFx();
+          if(dead.indexOf(fxCur)>=0){fxCur="";save("tt_fxcur","");}}
+        fxSel={};fxLastKey=null;renderShelf();
+        rdNote("✓ 删掉了 "+what.join(" + "));}
       document.getElementById("rd-grid").addEventListener("click",async function(e){
         var tw=e.target.closest("[data-tw]");
         if(tw){e.stopPropagation();fxToggle(tw.getAttribute("data-tw"),tw.getAttribute("data-twopen")==="1");return;}
+        // 选择模式下，或者按住 Ctrl/⌘ 时，点卡片就是勾选，不是打开
+        var card=e.target.closest("[data-k]");
+        if(card&&(fxSel||e.ctrlKey||e.metaKey)){
+          e.preventDefault();e.stopPropagation();
+          fxPickToggle(card.getAttribute("data-k"),e.shiftKey,await bAll());return;}
         var delf=e.target.closest("[data-delf]");
         if(delf){e.stopPropagation();fxDelFolder(delf.getAttribute("data-delf"),delf);return;}
         var dd=e.target.closest("[data-docdel]");
@@ -12368,25 +12510,45 @@ margin-left: -22px;
       function dragStart(e){
         var el=e.target.closest("[data-id],[data-doc],[data-dragfd]");
         if(!el){return;}
+        // 拖的是已经勾上的那批里的一个 → 整批一起走，不然多选完还得一个个拖
+        var k=el.getAttribute("data-k");
+        if(fxSel&&k&&fxSel[k]){
+          drag={k:"many",keys:fxSelKeys()};
+          try{e.dataTransfer.setData("text/plain",drag.keys.join(","));e.dataTransfer.effectAllowed="move";}catch(err){}
+          document.querySelectorAll("#rd-grid .rd-book.sel").forEach(function(x){x.classList.add("dragging");});
+          return;}
         drag=el.getAttribute("data-dragfd")?{k:"fd",id:el.getAttribute("data-dragfd")}
           :(el.getAttribute("data-doc")?{k:"doc",id:el.getAttribute("data-doc")}
           :{k:"book",id:el.getAttribute("data-id")});
         el.classList.add("dragging");
         try{e.dataTransfer.setData("text/plain",drag.id);e.dataTransfer.effectAllowed="move";}catch(err){}}
-      function dragEnd(e){
-        var el=e.target.closest(".dragging");if(el)el.classList.remove("dragging");drag=null;}
+      function dragEnd(){
+        document.querySelectorAll(".dragging").forEach(function(x){x.classList.remove("dragging");});
+        drag=null;}
       function dropTarget(e){
         var t=e.target.closest("[data-drop]");if(!t||!drag)return null;
         var to=t.getAttribute("data-drop");
         if(drag.k==="fd"&&!fxCanMove(drag.id,to))return null;      // 不能拖进自己肚子里
+        if(drag.k==="many"){                                       // 整批里只要有一个不能落，就不给落
+          for(var i=0;i<drag.keys.length;i++){var k=drag.keys[i];
+            if(k.charAt(0)==="f"&&!fxCanMove(k.slice(2),to))return null;}}
         return t;}
+      async function moveOne(k,to){
+        var id=k.slice(2),c=k.charAt(0);
+        if(c==="f"){var f=fxById(id);if(f&&fxCanMove(id,to)){f.parent=to;return "fx";}return "";}
+        if(c==="d"){var r=noteById(id);if(r){r.folder=to;r.upd=Date.now();return "note";}return "";}
+        var m=await bGet("meta",id);if(m){m.folder=to;await bPut("meta",m);}
+        return "";}
       async function doDrop(e){
         var t=dropTarget(e);if(!t)return;
         e.preventDefault();t.classList.remove("drop");
         var to=t.getAttribute("data-drop"),d=drag;drag=null;
-        if(d.k==="fd"){var f=fxById(d.id);if(f){f.parent=to;saveFx();}}
-        else if(d.k==="doc"){var r=noteById(d.id);if(r){r.folder=to;r.upd=Date.now();saveNotes();}}
-        else{var m=await bGet("meta",d.id);if(m){m.folder=to;await bPut("meta",m);}}
+        var hit={};
+        if(d.k==="many"){for(var i=0;i<d.keys.length;i++)hit[await moveOne(d.keys[i],to)]=1;fxSel={};}
+        else hit[await moveOne(({fd:"f",doc:"d",book:"b"})[d.k]+":"+d.id,to)]=1;
+        if(hit.fx)saveFx();
+        if(hit.note)saveNotes();
+        if(to){fxOpen[to]=true;save("tt_fxopen",fxOpen);}
         renderShelf();}
       [document.getElementById("rd-grid"),fxSideBox,document.getElementById("fx-crumb")].forEach(function(box){
         box.addEventListener("dragstart",dragStart);
