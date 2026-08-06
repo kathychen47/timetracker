@@ -1541,11 +1541,12 @@
   .nb-sidetog:hover{color:var(--primary);border-color:var(--primary);background:var(--surface-2)}
   .nb-cols.sidehid .nb-sidetog{left:0}
   .nb-cols.sidehid .nb-main{padding-left:20px}
-  /* 从电脑里拖文件进来时的落点提示 */
-  #rd-shelf.dropping{outline:2px dashed var(--primary);outline-offset:6px;border-radius:14px}
-  #rd-shelf.dropping::after{content:attr(data-drophint);position:fixed;left:50%;bottom:34px;transform:translateX(-50%);
-    background:var(--primary);color:#fff;padding:10px 20px;border-radius:99px;font-size:13.5px;font-weight:600;
-    z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.28);pointer-events:none;white-space:nowrap}
+  /* 从电脑里拖文件进来时的落点提示：整窗遮罩，pointer-events:none 保证不挡住 e.target */
+  .dropzone{position:fixed;inset:10px;z-index:190;pointer-events:none;border:2.5px dashed var(--primary);
+    border-radius:18px;background:color-mix(in srgb,var(--primary) 8%,transparent);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:46px}
+  .dropzone b{background:var(--primary);color:#fff;padding:11px 22px;border-radius:99px;font-size:14px;
+    font-weight:600;box-shadow:0 12px 34px rgba(0,0,0,.3);white-space:nowrap}
   /* 🗂 本地文件夹的小菜单：必须是真按钮，见 bookDirPick 那里的注释 */
   .dirmenu{position:fixed;z-index:120;background:var(--surface);border:1px solid var(--border);border-radius:12px;
     padding:6px;box-shadow:0 14px 38px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:2px;min-width:230px}
@@ -12240,34 +12241,45 @@ margin-left: -22px;
         if(fxCur)fxOpen[fxCur]=true;
         importJobs(jobs);});
       // ---- 从电脑里直接拖文件/文件夹进来 ----
-      // 拖到某个文件夹上就进那个文件夹，拖到空白处就进当前这一层。
-      var shelf=document.getElementById("rd-shelf"),dragN=0;
+      // 监听挂在 document 上，不是挂在 #rd-shelf 上 —— shelf 的高度就是它内容的高度，
+      // 内容少的时候下面一大片空白根本不在它身上，往那儿拖等于拖了个寂寞（第一版就是这么错的）。
+      // 现在整个窗口都能接：拖到某个文件夹上就进那个文件夹，拖到别处就进当前这一层。
+      var shelf=document.getElementById("rd-shelf"),dragN=0,dzEl=null;
       function isFileDrag(e){
         var t=e.dataTransfer&&e.dataTransfer.types;
         return !!t&&Array.prototype.indexOf.call(t,"Files")>=0;}
+      function shelfOn(){return state.tab==="reader"&&shelf&&shelf.style.display!=="none";}
       function dropFolderAt(e){
         var t=e.target&&e.target.closest&&e.target.closest("[data-drop]");
         return t?t.getAttribute("data-drop"):(fxCur||"");}
-      function clearDropMark(){
-        shelf.classList.remove("dropping");
-        shelf.querySelectorAll(".drop").forEach(function(x){x.classList.remove("drop");});}
-      shelf.addEventListener("dragenter",function(e){if(isFileDrag(e))dragN++;});
-      shelf.addEventListener("dragover",function(e){
+      // 提示层是 position:fixed + pointer-events:none 的整窗遮罩：
+      // 既保证你在哪儿拖都看得见，又不会把 e.target 挡成它自己（否则永远落在根目录）。
+      function showDZ(fid){
+        if(!dzEl){dzEl=document.createElement("div");dzEl.className="dropzone";dzEl.innerHTML="<b></b>";document.body.appendChild(dzEl);}
+        dzEl.firstChild.textContent="松手就放进「"+(fid?folderName(fid):"我的文件")+"」";}
+      function hideDZ(){
+        if(dzEl){dzEl.remove();dzEl=null;}
+        if(shelf)shelf.querySelectorAll(".drop").forEach(function(x){x.classList.remove("drop");});}
+      document.addEventListener("dragenter",function(e){if(isFileDrag(e)&&shelfOn())dragN++;});
+      document.addEventListener("dragover",function(e){
         if(!isFileDrag(e))return;
-        e.preventDefault();try{e.dataTransfer.dropEffect="copy";}catch(err){}
+        // 到哪都拦：不 preventDefault 的话浏览器会把文件当成网址打开，直接把你这一页顶掉
+        e.preventDefault();
+        if(!shelfOn())return;
+        try{e.dataTransfer.dropEffect="copy";}catch(err){}
         var fid=dropFolderAt(e);
         shelf.querySelectorAll(".drop").forEach(function(x){x.classList.remove("drop");});
-        var t=e.target.closest&&e.target.closest("[data-drop]");if(t)t.classList.add("drop");
-        shelf.classList.add("dropping");
-        shelf.setAttribute("data-drophint","松手就放进「"+(fid?folderName(fid):"我的文件")+"」");});
-      shelf.addEventListener("dragleave",function(e){
+        var t=e.target&&e.target.closest&&e.target.closest("[data-drop]");if(t)t.classList.add("drop");
+        showDZ(fid);});
+      document.addEventListener("dragleave",function(e){
+        if(!isFileDrag(e)||!shelfOn())return;
+        if(--dragN<=0){dragN=0;hideDZ();}});
+      document.addEventListener("drop",async function(e){
         if(!isFileDrag(e))return;
-        if(--dragN<=0){dragN=0;clearDropMark();}});
-      shelf.addEventListener("drop",async function(e){
-        if(!isFileDrag(e))return;
-        e.preventDefault();dragN=0;clearDropMark();
+        e.preventDefault();dragN=0;hideDZ();
+        if(!shelfOn())return;
         var fid=dropFolderAt(e);
-        var ens=entriesFromDT(e.dataTransfer);                      // 同步取，晚一步就没了
+        var ens=entriesFromDT(e.dataTransfer);                      // 同步取，晚一步 items 就失效了
         var flat=e.dataTransfer.files?[].slice.call(e.dataTransfer.files):[];
         var jobs=[];
         if(ens.length){rdNote("正在读文件夹…");await walkEntries(ens,fid,jobs,0);}
@@ -12276,14 +12288,9 @@ margin-left: -22px;
         save("tt_fxopen",fxOpen);
         await importJobs(jobs);
         if(jobs.tooDeep)ttAlert("有 "+jobs.tooDeep+" 个套得太深的子文件夹（超过 8 层）没有导入。\n把它们单独拖一次就行。");});
-      // 别让拖到页面别处的文件被浏览器当成"打开这个文件"直接跳走
-      // 不 preventDefault 的话，文件拖到页面别处会被浏览器当成"打开这个文件"直接跳走，
-      // 你辛苦拖的东西就变成了离开这一页。dragover 和 drop 两个都要拦。
-      ["dragover","drop"].forEach(function(ev){
-        window.addEventListener(ev,function(e){
-          if(!isFileDrag(e))return;
-          var t=e.target;
-          if(!t||!t.closest||!t.closest("#rd-shelf"))e.preventDefault();});});
+      // 拖出窗口/按 Esc 之后残留的遮罩清掉
+      window.addEventListener("dragend",function(){dragN=0;hideDZ();});
+      window.addEventListener("blur",function(){dragN=0;hideDZ();});
       // ---- 文件夹视图：主区（封面 / 列表 / 展开三种都走这一份） ----
       function fxGo(fid){fxCur=fid||"";save("tt_fxcur",fxCur);renderShelf();}
       // 按钮上标着它此刻是开是关 —— 展开视图默认是开的，直接 !fxOpen[id] 会把 undefined 变成 true，等于点了没反应
