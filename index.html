@@ -1541,6 +1541,11 @@
   .nb-sidetog:hover{color:var(--primary);border-color:var(--primary);background:var(--surface-2)}
   .nb-cols.sidehid .nb-sidetog{left:0}
   .nb-cols.sidehid .nb-main{padding-left:20px}
+  /* 从电脑里拖文件进来时的落点提示 */
+  #rd-shelf.dropping{outline:2px dashed var(--primary);outline-offset:6px;border-radius:14px}
+  #rd-shelf.dropping::after{content:attr(data-drophint);position:fixed;left:50%;bottom:34px;transform:translateX(-50%);
+    background:var(--primary);color:#fff;padding:10px 20px;border-radius:99px;font-size:13.5px;font-weight:600;
+    z-index:200;box-shadow:0 10px 30px rgba(0,0,0,.28);pointer-events:none;white-space:nowrap}
   /* 🗂 本地文件夹的小菜单：必须是真按钮，见 bookDirPick 那里的注释 */
   .dirmenu{position:fixed;z-index:120;background:var(--surface);border:1px solid var(--border);border-radius:12px;
     padding:6px;box-shadow:0 14px 38px rgba(0,0,0,.22);display:flex;flex-direction:column;gap:2px;min-width:230px}
@@ -3542,7 +3547,8 @@ margin-left: -22px;
           <aside class="nb-side" id="fx-side"></aside>
           <div class="nb-main">
             <div class="rd-import">
-              <label class="btn primary" style="cursor:pointer">📁 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
+              <label class="btn primary" style="cursor:pointer" title="也可以直接把文件从电脑里拖到这个页面上">＋ 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
+              <label class="btn" style="cursor:pointer" title="选一整个文件夹，里面的子文件夹结构会一起搭出来">📂 导入文件夹<input type="file" id="rd-dirfile" webkitdirectory directory multiple hidden></label>
               <button class="btn" id="fx-newnote" title="就建在当前这个文件夹里">📝 新建笔记</button>
               <button class="btn" id="rd-newfolder" title="建在当前文件夹下面，可以一层套一层">＋ 新建文件夹</button>
               <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
@@ -9800,17 +9806,71 @@ margin-left: -22px;
       t.title=hid?"展开本子栏":"收起本子栏";}
     t.addEventListener("click",function(){save("tt_nbsidehid",!load("tt_nbsidehid",false));paint();});
     paint();})();
-  async function importBooks(files,quiet){
-    for(var i=0;i<files.length;i++){var f=files[i],t=bookType(f.name);
-      if(!t){rdNote("不支持的格式："+f.name);continue;}
-      rdNote("导入 "+f.name+" …");
+  // jobs 是 [{f:File, fid:目标文件夹}] —— 拖一整个目录进来时每本书的落点不一样，所以按条带着走
+  async function importJobs(jobs,quiet){
+    var skip=[];
+    jobs=jobs.filter(function(j){if(bookType(j.f.name))return true;skip.push(j.f.name);return false;});
+    if(!jobs.length){
+      rdNote(skip.length?("没有能读的：'"+skip.slice(0,3).join("'、'")+"'"+(skip.length>3?" 等 "+skip.length+" 个":"")+" —— 支持 PDF / EPUB / Word / TXT / Markdown / HTML")
+                       :"没找到可导入的文件");
+      return;}
+    var n=0;
+    for(var i=0;i<jobs.length;i++){
+      var f=jobs[i].f,t=bookType(f.name);
+      rdNote("导入 "+(i+1)+"/"+jobs.length+"："+f.name+" …");
       var id="b"+uid();
       try{
         await bPut("blob",{id:id,blob:f});
-        await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null,folder:fxCur||""});
+        await bPut("meta",{id:id,name:f.name.replace(/\.[^.]+$/,""),type:t,size:f.size,added:Date.now(),pos:null,folder:jobs[i].fid||""});
         if(!quiet)try{await bookDirWrite(f.name,f);}catch(e){}   // 顺手往本地文件夹存一份，失败也不耽误导入
-      }catch(e){rdNote("导入失败："+String(e&&e.message||e));return;}}
-    rdNote("✓ 导入完成");renderShelf();}
+        n++;
+      }catch(e){rdNote("导入失败："+String(e&&e.message||e));break;}}
+    rdNote("✓ 导入完成，共 "+n+" 本"+(skip.length?("（跳过 "+skip.length+" 个不支持的）"):""));
+    renderShelf();}
+  function importBooks(files,quiet,fid){
+    var to=(fid===undefined)?(fxCur||""):fid;
+    return importJobs([].slice.call(files).map(function(f){return {f:f,fid:to};}),quiet);}
+
+  // ---- 从系统里直接拖文件/文件夹进来 ----
+  // 两个必须踩对的点：
+  //  ① webkitGetAsEntry 只能在 drop 事件里**同步**取，事件一结束 dataTransfer.items 就失效了；
+  //  ② readEntries 一次最多给 100 条，必须反复读到返回空为止 —— 只读一次的话大目录会静默少书。
+  function entriesFromDT(dt){
+    var out=[];
+    if(!dt||!dt.items)return out;
+    for(var i=0;i<dt.items.length;i++){
+      var it=dt.items[i];
+      if(it.kind!=="file"||!it.webkitGetAsEntry)continue;
+      var en=it.webkitGetAsEntry();
+      if(en)out.push(en);}
+    return out;}
+  function readAllEntries(reader){
+    return new Promise(function(res){
+      var acc=[];
+      (function step(){
+        reader.readEntries(function(batch){
+          if(!batch||!batch.length){res(acc);return;}
+          acc=acc.concat(batch);step();
+        },function(){res(acc);});})();});}
+  function entryToFile(en){return new Promise(function(res){en.file(res,function(){res(null);});});}
+  // 同一层已经有同名文件夹就用它，别每次拖都新建一个「论文」
+  function fxMake(name,parent){
+    name=String(name||"未命名").trim().slice(0,24)||"未命名";
+    var hit=fxChildren(parent).filter(function(f){return f.name===name;})[0];
+    if(hit)return hit.id;
+    var id="f"+uid();folders.push({id:id,name:name,parent:parent||""});saveFx();
+    return id;}
+  async function walkEntries(ens,fid,jobs,depth){
+    for(var i=0;i<ens.length;i++){
+      var en=ens[i];
+      if(en.isFile){
+        var f=await entryToFile(en);
+        if(f)jobs.push({f:f,fid:fid});
+      }else if(en.isDirectory){
+        if(depth>=8){jobs.tooDeep=(jobs.tooDeep||0)+1;continue;}   // 深到 8 层就停，防怪树把浏览器卡死
+        var sub=fxMake(en.name,fid);
+        if(fid)fxOpen[fid]=true;                  // 建完把上一层展开，不然你看不到新东西在哪
+        await walkEntries(await readAllEntries(en.createReader()),sub,jobs,depth+1);}}}
 
   // ---- 一个文件夹里装了什么：书 + 我写的笔记（t:"doc"）。书里划的高亮跟着书，不占格子 ----
   function fxDocs(fid){return (notes||[]).filter(function(r){return r.t==="doc"&&(r.folder||"")===fid;});}
@@ -12168,6 +12228,62 @@ margin-left: -22px;
       applyRdFs();
       document.getElementById("rd-file").addEventListener("change",function(e){
         if(e.target.files&&e.target.files.length)importBooks([].slice.call(e.target.files));e.target.value="";});
+      // 选一整个文件夹：input 给的每个 File 上有 webkitRelativePath（形如 "论文/2026/a.pdf"），
+      // 照着这条路径把文件夹一层层建出来，效果和拖进来一样。
+      document.getElementById("rd-dirfile").addEventListener("change",function(e){
+        var fs=[].slice.call(e.target.files||[]);e.target.value="";
+        if(!fs.length)return;
+        var jobs=fs.map(function(f){
+          var parts=String(f.webkitRelativePath||f.name).split("/").slice(0,-1).slice(0,8),fid=fxCur||"";
+          parts.forEach(function(seg){fid=fxMake(seg,fid);});
+          return {f:f,fid:fid};});
+        if(fxCur)fxOpen[fxCur]=true;
+        importJobs(jobs);});
+      // ---- 从电脑里直接拖文件/文件夹进来 ----
+      // 拖到某个文件夹上就进那个文件夹，拖到空白处就进当前这一层。
+      var shelf=document.getElementById("rd-shelf"),dragN=0;
+      function isFileDrag(e){
+        var t=e.dataTransfer&&e.dataTransfer.types;
+        return !!t&&Array.prototype.indexOf.call(t,"Files")>=0;}
+      function dropFolderAt(e){
+        var t=e.target&&e.target.closest&&e.target.closest("[data-drop]");
+        return t?t.getAttribute("data-drop"):(fxCur||"");}
+      function clearDropMark(){
+        shelf.classList.remove("dropping");
+        shelf.querySelectorAll(".drop").forEach(function(x){x.classList.remove("drop");});}
+      shelf.addEventListener("dragenter",function(e){if(isFileDrag(e))dragN++;});
+      shelf.addEventListener("dragover",function(e){
+        if(!isFileDrag(e))return;
+        e.preventDefault();try{e.dataTransfer.dropEffect="copy";}catch(err){}
+        var fid=dropFolderAt(e);
+        shelf.querySelectorAll(".drop").forEach(function(x){x.classList.remove("drop");});
+        var t=e.target.closest&&e.target.closest("[data-drop]");if(t)t.classList.add("drop");
+        shelf.classList.add("dropping");
+        shelf.setAttribute("data-drophint","松手就放进「"+(fid?folderName(fid):"我的文件")+"」");});
+      shelf.addEventListener("dragleave",function(e){
+        if(!isFileDrag(e))return;
+        if(--dragN<=0){dragN=0;clearDropMark();}});
+      shelf.addEventListener("drop",async function(e){
+        if(!isFileDrag(e))return;
+        e.preventDefault();dragN=0;clearDropMark();
+        var fid=dropFolderAt(e);
+        var ens=entriesFromDT(e.dataTransfer);                      // 同步取，晚一步就没了
+        var flat=e.dataTransfer.files?[].slice.call(e.dataTransfer.files):[];
+        var jobs=[];
+        if(ens.length){rdNote("正在读文件夹…");await walkEntries(ens,fid,jobs,0);}
+        else flat.forEach(function(f){jobs.push({f:f,fid:fid});});   // 老浏览器：只能拿到平铺的文件
+        if(fid)fxOpen[fid]=true;
+        save("tt_fxopen",fxOpen);
+        await importJobs(jobs);
+        if(jobs.tooDeep)ttAlert("有 "+jobs.tooDeep+" 个套得太深的子文件夹（超过 8 层）没有导入。\n把它们单独拖一次就行。");});
+      // 别让拖到页面别处的文件被浏览器当成"打开这个文件"直接跳走
+      // 不 preventDefault 的话，文件拖到页面别处会被浏览器当成"打开这个文件"直接跳走，
+      // 你辛苦拖的东西就变成了离开这一页。dragover 和 drop 两个都要拦。
+      ["dragover","drop"].forEach(function(ev){
+        window.addEventListener(ev,function(e){
+          if(!isFileDrag(e))return;
+          var t=e.target;
+          if(!t||!t.closest||!t.closest("#rd-shelf"))e.preventDefault();});});
       // ---- 文件夹视图：主区（封面 / 列表 / 展开三种都走这一份） ----
       function fxGo(fid){fxCur=fid||"";save("tt_fxcur",fxCur);renderShelf();}
       // 按钮上标着它此刻是开是关 —— 展开视图默认是开的，直接 !fxOpen[id] 会把 undefined 变成 true，等于点了没反应
