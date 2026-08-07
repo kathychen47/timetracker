@@ -558,13 +558,9 @@
   .mn-row .tag.guess{border-style:dashed}
   .mn-row .am{width:104px;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .mn-row .am.in{color:#4fae7d}
+  .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
+  .mn-row .am small.nofx{color:#d9534f}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
-  .mn-bars{display:flex;align-items:flex-end;gap:2px;height:150px;margin-top:6px}
-  .mn-bars .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;min-width:0}
-  .mn-bars .bar{width:70%;max-width:16px;border-radius:4px 4px 0 0;min-height:0;transition:opacity .12s}
-  .mn-bars .c:hover .bar{opacity:.65}
-  .mn-bars .lb{font-size:10px;color:var(--muted);white-space:nowrap;height:12px}
-  .mn-seg{display:flex;justify-content:center;margin-top:12px}
   .mn-donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
   .mn-donut{width:148px;height:148px;border-radius:50%;flex:none;position:relative}
   .mn-donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
@@ -9019,9 +9015,22 @@ margin-left: -22px;
       if(!dictCounts.oald)throw new Error("先在 ⚙️设置 → 📖词典 里加载牛津词典");
       return buildLevelIndex(onProg).then(function(r){return idbPut("meta",r).then(function(){return r;});});});}
 
-  var wbtOverlay=null;
+  var wbtOverlay=null,wbtBound=false;
+  // 「关闭」按钮原来是在 bindDictUI() 里绑的 —— 那个函数只有第一次打开词典页才跑。
+  // 于是从别的页（税务「记一笔收入」、记账「记一笔」）弹出来的这个框，
+  // 只要你这次没进过词典，关闭按钮就是死的。这个弹窗是公共组件，
+  // 绑定不能寄生在某一个模块的初始化里 —— 挪到这儿，谁调都能关。
+  function wbtBind(){
+    if(wbtBound)return;wbtBound=true;
+    var c=document.getElementById("wbtool-close");
+    if(c)c.addEventListener("click",wbtClose);
+    if(wbtOverlay)wbtOverlay.addEventListener("click",function(e){
+      if(e.target===wbtOverlay)wbtClose();});
+    document.addEventListener("keydown",function(e){
+      if(e.key==="Escape"&&wbtOverlay&&wbtOverlay.classList.contains("on"))wbtClose();});}
   function wbtOpen(title,html){
     wbtOverlay=wbtOverlay||document.getElementById("wbtool-overlay");
+    wbtBind();
     document.getElementById("wbtool-title").textContent=title;
     document.getElementById("wbtool-body").innerHTML=html;
     wbtOverlay.classList.add("on");
@@ -14091,14 +14100,34 @@ margin-left: -22px;
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts:[…]}
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
-  var mnScope="month",mnYear=0,mnTrend="out";
+  var mnScope="month",mnYear=0;
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
   function mnCurOf(t){return (t&&t.cur)||"NZD";}
+  // ---- 跨币种折算 ----
+  // mnCfg.fx[X] 的含义是「1 主币种 = 多少 X」，跟你在汇率网站上看到的写法一致。
+  // 所以把 X 换算回主币种是除，不是乘。
+  //
+  // 只用一个固定汇率折算所有历史记录 —— 这是刻意的。真汇率每天都在变，
+  // 拿今天的汇率去折三年前的消费，得出的数字看着精确其实是假的。
+  // 一个你自己知道来历的固定汇率，至少诚实。
+  function mnFxBase(){return mnCfg.base||"NZD";}
+  function mnConv(amt,cur){
+    var b=mnFxBase();
+    if(cur===b)return amt;
+    var r=(mnCfg.fx||{})[cur];
+    return (r&&r>0)?(amt/r):null;}            // 没设汇率 → null，调用方负责说出来
+  function mnAmt(t){
+    if(mnCur!=="__all")return t.amt;
+    var v=mnConv(t.amt,mnCurOf(t));
+    return v===null?0:v;}
+  function mnHasFx(t){
+    return mnCur!=="__all"||mnConv(t.amt,mnCurOf(t))!==null;}
   function mnMoney(v,cur){
+    var c=cur||(mnCur==="__all"?mnFxBase():mnCur)||"NZD";
     var neg=v<0,s=Math.abs(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
-    return (neg?"-":"")+(MN_SYM[cur||mnCur||"NZD"]||"")+s;}
+    return (neg?"-":"")+(MN_SYM[c]||"")+s;}
   // 账本里出现过的币种，按笔数多的排前面
   function mnCurList(){
     var c={};mnTxns.forEach(function(t){var k=mnCurOf(t);c[k]=(c[k]||0)+1;});
@@ -14391,7 +14420,9 @@ margin-left: -22px;
   // 币种是硬隔离，不是筛选项 —— NZD 和 CNY 加在一起得出的数字没有任何意义，
   // 所以页面任何时候都只在看一种货币，不提供"全部"这个选项。
   function mnBase(t){
-    return mnKeyOf(t)===mnCurKey()&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}
+    if(mnKeyOf(t)!==mnCurKey())return false;
+    if(mnAcct&&t.acct!==mnAcct)return false;
+    return mnCur==="__all"||mnCurOf(t)===mnCur;}
   function mnFiltered(){
     return mnTxns.filter(function(t){
       return mnBase(t)&&(!mnPick||t.cat===mnPick);});}
@@ -14415,40 +14446,15 @@ margin-left: -22px;
   // 一段期间的收支合计。转账一律不算 —— 自己账户之间倒钱两边一进一出，
   // 算进去会把收入和支出同时凭空抬高。
   function mnAgg(list){
-    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,cat:{}};
+    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,cat:{},noFx:0};
     list.forEach(function(t){
       if(t.cat==="transfer"){o.tf++;return;}
-      if(t.amt<0){o.out+=-t.amt;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-t.amt);}
-      else if(t.amt>0){o.inc+=t.amt;o.nIn++;}});
+      // 折算模式下缺汇率的那几笔宁可不算，也不能悄悄按 0 塞进去
+      if(!mnHasFx(t)){o.noFx++;return;}
+      var a=mnAmt(t);
+      if(a<0){o.out+=-a;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-a);}
+      else if(a>0){o.inc+=a;o.nIn++;}});
     return o;}
-
-  function mnBarsHtml(list){
-    var n,idx,everyLb;
-    if(mnScope==="year"){n=12;idx=function(t){return +t.d.slice(5,7)-1;};everyLb=1;}
-    else{n=mnDaysInMonth();idx=function(t){return +t.d.slice(8,10)-1;};everyLb=3;}
-    var b=[];for(var i=0;i<n;i++)b.push({out:0,inc:0});
-    list.forEach(function(t){
-      if(t.cat==="transfer")return;
-      var j=idx(t);if(!(j>=0&&j<n))return;
-      if(t.amt<0)b[j].out+=-t.amt;else b[j].inc+=t.amt;});
-    var vals=b.map(function(x){
-      return mnTrend==="inc"?x.inc:(mnTrend==="net"?(x.inc-x.out):x.out);});
-    var max=1;vals.forEach(function(v){if(Math.abs(v)>max)max=Math.abs(v);});
-    var unit=mnScope==="year"?"月":"日";
-    var bars=vals.map(function(v,i){
-      var pc=Math.abs(v)/max*100;
-      // 有值但太矮会看不见，给个 2% 的地板；真的是 0 就不画
-      var hh=v===0?0:Math.max(2,pc);
-      var col=mnTrend==="inc"?"#4fae7d":(mnTrend==="out"?"#d9534f":(v<0?"#d9534f":"#4fae7d"));
-      var tip=(i+1)+unit+"：支出 "+mnMoney(-b[i].out)+" · 收入 "+mnMoney(b[i].inc);
-      return '<div class="c" title="'+esc(tip)+'">'+
-        '<div class="bar" style="height:'+hh.toFixed(1)+'%;background:'+col+'"></div>'+
-        '<span class="lb">'+((i%everyLb===0||i===n-1)?(i+1):"")+'</span></div>';}).join("");
-    return '<div class="mn-bars">'+bars+'</div>'+
-      '<div class="mn-seg"><div class="seg" id="mn-trend">'+
-      [["out","支出"],["inc","收入"],["net","结余"]].map(function(x){
-        return '<button data-tr="'+x[0]+'"'+(mnTrend===x[0]?' class="on"':"")+'>'+x[1]+'</button>';}).join("")+
-      '</div></div>';}
 
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
@@ -14460,8 +14466,11 @@ margin-left: -22px;
     if(curs.indexOf(mnCur)<0)mnCur=curs[0];
     var cs=document.getElementById("mn-cur");
     cs.innerHTML=curs.map(function(c){
-      return '<option value="'+esc(c)+'"'+(c===mnCur?" selected":"")+'>'+esc(c)+"</option>";}).join("");
+      return '<option value="'+esc(c)+'"'+(c===mnCur?" selected":"")+'>'+esc(c)+"</option>";}).join("")+
+      (curs.length>1?('<option value="__all"'+(mnCur==="__all"?" selected":"")+
+        '>合计（折算成 '+esc(mnFxBase())+'）</option>'):"");
     cs.style.display=curs.length>1?"":"none";
+    if(mnCur==="__all"&&curs.length<2)mnCur=curs[0];
     // 账户下拉
     var sel=document.getElementById("mn-acct"),accts=mnCfg.accts||[];
     sel.innerHTML='<option value="">全部账户</option>'+accts.map(function(a){
@@ -14509,9 +14518,6 @@ margin-left: -22px;
       '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
         '<div class="sub">按 '+span+(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
       '</div>';
-
-    // 趋势柱状图
-    h+='<div class="panel"><h3>'+(mnScope==="year"?"月":"日")+'收支统计</h3>'+mnBarsHtml(inP)+'</div>';
 
     // 分类统计：环形图 + 列表（带环比）
     var sum=A.cat,ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
@@ -14572,7 +14578,15 @@ margin-left: -22px;
                (t.tax?"已经记进税务了，点一下撤回":"把这笔算进税务页的收入")+'">'+
                (t.tax?"已记税 ✓":"记入税务")+'</button>')
             : "")+
-          '<span class="am'+(t.amt>0?" in":"")+'">'+mnMoney(t.amt)+'</span></div>';});
+          // 折算模式下显示折算值，底下用小字挂上原币金额 ——
+          // 只显示折算值的话，你回头核对银行账单会对不上号
+          '<span class="am'+(t.amt>0?" in":"")+'">'+
+            (mnCur==="__all"&&mnCurOf(t)!==mnFxBase()
+              ? (mnHasFx(t)
+                  ? (mnMoney(mnAmt(t))+'<small>'+mnMoney(t.amt,mnCurOf(t))+'</small>')
+                  : ('<small class="nofx">'+mnMoney(t.amt,mnCurOf(t))+' 无汇率</small>'))
+              : mnMoney(t.amt,mnCurOf(t)))+
+            '</span></div>';});
       h+='</div>';}
     body.innerHTML=h;}
 
@@ -14583,6 +14597,7 @@ margin-left: -22px;
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">'+
       '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
       '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面那个按钮。</div></div>'+
+      mnFxHtml()+
       mnDataHtml()+
       '<div class="panel"><h3>分类规则 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
       '摘要或商户名里出现这些词，就归到那一类 · 逗号分隔 · 你写的优先级高于内置</span></h3>'+
@@ -14596,6 +14611,54 @@ margin-left: -22px;
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
       '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
+
+  // 汇率面板。默认去拉当日汇率，但拉回来的值是填进输入框的 ——
+  // 你随时可以改成自己认的数字，改完就以你的为准，不会被下次拉取悄悄覆盖
+  //（拉取是你自己点的）。
+  function mnFxHtml(){
+    var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
+    var fx=mnCfg.fx||{};
+    var when=mnCfg.fxAt?("上次拉取："+new Date(mnCfg.fxAt).toLocaleString()):"还没拉过";
+    return '<div class="panel"><h3>跨币种折算</h3>'+
+      '<div class="mn-rule"><span class="nm">主币种</span>'+
+      '<select data-fxbase style="flex:0 0 140px;padding:6px 9px;border:1px solid var(--border);'+
+        'border-radius:8px;background:var(--bg);color:var(--text);font-size:12px">'+
+        ["NZD","CNY","USD","AUD"].concat(mnCurList()).filter(function(c,i,a){return a.indexOf(c)===i;})
+          .map(function(c){return '<option value="'+esc(c)+'"'+(c===b?" selected":"")+'>'+esc(c)+'</option>';}).join("")+
+      '</select></div>'+
+      (others.length
+        ? others.map(function(c){
+            return '<div class="mn-rule"><span class="nm">1 '+esc(b)+' =</span>'+
+              '<input type="number" step="0.0001" data-fx="'+esc(c)+'" value="'+
+                esc(fx[c]!==undefined?fx[c]:"")+'" placeholder="比如 3.96">'+
+              '<span style="flex:0 0 44px;color:var(--muted);font-size:12px">'+esc(c)+'</span></div>';}).join("")
+        : '<div style="font-size:13px;color:var(--muted)">账本里只有一种货币，暂时用不上折算。</div>')+
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">'+
+      (others.length?'<button class="btn" data-fxget>🌐 拉当日汇率</button>':"")+
+      '<span style="font-size:12px;color:var(--muted)">'+esc(when)+'</span></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      '填好之后，上面的币种下拉会多一个「合计（折算成 '+esc(b)+'）」。<br>'+
+      '<b>只用这一个固定汇率折算所有记录，包括几年前的。</b>真汇率天天在变，'+
+      '拿今天的去折三年前的消费，数字看着精确其实是假的 —— 与其假装准确，不如让你知道它是怎么来的。<br>'+
+      '要精确的话，各币种分开看，那些数字永远是真的。</div></div>';}
+
+  function mnFxFetch(btn){
+    var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
+    if(!others.length)return;
+    if(btn){btn.disabled=true;btn.textContent="拉取中…";}
+    fetch("https://api.frankfurter.dev/v1/latest?base="+encodeURIComponent(b)+
+          "&symbols="+encodeURIComponent(others.join(",")))
+      .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+      .then(function(j){
+        var got=j&&j.rates||{},n=0;
+        mnCfg.fx=mnCfg.fx||{};
+        Object.keys(got).forEach(function(c){mnCfg.fx[c]=+(+got[c]).toFixed(4);n++;});
+        mnCfg.fxAt=Date.now();save("tt_mncfg",mnCfg);
+        mnStatus("拉到 <b>"+n+"</b> 个汇率（"+esc(j.date||"")+"）—— 不认可就直接改输入框");
+        mnRender();},
+        function(e){
+          if(btn){btn.disabled=false;btn.textContent="🌐 拉当日汇率";}
+          mnStatus("拉汇率失败："+esc(String(e&&e.message||e))+" —— 自己填一个也一样能用",true);});}
 
   // 导错了、同步早了，得有路可退。没有删除功能的话，起始日期改了也白改 ——
   // 那道闸只管以后不再收，不会动已经进来的。
@@ -14698,8 +14761,6 @@ margin-left: -22px;
         this.classList.toggle("primary",mnView==="rules");mnRender();});
       // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
       document.getElementById("mn-body").addEventListener("click",function(e){
-        var tr=e.target.closest("[data-tr]");
-        if(tr){mnTrend=tr.getAttribute("data-tr");mnRender();return;}
         var pick=e.target.closest("[data-pick]");
         if(pick){var k=pick.getAttribute("data-pick");mnPick=(mnPick===k)?"":k;mnRender();return;}
         var tax=e.target.closest("[data-tax]");
@@ -14714,6 +14775,7 @@ margin-left: -22px;
           mnTxns.forEach(function(x){if(String(x.id)===rid)rt=x;});
           if(rt&&rt.src==="manual")mnAddForm(rt);
           return;}
+        if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
         var clr=e.target.closest("[data-clr]");
         if(clr){
           var kind=clr.getAttribute("data-clr"),label=clr.textContent.trim();
@@ -14728,8 +14790,14 @@ margin-left: -22px;
         if(e.target.id==="mn-rule-save"){
           var since=document.querySelector("#mn-body [data-since]");
           if(since){var sv=String(since.value||"").trim();
-            if(sv&&/^\d{4}-\d{2}-\d{2}$/.test(sv)&&sv!==mnCfg.since){
-              mnCfg.since=sv;save("tt_mncfg",mnCfg);}}
+            if(sv&&/^\d{4}-\d{2}-\d{2}$/.test(sv))mnCfg.since=sv;}
+          var bs=document.querySelector("#mn-body [data-fxbase]");
+          if(bs&&bs.value)mnCfg.base=bs.value;
+          mnCfg.fx=mnCfg.fx||{};
+          document.querySelectorAll("#mn-body [data-fx]").forEach(function(inp){
+            var c=inp.getAttribute("data-fx"),v=parseFloat(inp.value);
+            if(isFinite(v)&&v>0)mnCfg.fx[c]=v;else delete mnCfg.fx[c];});
+          save("tt_mncfg",mnCfg);
           var next={};
           document.querySelectorAll("#mn-body [data-rule]").forEach(function(inp){
             var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
