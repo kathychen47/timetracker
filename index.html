@@ -14226,7 +14226,7 @@ margin-left: -22px;
     var H=mnCsvHead(rows);
     if(!H){mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);return;}
     var have={};mnTxns.forEach(function(t){have[t.id]=1;});
-    var add=0,early=0,bad=0,curs={};
+    var add=0,early=0,bad=0,dup=0,curs={},batch={};
     for(var i=H.row+1;i<rows.length;i++){
       var r=rows[i];if(!r||!r.length)continue;
       var d=mnCsvDate(r[H.date]||"");
@@ -14243,9 +14243,15 @@ margin-left: -22px;
       var desc=H.desc.map(function(j){return String(r[j]||"").trim();})
         .filter(Boolean).join(" ").replace(/\s+/g," ").trim();
       // 没有稳定 id，只能自己造。同一天同金额同摘要可能真的发生两次
-      // （比如买了两杯一样的咖啡），所以带上序号，别把第二笔当重复吞掉。
-      var base=src+":"+d+":"+amt.toFixed(2)+":"+cur+":"+desc.slice(0,48),n=0,id=base;
-      while(have[id]){n++;id=base+"#"+n;}
+      // （买了两杯一样的咖啡），所以带序号区分。
+      //
+      // 序号只在【本次文件内部】数，不能拿已存在的数据去数 ——
+      // 否则同一个文件导第二次时 base 已被占，会顺延成 base#1 存进去，账直接翻倍。
+      // 现在同一个文件算出来的 id 恒定，重复导入会被下面这行整批跳过。
+      var base=src+":"+d+":"+amt.toFixed(2)+":"+cur+":"+desc.slice(0,48);
+      var n=(batch[base]=(batch[base]||0)+1);
+      var id=n>1?(base+"#"+(n-1)):base;
+      if(have[id]){dup++;continue;}
       var t={id:id,d:d,date:d,desc:desc,amt:amt,cur:cur,merchant:"",acat:"",agrp:"",ref:"",
         acct:H.acct>=0?String(r[H.acct]||"").trim():"",src:src};
       t.cat=mnGuess(t);mnTxns.push(t);have[id]=1;add++;}
@@ -14254,6 +14260,7 @@ margin-left: -22px;
     var cl=Object.keys(curs).sort(function(a,b){return curs[b]-curs[a];});
     mnStatus("导入完成：新增 <b>"+add+"</b> 笔"+
       (cl.length>1?("（"+cl.map(function(c){return c+" "+curs[c];}).join("、")+"，用上面的币种下拉切换）"):"")+
+      (dup?("，跳过 "+dup+" 笔已经导过的"):"")+
       (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
       (bad?("，跳过 "+bad+" 行读不出日期/金额的"):""));
     mnRender();}
