@@ -520,6 +520,48 @@
   .tax-bar .grow{flex:1}
   .tax-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px}
   .tax-bar .btn{padding:7px 13px;font-size:13px}
+  /* ---- 记账 ---- */
+  .mn-wrap{max-width:940px;margin:0 auto}
+  .mn-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+  .mn-bar .grow{flex:1}
+  .mn-bar .btn{padding:7px 13px;font-size:13px}
+  .mn-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px;max-width:220px}
+  .mn-nav{width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1}
+  .mn-nav:hover{color:var(--text);border-color:var(--muted)}
+  .mn-month{font-size:15px;font-weight:650;min-width:96px;text-align:center}
+  .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
+  .mn-status b{color:var(--text);font-weight:600}
+  .mn-status.err{color:#d9534f}
+  .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
+  .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .mn-kpi .v{font-size:21px;font-weight:680;letter-spacing:-.3px}
+  .mn-kpi .v.out{color:#d9534f}.mn-kpi .v.in{color:#4fae7d}
+  .mn-kpi .sub{font-size:11px;color:var(--muted);margin-top:3px}
+  .mn-cats{display:flex;flex-direction:column;gap:7px}
+  .mn-cat{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;border-radius:8px;padding:3px 5px}
+  .mn-cat:hover{background:var(--surface-2)}
+  .mn-cat.off{opacity:.4}
+  .mn-cat .nm{width:96px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mn-cat .track{flex:1;height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden}
+  .mn-cat .fill{height:100%;border-radius:5px}
+  .mn-cat .amt{width:88px;flex:none;text-align:right;font-variant-numeric:tabular-nums}
+  .mn-cat .pct{width:38px;flex:none;text-align:right;color:var(--muted);font-size:12px}
+  .mn-day{font-size:12px;color:var(--muted);font-weight:600;padding:12px 4px 5px}
+  .mn-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:13px}
+  .mn-row:hover{background:var(--surface-2)}
+  .mn-row .ic{width:24px;flex:none;text-align:center;font-size:15px}
+  .mn-row .ds{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mn-row .ds small{color:var(--muted);font-size:11px;margin-left:6px}
+  .mn-row .tag{flex:none;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:pointer}
+  .mn-row .tag:hover{border-color:var(--primary);color:var(--primary)}
+  .mn-row .tag.guess{border-style:dashed}
+  .mn-row .am{width:104px;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .mn-row .am.in{color:#4fae7d}
+  .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
+  .mn-rule{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
+  .mn-rule .nm{width:104px;flex:none}
+  .mn-rule input{flex:1;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px}
   .tx-tbl{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--surface);margin-bottom:14px}
   .tx-tbl h4{margin:0;font-size:13px;font-weight:650;padding:10px 14px;background:var(--surface-2);color:var(--muted)}
   .tx-tbl table{width:100%;border-collapse:collapse;font-size:13px}
@@ -3229,6 +3271,7 @@ margin-left: -22px;
     <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"></path><rect x="7" y="12" width="3" height="5" rx="1"></rect><rect x="12.5" y="8" width="3" height="9" rx="1"></rect><rect x="18" y="4.5" width="3" height="12.5" rx="1"></rect></svg><span class="rl">统计</span></button>
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.8"></circle><path d="M15.4 15.4L20.5 20.5"></path><path d="M7.6 8.7h5.8M7.6 12.2h3.4"></path></svg><span class="rl">词典</span></button>
     <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-1.6L14 21l-3-1.6L8 21l-3-1.6z"></path><path d="M9 8.5h6M9 12h6M9 15.5h3"></path></svg><span class="rl">税务</span></button>
+    <button data-tab="money" aria-label="记账" title="记账 · 银行流水"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"></rect><path d="M2.5 10.5h19"></path><path d="M6 15h3"></path></svg><span class="rl">记账</span></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg><span class="rl">菜谱</span></button>
     <button class="rail-w" id="rail-wide" type="button" aria-label="展开/收起导航" title="展开导航（显示文字）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg><span class="rl">收起</span></button>
     <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
@@ -3429,6 +3472,26 @@ margin-left: -22px;
           <button class="btn" id="tax-export">⬇️ 导出</button>
         </div>
         <div id="tax-body"></div>
+      </div>
+    </section>
+
+    <section class="view" id="view-money">
+      <div class="page-h">记账 <span class="rd-sub">新西兰 · 银行流水自动进账本</span></div>
+      <div class="mn-wrap">
+        <div class="mn-bar">
+          <button class="mn-nav" id="mn-prev" title="上个月">‹</button>
+          <span class="mn-month" id="mn-month">—</span>
+          <button class="mn-nav" id="mn-next" title="下个月">›</button>
+          <select id="mn-cur"></select>
+          <select id="mn-acct"><option value="">全部账户</option></select>
+          <span class="grow"></span>
+          <button class="btn primary" id="mn-sync">🔄 同步</button>
+          <button class="btn" id="mn-csv">📄 导入文件</button>
+          <button class="btn" id="mn-rules">⚙️ 设置</button>
+          <input type="file" id="mn-file" accept=".csv,.xlsx,text/csv" hidden>
+        </div>
+        <div class="mn-status" id="mn-status"></div>
+        <div id="mn-body"></div>
       </div>
     </section>
 
@@ -4553,12 +4616,13 @@ margin-left: -22px;
     var lit=railKeyOf(tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-tab")===lit);});
-    ["calendar","todo","stats","dict","reader","tax","food","body","notes","rec"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax","money","food","body","notes","rec"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo"){renderTodos();renderSkills();setTimeout(function(){try{fitTodoCols();}catch(e){}},0);}
     if(tab==="dict")openDict();
     if(tab==="reader")openReader();
     if(tab==="tax")openTax();
+    if(tab==="money")openMoney();
     if(tab==="food")openFood();
     if(tab==="body"){renderBody();try{gluRenderCard();}catch(e){}}
     if(tab==="notes")showNotes();
@@ -7707,7 +7771,7 @@ margin-left: -22px;
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -7753,6 +7817,7 @@ margin-left: -22px;
     // provider_refresh_token 只有 PKCE 换码那一步才给 —— 没有它就没法自动续期。
     try{SB=window.supabase.createClient(sbUrl,sbKey,{auth:{flowType:"pkce",detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});}
     catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
+    window.__SB=SB;                                   // 控制台里调试用（取 user id、手动查表）
     SB.auth.onAuthStateChange(function(ev,session){
       if(session&&session.user){sbUser=session.user;updateSbUI();
         if(session.provider_token)adoptProviderToken(session.provider_token);
@@ -13949,6 +14014,575 @@ margin-left: -22px;
           taxRecs=taxRecs.filter(function(x){return String(x.id)!==did;});saveTax();renderTax();}});
     }
     renderTax();}
+
+  // ---------- 💰 记账：银行流水自动进账本 ----------
+  // 流水从 Akahu（新西兰的 accredited requestor，Westpac 是它官方支持的银行之一）来，
+  // 经 Supabase Edge Function 中转 —— 那两个 Akahu token 等于账户流水的读取权，
+  // 绝不能写进这个公开仓库里的 HTML。部署步骤见 supabase/AKAHU.md。
+  // 去重靠 Akahu 给的稳定 _id：同一笔重复同步多少次都只留一条。
+  var MN_CATS=[
+    {k:"grocery",  n:"超市",     i:"🛒", c:"#5cbd90"},
+    {k:"food",     n:"餐饮",     i:"🍜", c:"#e06c5a"},
+    {k:"transport",n:"交通",     i:"🚗", c:"#5f9bd8"},
+    {k:"housing",  n:"住房水电", i:"🏠", c:"#7c83e6"},
+    {k:"health",   n:"医疗",     i:"💊", c:"#61c4cf"},
+    {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
+    {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
+    {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
+    {k:"fee",      n:"银行费用", i:"🏦", c:"#b0895f"},
+    {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
+    {k:"transfer", n:"转账",     i:"↔", c:"#9aa1b0"},
+    {k:"other",    n:"其他",     i:"📦", c:"#a8adba"}
+  ];
+  var MN_CAT={};MN_CATS.forEach(function(c){MN_CAT[c.k]=c;});
+  // 内置关键词按新西兰常见商户写的。匹配的干草堆两头补了空格，
+  // 所以想要「整词」的关键词自己带前导空格（" rent" 不会被 "current" 撞上）。
+  var MN_KW={
+    grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy"],
+    food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell "],
+    transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
+    housing:[" rent","tenancy","property manag","spark nz","vodafone","one nz","2degrees","skinny","contact energy","mercury","genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy","watercare","city council","district council"," rates","chorus","body corp"],
+    health:["pharmacy","chemist","unichem","medical","dental","dentist","physio","optometr","specsavers","radiology","southern cross"," nib ","accuro","white cross"],
+    shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu"],
+    fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","youtube premium","audible","kindle","patreon","twitch"],
+    edu:["university","massey","unitec","studylink","student loan","coursera","udemy","duolingo","tuition"],
+    fee:["account fee","monthly fee","service fee","transaction fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
+    income:["salary","wages","payroll","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
+    transfer:["transfer","tfr ","to a/c","from a/c","internet banking"]
+  };
+  // 从钱迹搬过来的历史账用的是中文分类（"吃"2204 笔、"快递/海运"227 笔这种），
+  // 上面那张英文商户表一条都命中不了，所以单开一张中文的，一起参与匹配。
+  var MN_KW_ZH={
+    grocery:["买菜","超市","水果","菜市","生鲜","零食","粮油"],
+    food:["吃","餐","外卖","饭","饮料","奶茶","咖啡","下午茶","夜宵","食堂","小吃","烧烤","火锅"],
+    transport:["交通","油","加油","地铁","公交","打车","停车","通勤","汽车","车险","维修保养","机票","高铁","火车","自行车","路费"],
+    housing:["住房","房租","水电","水电网","话费","网费","物业","燃气","宽带","租金"],
+    health:["医疗","药","看病","牙","体检","保险","诊所","医院"],
+    shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
+    fun:["娱乐","会员","游戏","电影","旅行","运动","健身","钓鱼","订阅"],
+    edu:["学习","书","课程","培训","学费","教育","文具"],
+    fee:["手续费","利息","年费","服务费","罚款"],
+    income:["工资","收租","返现","外快","报销","奖金","红包","分红","退款","退费","代写","薪"],
+    transfer:["转账","还款","信用卡还款","结转","借出","借入","理财","理財","基金"]
+  };
+  // 币种符号。混币种加总没有意义，所以页面永远只看一种，符号跟着走。
+  var MN_SYM={NZD:"$",AUD:"$",USD:"$",CNY:"¥",HKD:"$",GBP:"£",EUR:"€",JPY:"¥"};
+  var mnTxns=load("tt_txns",[])||[];
+  var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
+  var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts:[…]}
+  var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
+  function mnSave(){save("tt_txns",mnTxns);}
+  function mnP2(n){return (n<10?"0":"")+n;}
+  function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
+  function mnCurOf(t){return (t&&t.cur)||"NZD";}
+  function mnMoney(v,cur){
+    var neg=v<0,s=Math.abs(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+    return (neg?"-":"")+(MN_SYM[cur||mnCur||"NZD"]||"")+s;}
+  // 账本里出现过的币种，按笔数多的排前面
+  function mnCurList(){
+    var c={};mnTxns.forEach(function(t){var k=mnCurOf(t);c[k]=(c[k]||0)+1;});
+    return Object.keys(c).sort(function(a,b){return c[b]-c[a];});}
+
+  // ---- 自动分类 ----
+  // 四层，从最可信到最兜底。你手改过的（manual）根本不进这个函数，永远保留。
+  function mnHit(hay,list){
+    for(var i=0;i<list.length;i++){var w=String(list[i]||"").toLowerCase();
+      if(w&&hay.indexOf(w)>=0)return true;}
+    return false;}
+  function mnGuess(t){
+    var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
+    // 1) 你自己加的规则 —— 内置表永远猜不到「房东 Mike」这种
+    for(var i=0;i<MN_CATS.length;i++){var k=MN_CATS[i].k;
+      if(mnRules[k]&&mnRules[k].length&&mnHit(hay,mnRules[k]))return k;}
+    // 2) 内置商户表：英文（新西兰常见商户）+ 中文（钱迹搬来的分类名）
+    for(var j=0;j<MN_CATS.length;j++){var k2=MN_CATS[j].k;
+      if(MN_KW[k2]&&mnHit(hay,MN_KW[k2]))return k2;
+      if(MN_KW_ZH[k2]&&mnHit(hay,MN_KW_ZH[k2]))return k2;}
+    // 3) Akahu 已经按 NZFCC 标准分过一道，拿它的类目名再模糊匹一次 —— 白捡的
+    var ac=" "+((t.acat||"")+" "+(t.agrp||"")).toLowerCase()+" ";
+    if(ac.trim())for(var m=0;m<MN_CATS.length;m++){var k3=MN_CATS[m].k;
+      if(MN_KW[k3]&&mnHit(ac,MN_KW[k3]))return k3;}
+    // 4) 认不出来：进账当收入，出账当其他
+    return (+t.amt>0)?"income":"other";}
+
+  function mnStatus(html,err){
+    var el=document.getElementById("mn-status");if(!el)return;
+    el.className="mn-status"+(err?" err":"");el.innerHTML=html||"";}
+  function mnAgo(ts){
+    if(!ts)return "还没同步过";
+    var s=Math.max(0,(Date.now()-ts)/1000);
+    if(s<90)return "刚刚";
+    if(s<5400)return Math.round(s/60)+" 分钟前";
+    if(s<172800)return Math.round(s/3600)+" 小时前";
+    return Math.round(s/86400)+" 天前";}
+
+  // ---- 同步 ----
+  var MN_ERR={
+    not_configured:"Edge Function 还没配密钥 —— 照 supabase/AKAHU.md 第 4 步设那三条",
+    bad_jwt:"登录过期了，去 设置 → 👤 账号 重新登录一次",
+    not_owner:"AKAHU_OWNER_UID 跟当前登录的账号对不上 —— 见 AKAHU.md 第 3 步",
+    akahu_auth:"Akahu 那两个 token 不对，或者你在 Akahu 撤了授权 —— 重新生成一次",
+    akahu_txn:"Akahu 那边取流水出错了"};
+  // 起始日期定了就直接从那天要，不用先拉一大堆再在本地扔掉
+  function mnSync(){
+    if(mnBusy)return Promise.resolve();
+    if(!SB||!sbUser||!sbUrl){
+      mnStatus("要先登录才能同步 —— 设置 → 👤 账号 → 用 Google 登录",true);
+      return Promise.resolve();}
+    mnBusy=true;mnStatus("同步中…");
+    return SB.auth.getSession().then(function(r){
+      var s=r&&r.data&&r.data.session;if(!s)throw new Error("no_session");
+      return fetch(sbUrl.replace(/\/+$/,"")+"/functions/v1/akahu-sync",{
+        method:"POST",
+        headers:{Authorization:"Bearer "+s.access_token,apikey:sbKey,"Content-Type":"application/json"},
+        body:JSON.stringify(mnCfg.since?{start:mnCfg.since+"T00:00:00Z"}:{})
+      }).then(function(res){return res.json().then(function(j){return{ok:res.ok,j:j};},
+        function(){return {ok:false,j:{error:"bad_response"}};});});
+    }).then(function(o){
+      mnBusy=false;
+      if(!o.ok){
+        mnStatus((MN_ERR[o.j&&o.j.error]||("同步失败："+((o.j&&o.j.error)||"未知错误")))+
+          (o.j&&o.j.detail?(" <span style='opacity:.7'>("+esc(String(o.j.detail).slice(0,120))+")</span>"):""),true);
+        return;}
+      if(o.j.accounts&&o.j.accounts.length){mnCfg.accts=o.j.accounts;}
+      var byId={},add=0,early=0;
+      mnTxns.forEach(function(t){byId[t.id]=t;});
+      (o.j.txns||[]).forEach(function(t){
+        var old=byId[t.id];
+        if(old){                                   // 已经有了：只补富化字段，绝不动分类
+          if(t.merchant)old.merchant=t.merchant;
+          if(t.acat)old.acat=t.acat;
+          return;}
+        t.d=mnYmd(new Date(t.date));
+        // 起始日期之前的一律不收 —— 那段账你在别处已经记过了，进来就是两份。
+        // 这道闸每次同步都在，不只是第一次。
+        if(mnCfg.since&&t.d<mnCfg.since){early++;return;}
+        t.src="akahu";t.cat=mnGuess(t);
+        mnTxns.push(t);byId[t.id]=t;add++;});
+      mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
+      mnCfg.lastSync=Date.now();
+      mnSave();save("tt_mncfg",mnCfg);
+      mnStatus("同步完成：新增 <b>"+add+"</b> 笔"+
+        (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
+        (o.j.truncated?"（历史太长没拉完，分段再拉一次）":"")+
+        " · 上次 "+mnAgo(mnCfg.lastSync));
+      mnRender();
+    },function(){mnBusy=false;
+      mnStatus("连不上 Edge Function —— 函数没部署，或名字不是 akahu-sync",true);});}
+
+  // ---- CSV 兜底（Westpac 网银导出的）----
+  // 各家银行的列名都不一样，所以不写死列序，靠表头认：找到「日期」和「金额」两列就能干活。
+  function mnCsvRows(text){
+    var rows=[],row=[],cur="",q=false;
+    text=String(text).replace(/^﻿/,"");
+    for(var i=0;i<text.length;i++){var c=text[i];
+      if(q){ if(c==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else if(c==='"')q=true;
+      else if(c===","){row.push(cur);cur="";}
+      else if(c==="\n"){row.push(cur);cur="";rows.push(row);row=[];}
+      else if(c!=="\r")cur+=c;}
+    if(cur!==""||row.length){row.push(cur);rows.push(row);}
+    return rows.filter(function(r){return r.some(function(x){return String(x).trim()!=="";});});}
+  // 认表头。Westpac 是英文列名，钱迹是中文列名，一张表都认。
+  // 钱迹的金额全是正数，正负靠「类型」列（支出/收入）区分 —— 少认这一列，
+  // 五年的账会全部变成收入。
+  function mnCsvHead(rows){
+    // Westpac 的导出前面常有几行说明，所以往下找，别死磕第一行
+    for(var i=0;i<Math.min(rows.length,15);i++){
+      var h=rows[i].map(function(x){return String(x).trim().toLowerCase();});
+      var di=-1,ai=-1,ci=-1,ti=-1,qi=-1,ds=[];
+      h.forEach(function(x,j){
+        if(di<0&&/^date$|transaction date|^trans date|^时间$|^日期$/.test(x))di=j;
+        if(ai<0&&(/^金额$/.test(x)||(/amount/.test(x)&&!/foreign|conversion/.test(x))))ai=j;
+        if(ci<0&&/^币种$|^货币$|^currency$/.test(x))ci=j;
+        if(ti<0&&/^类型$|^收支$|^type$/.test(x))ti=j;
+        if(qi<0&&/^账户1$|^账户$|^account$/.test(x))qi=j;});
+      if(di<0)h.forEach(function(x,j){if(di<0&&/date|时间|日期/.test(x))di=j;});
+      if(di<0||ai<0)continue;
+      h.forEach(function(x,j){
+        if(j!==di&&j!==ai&&j!==ci&&j!==ti&&
+           /other party|description|details|payee|narrative|particulars|reference|code|memo|merchant|analysis|分类|备注|标签|商家|对方/.test(x))ds.push(j);});
+      return {row:i,date:di,amt:ai,cur:ci,type:ti,acct:qi,desc:ds};}
+    return null;}
+  // 「类型」列 → 正负号。债务借入/报销算进账，借出算出账。
+  function mnSign(s){
+    s=String(s||"");
+    if(/收入|借入|报销|返现|退款/.test(s))return 1;
+    if(/支出|借出/.test(s))return -1;
+    return 0;}                                            // 认不出来 → 用金额本身的正负
+  function mnCsvDate(s){
+    s=String(s).trim();
+    var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if(m)return m[1]+"-"+mnP2(+m[2])+"-"+mnP2(+m[3]);
+    m=s.match(/^(\d{1,2})[\/\.\-](\d{1,2})[\/\.\-](\d{2,4})$/);
+    if(m){var a=+m[1],b=+m[2],y=+m[3];if(y<100)y+=2000;
+      // 新西兰是 dd/mm/yyyy。只有第一段明显不可能是「日」时才认为它是月。
+      var d=a,mo=b;if(a>12&&b<=12){d=a;mo=b;}else if(b>12){d=b;mo=a;}
+      return y+"-"+mnP2(mo)+"-"+mnP2(d);}
+    var dt=new Date(s);return isNaN(dt)?"":mnYmd(dt);}
+  // rows 可以来自 CSV 也可以来自 xlsx，到这里已经是统一的二维数组了。
+  // ignoreSince：搬历史账时用，绕过起始日期那道闸（钱迹那份本来就是旧账）。
+  function mnImportRows(rows,src,ignoreSince){
+    var H=mnCsvHead(rows);
+    if(!H){mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);return;}
+    var have={};mnTxns.forEach(function(t){have[t.id]=1;});
+    var add=0,early=0,bad=0,curs={};
+    for(var i=H.row+1;i<rows.length;i++){
+      var r=rows[i];if(!r||!r.length)continue;
+      var d=mnCsvDate(r[H.date]||"");
+      var raw=String(r[H.amt]||"").replace(/[$,¥£€\s]/g,"");
+      var amt=parseFloat(raw);
+      if(!d||isNaN(amt)){bad++;continue;}
+      if(!ignoreSince&&mnCfg.since&&d<mnCfg.since){early++;continue;}
+      var sg=H.type>=0?mnSign(r[H.type]):0;
+      // 有「类型」列就以它为准。末尾的 ||0 是把 -0 规整成 0 ——
+      // 金额为 0 的支出会算出 -0，而 -0<0 是 false，会被当成收入显示成绿色。
+      if(sg)amt=Math.abs(amt)*sg||0;
+      var cur=(H.cur>=0?String(r[H.cur]||"").trim().toUpperCase():"")||"NZD";
+      curs[cur]=(curs[cur]||0)+1;
+      var desc=H.desc.map(function(j){return String(r[j]||"").trim();})
+        .filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+      // 没有稳定 id，只能自己造。同一天同金额同摘要可能真的发生两次
+      // （比如买了两杯一样的咖啡），所以带上序号，别把第二笔当重复吞掉。
+      var base=src+":"+d+":"+amt.toFixed(2)+":"+cur+":"+desc.slice(0,48),n=0,id=base;
+      while(have[id]){n++;id=base+"#"+n;}
+      var t={id:id,d:d,date:d,desc:desc,amt:amt,cur:cur,merchant:"",acat:"",agrp:"",ref:"",
+        acct:H.acct>=0?String(r[H.acct]||"").trim():"",src:src};
+      t.cat=mnGuess(t);mnTxns.push(t);have[id]=1;add++;}
+    mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
+    mnSave();
+    var cl=Object.keys(curs).sort(function(a,b){return curs[b]-curs[a];});
+    mnStatus("导入完成：新增 <b>"+add+"</b> 笔"+
+      (cl.length>1?("（"+cl.map(function(c){return c+" "+curs[c];}).join("、")+"，用上面的币种下拉切换）"):"")+
+      (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
+      (bad?("，跳过 "+bad+" 行读不出日期/金额的"):""));
+    mnRender();}
+
+  // ---- 读 xlsx ----
+  // xlsx 其实就是个 zip。浏览器自带 DecompressionStream("deflate-raw")，
+  // 所以不用引 SheetJS 那种几百 KB 的库 —— 这个项目是单文件零依赖，不能为一个导入功能破例。
+  // 只解两个成员：sharedStrings.xml（所有文本）和第一张表。
+  function mnUnzip(buf){
+    var dv=new DataView(buf),u8=new Uint8Array(buf);
+    // 从尾巴往回找中央目录结束标记（0x06054b50）。注释区最长 65535，够找了。
+    var eocd=-1;
+    for(var i=u8.length-22;i>=0&&i>u8.length-65558;i--){
+      if(dv.getUint32(i,true)===0x06054b50){eocd=i;break;}}
+    if(eocd<0)return Promise.reject(new Error("不是有效的 xlsx 文件"));
+    var n=dv.getUint16(eocd+10,true),off=dv.getUint32(eocd+16,true);
+    var files=[],p=off;
+    for(var k=0;k<n;k++){
+      if(dv.getUint32(p,true)!==0x02014b50)break;
+      var method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true);
+      var nlen=dv.getUint16(p+28,true),elen=dv.getUint16(p+30,true),clen=dv.getUint16(p+32,true);
+      var lho=dv.getUint32(p+42,true);
+      var name=new TextDecoder().decode(u8.subarray(p+46,p+46+nlen));
+      files.push({name:name,method:method,csize:csize,lho:lho});
+      p+=46+nlen+elen+clen;}
+    function read(name){
+      var f=null;files.forEach(function(x){if(x.name===name)f=x;});
+      if(!f)return Promise.resolve("");
+      // 本地头里的名字/额外字段长度可能跟中央目录不一样，必须以本地头为准
+      var nlen=dv.getUint16(f.lho+26,true),elen=dv.getUint16(f.lho+28,true);
+      var start=f.lho+30+nlen+elen,data=u8.subarray(start,start+f.csize);
+      if(f.method===0)return Promise.resolve(new TextDecoder().decode(data));
+      if(f.method!==8)return Promise.reject(new Error("不支持的压缩方式 "+f.method));
+      if(!window.DecompressionStream)return Promise.reject(new Error("浏览器太老，不支持解压"));
+      var ds=new DecompressionStream("deflate-raw");
+      var rs=new Blob([data]).stream().pipeThrough(ds);
+      return new Response(rs).text();}
+    return Promise.resolve({read:read,files:files});}
+
+  // A→0, B→1, …, AA→26。空单元格在 xml 里是直接省略的，
+  // 所以必须按 r="C5" 里的列字母定位，不能挨个数 —— 不然整行会左移错位。
+  function mnColIdx(ref){
+    var s=String(ref).replace(/[0-9]/g,""),n=0;
+    for(var i=0;i<s.length;i++)n=n*26+(s.charCodeAt(i)-64);
+    return n-1;}
+  function mnSheetRows(sheetXml,strs){
+    var doc=new DOMParser().parseFromString(sheetXml,"application/xml");
+    var out=[];
+    var rows=doc.getElementsByTagName("row");
+    for(var i=0;i<rows.length;i++){
+      var cs=rows[i].getElementsByTagName("c"),row=[];
+      for(var j=0;j<cs.length;j++){
+        var c=cs[j],idx=c.getAttribute("r")?mnColIdx(c.getAttribute("r")):j;
+        var t=c.getAttribute("t"),v="";
+        if(t==="inlineStr"){
+          var is=c.getElementsByTagName("t");
+          for(var m=0;m<is.length;m++)v+=is[m].textContent;
+        }else{
+          var vn=c.getElementsByTagName("v")[0];
+          v=vn?vn.textContent:"";
+          if(t==="s"&&v!=="")v=strs[+v]||"";}
+        while(row.length<idx)row.push("");
+        row[idx]=v;}
+      out.push(row);}
+    return out;}
+  function mnReadXlsx(buf){
+    return mnUnzip(buf).then(function(z){
+      // 表名不一定叫 sheet1.xml，按实际存在的第一张挑
+      var sheet="xl/worksheets/sheet1.xml";
+      var names=z.files.map(function(f){return f.name;})
+        .filter(function(x){return /^xl\/worksheets\/.*\.xml$/.test(x);}).sort();
+      if(names.length)sheet=names[0];
+      return Promise.all([z.read("xl/sharedStrings.xml"),z.read(sheet)]).then(function(r){
+        var strs=[];
+        if(r[0]){
+          var sd=new DOMParser().parseFromString(r[0],"application/xml");
+          var sis=sd.getElementsByTagName("si");
+          for(var i=0;i<sis.length;i++){
+            var ts=sis[i].getElementsByTagName("t"),s="";
+            for(var j=0;j<ts.length;j++)s+=ts[j].textContent;
+            strs.push(s);}}
+        return mnSheetRows(r[1],strs);});});}
+
+  // ---- 渲染 ----
+  function mnMonthList(){
+    var s={};mnTxns.forEach(function(t){if(t.d)s[t.d.slice(0,7)]=1;});
+    var now=mnYmd(new Date()).slice(0,7);s[now]=1;
+    return Object.keys(s).sort();}
+  function mnShift(n){
+    var p=(mnMonth||mnYmd(new Date()).slice(0,7)).split("-");
+    var d=new Date(+p[0],+p[1]-1+n,1);
+    mnMonth=d.getFullYear()+"-"+mnP2(d.getMonth()+1);mnPick="";mnRender();}
+  function mnInMonth(t){return t.d&&t.d.slice(0,7)===mnMonth;}
+  // 币种是硬隔离，不是筛选项 —— NZD 和 CNY 加在一起得出的数字没有任何意义，
+  // 所以页面任何时候都只在看一种货币，不提供"全部"这个选项。
+  function mnBase(t){
+    return mnInMonth(t)&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}
+  function mnFiltered(){
+    return mnTxns.filter(function(t){
+      return mnBase(t)&&(!mnPick||t.cat===mnPick);});}
+  function mnCatOpts(sel){
+    return MN_CATS.map(function(c){
+      return '<option value="'+c.k+'"'+(c.k===sel?" selected":"")+'>'+c.i+" "+c.n+"</option>";}).join("");}
+  function mnRender(){
+    var body=document.getElementById("mn-body");if(!body)return;
+    document.getElementById("mn-month").textContent=(mnMonth||"").replace("-"," 年 ")+" 月";
+    // 币种下拉：只有一种货币时藏起来，不给界面添噪音
+    var curs=mnCurList();if(!curs.length)curs=["NZD"];
+    if(curs.indexOf(mnCur)<0)mnCur=curs[0];
+    var cs=document.getElementById("mn-cur");
+    cs.innerHTML=curs.map(function(c){
+      return '<option value="'+esc(c)+'"'+(c===mnCur?" selected":"")+'>'+esc(c)+"</option>";}).join("");
+    cs.style.display=curs.length>1?"":"none";
+    // 账户下拉
+    var sel=document.getElementById("mn-acct"),accts=mnCfg.accts||[];
+    sel.innerHTML='<option value="">全部账户</option>'+accts.map(function(a){
+      return '<option value="'+esc(a.id)+'"'+(a.id===mnAcct?" selected":"")+'>'+
+        esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+"</option>";}).join("");
+    sel.style.display=accts.length?"":"none";
+
+    if(mnView==="rules"){body.innerHTML=mnRulesHtml();return;}
+
+    var inMonth=mnTxns.filter(mnBase);
+    if(!mnTxns.length){
+      body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
+        '点 <b>🔄 同步</b> 从 Westpac 拉（要先照 <code>supabase/AKAHU.md</code> 配好），'+
+        '或点 <b>📄 导入 CSV</b> 拖一个网银导出的文件进来。</div>';
+      return;}
+
+    // 转账不算收支 —— 自己账户之间倒钱，两边一进一出，算进去会把数字凭空翻倍
+    var out=0,inc=0,tf=0;
+    inMonth.forEach(function(t){
+      if(t.cat==="transfer"){tf++;return;}
+      if(t.amt<0)out+=-t.amt;else inc+=t.amt;});
+    var net=inc-out;
+    var h='<div class="mn-kpis">'+
+      '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-out)+'</div>'+
+        '<div class="sub">'+inMonth.filter(function(t){return t.amt<0&&t.cat!=="transfer";}).length+' 笔</div></div>'+
+      '<div class="mn-kpi"><div class="k">收入</div><div class="v in">'+mnMoney(inc)+'</div>'+
+        '<div class="sub">'+inMonth.filter(function(t){return t.amt>0&&t.cat!=="transfer";}).length+' 笔</div></div>'+
+      '<div class="mn-kpi"><div class="k">结余</div><div class="v'+(net<0?" out":"")+'">'+mnMoney(net)+'</div>'+
+        '<div class="sub">'+(tf?(tf+" 笔转账没算进来"):"本月收支相抵")+'</div></div>'+
+      '</div>';
+
+    // 分类汇总（只看支出）
+    var sum={};inMonth.forEach(function(t){
+      if(t.cat==="transfer"||t.amt>=0)return;
+      sum[t.cat]=(sum[t.cat]||0)+(-t.amt);});
+    var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
+    if(ranked.length){
+      var top=sum[ranked[0]]||1;
+      h+='<div class="panel"><h3>花在哪 <span style="font-weight:400;color:var(--muted);font-size:12px">点一类只看那一类</span></h3><div class="mn-cats">'+
+        ranked.map(function(k){var c=MN_CAT[k]||MN_CAT.other,v=sum[k];
+          return '<div class="mn-cat'+(mnPick&&mnPick!==k?" off":"")+'" data-pick="'+k+'">'+
+            '<span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
+            '<span class="track"><span class="fill" style="width:'+Math.max(2,v/top*100).toFixed(1)+'%;background:'+c.c+'"></span></span>'+
+            '<span class="amt">'+mnMoney(-v)+'</span>'+
+            '<span class="pct">'+(out?Math.round(v/out*100):0)+'%</span></div>';}).join("")+
+        '</div></div>';}
+
+    // 明细，按天分组
+    var list=mnFiltered();
+    if(!list.length){
+      h+='<div class="mn-empty">这个月'+(mnPick?"这一类":"")+'没有流水</div>';}
+    else{
+      h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">点分类标签可以改，改过的以后不会被自动分类覆盖</span></h3>';
+      var day="";
+      list.forEach(function(t){
+        if(t.d!==day){day=t.d;
+          var p=day.split("-");
+          h+='<div class="mn-day">'+(+p[1])+" 月 "+(+p[2])+" 日</div>";}
+        var c=MN_CAT[t.cat]||MN_CAT.other;
+        h+='<div class="mn-row" data-id="'+esc(t.id)+'">'+
+          '<span class="ic">'+c.i+'</span>'+
+          '<span class="ds">'+esc(t.merchant||t.desc||"（无摘要）")+
+            (t.merchant&&t.desc?'<small>'+esc(t.desc)+'</small>':"")+
+            (t.src==="csv"?'<small>CSV</small>':"")+'</span>'+
+          '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
+            (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
+          // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
+          // 人民币的收租记进去毫无意义
+          (t.amt>0&&mnCurOf(t)==="NZD"
+            ? ('<button class="tag'+(t.tax?" guess":"")+'" data-tax="'+esc(t.id)+'" title="'+
+               (t.tax?"已经记进税务了，点一下撤回":"把这笔算进税务页的收入")+'">'+
+               (t.tax?"已记税 ✓":"记入税务")+'</button>')
+            : "")+
+          '<span class="am'+(t.amt>0?" in":"")+'">'+mnMoney(t.amt)+'</span></div>';});
+      h+='</div>';}
+    body.innerHTML=h;}
+
+  function mnRulesHtml(){
+    return '<div class="panel"><h3>起始日期</h3>'+
+      '<div class="mn-rule"><span class="nm">从这天起记</span>'+
+      '<input type="date" data-since value="'+esc(mnCfg.since||"")+'"></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">'+
+      '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
+      '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，只是以后不再收更早的。</div></div>'+
+      '<div class="panel"><h3>分类规则 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
+      '摘要或商户名里出现这些词，就归到那一类 · 逗号分隔 · 你写的优先级高于内置</span></h3>'+
+      MN_CATS.map(function(c){
+        return '<div class="mn-rule"><span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
+          '<input data-rule="'+c.k+'" value="'+esc((mnRules[c.k]||[]).join(", "))+
+          '" placeholder="'+esc((MN_KW[c.k]||[]).slice(0,3).join(", ")||"（没有内置词）")+'"></div>';}).join("")+
+      '<div style="display:flex;gap:8px;margin-top:12px">'+
+      '<button class="btn primary" id="mn-rule-save">保存并重新分类</button>'+
+      '<button class="btn" id="mn-rule-back">返回</button></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
+      '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
+
+  function mnRecat(){
+    var n=0;mnTxns.forEach(function(t){
+      if(t.manual)return;
+      var g=mnGuess(t);if(g!==t.cat){t.cat=g;n++;}});
+    mnSave();return n;}
+
+  function openMoney(){
+    if(!mnMonth)mnMonth=mnYmd(new Date()).slice(0,7);
+    if(!mnCur)mnCur=mnCfg.cur||"NZD";
+    if(!mnInit){
+      mnInit=true;
+      document.getElementById("mn-prev").addEventListener("click",function(){mnShift(-1);});
+      document.getElementById("mn-next").addEventListener("click",function(){mnShift(1);});
+      document.getElementById("mn-acct").addEventListener("change",function(){mnAcct=this.value;mnPick="";mnRender();});
+      document.getElementById("mn-cur").addEventListener("change",function(){
+        mnCur=this.value;mnCfg.cur=mnCur;save("tt_mncfg",mnCfg);mnPick="";mnRender();});
+      document.getElementById("mn-sync").addEventListener("click",async function(){
+        // 第一次先问从哪天起。很多人是从别处搬过来的，把旧账再拉一遍就成了两份。
+        if(!mnCfg.since){
+          var d=new Date(),def=d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-01";
+          var v=await ttPrompt("从哪天开始记？\n这天之前的流水永远不会进账本。",def,{anchor:this});
+          if(v===null)return;                              // 取消了就啥也不干
+          v=String(v).trim();
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(v)){
+            mnStatus("日期得写成 2026-08-01 这种格式",true);return;}
+          mnCfg.since=v;save("tt_mncfg",mnCfg);}
+        mnSync();});
+      document.getElementById("mn-csv").addEventListener("click",function(){
+        document.getElementById("mn-file").click();});
+      document.getElementById("mn-file").addEventListener("change",async function(){
+        var f=this.files&&this.files[0];this.value="";if(!f)return;
+        var xlsx=/\.xlsx$/i.test(f.name);
+        // 搬旧账（钱迹那种）本来就全在起始日期之前，一刀切掉就白导了 —— 先问清楚
+        var old=false;
+        if(mnCfg.since)old=await ttConfirm(
+          "这个文件里早于 "+mnCfg.since+" 的记录要一起导进来吗？\n（搬历史账选「都导」，导本月新流水点取消）",
+          {okText:"都导进来",anchor:document.getElementById("mn-csv")});
+        mnStatus("读取中…");
+        try{
+          if(xlsx){
+            var buf=await f.arrayBuffer();
+            var rows=await mnReadXlsx(buf);
+            mnImportRows(rows,"xlsx",old);
+          }else{
+            var text=await f.text();
+            mnImportRows(mnCsvRows(text),"csv",old);}
+        }catch(e){mnStatus("这个文件读不了："+esc(String(e&&e.message||e)),true);}});
+      document.getElementById("mn-rules").addEventListener("click",function(){
+        mnView=mnView==="rules"?"list":"rules";
+        this.classList.toggle("primary",mnView==="rules");mnRender();});
+      // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
+      document.getElementById("mn-body").addEventListener("click",function(e){
+        var pick=e.target.closest("[data-pick]");
+        if(pick){var k=pick.getAttribute("data-pick");mnPick=(mnPick===k)?"":k;mnRender();return;}
+        var tax=e.target.closest("[data-tax]");
+        if(tax){mnToTax(tax.getAttribute("data-tax"),tax);return;}
+        var tag=e.target.closest("[data-tag]");
+        if(tag){mnTagEdit(tag);return;}
+        if(e.target.id==="mn-rule-back"){mnView="list";
+          document.getElementById("mn-rules").classList.remove("primary");mnRender();return;}
+        if(e.target.id==="mn-rule-save"){
+          var since=document.querySelector("#mn-body [data-since]");
+          if(since){var sv=String(since.value||"").trim();
+            if(sv&&/^\d{4}-\d{2}-\d{2}$/.test(sv)&&sv!==mnCfg.since){
+              mnCfg.since=sv;save("tt_mncfg",mnCfg);}}
+          var next={};
+          document.querySelectorAll("#mn-body [data-rule]").forEach(function(inp){
+            var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
+            if(ws.length)next[inp.getAttribute("data-rule")]=ws;});
+          mnRules=next;save("tt_mnrules",mnRules);
+          var n=mnRecat();mnView="list";
+          document.getElementById("mn-rules").classList.remove("primary");
+          mnStatus("已保存 · 起始日期 <b>"+esc(mnCfg.since||"未设")+"</b> · 重新分类了 <b>"+n+"</b> 笔");
+          mnRender();return;}
+      });
+    }
+    mnRender();
+    if(!mnCfg.lastSync)mnStatus("还没同步过 —— 点 🔄 同步（要先照 <code>supabase/AKAHU.md</code> 配好 Edge Function）");
+    else mnStatus("上次同步 "+mnAgo(mnCfg.lastSync)+
+      (mnCfg.since?(" · 只收 <b>"+esc(mnCfg.since)+"</b> 起的流水"):""));
+    // 进页面顺手同步一下。离上次不到 1 小时就不发请求了 ——
+    // Akahu 的 Personal App 本来就是每天刷新一次，捶得再勤也不会更新。
+    // 起始日期没定过就不自动同步：那一步得先问你，不能替你默认。
+    if(SB&&sbUser&&mnCfg.since&&mnCfg.lastSync&&Date.now()-mnCfg.lastSync>3600000)mnSync();}
+
+  // 把一笔进账送进税务页的收入记录，或者撤回。
+  // 两边各存各的（税务那份可以自己改金额、勾 GST），靠 taxFrom 记住来源，
+  // 所以在记账页撤回时能精确找回那一条，不会误删你手工记的收入。
+  async function mnToTax(id,btn){
+    var t=null;mnTxns.forEach(function(x){if(String(x.id)===id)t=x;});
+    if(!t)return;
+    if(t.tax){
+      if(!await ttConfirm("把这笔从税务记录里撤回？",{danger:true,anchor:btn}))return;
+      taxRecs=taxRecs.filter(function(x){return x.taxFrom!==t.id;});
+      saveTax();t.tax=0;mnSave();
+      mnStatus("已从税务记录里撤回");mnRender();try{renderTax();}catch(e){}
+      return;}
+    var gst=await ttConfirm("这笔 "+mnMoney(t.amt,"NZD")+" 含 GST 吗？\n（不确定就点取消，之后在税务页也能改）",
+      {okText:"含 GST",anchor:btn});
+    taxRecs.push({id:uid(),taxFrom:t.id,date:t.d,gross:Math.abs(t.amt),gstIncluded:!!gst,
+      payer:t.merchant||"",note:(t.desc||"")+"（记账页自动带入）"});
+    saveTax();t.tax=1;mnSave();
+    taxYear=taxYearOf(t.d);
+    mnStatus("已记入税务 · 去「税务」页可以改金额或 GST");mnRender();try{renderTax();}catch(e){}}
+
+  // 点分类标签 → 就地换成下拉，选完存 manual，以后自动分类不再动它
+  function mnTagEdit(btn){
+    var id=btn.getAttribute("data-tag"),t=null;
+    mnTxns.forEach(function(x){if(String(x.id)===id)t=x;});
+    if(!t)return;
+    var s=document.createElement("select");
+    s.className="tag";s.innerHTML=mnCatOpts(t.cat);
+    btn.replaceWith(s);s.focus();
+    var closed=false;                        // change 之后 blur 还会补一发，别重渲染两次
+    s.addEventListener("change",function(){
+      if(closed)return;closed=true;
+      t.cat=s.value;t.manual=1;mnSave();mnRender();});
+    s.addEventListener("blur",function(){
+      if(closed)return;closed=true;mnRender();});}
 
   // ---------- 身体数据 ----------
   // 一天一条记录，v 里按指标 key 存数值；指标表可扩展，加新指标不用动存储结构。
