@@ -14596,7 +14596,8 @@ margin-left: -22px;
       '<input type="date" data-since value="'+esc(mnCfg.since||"")+'"></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">'+
       '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
-      '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面那个按钮。</div></div>'+
+      '<b>改完立刻生效</b>，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。<br>'+
+      '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面「账本数据」里的按钮。</div></div>'+
       mnFxHtml()+
       mnDataHtml()+
       '<div class="panel"><h3>分类规则 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
@@ -14637,7 +14638,7 @@ margin-left: -22px;
       (others.length?'<button class="btn" data-fxget>🌐 拉当日汇率</button>':"")+
       '<span style="font-size:12px;color:var(--muted)">'+esc(when)+'</span></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
-      '填好之后，上面的币种下拉会多一个「合计（折算成 '+esc(b)+'）」。<br>'+
+      '填好之后，上面的币种下拉会多一个「合计（折算成 '+esc(b)+'）」。<b>改完立刻生效。</b><br>'+
       '<b>只用这一个固定汇率折算所有记录，包括几年前的。</b>真汇率天天在变，'+
       '拿今天的去折三年前的消费，数字看着精确其实是假的 —— 与其假装准确，不如让你知道它是怎么来的。<br>'+
       '要精确的话，各币种分开看，那些数字永远是真的。</div></div>';}
@@ -14759,6 +14760,31 @@ margin-left: -22px;
       document.getElementById("mn-rules").addEventListener("click",function(){
         mnView=mnView==="rules"?"list":"rules";
         this.classList.toggle("primary",mnView==="rules");mnRender();});
+      // 设置页里的日期/主币种/汇率，改完立刻存。
+      // 原来它们要等你点最下面那个「保存并重新分类」才生效 —— 而那个按钮
+      // 在另一个面板里，隔着一屏，看起来跟这几个框没关系。
+      // 结果就是：改了日期直接去点同步，改动悄悄丢了，还以为是同步坏了。
+      document.getElementById("mn-body").addEventListener("change",function(e){
+        var t=e.target;if(!t||!t.matches)return;
+        if(t.matches("[data-since]")){
+          var sv=String(t.value||"").trim();
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(sv))return;
+          mnCfg.since=sv;save("tt_mncfg",mnCfg);
+          var pre=mnTxns.filter(function(x){return x.d<sv;}).length;
+          mnStatus("起始日期改成 <b>"+esc(sv)+"</b>，已保存"+
+            (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清的话用下面「账本数据」那个按钮"):"")+
+            "　·　点 🔄 同步 就会从这天开始拉");
+          mnRender();return;}
+        if(t.matches("[data-fxbase]")){
+          mnCfg.base=t.value;save("tt_mncfg",mnCfg);
+          mnStatus("主币种改成 <b>"+esc(t.value)+"</b>，已保存");mnRender();return;}
+        if(t.matches("[data-fx]")){
+          var c=t.getAttribute("data-fx"),v=parseFloat(t.value);
+          mnCfg.fx=mnCfg.fx||{};
+          if(isFinite(v)&&v>0)mnCfg.fx[c]=v;else delete mnCfg.fx[c];
+          save("tt_mncfg",mnCfg);
+          mnStatus("汇率已保存：1 "+esc(mnFxBase())+" = "+esc(t.value||"（清空）")+" "+esc(c));
+          return;}});
       // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
       document.getElementById("mn-body").addEventListener("click",function(e){
         var pick=e.target.closest("[data-pick]");
@@ -14788,16 +14814,7 @@ margin-left: -22px;
         if(e.target.id==="mn-rule-back"){mnView="list";
           document.getElementById("mn-rules").classList.remove("primary");mnRender();return;}
         if(e.target.id==="mn-rule-save"){
-          var since=document.querySelector("#mn-body [data-since]");
-          if(since){var sv=String(since.value||"").trim();
-            if(sv&&/^\d{4}-\d{2}-\d{2}$/.test(sv))mnCfg.since=sv;}
-          var bs=document.querySelector("#mn-body [data-fxbase]");
-          if(bs&&bs.value)mnCfg.base=bs.value;
-          mnCfg.fx=mnCfg.fx||{};
-          document.querySelectorAll("#mn-body [data-fx]").forEach(function(inp){
-            var c=inp.getAttribute("data-fx"),v=parseFloat(inp.value);
-            if(isFinite(v)&&v>0)mnCfg.fx[c]=v;else delete mnCfg.fx[c];});
-          save("tt_mncfg",mnCfg);
+          // 日期/主币种/汇率在 change 事件里已经各自存好了，这里只管分类规则
           var next={};
           document.querySelectorAll("#mn-body [data-rule]").forEach(function(inp){
             var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
@@ -14805,7 +14822,7 @@ margin-left: -22px;
           mnRules=next;save("tt_mnrules",mnRules);
           var n=mnRecat();mnView="list";
           document.getElementById("mn-rules").classList.remove("primary");
-          mnStatus("已保存 · 起始日期 <b>"+esc(mnCfg.since||"未设")+"</b> · 重新分类了 <b>"+n+"</b> 笔");
+          mnStatus("规则已保存 · 重新分类了 <b>"+n+"</b> 笔（手动改过的不动）");
           mnRender();return;}
       });
     }
