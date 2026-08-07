@@ -559,6 +559,21 @@
   .mn-row .am{width:104px;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .mn-row .am.in{color:#4fae7d}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
+  .mn-bars{display:flex;align-items:flex-end;gap:2px;height:150px;margin-top:6px}
+  .mn-bars .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;gap:4px;min-width:0}
+  .mn-bars .bar{width:70%;max-width:16px;border-radius:4px 4px 0 0;min-height:0;transition:opacity .12s}
+  .mn-bars .c:hover .bar{opacity:.65}
+  .mn-bars .lb{font-size:10px;color:var(--muted);white-space:nowrap;height:12px}
+  .mn-seg{display:flex;justify-content:center;margin-top:12px}
+  .mn-donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+  .mn-donut{width:148px;height:148px;border-radius:50%;flex:none;position:relative}
+  .mn-donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+  .mn-donut .mid .t{font-size:11px;color:var(--muted)}
+  .mn-donut .mid .v{font-size:15px;font-weight:680;letter-spacing:-.3px}
+  .mn-cat .dlt{width:96px;flex:none;text-align:right;font-size:11px}
+  .mn-cat .dlt .up{color:#d9534f}.mn-cat .dlt .dn{color:#4fae7d}
+  .mn-day{display:flex;align-items:baseline;gap:10px}
+  .mn-day .dsum{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text)}
   .mn-rule{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
   .mn-rule .nm{width:104px;flex:none}
   .mn-rule input{flex:1;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px}
@@ -3479,9 +3494,13 @@ margin-left: -22px;
       <div class="page-h">记账 <span class="rd-sub">新西兰 · 银行流水自动进账本</span></div>
       <div class="mn-wrap">
         <div class="mn-bar">
-          <button class="mn-nav" id="mn-prev" title="上个月">‹</button>
+          <div class="seg" id="mn-scope">
+            <button data-sc="month" class="on">月</button>
+            <button data-sc="year">年</button>
+          </div>
+          <button class="mn-nav" id="mn-prev" title="上一期">‹</button>
           <span class="mn-month" id="mn-month">—</span>
-          <button class="mn-nav" id="mn-next" title="下个月">›</button>
+          <button class="mn-nav" id="mn-next" title="下一期">›</button>
           <select id="mn-cur"></select>
           <select id="mn-acct"><option value="">全部账户</option></select>
           <span class="grow"></span>
@@ -14072,6 +14091,7 @@ margin-left: -22px;
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts:[…]}
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
+  var mnScope="month",mnYear=0,mnTrend="out";
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
@@ -14363,23 +14383,78 @@ margin-left: -22px;
     var now=mnYmd(new Date()).slice(0,7);s[now]=1;
     return Object.keys(s).sort();}
   function mnShift(n){
-    var p=(mnMonth||mnYmd(new Date()).slice(0,7)).split("-");
-    var d=new Date(+p[0],+p[1]-1+n,1);
-    mnMonth=d.getFullYear()+"-"+mnP2(d.getMonth()+1);mnPick="";mnRender();}
-  function mnInMonth(t){return t.d&&t.d.slice(0,7)===mnMonth;}
+    if(mnScope==="year"){mnYear+=n;}
+    else{var p=(mnMonth||mnYmd(new Date()).slice(0,7)).split("-");
+      var d=new Date(+p[0],+p[1]-1+n,1);
+      mnMonth=d.getFullYear()+"-"+mnP2(d.getMonth()+1);}
+    mnPick="";mnRender();}
   // 币种是硬隔离，不是筛选项 —— NZD 和 CNY 加在一起得出的数字没有任何意义，
   // 所以页面任何时候都只在看一种货币，不提供"全部"这个选项。
   function mnBase(t){
-    return mnInMonth(t)&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}
+    return mnKeyOf(t)===mnCurKey()&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}
   function mnFiltered(){
     return mnTxns.filter(function(t){
       return mnBase(t)&&(!mnPick||t.cat===mnPick);});}
   function mnCatOpts(sel){
     return MN_CATS.map(function(c){
       return '<option value="'+c.k+'"'+(c.k===sel?" selected":"")+'>'+c.i+" "+c.n+"</option>";}).join("");}
+  // ---- 统计 ----
+  // 一切都按「当前期间 + 当前币种 + 当前账户」算。期间可以是一个月也可以是一年，
+  // 两种模式共用同一套聚合代码，只是取 key 的位数不同。
+  function mnKeyOf(t){var d=String(t&&t.d||"");return mnScope==="year"?d.slice(0,4):d.slice(0,7);}
+  function mnCurKey(){return mnScope==="year"?String(mnYear):mnMonth;}
+  function mnPrevKey(){
+    if(mnScope==="year")return String(mnYear-1);
+    var p=(mnMonth||"").split("-"),d=new Date(+p[0],+p[1]-2,1);
+    return d.getFullYear()+"-"+mnP2(d.getMonth()+1);}
+  function mnPeriodLabel(){
+    return mnScope==="year"?(mnYear+" 年"):((mnMonth||"").replace("-"," 年 ")+" 月");}
+  function mnDaysInMonth(){
+    var p=(mnMonth||"").split("-");return new Date(+p[0],+p[1],0).getDate();}
+
+  // 一段期间的收支合计。转账一律不算 —— 自己账户之间倒钱两边一进一出，
+  // 算进去会把收入和支出同时凭空抬高。
+  function mnAgg(list){
+    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,cat:{}};
+    list.forEach(function(t){
+      if(t.cat==="transfer"){o.tf++;return;}
+      if(t.amt<0){o.out+=-t.amt;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-t.amt);}
+      else if(t.amt>0){o.inc+=t.amt;o.nIn++;}});
+    return o;}
+
+  function mnBarsHtml(list){
+    var n,idx,everyLb;
+    if(mnScope==="year"){n=12;idx=function(t){return +t.d.slice(5,7)-1;};everyLb=1;}
+    else{n=mnDaysInMonth();idx=function(t){return +t.d.slice(8,10)-1;};everyLb=3;}
+    var b=[];for(var i=0;i<n;i++)b.push({out:0,inc:0});
+    list.forEach(function(t){
+      if(t.cat==="transfer")return;
+      var j=idx(t);if(!(j>=0&&j<n))return;
+      if(t.amt<0)b[j].out+=-t.amt;else b[j].inc+=t.amt;});
+    var vals=b.map(function(x){
+      return mnTrend==="inc"?x.inc:(mnTrend==="net"?(x.inc-x.out):x.out);});
+    var max=1;vals.forEach(function(v){if(Math.abs(v)>max)max=Math.abs(v);});
+    var unit=mnScope==="year"?"月":"日";
+    var bars=vals.map(function(v,i){
+      var pc=Math.abs(v)/max*100;
+      // 有值但太矮会看不见，给个 2% 的地板；真的是 0 就不画
+      var hh=v===0?0:Math.max(2,pc);
+      var col=mnTrend==="inc"?"#4fae7d":(mnTrend==="out"?"#d9534f":(v<0?"#d9534f":"#4fae7d"));
+      var tip=(i+1)+unit+"：支出 "+mnMoney(-b[i].out)+" · 收入 "+mnMoney(b[i].inc);
+      return '<div class="c" title="'+esc(tip)+'">'+
+        '<div class="bar" style="height:'+hh.toFixed(1)+'%;background:'+col+'"></div>'+
+        '<span class="lb">'+((i%everyLb===0||i===n-1)?(i+1):"")+'</span></div>';}).join("");
+    return '<div class="mn-bars">'+bars+'</div>'+
+      '<div class="mn-seg"><div class="seg" id="mn-trend">'+
+      [["out","支出"],["inc","收入"],["net","结余"]].map(function(x){
+        return '<button data-tr="'+x[0]+'"'+(mnTrend===x[0]?' class="on"':"")+'>'+x[1]+'</button>';}).join("")+
+      '</div></div>';}
+
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
-    document.getElementById("mn-month").textContent=(mnMonth||"").replace("-"," 年 ")+" 月";
+    document.getElementById("mn-month").textContent=mnPeriodLabel();
+    document.querySelectorAll("#mn-scope button").forEach(function(x){
+      x.classList.toggle("on",x.getAttribute("data-sc")===mnScope);});
     // 币种下拉：只有一种货币时藏起来，不给界面添噪音
     var curs=mnCurList();if(!curs.length)curs=["NZD"];
     if(curs.indexOf(mnCur)<0)mnCur=curs[0];
@@ -14396,61 +14471,98 @@ margin-left: -22px;
 
     if(mnView==="rules"){body.innerHTML=mnRulesHtml();return;}
 
-    var inMonth=mnTxns.filter(mnBase);
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
-        '点 <b>🔄 同步</b> 从 Westpac 拉（要先照 <code>supabase/AKAHU.md</code> 配好），'+
-        '或点 <b>📄 导入 CSV</b> 拖一个网银导出的文件进来。</div>';
+        '点 <b>＋ 记一笔</b> 自己记，点 <b>🔄 同步</b> 从 Westpac 拉'+
+        '（要先照 <code>supabase/AKAHU.md</code> 配好），'+
+        '或点 <b>📄 导入文件</b> 拖一个 CSV / xlsx 进来。</div>';
       return;}
 
-    // 转账不算收支 —— 自己账户之间倒钱，两边一进一出，算进去会把数字凭空翻倍
-    var out=0,inc=0,tf=0;
-    inMonth.forEach(function(t){
-      if(t.cat==="transfer"){tf++;return;}
-      if(t.amt<0)out+=-t.amt;else inc+=t.amt;});
-    var net=inc-out;
+    var inP=mnTxns.filter(mnBase),A=mnAgg(inP);
+    var net=A.inc-A.out;
+    // 上一期的同口径数字，用来算环比
+    var pk=mnPrevKey();
+    var P=mnAgg(mnTxns.filter(function(t){
+      return mnKeyOf(t)===pk&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}));
+    // 日均 / 月均：只按已经过去的天数算，不然当月还没过完会被稀释得很难看
+    var span,spanLb;
+    if(mnScope==="year"){
+      var nowY=new Date().getFullYear();
+      span=(mnYear===nowY)?(new Date().getMonth()+1):12;spanLb="月均支出";
+    }else{
+      var nowM=mnYmd(new Date()).slice(0,7);
+      span=(mnMonth===nowM)?new Date().getDate():mnDaysInMonth();spanLb="日均支出";}
+    var avg=span>0?A.out/span:0;
+
+    function delta(cur,prev){
+      if(!prev)return "";
+      var d=cur-prev;if(Math.abs(d)<0.005)return "";
+      return '<span class="'+(d>0?"up":"dn")+'">'+(d>0?"▲":"▼")+" "+mnMoney(Math.abs(d))+"</span>";}
+
     var h='<div class="mn-kpis">'+
-      '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-out)+'</div>'+
-        '<div class="sub">'+inMonth.filter(function(t){return t.amt<0&&t.cat!=="transfer";}).length+' 笔</div></div>'+
-      '<div class="mn-kpi"><div class="k">收入</div><div class="v in">'+mnMoney(inc)+'</div>'+
-        '<div class="sub">'+inMonth.filter(function(t){return t.amt>0&&t.cat!=="transfer";}).length+' 笔</div></div>'+
+      '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
+        '<div class="sub">'+A.nOut+' 笔 '+delta(A.out,P.out)+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">收入</div><div class="v in">'+mnMoney(A.inc)+'</div>'+
+        '<div class="sub">'+A.nIn+' 笔 '+delta(A.inc,P.inc)+'</div></div>'+
       '<div class="mn-kpi"><div class="k">结余</div><div class="v'+(net<0?" out":"")+'">'+mnMoney(net)+'</div>'+
-        '<div class="sub">'+(tf?(tf+" 笔转账没算进来"):"本月收支相抵")+'</div></div>'+
+        '<div class="sub">'+(A.tf?(A.tf+" 笔转账没算"):"收入减支出")+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
+        '<div class="sub">按 '+span+(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
       '</div>';
 
-    // 分类汇总（只看支出）
-    var sum={};inMonth.forEach(function(t){
-      if(t.cat==="transfer"||t.amt>=0)return;
-      sum[t.cat]=(sum[t.cat]||0)+(-t.amt);});
-    var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
+    // 趋势柱状图
+    h+='<div class="panel"><h3>'+(mnScope==="year"?"月":"日")+'收支统计</h3>'+mnBarsHtml(inP)+'</div>';
+
+    // 分类统计：环形图 + 列表（带环比）
+    var sum=A.cat,ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
     if(ranked.length){
-      var top=sum[ranked[0]]||1;
-      h+='<div class="panel"><h3>花在哪 <span style="font-weight:400;color:var(--muted);font-size:12px">点一类只看那一类</span></h3><div class="mn-cats">'+
-        ranked.map(function(k){var c=MN_CAT[k]||MN_CAT.other,v=sum[k];
+      var acc=0,stops=[];
+      ranked.forEach(function(k){
+        var c=MN_CAT[k]||MN_CAT.other,a0=acc/A.out*100;acc+=sum[k];
+        stops.push(c.c+" "+a0.toFixed(2)+"% "+(acc/A.out*100).toFixed(2)+"%");});
+      h+='<div class="panel"><h3>分类统计 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
+        '点一类只看那一类 · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span></h3>'+
+        '<div class="mn-donut-wrap">'+
+        '<div class="mn-donut" style="background:conic-gradient('+stops.join(",")+');'+
+          '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
+          '<div class="mid"><span class="t">总计</span><span class="v">'+mnMoney(-A.out)+'</span></div></div>'+
+        '<div class="mn-cats" style="flex:1;min-width:280px">'+
+        ranked.map(function(k){
+          var c=MN_CAT[k]||MN_CAT.other,v=sum[k],pv=P.cat[k]||0;
           return '<div class="mn-cat'+(mnPick&&mnPick!==k?" off":"")+'" data-pick="'+k+'">'+
             '<span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
-            '<span class="track"><span class="fill" style="width:'+Math.max(2,v/top*100).toFixed(1)+'%;background:'+c.c+'"></span></span>'+
+            '<span class="track"><span class="fill" style="width:'+
+              Math.max(2,v/sum[ranked[0]]*100).toFixed(1)+'%;background:'+c.c+'"></span></span>'+
+            '<span class="dlt">'+delta(v,pv)+'</span>'+
             '<span class="amt">'+mnMoney(-v)+'</span>'+
-            '<span class="pct">'+(out?Math.round(v/out*100):0)+'%</span></div>';}).join("")+
-        '</div></div>';}
+            '<span class="pct">'+(A.out?Math.round(v/A.out*100):0)+'%</span></div>';}).join("")+
+        '</div></div></div>';}
 
-    // 明细，按天分组
+    // 明细，按天分组，日期行右边给当天合计
     var list=mnFiltered();
     if(!list.length){
-      h+='<div class="mn-empty">这个月'+(mnPick?"这一类":"")+'没有流水</div>';}
+      h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+(mnPick?"这一类":"")+'没有流水</div>';}
     else{
-      h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">点分类标签可以改，改过的以后不会被自动分类覆盖</span></h3>';
+      // 先按天把支出汇总好，渲染时直接取
+      var dayOut={};
+      list.forEach(function(t){
+        if(t.cat==="transfer"||t.amt>=0)return;
+        dayOut[t.d]=(dayOut[t.d]||0)+(-t.amt);});
+      var WD=["日","一","二","三","四","五","六"];
+      h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
+        '点分类标签可以改，改过的以后不会被自动分类覆盖</span></h3>';
       var day="";
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
-          var p=day.split("-");
-          h+='<div class="mn-day">'+(+p[1])+" 月 "+(+p[2])+" 日</div>";}
+          var p=day.split("-"),wd=WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
+          h+='<div class="mn-day"><span>'+(+p[1])+"."+mnP2(+p[2])+" 周"+wd+'</span>'+
+            (dayOut[day]?('<span class="dsum">支 '+mnMoney(-dayOut[day])+'</span>'):"")+'</div>';}
         var c=MN_CAT[t.cat]||MN_CAT.other;
         h+='<div class="mn-row" data-id="'+esc(t.id)+'">'+
           '<span class="ic">'+c.i+'</span>'+
           '<span class="ds">'+esc(t.merchant||t.desc||"（无摘要）")+
             (t.merchant&&t.desc?'<small>'+esc(t.desc)+'</small>':"")+
-            (t.src==="csv"?'<small>CSV</small>':"")+'</span>'+
+            (t.src==="manual"?'<small>手记</small>':(t.src==="akahu"?"":'<small>导入</small>'))+'</span>'+
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
           // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
@@ -14532,11 +14644,20 @@ margin-left: -22px;
 
   function openMoney(){
     if(!mnMonth)mnMonth=mnYmd(new Date()).slice(0,7);
+    if(!mnYear)mnYear=new Date().getFullYear();
     if(!mnCur)mnCur=mnCfg.cur||"NZD";
+    if(mnCfg.scope)mnScope=mnCfg.scope;
     if(!mnInit){
       mnInit=true;
       document.getElementById("mn-prev").addEventListener("click",function(){mnShift(-1);});
       document.getElementById("mn-next").addEventListener("click",function(){mnShift(1);});
+      document.getElementById("mn-scope").addEventListener("click",function(e){
+        var b=e.target.closest("[data-sc]");if(!b)return;
+        mnScope=b.getAttribute("data-sc");mnCfg.scope=mnScope;save("tt_mncfg",mnCfg);
+        // 月↔年互相跟随：从 7 月切到年，看的就是那一年
+        if(mnScope==="year"&&mnMonth)mnYear=+mnMonth.slice(0,4);
+        else if(mnScope==="month"&&mnYear)mnMonth=mnYear+"-"+(mnMonth?mnMonth.slice(5,7):"01");
+        mnPick="";mnRender();});
       document.getElementById("mn-acct").addEventListener("change",function(){mnAcct=this.value;mnPick="";mnRender();});
       document.getElementById("mn-cur").addEventListener("change",function(){
         mnCur=this.value;mnCfg.cur=mnCur;save("tt_mncfg",mnCfg);mnPick="";mnRender();});
@@ -14577,6 +14698,8 @@ margin-left: -22px;
         this.classList.toggle("primary",mnView==="rules");mnRender();});
       // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
       document.getElementById("mn-body").addEventListener("click",function(e){
+        var tr=e.target.closest("[data-tr]");
+        if(tr){mnTrend=tr.getAttribute("data-tr");mnRender();return;}
         var pick=e.target.closest("[data-pick]");
         if(pick){var k=pick.getAttribute("data-pick");mnPick=(mnPick===k)?"":k;mnRender();return;}
         var tax=e.target.closest("[data-tax]");
