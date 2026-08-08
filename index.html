@@ -560,10 +560,12 @@
   .mn-bal .b{font-size:16px;font-weight:680;letter-spacing:-.3px;white-space:nowrap;
     font-variant-numeric:tabular-nums}
   .mn-bal.tot{background:var(--surface-2);border-style:dashed}
-  .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-  .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
-  .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:4px}
-  .mn-kpi .v{font-size:21px;font-weight:680;letter-spacing:-.3px}
+  /* align-items:start —— grid 默认 stretch，六张卡会被最高的那张（预估税负：两行小字＋按钮）
+     统一拔高，剩下几张下面就空出一大块。让每张卡只占自己内容那么高。 */
+  .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;align-items:start}
+  .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:10px 12px}
+  .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:2px}
+  .mn-kpi .v{font-size:20px;font-weight:680;letter-spacing:-.3px;line-height:1.25}
   .mn-kpi .v.out{color:#d9534f}.mn-kpi .v.in{color:#4fae7d}
   .mn-kpi .sub{font-size:11px;color:var(--muted);margin-top:3px}
   .mn-cats{display:flex;flex-direction:column;gap:7px}
@@ -4658,6 +4660,10 @@ margin-left: -22px;
   window.addEventListener("resize",applyZoom);
   document.getElementById("set-zoom").addEventListener("change",function(){zoomPref=this.value;save("tt_zoom",zoomPref);applyZoom();});
   document.getElementById("set-lang").addEventListener("change",function(){save("tt_lang",this.value);location.reload();});
+  // 身体数据页那块血糖卡片：显示 / 不显示（收起与否是点标题控制的，记在 tt_folds 里）
+  (function(){var s=document.getElementById("set-glushow");if(!s)return;
+    s.value=load("tt_glushow",true)?"1":"0";
+    s.addEventListener("change",function(){save("tt_glushow",this.value==="1");try{gluRenderCard();}catch(e){}});})();
 
   // ---------- 左侧导航：拖动排序 ----------
   (function(){
@@ -15923,6 +15929,11 @@ margin-left: -22px;
     return {rows:rows,n:n,avg:n?sum/n:0,hi:hi,lo:lo,by:by};}
   function gluRenderCard(){
     var box=document.getElementById("glu-card");if(!box)return;
+    // 设置里选了「不显示」就整块不出现（不量血糖的人不该被这一大块占着页面）。
+    // 这里每次都现读 localStorage，不缓存在变量里 —— 这段代码在 init 之后才执行，
+    // 缓存的话首次 renderBody() 那一下读到的会是 undefined。
+    if(!load("tt_glushow",true)){box.style.display="none";return;}
+    box.style.display="";
     var s=gluStats(gluDays),u=gluUnit();
     var tagChips=gluCfg.tags.map(function(t){
       return '<button class="tf-chip'+(gluTag===t?" on":"")+'" data-glutag="'+esc(t)+'">'+esc(t)+'</button>';}).join("")+
@@ -15949,7 +15960,8 @@ margin-left: -22px;
       return '<div class="glu-bt"><span class="n">'+esc(t)+'</span><span class="v">'+(Math.round(shown*10)/10)+'</span><span class="c">'+arr.length+' 次</span></div>';}).join("");
     var avgShown=(gluCfg.unit==="mgdl")?(s.avg*18):s.avg;
     box.innerHTML=
-      '<div class="dash-h">血糖 <span style="font-weight:400;color:var(--muted)">'+u+'</span>'+
+      // data-foldc：点标题收起/展开，用的是边栏卡片那一套（状态存 tt_folds，刷新后还是原样）
+      '<div class="dash-h" data-foldc="glu">血糖 <span style="font-weight:400;color:var(--muted)">'+u+'</span>'+
         '<button class="dash-add" data-gluunit="1">换单位</button></div>'+
       '<div class="glu-add">'+
         '<input type="number" id="glu-v" step="0.1" min="0" placeholder="数值">'+
@@ -15967,7 +15979,8 @@ margin-left: -22px;
       '</div>'+
       '<div class="tf-chips" style="margin-bottom:8px">'+dayChips+'</div>'+
       (byTag?('<div class="glu-bts">'+byTag+'</div>'):"")+
-      '<div class="glu-list">'+list+'</div>';}
+      '<div class="glu-list">'+list+'</div>';
+    try{applyFolds();}catch(e){}}      // 重画之后把「收起」的状态贴回去
   (function(){
     var box=document.getElementById("glu-card");if(!box)return;
     box.addEventListener("click",async function(e){
