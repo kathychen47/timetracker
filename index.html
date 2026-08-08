@@ -14237,6 +14237,9 @@ margin-left: -22px;
     // 交通的关键词有「汽车」，排在前面的话车险会被交通抢走。
     {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
     {k:"transport",n:"交通",     i:"🚗", c:"#5f9bd8"},
+    // 通讯要排在住房之前 —— 住房的关键词里有 "spark "、"2degrees"，
+    // 排在后面的话手机费会被住房抢走。
+    {k:"telco",    n:"通讯",     i:"📱", c:"#5aa9c9"},
     {k:"housing",  n:"住房水电", i:"🏠", c:"#7c83e6"},
     {k:"health",   n:"医疗",     i:"💊", c:"#61c4cf"},
     {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
@@ -14286,7 +14289,14 @@ margin-left: -22px;
       "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"," meat","meat ","sunson","yubuy","orchard","darlings","ken's mart","kens mart","big t asian","jrn asian","asian mart","asian grocer"],
     food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell ","old street","hotpot","ramen","dim sum","yum cha","charcoal","grill","canteen","seoul mate","seoulmate","makan","chahao","bubble","boba","korean","japanese","thai ","vietnam","malaysia"],
     transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
-    housing:[" rent","tenancy","property manag","spark nz","vodafone","one nz","2degrees","skinny","contact energy","mercury","genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy","watercare","city council","district council"," rates","chorus","body corp"],
+    // 银行摘要会截断商户名（"Holmwood Property Management" → "Holmwood Property Ma"），
+    // 所以关键词要用短的、截不掉的那截："property" 而不是 "property manag"。
+    // 同理 "Spark Billing" 命中不了 "spark nz"。
+    telco:["spark ","spark billing","vodafone","one nz","2degrees","skinny","kogan mobile",
+      "warehouse mobile","slingshot","orcon","nowtv","chorus","broadband","mobile top"],
+    housing:[" rent","tenancy","property","holmwood","landlord","contact energy","mercury",
+      "genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy",
+      "watercare","city council","district council"," rates","body corp","trustpower","ecotricity"],
     health:["pharmacy","chemist","unichem","medical","dental","dentist","physio","optometr","specsavers","radiology","southern cross"," nib ","accuro","white cross"],
     shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu","pb tech","pbtech","furniture","appliance","mighty ape","the market"],
     fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","graham condon","recreation and sport","leisure centre","pioneer rec","taiora","swim","youtube premium","audible","kindle","patreon","twitch"],
@@ -14325,7 +14335,8 @@ margin-left: -22px;
     grocery:["买菜","超市","水果","菜市","生鲜","零食","粮油"],
     food:["吃","餐","外卖","饭","饮料","奶茶","咖啡","下午茶","夜宵","食堂","小吃","烧烤","火锅"],
     transport:["交通","油","加油","地铁","公交","打车","停车","通勤","汽车","维修保养","高铁","火车","自行车","路费"],
-    housing:["住房","房租","水电","水电网","话费","网费","物业","燃气","宽带","租金"],
+    telco:["话费","网费","宽带","手机费","流量","电话费"],
+    housing:["住房","房租","水电","水电网","物业","燃气","租金"],
     health:["医疗","药","看病","牙","体检","诊所","医院"],
     insure:["保险","车险","房险","寿险","投保","续保","保费"],
     shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
@@ -14388,6 +14399,9 @@ margin-left: -22px;
     "child support":"other","welfare and charity":"other",
     "religious organisations":"other","political organisations":"other",
     "tax payments":"fee",
+    // NZFCC 的 Utilities 组里既有水电也有电信，组默认给了住房 ——
+    // 手机费和宽带单独拎到通讯
+    "internet services":"telco","telecommunication services":"telco",
     // NZFCC 把软件和云服务归在 Professional Services 组，跟税款、ACC、
     // 律师会计费同组。默认走那个组的话，OpenAI、Anthropic、Cloudflare
     // 会全掉进「费用 / 税」—— 明显不对，单独拎出来。
@@ -14410,8 +14424,8 @@ margin-left: -22px;
     ["hospital","health"],["optometr","health"],["physio","health"],
     ["insurance","insure"],["courier","post"],["postal","post"],
     ["rent","housing"],["electricity","housing"],["gas service","housing"],
-    ["water and sanitation","housing"],["internet service","housing"],
-    ["telecommunication","housing"],["local government","housing"],
+    ["water and sanitation","housing"],["internet service","telco"],
+    ["telecommunication","telco"],["local government","housing"],
     ["hotel","travel"],["air transport","travel"],["travel agenc","travel"],
     ["clothing","shop"],["apparel","shop"],["shoe","shop"],["hardware","shop"],
     ["school","edu"],["education","edu"],["universit","edu"],["book store","edu"],
