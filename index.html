@@ -14249,7 +14249,7 @@ margin-left: -22px;
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
     {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
     {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
-    {k:"post",     n:"快递物流", i:"📦", c:"#9b8ec4"},
+    {k:"post",     n:"快递 / 海运", i:"🚢", c:"#9b8ec4"},
     {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
     {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
     {k:"saving",   n:"存款 / 资产", i:"💰", c:"#3f9e7c"},
@@ -14322,6 +14322,14 @@ margin-left: -22px;
       // 照类目走会掉进购物 —— 但 APPLE.COM/BILL 是订阅，不是买东西。
       // 关键词这一层在 NZFCC 之前，所以能拦住。
       "apple.com","apple.com/bill","itunes","app store","google play","play store"],
+    // 快递 / 海运 —— 中新之间的集运海运公司（Chinz Logistics 这种）
+    // 跟本地快递放一类。"logistics"、"freight"、"forwarder" 是通用词，
+    // 独立小公司靠它们也能认出来。
+    // " ups " 两头都要留空格 —— 不然 "groups" 里就中了。
+    post:["chinz","logistics","freight","forwarder","forwarding","shipping",
+      "nz post","nzpost","new zealand couriers","courier","post haste","posthaste",
+      "castle parcels","fastway","aramex","mainfreight","dhl","fedex"," ups ",
+      "parcel","cargo","customs broker","sea freight","air freight"],
     fee:["account fee","monthly fee","service fee","transaction fee","foreign currency fee","offshore fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
     income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
     // 存起来的钱：定期、储蓄、KiwiSaver、基金。没花掉，回来时也不是收入，
@@ -14345,7 +14353,10 @@ margin-left: -22px;
     health:["医疗","药","看病","牙","体检","诊所","医院"],
     insure:["保险","车险","房险","寿险","投保","续保","保费"],
     tool:["五金","建材","工具","装修","油漆","木材","园艺","花园"],
-    shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
+    // 「快递」「海运」原本在购物里 —— 钱迹的一级分类就叫「快递/海运」，
+    // 227 笔全被算进了购物。搬到 post，购物这边要一并删掉，否则购物排在前面还是会抢走。
+    shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","家居","二手置换","退换货"],
+    post:["快递","海运","集运","物流","邮寄","包裹","运费","托运","空运","报关"],
     fun:["娱乐","会员","游戏","电影","旅行","运动","健身","钓鱼","订阅"],
     edu:["学习","书","课程","培训","学费","教育","文具"],
     soft:["软件","订阅","会员费","云服务","域名","服务器"],
@@ -14376,8 +14387,9 @@ margin-left: -22px;
     "hotels, motels, and other temporary accommodation":"travel",
     "travel agencies and tour operators":"travel",
     "motor parks, campgrounds, holiday parks, recreational camps":"travel",
-    // 快递物流
+    // 快递 / 海运
     "courier and freight delivery services":"post","postal services":"post",
+    "shipping and marine transport services":"post","freight forwarding services":"post",
     // 保险
     "insurance":"insure",
     // 住房 —— 修房子、园艺、垃圾、仓储都算住的开销，不是购物
@@ -14430,11 +14442,14 @@ margin-left: -22px;
     ["meat","grocery"],["seafood","grocery"],["specialty food","grocery"],
     ["restaurant","food"],["cafe","food"],["fast food","food"],["takeaway","food"],
     ["bakery","food"],["bakeries","food"],["bar","food"],["liquor","food"],
+    // 货运要排在 transport 之前 —— "Freight transport services" 里有 "transport"，
+    // 排在后面的话海运会被判成交通。
+    ["freight","post"],["shipping","post"],["courier","post"],["postal","post"],
     ["fuel","transport"],["parking","transport"],["rideshare","transport"],["taxi","transport"],
     ["automotive","transport"],["vehicle","transport"],["transport","transport"],
     ["pharmac","health"],["dental","health"],["doctor","health"],["medical","health"],
     ["hospital","health"],["optometr","health"],["physio","health"],
-    ["insurance","insure"],["courier","post"],["postal","post"],
+    ["insurance","insure"],
     ["rent","housing"],["electricity","housing"],["gas service","housing"],
     ["water and sanitation","housing"],["internet service","telco"],
     ["telecommunication","telco"],["local government","housing"],
