@@ -524,16 +524,21 @@
   /* 记账页表格列多（图标+摘要+分类+环比+金额+占比），940px 挤不下，
      大屏两边又全空着。放宽到 1400，小屏自动收窄。 */
   .mn-wrap{max-width:1400px;margin:0 auto}
-  .mn-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+  .mn-bar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:10px}
   .mn-bar .grow{flex:1}
-  .mn-bar .btn{padding:7px 13px;font-size:13px}
-  .mn-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px;max-width:220px}
-  .mn-nav{width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1}
+  .mn-bar .btn{padding:6px 11px;font-size:12.5px}
+  .mn-bar select{padding:6px 8px;border:1px solid var(--border);border-radius:9px;
+    background:var(--surface);color:var(--text);font-size:12.5px;max-width:210px}
+  /* 币种只有 NZD/CNY 这种三个字母，按内容给宽度就够，别占一整格 */
+  #mn-cur{width:auto;min-width:0;padding-right:4px}
+  .mn-nav{width:26px;height:26px;border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1}
   .mn-nav:hover{color:var(--text);border-color:var(--muted)}
-  .mn-month{font-size:15px;font-weight:650;min-width:96px;text-align:center}
-  .mn-range{display:inline-flex;align-items:center;gap:6px}
-  .mn-range input{padding:6px 9px;border:1px solid var(--border);border-radius:9px;
-    background:var(--surface);color:var(--text);font-size:12.5px}
+  .mn-month{font-size:14.5px;font-weight:650;min-width:0;white-space:nowrap;text-align:center;padding:0 2px}
+  /* .seg button 是全局的（税务页也在用），只收窄记账工具栏里这一处 */
+  #mn-scope button{padding:5px 10px;font-size:12.5px}
+  .mn-range{display:inline-flex;align-items:center;gap:5px}
+  .mn-range input{padding:5px 7px;border:1px solid var(--border);border-radius:9px;
+    background:var(--surface);color:var(--text);font-size:12px}
   .mn-range .to{color:var(--muted);font-size:13px}
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
@@ -554,8 +559,7 @@
   .mn-bal .n .q{opacity:.7}
   .mn-bal .b{font-size:16px;font-weight:680;letter-spacing:-.3px;white-space:nowrap;
     font-variant-numeric:tabular-nums}
-  .mn-bal.tot{cursor:default;background:var(--surface-2);border-style:dashed}
-  .mn-bal.tot:hover{border-color:var(--border)}
+  .mn-bal.tot{background:var(--surface-2);border-style:dashed}
   .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
   .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
   .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -14816,9 +14820,7 @@ margin-left: -22px;
   function mnInSpan(t,sp){var d=String(t&&t.d||"");return d>=sp[0]&&d<=sp[1];}
   function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
   function mnPeriodLabel(){
-    if(mnScope==="all"){
-      var ds=mnTxns.map(function(t){return t.d;}).filter(Boolean).sort();
-      return ds.length?("全部 "+ds[0]+" → "+ds[ds.length-1]):"全部";}
+    if(mnScope==="all")return "全部";
     if(mnScope==="year")return mnYear+" 年";
     if(mnScope==="range")return (mnFrom||"?")+" → "+(mnTo||"?");
     return (mnMonth||"").replace("-"," 年 ")+" 月";}
@@ -14898,7 +14900,9 @@ margin-left: -22px;
           '<div class="n">'+(sav?"💰 ":"")+esc(a.name||a.bank||"账户")+
             (a.num?('<span class="q"> ···'+esc(a.num)+'</span>'):"")+'</div>'+
           '<div class="b">'+mnMoney(a.bal,a.cur||"NZD")+'</div></div>';}).join("")+
-      '<div class="mn-bal tot"><div class="n">合计</div><div class="b">'+
+      // 合计这格兼作"取消账户筛选" —— 筛了之后总得有地方点回来
+      '<div class="mn-bal tot'+(mnAcct?"":" on")+'" data-bal="" title="看全部账户">'+
+        '<div class="n">合计 · 全部账户</div><div class="b">'+
         Object.keys(tot).map(function(c){return mnMoney(tot[c],c);}).join(" / ")+'</div></div>'+
       '</div>';}
 
@@ -14922,6 +14926,10 @@ margin-left: -22px;
     document.getElementById("mn-month").style.display=isRange?"none":"";
     ["mn-prev","mn-next"].forEach(function(id){
       document.getElementById(id).style.display=(mnScope==="all")?"none":"";});
+    // 「全部」的实际跨度写在标题里太长，会把工具栏挤到第二行 —— 放状态栏
+    if(mnScope==="all"){
+      var ds=mnTxns.map(function(t){return t.d;}).filter(Boolean).sort();
+      if(ds.length)document.getElementById("mn-month").title=ds[0]+" → "+ds[ds.length-1];}
     if(isRange){
       document.getElementById("mn-from").value=mnFrom;
       document.getElementById("mn-to").value=mnTo;}
@@ -14940,7 +14948,10 @@ margin-left: -22px;
     sel.innerHTML='<option value="">全部账户</option>'+accts.map(function(a){
       return '<option value="'+esc(a.id)+'"'+(a.id===mnAcct?" selected":"")+'>'+
         esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+"</option>";}).join("");
-    sel.style.display=accts.length?"":"none";
+    // 上面的余额卡片点一下就能筛账户，两个入口做同一件事 ——
+    // 有卡片时就藏掉这个下拉，给工具栏腾地方
+    var hasCards=accts.some(function(a){return typeof a.bal==="number";});
+    sel.style.display=(accts.length&&!hasCards)?"":"none";
 
 
     if(!mnTxns.length){
@@ -15502,8 +15513,9 @@ margin-left: -22px;
           return;}}
       function mnOnClick(e){
         var bal=e.target.closest("[data-bal]");
-        if(bal){var bk=bal.getAttribute("data-bal");
-          mnAcct=(mnAcct===bk)?"":bk;mnPick="";mnRender();return;}
+        if(bal){var bk=bal.getAttribute("data-bal")||"";
+          mnAcct=(bk&&mnAcct===bk)?"":bk;    // 再点一次取消；合计那格的 bk 是空串 = 全部
+          mnPick="";mnSrc="";mnRender();return;}
         var side=e.target.closest("[data-side]");
         if(side){mnSide=side.getAttribute("data-side");mnPick="";mnSrc="";mnRender();return;}
         var src=e.target.closest("[data-src]");
