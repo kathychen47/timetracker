@@ -579,6 +579,8 @@
   .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
   .mn-row .am small.nofx{color:#d9534f}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
+  .mn-side{float:right;margin-top:-4px}
+  .mn-side button{padding:4px 13px;font-size:12px}
   .mn-donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
   .mn-donut{width:148px;height:148px;border-radius:50%;flex:none;position:relative}
   .mn-donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
@@ -14359,7 +14361,7 @@ margin-left: -22px;
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
-  var mnScope="month",mnYear=0;
+  var mnScope="month",mnYear=0,mnSide="out",mnSrc="";
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
@@ -14700,7 +14702,7 @@ margin-left: -22px;
     else{var p=(mnMonth||mnYmd(new Date()).slice(0,7)).split("-");
       var d=new Date(+p[0],+p[1]-1+n,1);
       mnMonth=d.getFullYear()+"-"+mnP2(d.getMonth()+1);}
-    mnPick="";mnRender();}
+    mnPick="";mnSrc="";mnRender();}
   // 币种是硬隔离，不是筛选项 —— NZD 和 CNY 加在一起得出的数字没有任何意义，
   // 所以页面任何时候都只在看一种货币，不提供"全部"这个选项。
   function mnBase(t){
@@ -14712,6 +14714,7 @@ margin-left: -22px;
       if(!mnBase(t))return false;
       // 转账和存款本来就不进合计，不想看见的话连明细里也藏掉
       if(mnCfg.hideTf&&MN_NEUTRAL[t.cat]&&mnPick!==t.cat)return false;
+      if(mnSide==="in"&&mnSrc)return t.amt>0&&mnPayer(t)===mnSrc;
       return !mnPick||t.cat===mnPick;});}
   function mnCatOpts(sel){
     return mnCats().map(function(c){
@@ -14732,8 +14735,26 @@ margin-left: -22px;
 
   // 一段期间的收支合计。转账一律不算 —— 自己账户之间倒钱两边一进一出，
   // 算进去会把收入和支出同时凭空抬高。
+  // 收入没有"分类"可分 —— 全是 income 这一类。有意义的分法是按来源：
+  // 你的工资、Pingping 的工资、房租、定期利息。银行摘要里带流水号和日期，
+  // 每笔都不一样，所以要先归一化才能聚在一起。
+  function mnPayer(t){
+    // 你自己定的归并规则最优先。同一个人付款，银行摘要写法可能有好几种
+    // （CAI,YUELE NZPost / NZP-Michael / Nzp …），只有你知道它们是同一笔来源。
+    var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
+    var pm=mnCfg.payers||{};
+    for(var nm in pm){
+      if(pm[nm]&&pm[nm].length&&mnHit(hay,pm[nm]))return nm;}
+    if(t.merchant)return t.merchant;
+    var s=String(t.desc||"").trim();
+    if(/INT WBC/i.test(s))return "定期利息";
+    if(/I\.R\.D|INLAND REVENUE/i.test(s))return "IRD 退税";
+    // 取前两个词：'UNIVERSITY CNTBRY UOC NET PAY 260805' → 'UNIVERSITY CNTBRY'
+    var w=s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");
+    return w.slice(0,34)||"（无摘要）";}
+
   function mnAgg(list){
-    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},noFx:0};
+    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},src:{},noFx:0};
     var sa=mnSavAccts(),hasSa=sa.__n>0;
     list.forEach(function(t){
       // 折算模式下缺汇率的那几笔宁可不算，也不能悄悄按 0 塞进去
@@ -14747,7 +14768,8 @@ margin-left: -22px;
         else if(t.cat==="saving"){o.sav+=-a;o.nSav++;}
         return;}
       if(a<0){o.out+=-a;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-a);}
-      else if(a>0){o.inc+=a;o.nIn++;}});
+      else if(a>0){o.inc+=a;o.nIn++;
+        var pk=mnPayer(t);o.src[pk]=(o.src[pk]||0)+a;}});
     return o;}
 
   // 这段期间要交多少税。数据来自税务页 —— 只有你点过「记入税务」的那些收入
@@ -14873,29 +14895,46 @@ margin-left: -22px;
         '</b> 笔（实收 '+mnMoney(TX.gross)+'）—— 已经在发薪时扣过 PAYE 的工资不该记进去，'+
         '否则这里会算重。真扣税之后回来对一下，差多少一目了然。</div>'):"");
 
-    // 分类统计：环形图 + 列表（带环比）
-    var sum=A.cat,ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
-    if(ranked.length){
+    // 分类统计：支出按分类、收入按来源。两边共用同一套环形图 + 列表。
+    var isIn=(mnSide==="in");
+    var sum=isIn?A.src:A.cat, prev=isIn?P.src:P.cat, tot=isIn?A.inc:A.out;
+    var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
+    // 收入来源没有固定颜色，按排名从一个色盘里取
+    var SRCC=["#4fae7d","#5f9bd8","#eeb85f","#c77fd0","#61c4cf","#e06c5a","#8bb04f","#7c83e6","#b0895f","#9aa1b0"];
+    var meta=function(k,i){
+      return isIn?{i:"💵",n:k,c:SRCC[i%SRCC.length]}:(MN_CAT[k]||MN_CAT.other);};
+    var toggle='<div class="seg mn-side" id="mn-side">'+
+      [["out","支出"],["in","收入"]].map(function(x){
+        return '<button data-side="'+x[0]+'"'+(mnSide===x[0]?' class="on"':"")+'>'+x[1]+'</button>';}).join("")+
+      '</div>';
+    h+='<div class="panel"><h3>'+(isIn?"收入来源":"分类统计")+
+      ' <span style="font-weight:400;color:var(--muted);font-size:12px">'+
+      (isIn?"点一类只看那一类 · 银行摘要按前两个词归并":"点一类只看那一类")+
+      ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span>'+toggle+'</h3>';
+    if(!ranked.length){
+      h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+'没有'+(isIn?"收入":"支出")+'</div></div>';
+    }else{
       var acc=0,stops=[];
-      ranked.forEach(function(k){
-        var c=MN_CAT[k]||MN_CAT.other,a0=acc/A.out*100;acc+=sum[k];
-        stops.push(c.c+" "+a0.toFixed(2)+"% "+(acc/A.out*100).toFixed(2)+"%");});
-      h+='<div class="panel"><h3>分类统计 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
-        '点一类只看那一类 · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span></h3>'+
-        '<div class="mn-donut-wrap">'+
+      ranked.forEach(function(k,i){
+        var c=meta(k,i),a0=acc/tot*100;acc+=sum[k];
+        stops.push(c.c+" "+a0.toFixed(2)+"% "+(acc/tot*100).toFixed(2)+"%");});
+      h+='<div class="mn-donut-wrap">'+
         '<div class="mn-donut" style="background:conic-gradient('+stops.join(",")+');'+
           '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
-          '<div class="mid"><span class="t">总计</span><span class="v">'+mnMoney(-A.out)+'</span></div></div>'+
+          '<div class="mid"><span class="t">'+(isIn?"收入合计":"支出合计")+'</span>'+
+          '<span class="v">'+mnMoney(isIn?tot:-tot)+'</span></div></div>'+
         '<div class="mn-cats" style="flex:1;min-width:280px">'+
-        ranked.map(function(k){
-          var c=MN_CAT[k]||MN_CAT.other,v=sum[k],pv=P.cat[k]||0;
-          return '<div class="mn-cat'+(mnPick&&mnPick!==k?" off":"")+'" data-pick="'+k+'">'+
-            '<span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
+        ranked.map(function(k,i){
+          var c=meta(k,i),v=sum[k],pv=prev[k]||0;
+          var on=isIn?(mnSrc&&mnSrc!==k):(mnPick&&mnPick!==k);
+          return '<div class="mn-cat'+(on?" off":"")+'" '+
+            (isIn?('data-src="'+esc(k)+'"'):('data-pick="'+esc(k)+'"'))+'>'+
+            '<span class="nm" title="'+esc(c.n)+'">'+c.i+" "+esc(c.n)+'</span>'+
             '<span class="track"><span class="fill" style="width:'+
               Math.max(2,v/sum[ranked[0]]*100).toFixed(1)+'%;background:'+c.c+'"></span></span>'+
             '<span class="dlt">'+delta(v,pv)+'</span>'+
-            '<span class="amt">'+mnMoney(-v)+'</span>'+
-            '<span class="pct">'+(A.out?Math.round(v/A.out*100):0)+'%</span></div>';}).join("")+
+            '<span class="amt">'+mnMoney(isIn?v:-v)+'</span>'+
+            '<span class="pct">'+(tot?Math.round(v/tot*100):0)+'%</span></div>';}).join("")+
         '</div></div></div>';}
 
     // 明细，按天分组，日期行右边给当天合计
@@ -14967,6 +15006,7 @@ margin-left: -22px;
       mnAcctHtml()+
       mnTaxAcctHtml()+
       mnCustomHtml()+
+      mnPayerHtml()+
       mnFxHtml()+
       mnDataHtml()+
       '<div class="panel"><h3>分类规则 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
@@ -15051,6 +15091,31 @@ margin-left: -22px;
       '新分类<b>不会自动命中任何交易</b> —— 加完去下面「分类规则」给它写几个关键词，'+
       '或者在明细里点某笔的分类标签手动改。<br>'+
       '删掉一个分类时，归在它名下的记录会退回「其他」。改名字/图标不影响已有记录。</div></div>';}
+
+  // 收入来源归并。同一个人付款，银行摘要可能有好几种写法
+  // （CAI,YUELE NZPost / CAI,YUELE NZP-Michael / CAI,YUELE Nzp），
+  // 自动归并只能按前两个词切，切不到一起 —— 只有你知道它们是同一个来源。
+  function mnPayerHtml(){
+    var pm=mnCfg.payers||{},names=Object.keys(pm);
+    // 把这段期间实际出现过的来源列出来，方便照着填
+    var seen={};
+    mnTxns.forEach(function(t){
+      if(t.amt>0&&!MN_NEUTRAL[t.cat]&&mnKeyOf(t)===mnCurKey())seen[mnPayer(t)]=1;});
+    return '<div class="panel"><h3>收入来源归并</h3>'+
+      (names.length?names.map(function(n){
+        return '<div class="mn-rule"><span class="nm">'+esc(n)+'</span>'+
+          '<input data-pay="'+esc(n)+'" value="'+esc((pm[n]||[]).join(", "))+'" placeholder="关键词，逗号分隔">'+
+          '<button class="btn" data-paydel="'+esc(n)+'" style="padding:4px 9px;font-size:12px">删</button></div>';}).join("")
+        :'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">还没设过。</div>')+
+      '<div class="mn-rule" style="margin-top:10px"><span class="nm">新来源</span>'+
+      '<input data-paynew placeholder="显示成什么名字，比如「Pingping 工资」">'+
+      '<input data-paynewk placeholder="关键词，比如 cai,yuele">'+
+      '<button class="btn primary" data-payadd style="padding:5px 12px;font-size:12px">添加</button></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      '摘要里出现这些词就归到这个名字下。改完立刻生效。<br>'+
+      (Object.keys(seen).length?('这'+(mnScope==="year"?"年":"个月")+'出现过的来源：<b>'+
+        Object.keys(seen).map(esc).join("</b>、<b>")+'</b>'):"")+
+      '</div></div>';}
 
   // 汇率面板。默认去拉当日汇率，但拉回来的值是填进输入框的 ——
   // 你随时可以改成自己认的数字，改完就以你的为准，不会被下次拉取悄悄覆盖
@@ -15254,6 +15319,12 @@ margin-left: -22px;
           var fld=t.hasAttribute("data-cn")?"n":(t.hasAttribute("data-ci")?"i":"c");
           (mnCfg.cats||[]).forEach(function(c){if(c.k===key)c[fld]=t.value||(fld==="i"?"🏷":c[fld]);});
           save("tt_mncfg",mnCfg);mnCatIdx();mnStatus("分类已改");mnRender();return;}
+        if(t.matches("[data-pay]")){
+          var pn=t.getAttribute("data-pay");
+          var ws=t.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
+          mnCfg.payers=mnCfg.payers||{};
+          if(ws.length)mnCfg.payers[pn]=ws;else delete mnCfg.payers[pn];
+          save("tt_mncfg",mnCfg);mnStatus("「"+esc(pn)+"」的归并词已保存");mnRender();return;}
         if(t.matches("[data-fxbase]")){
           mnCfg.base=t.value;save("tt_mncfg",mnCfg);
           mnStatus("主币种改成 <b>"+esc(t.value)+"</b>，已保存");mnRender();return;}
@@ -15269,6 +15340,10 @@ margin-left: -22px;
         var bal=e.target.closest("[data-bal]");
         if(bal){var bk=bal.getAttribute("data-bal");
           mnAcct=(mnAcct===bk)?"":bk;mnPick="";mnRender();return;}
+        var side=e.target.closest("[data-side]");
+        if(side){mnSide=side.getAttribute("data-side");mnPick="";mnSrc="";mnRender();return;}
+        var src=e.target.closest("[data-src]");
+        if(src){var sk=src.getAttribute("data-src");mnSrc=(mnSrc===sk)?"":sk;mnRender();return;}
         var pick=e.target.closest("[data-pick]");
         if(pick){var k=pick.getAttribute("data-pick");mnPick=(mnPick===k)?"":k;mnRender();return;}
         var tax=e.target.closest("[data-tax]");
@@ -15292,6 +15367,18 @@ margin-left: -22px;
         if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
+        if(e.target.closest("[data-payadd]")){
+          var pn=((document.querySelector("#mn-body [data-paynew]")||{}).value||"").trim();
+          var pk=((document.querySelector("#mn-body [data-paynewk]")||{}).value||"").trim();
+          if(!pn||!pk){mnStatus("名字和关键词都要填",true);return;}
+          mnCfg.payers=mnCfg.payers||{};
+          mnCfg.payers[pn]=pk.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
+          save("tt_mncfg",mnCfg);mnStatus("已把含「"+esc(pk)+"」的收入归到「"+esc(pn)+"」");
+          mnRender();return;}
+        var pd=e.target.closest("[data-paydel]");
+        if(pd){var dn=pd.getAttribute("data-paydel");
+          delete (mnCfg.payers||{})[dn];save("tt_mncfg",mnCfg);
+          mnStatus("已删掉「"+esc(dn)+"」");mnRender();return;}
         if(e.target.closest("[data-cadd]")){
           var nm=(document.querySelector("#mn-body [data-cnew]")||{}).value||"";
           nm=nm.trim();
