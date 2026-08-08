@@ -15270,9 +15270,6 @@ margin-left: -22px;
         return '<div class="mn-cat" style="cursor:default">'+
           '<span class="nm" style="width:auto;flex:1">'+esc(mnAcctLabel(a))+
             (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+
-            // 银行原名跟在后面，对账时能对上号
-            (a.name&&a.name!==mnAcctLabel(a)
-              ? ('<span style="color:var(--muted);font-size:11px"> · '+esc(a.name)+'</span>'):"")+
             (a.type?('<span style="color:var(--muted);font-size:11px"> · '+esc(a.type)+'</span>'):"")+'</span>'+
           '<span class="amt" style="width:120px">'+
             (typeof a.bal==="number"?mnMoney(a.bal,a.cur||"NZD"):"—")+'</span></div>';}).join("")+
@@ -15341,10 +15338,10 @@ margin-left: -22px;
     var accts=mnCfg.accts||[],ow=mnCfg.owners||{};
     var ownerBlock=accts.length?('<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按账户归属</div>'+
       accts.map(function(a){
-        // 这一栏是"给账户改名"的地方，左边必须显示银行原名，
-        // 否则改完之后两边都是新名字，你就分不清哪一行对应哪个账户了
+        // 银行原名（Kaisi Chen / Joint Account）不在界面上出现，
+        // 靠账号后四位区分是哪个账户；原名放悬停提示里，需要对账时才看
         return '<div class="mn-rule"><span class="nm" title="'+esc(a.name||a.bank||"")+'">'+
-          esc(a.name||a.bank||"账户")+
+          esc(mnAcctLabel(a))+
           (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+'</span>'+
           '<input data-own="'+esc(a.id)+'" value="'+esc(ow[a.id]||"")+
           '" placeholder="'+esc(mnAcctLabel(a))+'（默认，可以改）"></div>';}).join("")+
