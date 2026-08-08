@@ -15447,7 +15447,12 @@ margin-left: -22px;
       'CSV 给你自己在 Excel 里看；JSON 是原样导出（含 Akahu 的类目字段），'+
       '分类不准时把 JSON 发我，我照真实数据补规则。<br>'+
       '删掉的记录如果曾经「记入税务」，税务页那一条会一起撤掉。<br>'+
-      '银行同步的删了还能再同步回来（只要不早于起始日期）；导入的要重新导文件。</div></div>';}
+      '<b style="color:#d9534f">Akahu 只给得出有限的历史</b>（上面那行「银行同步」的起始日'+
+      '就是极限）。比它更早的记录，这个账本里的就是唯一一份 —— '+
+      '云同步救不了你，因为在这里清空，云端也会被同步成空。<br>'+
+      '所以点任何一个清空按钮，都会<b>先自动导一份 JSON 到下载文件夹</b>。'+
+      '银行同步的删了还能再拉回来（不早于 Akahu 的极限就行）；导入和手记的只能靠那份备份。'+
+      '</div></div>';}
 
   // 导出整本账。JSON 是原样的，含 Akahu 给的 acat/agrp —— 分类不准时
   // 看这两个字段就知道是规则没覆盖，还是 Akahu 本来就没标。
@@ -15706,11 +15711,25 @@ margin-left: -22px;
         var clr=e.target.closest("[data-clr]");
         if(clr){
           var kind=clr.getAttribute("data-clr"),label=clr.textContent.trim();
-          ttConfirm("确定「"+label+"」？\n这个动作撤不回来。",{danger:true,anchor:clr}).then(function(ok){
+          // Akahu 只给得出有限的历史，比它更早的数据这个账本就是唯一一份 ——
+          // 清空之前先自动导一份，不指望你记得手动备份。
+          ttConfirm("确定「"+label+"」？\n撤不回来。会先自动导出一份备份到下载文件夹。",
+            {danger:true,anchor:clr}).then(function(ok){
             if(!ok)return;
+            try{mnExport("json");}catch(e2){}
+            // 「全部清空」会把比 Akahu 能给的还早的那段一起删掉，那段没处找回来。
+            // 备份已经导了，但还是再挡一下 —— 这一步撤不回来。
+            var risky=(kind==="all"||kind==="imp");
+            var pre=risky?mnTxns.filter(function(t){
+              return t.src!=="akahu";}).length:0;
+            (risky&&pre?ttConfirm("再确认一次：这会删掉 "+pre+
+              " 笔银行同步不回来的记录（导入的和手记的）。\n备份已经导到下载文件夹了，真的要删？",
+              {danger:true,okText:"删",anchor:clr}):Promise.resolve(true)).then(function(ok2){
+            if(!ok2)return;
             var r=mnClear(kind);
-            mnStatus("删掉了 <b>"+r.n+"</b> 笔"+(r.tax?("，同时撤掉 "+r.tax+" 条税务记录"):""));
-            mnRender();try{renderTax();}catch(e2){}});
+            mnStatus("删掉了 <b>"+r.n+"</b> 笔"+(r.tax?("，同时撤掉 "+r.tax+" 条税务记录"):"")+
+              "　·　备份已导到下载文件夹");
+            mnRender();try{renderTax();}catch(e2){}});});
           return;}
         if(e.target.id==="mn-rule-save"){
           // 日期/主币种/汇率在 change 事件里已经各自存好了，这里只管分类规则
