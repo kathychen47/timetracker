@@ -14066,22 +14066,35 @@ margin-left: -22px;
     {k:"transfer", n:"转账",     i:"↔", c:"#9aa1b0"},
     {k:"other",    n:"其他",     i:"📦", c:"#a8adba"}
   ];
-  var MN_CAT={};MN_CATS.forEach(function(c){MN_CAT[c.k]=c;});
+  // 内置的那些是死的，你自己加的存在 mnCfg.cats 里，两边合起来才是完整的分类表。
+  // 自定义分类没有内置关键词，靠 ⚙️ 设置里的分类规则来命中。
+  var MN_CAT={};
+  function mnCats(){return MN_CATS.concat(mnCfg&&mnCfg.cats||[]);}
+  function mnCatIdx(){MN_CAT={};mnCats().forEach(function(c){MN_CAT[c.k]=c;});}
+  // 进账时只允许这几类 —— 不然「UNIVERSITY CNTBRY UOC NET PAY」会因为
+  // 含 "university" 被判成教育支出，工资就成了学费
+  var MN_IN_OK={income:1,transfer:1,other:1};
   // 内置关键词按新西兰常见商户写的。匹配的干草堆两头补了空格，
   // 所以想要「整词」的关键词自己带前导空格（" rent" 不会被 "current" 撞上）。
   var MN_KW={
     // 除了大连锁，也放通用词 —— Akahu 万一没给类目，靠这些还能认出独立小店
     grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy",
-      "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"],
-    food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell "],
+      "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"," meat","meat "],
+    food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell ","old street","hotpot","ramen","dim sum","yum cha","charcoal","grill","canteen"],
     transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
     housing:[" rent","tenancy","property manag","spark nz","vodafone","one nz","2degrees","skinny","contact energy","mercury","genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy","watercare","city council","district council"," rates","chorus","body corp"],
     health:["pharmacy","chemist","unichem","medical","dental","dentist","physio","optometr","specsavers","radiology","southern cross"," nib ","accuro","white cross"],
     shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu"],
     fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","youtube premium","audible","kindle","patreon","twitch"],
     edu:["university","massey","unitec","studylink","student loan","coursera","udemy","duolingo","tuition"],
+    // 新西兰的保险公司。"insurance" 这个通用词能覆盖大半（AA INSURANCE、
+    // STATE INSURANCE 都带这词），剩下的按品牌补。
+    // 短名要留空格：" ami " 不能写成 "ami"，否则 "family"、"Miami" 全中招。
+    insure:["insurance","insurer","policy renewal"," ami ","ami ins","aa insurance","aa life",
+      "state ins","tower ins","vero","fmg ","nzi ","initio","cove ins","ando ins",
+      "partners life","asteron","fidelity life","aioi","trade me ins","suncorp"],
     fee:["account fee","monthly fee","service fee","transaction fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
-    income:["salary","wages","payroll","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
+    income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
     transfer:["transfer","tfr ","to a/c","from a/c","internet banking"]
   };
   // 从钱迹搬过来的历史账用的是中文分类（"吃"2204 笔、"快递/海运"227 笔这种），
@@ -14089,9 +14102,10 @@ margin-left: -22px;
   var MN_KW_ZH={
     grocery:["买菜","超市","水果","菜市","生鲜","零食","粮油"],
     food:["吃","餐","外卖","饭","饮料","奶茶","咖啡","下午茶","夜宵","食堂","小吃","烧烤","火锅"],
-    transport:["交通","油","加油","地铁","公交","打车","停车","通勤","汽车","车险","维修保养","机票","高铁","火车","自行车","路费"],
+    transport:["交通","油","加油","地铁","公交","打车","停车","通勤","汽车","维修保养","高铁","火车","自行车","路费"],
     housing:["住房","房租","水电","水电网","话费","网费","物业","燃气","宽带","租金"],
-    health:["医疗","药","看病","牙","体检","保险","诊所","医院"],
+    health:["医疗","药","看病","牙","体检","诊所","医院"],
+    insure:["保险","车险","房险","寿险","投保","续保","保费"],
     shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
     fun:["娱乐","会员","游戏","电影","旅行","运动","健身","钓鱼","订阅"],
     edu:["学习","书","课程","培训","学费","教育","文具"],
@@ -14174,7 +14188,8 @@ margin-left: -22px;
   var MN_SYM={NZD:"$",AUD:"$",USD:"$",CNY:"¥",HKD:"$",GBP:"£",EUR:"€",JPY:"¥"};
   var mnTxns=load("tt_txns",[])||[];
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
-  var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts:[…]}
+  var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
+  mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
   var mnScope="month",mnYear=0;
   function mnSave(){save("tt_txns",mnTxns);}
@@ -14218,21 +14233,26 @@ margin-left: -22px;
   function mnGuess(t){
     var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
     // 1) 你自己加的规则 —— 内置表永远猜不到「房东 Mike」这种
-    for(var i=0;i<MN_CATS.length;i++){var k=MN_CATS[i].k;
+    var cats=mnCats(),inc=(+t.amt>0);
+    for(var i=0;i<cats.length;i++){var k=cats[i].k;
       if(mnRules[k]&&mnRules[k].length&&mnHit(hay,mnRules[k]))return k;}
     // 2) 内置商户表：英文（新西兰常见商户）+ 中文（钱迹搬来的分类名）
-    for(var j=0;j<MN_CATS.length;j++){var k2=MN_CATS[j].k;
+    //    进账只许落到收入/转账/其他 —— 否则「UNIVERSITY … NET PAY」这笔工资
+    //    会因为含 "university" 被判成教育支出。你自己写的规则不受这条限制。
+    for(var j=0;j<cats.length;j++){var k2=cats[j].k;
+      if(inc&&!MN_IN_OK[k2])continue;
       if(MN_KW[k2]&&mnHit(hay,MN_KW[k2]))return k2;
       if(MN_KW_ZH[k2]&&mnHit(hay,MN_KW_ZH[k2]))return k2;}
     // 3) Akahu 按 NZFCC 标好的类目 —— 先对具体类目名，再退到分组。
     //    这一层比关键词可靠得多：它认得出独立小店，而品牌名表永远认不出。
-    var an=String(t.acat||"").toLowerCase().trim();
+    var an=String(t.acat||"").toLowerCase().trim(),g3=null;
     if(an){
-      if(MN_NZ_CAT[an])return MN_NZ_CAT[an];
-      for(var w=0;w<MN_NZ_WORD.length;w++)
-        if(an.indexOf(MN_NZ_WORD[w][0])>=0)return MN_NZ_WORD[w][1];}
-    var ag=String(t.agrp||"").trim();
-    if(ag&&MN_NZ_GROUP[ag])return MN_NZ_GROUP[ag];
+      if(MN_NZ_CAT[an])g3=MN_NZ_CAT[an];
+      else for(var w=0;w<MN_NZ_WORD.length&&!g3;w++)
+        if(an.indexOf(MN_NZ_WORD[w][0])>=0)g3=MN_NZ_WORD[w][1];}
+    if(!g3){var ag=String(t.agrp||"").trim();
+      if(ag&&MN_NZ_GROUP[ag])g3=MN_NZ_GROUP[ag];}
+    if(g3&&!(inc&&!MN_IN_OK[g3]))return g3;
     // 4) 认不出来：进账当收入，出账当其他
     return (+t.amt>0)?"income":"other";}
 
@@ -14508,7 +14528,7 @@ margin-left: -22px;
     return mnTxns.filter(function(t){
       return mnBase(t)&&(!mnPick||t.cat===mnPick);});}
   function mnCatOpts(sel){
-    return MN_CATS.map(function(c){
+    return mnCats().map(function(c){
       return '<option value="'+c.k+'"'+(c.k===sel?" selected":"")+'>'+c.i+" "+c.n+"</option>";}).join("");}
   // ---- 统计 ----
   // 一切都按「当前期间 + 当前币种 + 当前账户」算。期间可以是一个月也可以是一年，
@@ -14654,7 +14674,11 @@ margin-left: -22px;
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
           // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
           // 人民币的收租记进去毫无意义。转账也排除：自己账户之间倒钱不是收入。
+          // 再加一道账户闸：已经扣过税的 NET PAY 工资记进税务页会算重，
+          // 所以只在你指定的那个「税务账户」上给按钮
           (t.amt>0&&mnCurOf(t)==="NZD"&&t.cat!=="transfer"
+           &&mnCfg.taxAcct!=="__none"
+           &&(!mnCfg.taxAcct||t.acct===mnCfg.taxAcct)
             ? ('<button class="tag'+(t.tax?" guess":"")+'" data-tax="'+esc(t.id)+'" title="'+
                (t.tax?"已经记进税务了，点一下撤回":"把这笔算进税务页的收入")+'">'+
                (t.tax?"已记税 ✓":"记入税务")+'</button>')
@@ -14679,11 +14703,13 @@ margin-left: -22px;
       '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
       '<b>改完立刻生效</b>，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。<br>'+
       '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面「账本数据」里的按钮。</div></div>'+
+      mnTaxAcctHtml()+
+      mnCustomHtml()+
       mnFxHtml()+
       mnDataHtml()+
       '<div class="panel"><h3>分类规则 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
       '摘要或商户名里出现这些词，就归到那一类 · 逗号分隔 · 你写的优先级高于内置</span></h3>'+
-      MN_CATS.map(function(c){
+      mnCats().map(function(c){
         return '<div class="mn-rule"><span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
           '<input data-rule="'+c.k+'" value="'+esc((mnRules[c.k]||[]).join(", "))+
           '" placeholder="'+esc((MN_KW[c.k]||[]).slice(0,3).join(", ")||"（没有内置词）")+'"></div>';}).join("")+
@@ -14693,6 +14719,50 @@ margin-left: -22px;
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
       '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
+
+  // 哪个账户的进账要算税。
+  // Kaisi 的 UC 工资是 NET PAY，发到手时 PAYE 已经扣过了，再记进税务页会重复算；
+  // Pingping 那笔进 joint 账户的才需要自己算 PAYE/ACC/GST。
+  // 所以「记入税务」按钮只在这个账户的进账上出现，避免手滑点错。
+  function mnTaxAcctHtml(){
+    var accts=mnCfg.accts||[];
+    if(!accts.length)return "";
+    return '<div class="panel"><h3>税务账户</h3>'+
+      '<div class="mn-rule"><span class="nm">要算税的账户</span>'+
+      '<select data-taxacct style="flex:1;padding:6px 9px;border:1px solid var(--border);'+
+        'border-radius:8px;background:var(--bg);color:var(--text);font-size:12px">'+
+      '<option value="">（不限，所有 NZD 进账都能记）</option>'+
+      '<option value="__none"'+(mnCfg.taxAcct==="__none"?" selected":"")+'>（关掉，不显示这个按钮）</option>'+
+      accts.map(function(a){
+        return '<option value="'+esc(a.id)+'"'+(a.id===mnCfg.taxAcct?" selected":"")+'>'+
+          esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+'</option>';}).join("")+
+      '</select></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">'+
+      '选定之后，只有这个账户的 NZD 进账才会显示「记入税务」按钮。<br>'+
+      '<b>已经扣过税的工资（NET PAY）不要记进税务页</b> —— 税务页是拿实收金额反推 '+
+      'PAYE / ACC / GST 的，把到手金额填进去会算重。<br>改完立刻生效。</div></div>';}
+
+  // 自己加分类。内置那 15 个是按新西兰常见开销定的，不可能贴合每个人 ——
+  // 加的分类没有内置关键词，靠下面「分类规则」里写词来命中。
+  function mnCustomHtml(){
+    var cs=mnCfg.cats||[];
+    return '<div class="panel"><h3>自定义分类</h3>'+
+      (cs.length?cs.map(function(c){
+        return '<div class="mn-rule"><span class="nm">'+esc(c.i||"🏷")+" "+esc(c.n)+'</span>'+
+          '<input data-cn="'+esc(c.k)+'" value="'+esc(c.n)+'" placeholder="名字">'+
+          '<input data-ci="'+esc(c.k)+'" value="'+esc(c.i||"")+'" placeholder="emoji" style="flex:0 0 70px;text-align:center">'+
+          '<input type="color" data-cc="'+esc(c.k)+'" value="'+esc(c.c||"#9aa1b0")+'" style="flex:0 0 40px;padding:2px;height:30px">'+
+          '<button class="btn" data-cdel="'+esc(c.k)+'" style="padding:4px 9px;font-size:12px">删</button></div>';}).join("")
+        :'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">还没加过。</div>')+
+      '<div class="mn-rule" style="margin-top:10px">'+
+      '<span class="nm">新分类</span>'+
+      '<input data-cnew placeholder="名字，比如「人情」「宠物」">'+
+      '<input data-cnewi placeholder="emoji" style="flex:0 0 70px;text-align:center">'+
+      '<button class="btn primary" data-cadd style="padding:5px 12px;font-size:12px">添加</button></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      '新分类<b>不会自动命中任何交易</b> —— 加完去下面「分类规则」给它写几个关键词，'+
+      '或者在明细里点某笔的分类标签手动改。<br>'+
+      '删掉一个分类时，归在它名下的记录会退回「其他」。改名字/图标不影响已有记录。</div></div>';}
 
   // 汇率面板。默认去拉当日汇率，但拉回来的值是填进输入框的 ——
   // 你随时可以改成自己认的数字，改完就以你的为准，不会被下次拉取悄悄覆盖
@@ -14878,12 +14948,24 @@ margin-left: -22px;
         if(t.matches("[data-since]")){
           var sv=String(t.value||"").trim();
           if(!/^\d{4}-\d{2}-\d{2}$/.test(sv))return;
+          // 日期框是逐段输入的，年份打到第一位时 "04/01/0002" 就已经是合法日期，
+          // change 会当场触发。这里既不能存这种半截值，更不能 mnRender() ——
+          // 重画会把你正在输入的框连同焦点一起销毁，看起来就是"打不进字"。
+          if(+sv.slice(0,4)<2000)return;
           mnCfg.since=sv;save("tt_mncfg",mnCfg);
           var pre=mnTxns.filter(function(x){return x.d<sv;}).length;
-          mnStatus("起始日期改成 <b>"+esc(sv)+"</b>，已保存"+
-            (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清的话用下面「账本数据」那个按钮"):"")+
-            "　·　点 🔄 同步 就会从这天开始拉");
-          mnRender();return;}
+          mnStatus("起始日期 <b>"+esc(sv)+"</b> 已保存"+
+            (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清用下面「账本数据」里的按钮"):"")+
+            "　·　点 🔄 同步 就从这天开始拉");
+          return;}
+        if(t.matches("[data-taxacct]")){
+          mnCfg.taxAcct=t.value;save("tt_mncfg",mnCfg);
+          mnStatus("税务账户已保存");mnRender();return;}
+        if(t.matches("[data-cn]")||t.matches("[data-ci]")||t.matches("[data-cc]")){
+          var key=t.getAttribute("data-cn")||t.getAttribute("data-ci")||t.getAttribute("data-cc");
+          var fld=t.hasAttribute("data-cn")?"n":(t.hasAttribute("data-ci")?"i":"c");
+          (mnCfg.cats||[]).forEach(function(c){if(c.k===key)c[fld]=t.value||(fld==="i"?"🏷":c[fld]);});
+          save("tt_mncfg",mnCfg);mnCatIdx();mnStatus("分类已改");mnRender();return;}
         if(t.matches("[data-fxbase]")){
           mnCfg.base=t.value;save("tt_mncfg",mnCfg);
           mnStatus("主币种改成 <b>"+esc(t.value)+"</b>，已保存");mnRender();return;}
@@ -14913,6 +14995,35 @@ margin-left: -22px;
         if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
+        if(e.target.closest("[data-cadd]")){
+          var nm=(document.querySelector("#mn-body [data-cnew]")||{}).value||"";
+          nm=nm.trim();
+          if(!nm){mnStatus("先给新分类起个名字",true);return;}
+          var ic=((document.querySelector("#mn-body [data-cnewi]")||{}).value||"").trim()||"🏷";
+          mnCfg.cats=mnCfg.cats||[];
+          if(mnCats().some(function(c){return c.n===nm;})){
+            mnStatus("已经有叫「"+esc(nm)+"」的分类了",true);return;}
+          // key 必须永久稳定 —— 记录里存的就是它，改名字不能影响已有记录
+          mnCfg.cats.push({k:"u_"+uid(),n:nm,i:ic,c:"#8b93a8"});
+          save("tt_mncfg",mnCfg);mnCatIdx();
+          mnStatus("加好了「"+esc(ic+" "+nm)+"」—— 去下面「分类规则」给它写几个关键词");
+          mnRender();return;}
+        var cdel=e.target.closest("[data-cdel]");
+        if(cdel){
+          var dk=cdel.getAttribute("data-cdel"),dc=null;
+          (mnCfg.cats||[]).forEach(function(c){if(c.k===dk)dc=c;});
+          if(!dc)return;
+          var used=mnTxns.filter(function(x){return x.cat===dk;}).length;
+          ttConfirm("删掉分类「"+dc.n+"」？"+(used?("\n归在它名下的 "+used+" 笔会退回「其他」。"):""),
+            {danger:true,anchor:cdel}).then(function(ok){
+            if(!ok)return;
+            mnCfg.cats=(mnCfg.cats||[]).filter(function(c){return c.k!==dk;});
+            delete mnRules[dk];save("tt_mnrules",mnRules);
+            mnTxns.forEach(function(x){if(x.cat===dk)x.cat="other";});
+            mnSave();save("tt_mncfg",mnCfg);mnCatIdx();
+            mnStatus("已删掉「"+esc(dc.n)+"」"+(used?("，"+used+" 笔退回「其他」"):""));
+            mnRender();});
+          return;}
         var clr=e.target.closest("[data-clr]");
         if(clr){
           var kind=clr.getAttribute("data-clr"),label=clr.textContent.trim();
