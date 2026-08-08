@@ -532,6 +532,18 @@
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
+  .mn-bals{display:flex;gap:9px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
+  .mn-bal{flex:0 0 auto;min-width:132px;border:1px solid var(--border);border-radius:11px;
+    background:var(--surface);padding:9px 13px;cursor:pointer;transition:border-color .12s}
+  .mn-bal:hover{border-color:var(--muted)}
+  .mn-bal.on{border-color:var(--primary);background:var(--primary-soft)}
+  .mn-bal.sav{background:linear-gradient(180deg,var(--surface),rgba(63,158,124,.09))}
+  .mn-bal .n{font-size:11.5px;color:var(--muted);white-space:nowrap;margin-bottom:3px}
+  .mn-bal .n .q{opacity:.7}
+  .mn-bal .b{font-size:16px;font-weight:680;letter-spacing:-.3px;white-space:nowrap;
+    font-variant-numeric:tabular-nums}
+  .mn-bal.tot{cursor:default;background:var(--surface-2);border-style:dashed}
+  .mn-bal.tot:hover{border-color:var(--border)}
   .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
   .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:12px 14px}
   .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -14577,7 +14589,9 @@ margin-left: -22px;
       // 序号只在【本次文件内部】数，不能拿已存在的数据去数 ——
       // 否则同一个文件导第二次时 base 已被占，会顺延成 base#1 存进去，账直接翻倍。
       // 现在同一个文件算出来的 id 恒定，重复导入会被下面这行整批跳过。
-      var base=src+":"+d+":"+amt.toFixed(2)+":"+cur+":"+desc.slice(0,48);
+      // id 只由内容决定，不带来源。带上 src 的话，同一份数据你存成 csv 导一次、
+      // 再存成 xlsx 导一次，会算出两个不同的 id，账就重了。
+      var base="imp:"+d+":"+amt.toFixed(2)+":"+cur+":"+desc.slice(0,48);
       var n=(batch[base]=(batch[base]||0)+1);
       var id=n>1?(base+"#"+(n-1)):base;
       if(have[id]){dup++;continue;}
@@ -14753,6 +14767,26 @@ margin-left: -22px;
       o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;});
     return o.n?o:null;}
 
+  // 账户余额条，摆在最上面。余额是"现在有多少"，跟下面按期间算的收支
+  // 完全是两回事 —— 定期里躺着的钱不会出现在任何一个月的流水里，
+  // 埋在设置里根本看不见。点一下能只看那个账户。
+  function mnBalHtml(){
+    var accts=(mnCfg.accts||[]).filter(function(a){return typeof a.bal==="number";});
+    if(!accts.length)return "";
+    var tot={};
+    accts.forEach(function(a){var c=a.cur||"NZD";tot[c]=(tot[c]||0)+a.bal;});
+    return '<div class="mn-bals">'+
+      accts.map(function(a){
+        var sav=/TERM|SAVING|DEPOSIT|INVEST/i.test(String(a.type||"")+" "+String(a.name||""));
+        return '<div class="mn-bal'+(a.id===mnAcct?" on":"")+(sav?" sav":"")+'" data-bal="'+esc(a.id)+'" '+
+          'title="点一下只看这个账户">'+
+          '<div class="n">'+(sav?"💰 ":"")+esc(a.name||a.bank||"账户")+
+            (a.num?('<span class="q"> ···'+esc(a.num)+'</span>'):"")+'</div>'+
+          '<div class="b">'+mnMoney(a.bal,a.cur||"NZD")+'</div></div>';}).join("")+
+      '<div class="mn-bal tot"><div class="n">合计</div><div class="b">'+
+        Object.keys(tot).map(function(c){return mnMoney(tot[c],c);}).join(" / ")+'</div></div>'+
+      '</div>';}
+
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
     document.getElementById("mn-month").textContent=mnPeriodLabel();
@@ -14811,7 +14845,7 @@ margin-left: -22px;
     var incShow=afterTax?(A.inc-due):A.inc;
     var netShow=afterTax?(net-due):net;
 
-    var h='<div class="mn-kpis">'+
+    var h=mnBalHtml()+'<div class="mn-kpis">'+
       '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
         '<div class="sub">'+A.nOut+' 笔 '+delta(A.out,P.out)+'</div></div>'+
       '<div class="mn-kpi"><div class="k">收入'+(afterTax?'（税后）':'')+'</div>'+
@@ -15232,6 +15266,9 @@ margin-left: -22px;
           return;}});
       // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
       document.getElementById("mn-body").addEventListener("click",function(e){
+        var bal=e.target.closest("[data-bal]");
+        if(bal){var bk=bal.getAttribute("data-bal");
+          mnAcct=(mnAcct===bk)?"":bk;mnPick="";mnRender();return;}
         var pick=e.target.closest("[data-pick]");
         if(pick){var k=pick.getAttribute("data-pick");mnPick=(mnPick===k)?"":k;mnRender();return;}
         var tax=e.target.closest("[data-tax]");
