@@ -14163,6 +14163,9 @@ margin-left: -22px;
   var MN_CATS=[
     {k:"grocery",  n:"超市",     i:"🛒", c:"#5cbd90"},
     {k:"food",     n:"餐饮",     i:"🍜", c:"#e06c5a"},
+    // 保险必须排在交通前面 —— 钱迹的分类是「汽车 / 车险」，
+    // 交通的关键词有「汽车」，排在前面的话车险会被交通抢走。
+    {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
     {k:"transport",n:"交通",     i:"🚗", c:"#5f9bd8"},
     {k:"housing",  n:"住房水电", i:"🏠", c:"#7c83e6"},
     {k:"health",   n:"医疗",     i:"💊", c:"#61c4cf"},
@@ -14172,7 +14175,6 @@ margin-left: -22px;
     {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
     {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
     {k:"post",     n:"快递物流", i:"📦", c:"#9b8ec4"},
-    {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
     {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
     {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
     {k:"saving",   n:"存款 / 资产", i:"💰", c:"#3f9e7c"},
