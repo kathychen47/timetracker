@@ -581,6 +581,9 @@
   .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
   .mn-kpi{display:flex;flex-direction:column}
   .mn-kpi .sub{margin-top:auto}
+  .mn-kpi-link{cursor:pointer;transition:border-color .12s,background .12s}
+  .mn-kpi-link:hover{border-color:var(--primary);background:var(--primary-soft)}
+  .mn-kpi .v.go{font-size:15px;font-weight:640;color:var(--primary);letter-spacing:0}
   .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:10px 12px}
   .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:2px}
   .mn-kpi .v{font-size:20px;font-weight:680;letter-spacing:-.3px;line-height:1.25}
@@ -15064,10 +15067,14 @@ margin-left: -22px;
         '<div class="v'+(A.sav<0?"":" in")+'">'+mnMoney(A.sav>0?A.sav:A.sav)+'</div>'+
         '<div class="sub">'+A.nSav+' 笔 · '+(A.sav>=0?"净存入":"净取出")+
         '，不算支出</div></div>'):"")+
-      (TX?('<div class="mn-kpi"><div class="k">预估税负</div>'+
-        '<div class="v out">'+mnMoney(-due)+'</div>'+
-        '<div class="sub" title="PAYE '+mnMoney(-TX.tax)+' · ACC '+mnMoney(-TX.acc)+
-          (TX.gst?(' · GST '+mnMoney(-TX.gst)):"")+'">'+
+      // 税负这格不摆数字 —— 具体金额和 PAYE/ACC/GST 的拆分在税务页看得更清楚，
+      // 这里只做入口。整格可点，里面那个切换按钮要拦住冒泡，否则点它也会跳走。
+      (TX?('<div class="mn-kpi mn-kpi-link" data-gotax title="'+
+        '预估税负 '+mnMoney(-due)+'　·　PAYE '+mnMoney(-TX.tax)+' · ACC '+mnMoney(-TX.acc)+
+        (TX.gst?(' · GST '+mnMoney(-TX.gst)):"")+'">'+
+        '<div class="k">预估税负</div>'+
+        '<div class="v go">去税务页 ›</div>'+
+        '<div class="sub">已申报 '+TX.n+' 笔　'+
           '<button class="mn-mini" data-aftertax>'+
           (afterTax?"改回税前":"改按税后看")+'</button></div></div>'):"")+
       '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
@@ -15611,7 +15618,12 @@ margin-left: -22px;
           return;}
         if(e.target.closest("[data-hidetf]")){
           mnCfg.hideTf=!mnCfg.hideTf;save("tt_mncfg",mnCfg);mnRender();return;}
+        if(e.target.closest("[data-gotax]")&&!e.target.closest("[data-aftertax]")){
+          // 跳去税务页，并把年份对到当前看的这段，省得过去还要自己翻
+          try{var sp=mnSpanOf();taxYear=taxYearOf(sp[1]);}catch(e2){}
+          showTab("tax");return;}
         if(e.target.closest("[data-aftertax]")){
+          e.stopPropagation();
           mnCfg.afterTax=!mnCfg.afterTax;save("tt_mncfg",mnCfg);
           mnStatus(mnCfg.afterTax?"收入和结余改成按<b>税后</b>显示了":"改回按税前显示");
           mnRender();return;}
