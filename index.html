@@ -14080,7 +14080,10 @@ margin-left: -22px;
   function mnCatIdx(){MN_CAT={};mnCats().forEach(function(c){MN_CAT[c.k]=c;});}
   // 进账时只允许这几类 —— 不然「UNIVERSITY CNTBRY UOC NET PAY」会因为
   // 含 "university" 被判成教育支出，工资就成了学费
-  var MN_IN_OK={income:1,transfer:1,other:1};
+  // 进账时允许落到的分类。转账和存款必须在里面 —— 定期的两条腿一出一进，
+  // 进的那条（定期账户 +32000）如果不许判成存款，就会掉进「收入」，
+  // 把收入凭空抬高几十万。
+  var MN_IN_OK={income:1,transfer:1,saving:1,other:1};
   // 反过来也一样：出账不能落到「收入」。
   // 负数金额被判成收入的话，它会跑进支出的分类汇总里，
   // 出现「收入 -$1,693」这种自相矛盾的一行。
@@ -14089,18 +14092,26 @@ margin-left: -22px;
   // 转账 = 自己账户之间倒钱（两条腿一进一出，算进去会凭空翻倍）
   // 存款 = 钱换个地方放着，取回来时也不是收入
   var MN_NEUTRAL={transfer:1,saving:1};
+  // 「这段期间存了多少」不能靠关键词加总 —— 两个账户都连了 Akahu 的话，
+  // 每笔定期都被记两次（支票账户出一次、定期账户进一次），加起来永远是 0。
+  // 正确做法是看定期/储蓄账户的净流入，账户类型 Akahu 已经给了（TERMDEPOSIT）。
+  function mnSavAccts(){
+    var s={},n=0;
+    (mnCfg.accts||[]).forEach(function(a){
+      if(/TERM|SAVING|DEPOSIT|INVEST/i.test(String(a.type||"")+" "+String(a.name||""))){s[a.id]=1;n++;}});
+    s.__n=n;return s;}
   // 内置关键词按新西兰常见商户写的。匹配的干草堆两头补了空格，
   // 所以想要「整词」的关键词自己带前导空格（" rent" 不会被 "current" 撞上）。
   var MN_KW={
     // 除了大连锁，也放通用词 —— Akahu 万一没给类目，靠这些还能认出独立小店
     grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy",
-      "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"," meat","meat "],
-    food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell ","old street","hotpot","ramen","dim sum","yum cha","charcoal","grill","canteen"],
+      "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"," meat","meat ","sunson","yubuy","orchard","darlings","ken's mart","kens mart","big t asian","jrn asian","asian mart","asian grocer"],
+    food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell ","old street","hotpot","ramen","dim sum","yum cha","charcoal","grill","canteen","seoul mate","seoulmate","makan","chahao","bubble","boba","korean","japanese","thai ","vietnam","malaysia"],
     transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
     housing:[" rent","tenancy","property manag","spark nz","vodafone","one nz","2degrees","skinny","contact energy","mercury","genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy","watercare","city council","district council"," rates","chorus","body corp"],
     health:["pharmacy","chemist","unichem","medical","dental","dentist","physio","optometr","specsavers","radiology","southern cross"," nib ","accuro","white cross"],
-    shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu"],
-    fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","youtube premium","audible","kindle","patreon","twitch"],
+    shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu","pb tech","pbtech","furniture","appliance","mighty ape","the market"],
+    fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","graham condon","recreation and sport","leisure centre","pioneer rec","taiora","swim","youtube premium","audible","kindle","patreon","twitch"],
     edu:["university","massey","unitec","studylink","student loan","coursera","udemy","duolingo","tuition"],
     // 新西兰的保险公司。"insurance" 这个通用词能覆盖大半（AA INSURANCE、
     // STATE INSURANCE 都带这词），剩下的按品牌补。
@@ -14108,12 +14119,12 @@ margin-left: -22px;
     insure:["insurance","insurer","policy renewal"," ami ","ami ins","aa insurance","aa life",
       "state ins","tower ins","vero","fmg ","nzi ","initio","cove ins","ando ins",
       "partners life","asteron","fidelity life","aioi","trade me ins","suncorp"],
-    fee:["account fee","monthly fee","service fee","transaction fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
+    fee:["account fee","monthly fee","service fee","transaction fee","foreign currency fee","offshore fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
     income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
     // 存起来的钱：定期、储蓄、KiwiSaver、基金。没花掉，回来时也不是收入，
     // 但你想知道存了多少 —— 所以单独一类，不跟纯粹的账户互转混在一起。
     // Westpac 的定期在流水里写作 "T/DEP"。
-    saving:["t/dep","term dep","term deposit","td renew","kiwisaver","savings account",
+    saving:["t/dep","t/d ","t/d maturity","term dep","term deposit","td renew","maturity","kiwisaver","savings account",
       "saver","investment","managed fund","sharesies","invest now","investnow","simplicity"],
     transfer:["transfer","tfr ","tfr-","to a/c","from a/c","internet banking","on call","sweep","autopay to"]
   };
@@ -14131,7 +14142,8 @@ margin-left: -22px;
     edu:["学习","书","课程","培训","学费","教育","文具"],
     fee:["手续费","利息","年费","服务费","罚款"],
     income:["工资","收租","返现","外快","报销","奖金","红包","分红","退款","退费","代写","薪"],
-    transfer:["转账","还款","信用卡还款","结转","借出","借入","理财","理財","基金"]
+    saving:["存款","定期","理财","理財","基金","储蓄","投资","攒"],
+    transfer:["转账","转入","转出","还款","信用卡还款","结转","借出","借入"]
   };
   // ---- NZFCC → 我的分类 ----
   // Akahu 按 NZFCC（新西兰官方财务分类，208 个类目 / 11 个分组）给每笔交易标了类。
@@ -14390,9 +14402,19 @@ margin-left: -22px;
   // 「类型」列 → 正负号。债务借入/报销算进账，借出算出账。
   function mnSign(s){
     s=String(s||"");
+    if(/转入/.test(s))return 1;
+    if(/转出/.test(s))return -1;
     if(/收入|借入|报销|返现|退款/.test(s))return 1;
     if(/支出|借出/.test(s))return -1;
     return 0;}                                            // 认不出来 → 用金额本身的正负
+  // 钱迹这类 app 有专门的「转账」类型（自己账户之间挪钱）。
+  // 它不是收入也不是支出，得直接定成转账 —— 否则会被当成一笔真实进/出账，
+  // 把收支合计凭空抬高。
+  function mnTypeCat(s){
+    s=String(s||"");
+    if(/转账|转入|转出|互转/.test(s))return "transfer";
+    if(/理财|理財|基金|定期|存款/.test(s))return "saving";
+    return "";}
   function mnCsvDate(s){
     s=String(s).trim();
     var m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -14437,7 +14459,10 @@ margin-left: -22px;
       if(have[id]){dup++;continue;}
       var t={id:id,d:d,date:d,desc:desc,amt:amt,cur:cur,merchant:"",acat:"",agrp:"",ref:"",
         acct:H.acct>=0?String(r[H.acct]||"").trim():"",src:src};
-      t.cat=mnGuess(t);mnTxns.push(t);have[id]=1;add++;}
+      // 「类型」列如果明说是转账/理财，直接照它定，不用猜
+      var forced=H.type>=0?mnTypeCat(r[H.type]):"";
+      t.cat=forced||mnGuess(t);
+      mnTxns.push(t);have[id]=1;add++;}
     mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
     mnSave();
     var cl=Object.keys(curs).sort(function(a,b){return curs[b]-curs[a];});
@@ -14571,14 +14596,17 @@ margin-left: -22px;
   // 算进去会把收入和支出同时凭空抬高。
   function mnAgg(list){
     var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},noFx:0};
+    var sa=mnSavAccts(),hasSa=sa.__n>0;
     list.forEach(function(t){
       // 折算模式下缺汇率的那几笔宁可不算，也不能悄悄按 0 塞进去
       if(!mnHasFx(t)){o.noFx++;return;}
       var a=mnAmt(t);
       if(MN_NEUTRAL[t.cat]){
         o.tf++;
-        // 存进去记正、取回来记负，净额才是这段期间真正存下的钱
-        if(t.cat==="saving"){o.sav+=-a;o.nSav++;}
+        // 定期账户连着的话，只数它那一条腿的净流入（存进去为正、到期取回为负）；
+        // 没连定期账户就退回按分类算，用支票账户那条腿取反。
+        if(hasSa){if(sa[t.acct]){o.sav+=a;o.nSav++;}}
+        else if(t.cat==="saving"){o.sav+=-a;o.nSav++;}
         return;}
       if(a<0){o.out+=-a;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-a);}
       else if(a>0){o.inc+=a;o.nIn++;}});
