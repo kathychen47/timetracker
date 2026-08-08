@@ -14490,7 +14490,20 @@ margin-left: -22px;
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
   var mnScope="month",mnYear=0,mnSide="out",mnSrc="",mnFrom="",mnTo="";
-  function mnSave(){save("tt_txns",mnTxns);}
+  // 存之前把空字段抹掉。导入的记录没有商户名 / NZFCC 类目 / 账号这些，
+  // 每一笔却照样存五个空字符串，占了整本账 16% 的体积。
+  // date 跟 d 一样时也去掉一个 —— 只有 Akahu 的 date 是带时分秒的原始串，
+  // 那种留着（t.d 是从它算出来的）。
+  // 读的地方本来就都写了 t.merchant||"" 这种，键不存在照样跑。
+  function mnTrim(t){
+    var o={};
+    for(var k in t){
+      var v=t[k];
+      if(v===""||v==null)continue;
+      if(k==="date"&&v===t.d)continue;
+      o[k]=v;}
+    return o;}
+  function mnSave(){save("tt_txns",mnTxns.map(mnTrim));}
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
   function mnCurOf(t){return (t&&t.cur)||"NZD";}
@@ -14507,24 +14520,48 @@ margin-left: -22px;
   function mnIsAll(){return String(mnCur).indexOf("__all")===0;}
   function mnAllBase(){var i=String(mnCur).indexOf(":");
     return i>0?String(mnCur).slice(i+1):mnFxBase();}
-  // 折算走两步：先按 fx 换回主币种，再从主币种换到目标币种。
-  // 直接拿两个非主币种相除也能得到同样的数，但分两步走跟 fx 表的定义一致，
-  // 哪一步缺汇率一眼看得出来。
-  function mnConv(amt,cur,to){
-    var b=mnFxBase(),t=to||mnAllBase();
+  // ---- 日汇率缓存 ----
+  // mnCfg.fxd = {base:"NZD", c:["CNY","USD","AUD"], from, to, at,
+  //              r:{"2021-06-03":[4.5123,0.7201,0.9312], …}}
+  // 存成定长数组而不是 {CNY:…,USD:…} —— 五年一千三百多个交易日，
+  // 带字段名要 71 KB，定长数组 48 KB，读的时候按 c 里的下标取。
+  //
+  // 缓存的 base 跟当前主币种不一致时整个不用（改了主币种就重新拉一次）——
+  // 两个币种各拿一个不同轴心的汇率去折，算出来的数没有意义。
+  function mnFxAt(d){
+    var F=mnCfg.fxd;
+    if(!F||!F.r||mnCfg.fxMode==="fixed"||!d)return null;
+    if(F.base!==mnFxBase())return null;
+    var row=F.r[d];
+    // 周末和节假日欧洲央行不发布，往前找最近一个交易日（最多 7 天，够跨圣诞）
+    if(!row){var ms=Date.parse(d+"T00:00:00");
+      for(var i=1;i<=7&&!row;i++)row=F.r[mnYmd(new Date(ms-i*86400000))];}
+    return row?{base:F.base,c:F.c,row:row}:null;}
+  // 某个币种在某天的「一个轴心币种换多少它」。轴心是主币种，它自己恒为 1。
+  function mnRateOf(cur,d){
+    var A=mnFxAt(d);
+    if(A){
+      if(cur===A.base)return 1;
+      var i=A.c.indexOf(cur);
+      // 日汇率里没有这个币种（后来才出现的新币种）就退回固定汇率。
+      // 轴心相同，所以混着用不会算错。
+      if(i>=0&&A.row[i]>0)return A.row[i];}
+    if(cur===mnFxBase())return 1;
+    var r=(mnCfg.fx||{})[cur];
+    return (r>0)?r:null;}
+  // 折算：两边都换算成「多少个轴心币种」，再乘目标的汇率。
+  // 传了日期就按那天的汇率折，没传（或没缓存）就用固定汇率。
+  function mnConv(amt,cur,to,d){
+    var t=to||mnAllBase();
     if(cur===t)return amt;
-    var nb;
-    if(cur===b)nb=amt;
-    else{var r=(mnCfg.fx||{})[cur];if(!(r>0))return null;nb=amt/r;}
-    if(t===b)return nb;
-    var r2=(mnCfg.fx||{})[t];
-    return (r2>0)?(nb*r2):null;}            // 没设汇率 → null，调用方负责说出来
+    var rc=mnRateOf(cur,d),rt=mnRateOf(t,d);
+    return (rc&&rt)?(amt/rc*rt):null;}       // 没汇率 → null，调用方负责说出来
   function mnAmt(t){
     if(!mnIsAll())return t.amt;
-    var v=mnConv(t.amt,mnCurOf(t));
+    var v=mnConv(t.amt,mnCurOf(t),null,t.d);
     return v===null?0:v;}
   function mnHasFx(t){
-    return !mnIsAll()||mnConv(t.amt,mnCurOf(t))!==null;}
+    return !mnIsAll()||mnConv(t.amt,mnCurOf(t),null,t.d)!==null;}
   function mnMoney(v,cur){
     var c=cur||(mnIsAll()?mnAllBase():mnCur)||"NZD";
     var neg=v<0,s=Math.abs(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
@@ -15120,7 +15157,7 @@ margin-left: -22px;
     // 「合计」能折算成哪几个币种：主币种，加上你填过汇率的那些。
     // 目标币种没汇率的话整栏都折不出来，所以那个选项干脆不给。
     var fxT=(curs.length>1)?curs.filter(function(c){
-      return c===mnFxBase()||((mnCfg.fx||{})[c]>0);}):[];
+      return c===mnFxBase()||((mnCfg.fx||{})[c]>0)||mnRateOf(c,mnYmd(new Date()));}):[];
     // 这一句原来会把 "__all" 顶掉 —— curs 里只有真币种，合计压根不在里面，
     // 结果一选合计就被弹回第一个币种，那个选项等于摆设。
     if(!mnIsAll()&&curs.indexOf(mnCur)<0)mnCur=curs[0];
@@ -15543,9 +15580,63 @@ margin-left: -22px;
       '<span style="font-size:12px;color:var(--muted)">'+esc(when)+'</span></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '填好之后，上面的币种下拉会多一个「合计（折算成 '+esc(b)+'）」。<b>改完立刻生效。</b><br>'+
-      '<b>只用这一个固定汇率折算所有记录，包括几年前的。</b>真汇率天天在变，'+
-      '拿今天的去折三年前的消费，数字看着精确其实是假的 —— 与其假装准确，不如让你知道它是怎么来的。<br>'+
-      '要精确的话，各币种分开看，那些数字永远是真的。</div></div>';}
+      '上面这几个是<b>固定汇率</b>，一个数折算所有年份。要按每笔自己那天的汇率折，用下面那块。</div>'+
+      mnFxDayHtml()+'</div>';}
+
+  // 日汇率。上面那块是「一个数折五年」，这块是「每笔按它自己那天折」。
+  // 两种都留着：日汇率更真实，但要联网拉一次、占几十 KB；
+  // 固定汇率随时能手填，断网也能用，而且你自己知道那个数是哪来的。
+  function mnFxDayHtml(){
+    var F=mnCfg.fxd,on=!!F&&mnCfg.fxMode!=="fixed"&&F.base===mnFxBase();
+    var n=F&&F.r?Object.keys(F.r).length:0;
+    var ds=mnTxns.map(function(t){return t.d;}).filter(Boolean).sort();
+    var from=ds.length?ds[0]:mnYmd(new Date()),to=mnYmd(new Date());
+    var stale=F&&F.base!==mnFxBase();
+    return '<div style="border-top:1px solid var(--border);margin-top:14px;padding-top:12px">'+
+      '<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按当天汇率折算</div>'+
+      (n?('<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px">'+
+          '已缓存 <b>'+n+'</b> 个交易日（'+esc(F.from||"")+' → '+esc(F.to||"")+'，轴心 '+esc(F.base)+'）'+
+          (F.at?('，'+dtstr(F.at)+'拉的'):"")+
+          (stale?'<br><b style="color:#d9534f">主币种改过了，这份缓存对不上，要重拉一次</b>':"")+
+          '</div>')
+        :('<div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:8px">'+
+          '还没拉过。拉一次会取 '+esc(from)+' 到今天的每日汇率（欧洲央行只在工作日发布，'+
+          '周末和节假日往前取最近一个交易日），存在本地，约 50 KB。</div>'))+
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
+      '<button class="btn" data-fxday="'+esc(from)+'|'+esc(to)+'">🌐 '+(n?"重新拉":"拉五年日汇率")+'</button>'+
+      (n?('<button class="btn'+(on?" primary":"")+'" data-fxmode>'+
+          (on?"现在：按当天汇率 ✓":"现在：用固定汇率")+'</button>'):"")+
+      '</div>'+
+      (n?('<div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">'+
+        '点上面那个按钮切换。<b>按当天汇率</b>＝ 2021 年的消费用 2021 年的汇率折，'+
+        '数字是当时真实的等值；<b>固定汇率</b>＝ 全部按你填的那个数折，回答的是'+
+        '「这些钱按今天算值多少」。两个问题不一样，都对，看你要哪个。</div>'):"")+
+      '</div>';}
+
+  // 拉一整段时间的日汇率。frankfurter 的区间接口一次就能给全，不用逐天请求。
+  function mnFxDayFetch(btn,from,to){
+    var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
+    if(!others.length){mnStatus("账本里只有一种货币，用不上折算");return;}
+    if(btn){btn.disabled=true;btn.textContent="拉取中…（要几秒）";}
+    fetch("https://api.frankfurter.dev/v1/"+from+".."+to+"?base="+encodeURIComponent(b)+
+          "&symbols="+encodeURIComponent(others.join(",")))
+      .then(function(r){if(!r.ok)throw new Error("HTTP "+r.status);return r.json();})
+      .then(function(j){
+        var R=j&&j.rates||{},days=Object.keys(R).sort(),out={};
+        if(!days.length)throw new Error("这段时间没有汇率数据");
+        days.forEach(function(d){
+          out[d]=others.map(function(c){
+            var v=R[d][c];return (v>0)?+(+v).toFixed(4):0;});});
+        mnCfg.fxd={base:b,c:others,from:days[0],to:days[days.length-1],at:Date.now(),r:out};
+        mnCfg.fxMode="day";
+        save("tt_mncfg",mnCfg);
+        mnStatus("拉到 <b>"+days.length+"</b> 个交易日的汇率（"+esc(days[0])+" → "+
+          esc(days[days.length-1])+"）· 已切换成按当天汇率折算");
+        mnRender();},
+        function(e){
+          if(btn){btn.disabled=false;btn.textContent="🌐 拉五年日汇率";}
+          mnStatus("拉日汇率失败："+esc(String(e&&e.message||e))+
+            " —— 上面的固定汇率照样能用",true);});}
 
   function mnFxFetch(btn){
     var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
@@ -15811,6 +15902,12 @@ margin-left: -22px;
           mnStatus(mnCfg.afterTax?"收入和结余改成按<b>税后</b>显示了":"改回按税前显示");
           mnRender();return;}
         if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
+        var fxd=e.target.closest("[data-fxday]");
+        if(fxd){var pr=fxd.getAttribute("data-fxday").split("|");mnFxDayFetch(fxd,pr[0],pr[1]);return;}
+        if(e.target.closest("[data-fxmode]")){
+          mnCfg.fxMode=(mnCfg.fxMode==="fixed")?"day":"fixed";save("tt_mncfg",mnCfg);
+          mnStatus(mnCfg.fxMode==="fixed"?"改回按<b>固定汇率</b>折算了":"改成按<b>每笔那天的汇率</b>折算了");
+          mnRender();return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
         if(e.target.closest("[data-payadd]")){
