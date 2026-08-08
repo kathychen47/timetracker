@@ -5913,7 +5913,7 @@ margin-left: -22px;
     return e;}
   function liveLabel(e){                                   // 块上那行小字：走了多久，其中停了多久
     var g=Math.max(0,(+e.sec||0)-(+e.wsec||e.sec||0));
-    return e.start+" · 已"+secLabel(e.wsec||e.sec)+(g>=GAPMIN?("（停 "+secLabel(g)+"）"):"");}
+    return "已"+secLabel(e.wsec||e.sec)+(g>=GAPMIN?("（停 "+secLabel(g)+"）"):"");}   // 开始时间不写了：块画在哪儿就是几点开始
   function liveH(e){var p=evPos(e);return Math.max(EVMINH,Math.min(e.sec/3600*PH,GH-p.top));}  // 和普通块同一个地板，停表时不会突然缩一下
   // key 里故意不放 start：它是"现在 - 已走秒数"算出来的，四舍五入会在整分处来回跳一格，
   // 放进去就会平白无故整张重画。真正需要重画的是它出现/消失/换了名字或分类。
@@ -6039,8 +6039,13 @@ margin-left: -22px;
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
-    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'"'+(e.note?' title="'+esc(e.note)+'"':'')+' style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
-      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):e.start)+'</div>'+lbl+fish+corner+gm+'</div>';}
+    // 块上那行小字写时长，不写开始时间 —— 几点开始，块画在哪一行本来就说明了；
+    // 真正想一眼看见的是"这事花了多久"。够一小时按小时（1.5h），不够才用分钟（45m）。
+    // 中间停过的那种用净时长（不含洞），跟统计口径一致。精确的起止时间移到悬停里。
+    var dmin=evNetMin(e),htxt=(dmin>0?fmtDur(dmin):e.start);
+    var tip=e.start+"–"+e.end+(e.note?" · "+e.note:"");
+    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+      '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):htxt)+'</div>'+lbl+fish+corner+gm+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
