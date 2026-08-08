@@ -531,6 +531,10 @@
   .mn-nav{width:28px;height:28px;border:1px solid var(--border);background:var(--surface);color:var(--muted);border-radius:8px;cursor:pointer;font-size:16px;line-height:1}
   .mn-nav:hover{color:var(--text);border-color:var(--muted)}
   .mn-month{font-size:15px;font-weight:650;min-width:96px;text-align:center}
+  .mn-range{display:inline-flex;align-items:center;gap:6px}
+  .mn-range input{padding:6px 9px;border:1px solid var(--border);border-radius:9px;
+    background:var(--surface);color:var(--text);font-size:12.5px}
+  .mn-range .to{color:var(--muted);font-size:13px}
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
@@ -3527,7 +3531,11 @@ margin-left: -22px;
           <div class="seg" id="mn-scope">
             <button data-sc="month" class="on">月</button>
             <button data-sc="year">年</button>
+            <button data-sc="range">区间</button>
           </div>
+          <span class="mn-range" id="mn-range" hidden>
+            <input type="date" id="mn-from"><span class="to">→</span><input type="date" id="mn-to">
+          </span>
           <button class="mn-nav" id="mn-prev" title="上一期">‹</button>
           <span class="mn-month" id="mn-month">—</span>
           <button class="mn-nav" id="mn-next" title="下一期">›</button>
@@ -14372,7 +14380,7 @@ margin-left: -22px;
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
   var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
-  var mnScope="month",mnYear=0,mnSide="out",mnSrc="";
+  var mnScope="month",mnYear=0,mnSide="out",mnSrc="",mnFrom="",mnTo="";
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
@@ -14710,6 +14718,11 @@ margin-left: -22px;
     return Object.keys(s).sort();}
   function mnShift(n){
     if(mnScope==="year"){mnYear+=n;}
+    else if(mnScope==="range"){
+      // 整个窗口前后平移一整段，方便"上一个同样长的区间"这样比
+      var len=mnDaysBetween(mnFrom,mnTo)+1;
+      mnFrom=mnAddDays(mnFrom,n*len);mnTo=mnAddDays(mnTo,n*len);
+      mnCfg.from=mnFrom;mnCfg.to=mnTo;save("tt_mncfg",mnCfg);}
     else{var p=(mnMonth||mnYmd(new Date()).slice(0,7)).split("-");
       var d=new Date(+p[0],+p[1]-1+n,1);
       mnMonth=d.getFullYear()+"-"+mnP2(d.getMonth()+1);}
@@ -14717,7 +14730,7 @@ margin-left: -22px;
   // 币种是硬隔离，不是筛选项 —— NZD 和 CNY 加在一起得出的数字没有任何意义，
   // 所以页面任何时候都只在看一种货币，不提供"全部"这个选项。
   function mnBase(t){
-    if(mnKeyOf(t)!==mnCurKey())return false;
+    if(!mnInPeriod(t))return false;
     if(mnAcct&&t.acct!==mnAcct)return false;
     return mnCur==="__all"||mnCurOf(t)===mnCur;}
   function mnFiltered(){
@@ -14733,16 +14746,33 @@ margin-left: -22px;
   // ---- 统计 ----
   // 一切都按「当前期间 + 当前币种 + 当前账户」算。期间可以是一个月也可以是一年，
   // 两种模式共用同一套聚合代码，只是取 key 的位数不同。
-  function mnKeyOf(t){var d=String(t&&t.d||"");return mnScope==="year"?d.slice(0,4):d.slice(0,7);}
-  function mnCurKey(){return mnScope==="year"?String(mnYear):mnMonth;}
-  function mnPrevKey(){
-    if(mnScope==="year")return String(mnYear-1);
-    var p=(mnMonth||"").split("-"),d=new Date(+p[0],+p[1]-2,1);
-    return d.getFullYear()+"-"+mnP2(d.getMonth()+1);}
-  function mnPeriodLabel(){
-    return mnScope==="year"?(mnYear+" 年"):((mnMonth||"").replace("-"," 年 ")+" 月");}
+  // 月和年可以用「前缀相等」判断，自选区间不行 —— 所以统一成
+  // 「起止日期 + 落在里面吗」这一种表达，三种模式共用。
+  function mnAddDays(d,n){var x=new Date(d+"T00:00:00");x.setDate(x.getDate()+n);return mnYmd(x);}
+  function mnDaysBetween(a,b){return Math.round((Date.parse(b+"T00:00:00")-Date.parse(a+"T00:00:00"))/86400000);}
   function mnDaysInMonth(){
     var p=(mnMonth||"").split("-");return new Date(+p[0],+p[1],0).getDate();}
+  // 当前期间的 [起, 止]，都含端点
+  function mnSpanOf(){
+    if(mnScope==="year")return [mnYear+"-01-01",mnYear+"-12-31"];
+    if(mnScope==="range")return [mnFrom,mnTo];
+    return [mnMonth+"-01",mnMonth+"-"+mnP2(mnDaysInMonth())];}
+  // 上一期：月→上月，年→去年，区间→紧邻的等长窗口
+  function mnPrevSpanOf(){
+    var s=mnSpanOf();
+    if(mnScope==="year")return [(mnYear-1)+"-01-01",(mnYear-1)+"-12-31"];
+    if(mnScope==="range"){
+      var n=mnDaysBetween(s[0],s[1])+1;
+      return [mnAddDays(s[0],-n),mnAddDays(s[0],-1)];}
+    var p=(mnMonth||"").split("-"),d=new Date(+p[0],+p[1]-2,1);
+    var pm=d.getFullYear()+"-"+mnP2(d.getMonth()+1);
+    return [pm+"-01",pm+"-"+mnP2(new Date(d.getFullYear(),d.getMonth()+1,0).getDate())];}
+  function mnInSpan(t,sp){var d=String(t&&t.d||"");return d>=sp[0]&&d<=sp[1];}
+  function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
+  function mnPeriodLabel(){
+    if(mnScope==="year")return mnYear+" 年";
+    if(mnScope==="range")return (mnFrom||"?")+" → "+(mnTo||"?");
+    return (mnMonth||"").replace("-"," 年 ")+" 月";}
 
   // 一段期间的收支合计。转账一律不算 —— 自己账户之间倒钱两边一进一出，
   // 算进去会把收入和支出同时凭空抬高。
@@ -14756,6 +14786,10 @@ margin-left: -22px;
     var pm=mnCfg.payers||{};
     for(var nm in pm){
       if(pm[nm]&&pm[nm].length&&mnHit(hay,pm[nm]))return nm;}
+    // 其次按账户归属。账户是硬事实（钱进了谁的户头），
+    // 摘要写法是会变的 —— 只要设了归属，就比任何关键词都可靠。
+    var ow=mnCfg.owners||{};
+    if(Object.keys(ow).length)return ow[t.acct]||"其他收入";
     if(t.merchant)return t.merchant;
     var s=String(t.desc||"").trim();
     if(/INT WBC/i.test(s))return "定期利息";
@@ -14792,11 +14826,10 @@ margin-left: -22px;
     if(mnCur!=="NZD"&&!(mnCur==="__all"&&mnFxBase()==="NZD"))return null;
     var rows;
     try{rows=txCompute();}catch(e){return null;}
-    var key=mnCurKey(),o={tax:0,acc:0,gst:0,gross:0,n:0};
+    var sp=mnSpanOf(),o={tax:0,acc:0,gst:0,gross:0,n:0};
     rows.forEach(function(r){
       var d=String(r.date||"");
-      var k=(mnScope==="year")?d.slice(0,4):d.slice(0,7);
-      if(k!==key)return;
+      if(!(d>=sp[0]&&d<=sp[1]))return;
       o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;});
     return o.n?o:null;}
 
@@ -14825,6 +14858,12 @@ margin-left: -22px;
     document.getElementById("mn-month").textContent=mnPeriodLabel();
     document.querySelectorAll("#mn-scope button").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-sc")===mnScope);});
+    var rg=document.getElementById("mn-range"),isRange=(mnScope==="range");
+    rg.hidden=!isRange;
+    document.getElementById("mn-month").style.display=isRange?"none":"";
+    if(isRange){
+      document.getElementById("mn-from").value=mnFrom;
+      document.getElementById("mn-to").value=mnTo;}
     // 币种下拉：只有一种货币时藏起来，不给界面添噪音
     var curs=mnCurList();if(!curs.length)curs=["NZD"];
     if(curs.indexOf(mnCur)<0)mnCur=curs[0];
@@ -14854,16 +14893,20 @@ margin-left: -22px;
     var inP=mnTxns.filter(mnBase),A=mnAgg(inP);
     var net=A.inc-A.out;
     // 上一期的同口径数字，用来算环比
-    var pk=mnPrevKey();
+    var psp=mnPrevSpanOf();
     var P=mnAgg(mnTxns.filter(function(t){
-      return mnKeyOf(t)===pk&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}));
+      return mnInSpan(t,psp)&&mnCurOf(t)===mnCur&&(!mnAcct||t.acct===mnAcct);}));
     // 日均 / 月均：只按已经过去的天数算，不然当月还没过完会被稀释得很难看
-    var span,spanLb;
+    var span,spanLb,today=mnYmd(new Date());
     if(mnScope==="year"){
       var nowY=new Date().getFullYear();
       span=(mnYear===nowY)?(new Date().getMonth()+1):12;spanLb="月均支出";
+    }else if(mnScope==="range"){
+      // 区间跨到未来时只按已经过去的天数算，不然会被没发生的日子稀释
+      var end=(mnTo>today&&mnFrom<=today)?today:mnTo;
+      span=Math.max(1,mnDaysBetween(mnFrom,end)+1);spanLb="日均支出";
     }else{
-      var nowM=mnYmd(new Date()).slice(0,7);
+      var nowM=today.slice(0,7);
       span=(mnMonth===nowM)?new Date().getDate():mnDaysInMonth();spanLb="日均支出";}
     var avg=span>0?A.out/span:0;
 
@@ -15111,8 +15154,20 @@ margin-left: -22px;
     // 把这段期间实际出现过的来源列出来，方便照着填
     var seen={};
     mnTxns.forEach(function(t){
-      if(t.amt>0&&!MN_NEUTRAL[t.cat]&&mnKeyOf(t)===mnCurKey())seen[mnPayer(t)]=1;});
-    return '<div class="panel"><h3>收入来源归并</h3>'+
+      if(t.amt>0&&!MN_NEUTRAL[t.cat]&&mnInPeriod(t))seen[mnPayer(t)]=1;});
+    var accts=mnCfg.accts||[],ow=mnCfg.owners||{};
+    var ownerBlock=accts.length?('<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按账户归属</div>'+
+      accts.map(function(a){
+        return '<div class="mn-rule"><span class="nm">'+esc(a.name||a.bank||"账户")+
+          (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+'</span>'+
+          '<input data-own="'+esc(a.id)+'" value="'+esc(ow[a.id]||"")+
+          '" placeholder="这个账户的收入算谁的，比如「我的收入」"></div>';}).join("")+
+      '<div style="font-size:12px;color:var(--muted);margin:6px 0 16px;line-height:1.6">'+
+      '账户是硬事实，比摘要关键词可靠。<b>只要填了任意一个</b>，'+
+      '收入就按账户归属分组，没填的账户一律归到「其他收入」。<br>'+
+      '全部留空 = 按摘要自动归并（现在的做法）。上面的关键词规则优先级更高。</div>'):"";
+    return '<div class="panel"><h3>收入来源归并</h3>'+ownerBlock+
+      '<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按关键词归并</div>'+
       (names.length?names.map(function(n){
         return '<div class="mn-rule"><span class="nm">'+esc(n)+'</span>'+
           '<input data-pay="'+esc(n)+'" value="'+esc((pm[n]||[]).join(", "))+'" placeholder="关键词，逗号分隔">'+
@@ -15252,6 +15307,8 @@ margin-left: -22px;
   function openMoney(){
     if(!mnMonth)mnMonth=mnYmd(new Date()).slice(0,7);
     if(!mnYear)mnYear=new Date().getFullYear();
+    if(!mnFrom){mnFrom=mnCfg.from||mnYmd(new Date()).slice(0,8)+"01";}
+    if(!mnTo){mnTo=mnCfg.to||mnYmd(new Date());}
     if(!mnCur)mnCur=mnCfg.cur||"NZD";
     if(mnCfg.scope)mnScope=mnCfg.scope;
     if(!mnInit){
@@ -15260,12 +15317,25 @@ margin-left: -22px;
       document.getElementById("mn-next").addEventListener("click",function(){mnShift(1);});
       document.getElementById("mn-scope").addEventListener("click",function(e){
         var b=e.target.closest("[data-sc]");if(!b)return;
+        var prev=mnScope;
         mnScope=b.getAttribute("data-sc");mnCfg.scope=mnScope;save("tt_mncfg",mnCfg);
-        // 月↔年互相跟随：从 7 月切到年，看的就是那一年
-        if(mnScope==="year"&&mnMonth)mnYear=+mnMonth.slice(0,4);
-        else if(mnScope==="month"&&mnYear)mnMonth=mnYear+"-"+(mnMonth?mnMonth.slice(5,7):"01");
-        mnPick="";mnRender();});
+        // 切模式时把当前看的那段带过去，别跳回今天
+        if(mnScope==="year"&&prev==="month"&&mnMonth)mnYear=+mnMonth.slice(0,4);
+        else if(mnScope==="month"&&prev==="year"&&mnYear)mnMonth=mnYear+"-"+(mnMonth?mnMonth.slice(5,7):"01");
+        else if(mnScope==="range"){var sp=(prev==="year")?[mnYear+"-01-01",mnYear+"-12-31"]
+          :[mnMonth+"-01",mnMonth+"-"+mnP2(mnDaysInMonth())];
+          mnFrom=sp[0];mnTo=sp[1];mnCfg.from=mnFrom;mnCfg.to=mnTo;save("tt_mncfg",mnCfg);}
+        mnPick="";mnSrc="";mnRender();});
       document.getElementById("mn-acct").addEventListener("change",function(){mnAcct=this.value;mnPick="";mnRender();});
+      ["mn-from","mn-to"].forEach(function(id){
+        document.getElementById(id).addEventListener("change",function(){
+          var v=String(this.value||"").trim();
+          if(!/^\d{4}-\d{2}-\d{2}$/.test(v)||+v.slice(0,4)<2000)return;
+          if(id==="mn-from")mnFrom=v;else mnTo=v;
+          if(mnFrom>mnTo){var x=mnFrom;mnFrom=mnTo;mnTo=x;}   // 反了就自动调过来
+          mnCfg.from=mnFrom;mnCfg.to=mnTo;save("tt_mncfg",mnCfg);
+          mnScope="range";mnCfg.scope="range";save("tt_mncfg",mnCfg);
+          mnPick="";mnSrc="";mnRender();});});
       document.getElementById("mn-cur").addEventListener("change",function(){
         mnCur=this.value;mnCfg.cur=mnCur;save("tt_mncfg",mnCfg);mnPick="";mnRender();});
       document.getElementById("mn-sync").addEventListener("click",async function(){
@@ -15330,6 +15400,13 @@ margin-left: -22px;
           var fld=t.hasAttribute("data-cn")?"n":(t.hasAttribute("data-ci")?"i":"c");
           (mnCfg.cats||[]).forEach(function(c){if(c.k===key)c[fld]=t.value||(fld==="i"?"🏷":c[fld]);});
           save("tt_mncfg",mnCfg);mnCatIdx();mnStatus("分类已改");mnRender();return;}
+        if(t.matches("[data-own]")){
+          var oid=t.getAttribute("data-own"),ov=String(t.value||"").trim();
+          mnCfg.owners=mnCfg.owners||{};
+          if(ov)mnCfg.owners[oid]=ov;else delete mnCfg.owners[oid];
+          save("tt_mncfg",mnCfg);
+          mnStatus(ov?("这个账户的收入归到「"+esc(ov)+"」了"):"已取消这个账户的归属");
+          mnRender();return;}
         if(t.matches("[data-pay]")){
           var pn=t.getAttribute("data-pay");
           var ws=t.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
