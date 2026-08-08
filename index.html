@@ -601,6 +601,14 @@
   .mn-row.neutral:hover{opacity:1}
   .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
   .mn-row .am small.nofx{color:#d9534f}
+  /* 删除键平时留着位置但不显形 —— 用 visibility 而不是 display，
+     否则鼠标移进移出时整行的金额会左右跳。 */
+  .mn-row .mn-x{flex:none;width:22px;height:22px;padding:0;line-height:1;border:0;border-radius:6px;
+    background:transparent;color:var(--muted);font-size:13px;cursor:pointer;visibility:hidden}
+  .mn-row:hover .mn-x,.mn-row .mn-x:focus-visible{visibility:visible}
+  .mn-row .mn-x:hover{background:rgba(217,83,79,.13);color:#d9534f}
+  /* 手机上没有 hover，一直显示 */
+  @media(hover:none){.mn-row .mn-x{visibility:visible}}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
   /* 原来用 float:right，宽度不够时会跟标题文字叠在一起。
      改成让 h3 自己做 flex 容器，切换按钮永远靠右且不重叠。 */
@@ -14479,19 +14487,31 @@ margin-left: -22px;
   // 拿今天的汇率去折三年前的消费，得出的数字看着精确其实是假的。
   // 一个你自己知道来历的固定汇率，至少诚实。
   function mnFxBase(){return mnCfg.base||"NZD";}
-  function mnConv(amt,cur){
-    var b=mnFxBase();
-    if(cur===b)return amt;
-    var r=(mnCfg.fx||{})[cur];
-    return (r&&r>0)?(amt/r):null;}            // 没设汇率 → null，调用方负责说出来
+  // 币种下拉选到「合计」时 mnCur 是 "__all:CNY" 这种 —— 冒号后面就是折算成哪个币种。
+  // 老的裸 "__all" 当成折算成主币种，免得旧状态炸掉。
+  function mnIsAll(){return String(mnCur).indexOf("__all")===0;}
+  function mnAllBase(){var i=String(mnCur).indexOf(":");
+    return i>0?String(mnCur).slice(i+1):mnFxBase();}
+  // 折算走两步：先按 fx 换回主币种，再从主币种换到目标币种。
+  // 直接拿两个非主币种相除也能得到同样的数，但分两步走跟 fx 表的定义一致，
+  // 哪一步缺汇率一眼看得出来。
+  function mnConv(amt,cur,to){
+    var b=mnFxBase(),t=to||mnAllBase();
+    if(cur===t)return amt;
+    var nb;
+    if(cur===b)nb=amt;
+    else{var r=(mnCfg.fx||{})[cur];if(!(r>0))return null;nb=amt/r;}
+    if(t===b)return nb;
+    var r2=(mnCfg.fx||{})[t];
+    return (r2>0)?(nb*r2):null;}            // 没设汇率 → null，调用方负责说出来
   function mnAmt(t){
-    if(mnCur!=="__all")return t.amt;
+    if(!mnIsAll())return t.amt;
     var v=mnConv(t.amt,mnCurOf(t));
     return v===null?0:v;}
   function mnHasFx(t){
-    return mnCur!=="__all"||mnConv(t.amt,mnCurOf(t))!==null;}
+    return !mnIsAll()||mnConv(t.amt,mnCurOf(t))!==null;}
   function mnMoney(v,cur){
-    var c=cur||(mnCur==="__all"?mnFxBase():mnCur)||"NZD";
+    var c=cur||(mnIsAll()?mnAllBase():mnCur)||"NZD";
     var neg=v<0,s=Math.abs(v).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
     return (neg?"-":"")+(MN_SYM[c]||"")+s;}
   // 账本里出现过的币种，按笔数多的排前面
@@ -14830,7 +14850,7 @@ margin-left: -22px;
   function mnBase(t){
     if(!mnInPeriod(t))return false;
     if(mnAcct&&t.acct!==mnAcct)return false;
-    return mnCur==="__all"||mnCurOf(t)===mnCur;}
+    return mnIsAll()||mnCurOf(t)===mnCur;}
   function mnFiltered(){
     return mnTxns.filter(function(t){
       if(!mnBase(t))return false;
@@ -14965,16 +14985,33 @@ margin-left: -22px;
   //
   // 税按税年累进，txCompute() 给的 mTax 是每笔的增量，逐笔相加正好等于
   // 这段期间新增的税负 —— 不能拿总收入去乘一个平均税率，那样跨月会算错。
-  function mnTaxDue(){
-    if(mnCur!=="NZD"&&!(mnCur==="__all"&&mnFxBase()==="NZD"))return null;
+  // 这段期间要交多少税。bySrc 把每一笔税摊回它来自的那笔收入的「来源」上 ——
+  // 收入来源那张图要按税后看的话，得知道税该从哪一栏里扣，
+  // 不然只能按比例摊，而她的税其实全是 Pingping 那边的（我的工资是 NET PAY，早扣过了）。
+  // 税务页上手动加的记录没有 taxFrom，认不出来源，进 free 那一桶，渲染时按收入占比摊。
+  function mnTaxDue(sp){
+    if(mnCur!=="NZD"&&!(mnIsAll()&&mnAllBase()==="NZD"))return null;
     var rows;
     try{rows=txCompute();}catch(e){return null;}
-    var sp=mnSpanOf(),o={tax:0,acc:0,gst:0,gross:0,n:0};
+    sp=sp||mnSpanOf();
+    var o={tax:0,acc:0,gst:0,gross:0,n:0,bySrc:{},free:0};
+    var byId={};mnTxns.forEach(function(t){byId[String(t.id)]=t;});
     rows.forEach(function(r){
       var d=String(r.date||"");
       if(!(d>=sp[0]&&d<=sp[1]))return;
-      o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;});
+      o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;
+      var due=r.mTax+r.mAcc+r.gstAmt,src=byId[String(r.taxFrom)];
+      if(src){var nm=mnPayer(src);o.bySrc[nm]=(o.bySrc[nm]||0)+due;}
+      else o.free+=due;});
     return o.n?o:null;}
+  // 把税从各个收入来源里扣掉。认得出来源的照实扣，认不出的按收入占比摊。
+  // 扣完不能变负数 —— 税年跨期时某一栏可能只剩零头，硬扣会出现负的收入。
+  function mnAfterTaxSrc(sum,TX,tot){
+    if(!TX)return sum;
+    Object.keys(sum).forEach(function(k){
+      var cut=(TX.bySrc[k]||0)+(tot>0?TX.free*(sum[k]/tot):0);
+      sum[k]=Math.max(0,sum[k]-cut);});
+    return sum;}
 
   // 账户余额条，摆在最上面。余额是"现在有多少"，跟下面按期间算的收支
   // 完全是两回事 —— 定期里躺着的钱不会出现在任何一个月的流水里，
@@ -15018,14 +15055,21 @@ margin-left: -22px;
       document.getElementById("mn-rngtxt").textContent=mnFrom+" → "+mnTo;}
     // 币种下拉：只有一种货币时藏起来，不给界面添噪音
     var curs=mnCurList();if(!curs.length)curs=["NZD"];
-    if(curs.indexOf(mnCur)<0)mnCur=curs[0];
+    // 「合计」能折算成哪几个币种：主币种，加上你填过汇率的那些。
+    // 目标币种没汇率的话整栏都折不出来，所以那个选项干脆不给。
+    var fxT=(curs.length>1)?curs.filter(function(c){
+      return c===mnFxBase()||((mnCfg.fx||{})[c]>0);}):[];
+    // 这一句原来会把 "__all" 顶掉 —— curs 里只有真币种，合计压根不在里面，
+    // 结果一选合计就被弹回第一个币种，那个选项等于摆设。
+    if(!mnIsAll()&&curs.indexOf(mnCur)<0)mnCur=curs[0];
+    if(mnIsAll()&&fxT.indexOf(mnAllBase())<0)mnCur=curs[0];
     var cs=document.getElementById("mn-cur");
     cs.innerHTML=curs.map(function(c){
       return '<option value="'+esc(c)+'"'+(c===mnCur?" selected":"")+'>'+esc(c)+"</option>";}).join("")+
-      (curs.length>1?('<option value="__all"'+(mnCur==="__all"?" selected":"")+
-        '>合计（折算成 '+esc(mnFxBase())+'）</option>'):"");
+      fxT.map(function(c){
+        return '<option value="__all:'+esc(c)+'"'+(mnIsAll()&&mnAllBase()===c?" selected":"")+
+          '>合计（折算成 '+esc(c)+'）</option>';}).join("");
     cs.style.display=curs.length>1?"":"none";
-    if(mnCur==="__all"&&curs.length<2)mnCur=curs[0];
     // 账户下拉
     var sel=document.getElementById("mn-acct"),accts=mnCfg.accts||[];
     sel.innerHTML='<option value="">全部账户</option>'+accts.map(function(a){
@@ -15116,6 +15160,13 @@ margin-left: -22px;
     // 分类统计：支出按分类、收入按来源。两边共用同一套环形图 + 列表。
     var isIn=(mnSide==="in");
     var sum=isIn?A.src:A.cat, prev=isIn?P.src:P.cat, tot=isIn?A.inc:A.out;
+    // 上面 KPI 选了「税后」，下面这张收入来源图也得跟着扣税 ——
+    // 一边写税后一边列税前，两个数对不上，看的人会以为哪里算错了。
+    // 环比那一栏同样要用上一期的税额扣，否则拿税后跟税前比，涨跌全是假的。
+    if(isIn&&afterTax){
+      mnAfterTaxSrc(sum,TX,tot);
+      mnAfterTaxSrc(prev,mnTaxDue(psp),P.inc);
+      tot=Math.max(0,tot-due);}
     var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
     // 收入按摘要自动归并时，一次性的小额转账会各自成一类
     // （MR A、GRICE S、PERRON F…），十几行几十块的把真正的大头淹掉。
@@ -15138,7 +15189,7 @@ margin-left: -22px;
       [["out","支出"],["in","收入"]].map(function(x){
         return '<button data-side="'+x[0]+'"'+(mnSide===x[0]?' class="on"':"")+'>'+x[1]+'</button>';}).join("")+
       '</div>';
-    h+='<div class="panel"><h3>'+(isIn?"收入来源":"分类统计")+
+    h+='<div class="panel"><h3>'+(isIn?("收入来源"+(afterTax?"（税后）":"")):"分类统计")+
       ' <span style="font-weight:400;color:var(--muted);font-size:12px">'+
       (isIn?"点一类只看那一类 · 银行摘要按前两个词归并":"点一类只看那一类")+
       ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span><span class="grow"></span>'+toggle+'</h3>';
@@ -15153,7 +15204,7 @@ margin-left: -22px;
       h+='<div class="mn-donut-wrap">'+
         '<div class="mn-donut" style="background:conic-gradient('+stops.join(",")+');'+
           '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
-          '<div class="mid"><span class="t">'+(isIn?"收入合计":"支出合计")+'</span>'+
+          '<div class="mid"><span class="t">'+(isIn?("收入合计"+(afterTax?" · 税后":"")):"支出合计")+'</span>'+
           '<span class="v">'+mnMoney(isIn?tot:-tot)+'</span></div></div>'+
         '<div class="mn-cats" style="flex:1;min-width:280px">'+
         ranked.map(function(k,i){
@@ -15233,12 +15284,18 @@ margin-left: -22px;
           // 折算模式下显示折算值，底下用小字挂上原币金额 ——
           // 只显示折算值的话，你回头核对银行账单会对不上号
           '<span class="am'+(t.amt>0?" in":"")+'">'+
-            (mnCur==="__all"&&mnCurOf(t)!==mnFxBase()
+            (mnIsAll()&&mnCurOf(t)!==mnAllBase()
               ? (mnHasFx(t)
                   ? (mnMoney(mnAmt(t))+'<small>'+mnMoney(t.amt,mnCurOf(t))+'</small>')
                   : ('<small class="nofx">'+mnMoney(t.amt,mnCurOf(t))+' 无汇率</small>'))
               : mnMoney(t.amt,mnCurOf(t)))+
-            '</span></div>';});
+            '</span>'+
+          // 导入的和手记的给个删除键 —— 旧账本里难免有记错的（金额抄错、
+          // 同一笔记了两遍），发现了得能当场删掉，不然只能整本清空重来。
+          // 银行同步来的不给：那是对账的底稿，删了下次同步也未必回得来。
+          (t.src==="akahu"?"":
+            '<button class="mn-x" data-mndel="'+esc(t.id)+'" title="删掉这笔（导入/手记的才能删）">✕</button>')+
+          '</div>';});
       h+='</div>';}
     body.innerHTML=h;}
 
@@ -15655,6 +15712,8 @@ margin-left: -22px;
         if(tax){mnToTax(tax.getAttribute("data-tax"),tax);return;}
         var tag=e.target.closest("[data-tag]");
         if(tag){mnTagEdit(tag);return;}
+        var mdel=e.target.closest("[data-mndel]");
+        if(mdel){e.stopPropagation();mnDelOne(mdel.getAttribute("data-mndel"),mdel);return;}
         // 手动记的那笔点一下能改能删。银行和导入的不给改 ——
         // 改了下次同步又被覆盖，白改一场。
         var row=e.target.closest(".mn-row[data-id]");
@@ -15808,6 +15867,20 @@ margin-left: -22px;
       taxRecs=taxRecs.filter(function(x){return x.taxFrom!==rec.id;});saveTax();
       mnTxns=mnTxns.filter(function(x){return x.id!==rec.id;});
       mnSave();wbtClose();mnStatus("已删掉");mnRender();try{renderTax();}catch(e){}});}
+
+  // 明细里直接删掉一笔。只给导入和手记的用 —— 银行同步来的不给删。
+  // 删之前把它在税务页留下的那条一起撤掉，否则税还挂着，收入却没了。
+  async function mnDelOne(id,btn){
+    var t=null;mnTxns.forEach(function(x){if(String(x.id)===id)t=x;});
+    if(!t)return;
+    if(t.src==="akahu"){mnStatus("银行同步来的不给删 —— 那是对账的底稿",1);return;}
+    var nm=mnAlias(t.merchant||t.desc||"这笔");
+    if(!await ttConfirm("删掉「"+nm.slice(0,24)+"」"+mnMoney(t.amt,mnCurOf(t))+"？"+
+      (t.tax?"\n（它在税务页的那条记录也会一起撤掉）":""),{danger:true,anchor:btn}))return;
+    if(t.tax){taxRecs=taxRecs.filter(function(x){return x.taxFrom!==t.id;});saveTax();}
+    mnTxns=mnTxns.filter(function(x){return String(x.id)!==String(id);});
+    mnSave();mnStatus("已删掉 · 同一个文件再导一次它会回来");mnRender();
+    try{renderTax();}catch(e){}}
 
   // 把一笔进账送进税务页的收入记录，或者撤回。
   // 两边各存各的（税务那份可以自己改金额、勾 GST），靠 taxFrom 记住来源，
