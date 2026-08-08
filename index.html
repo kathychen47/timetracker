@@ -3588,7 +3588,7 @@ margin-left: -22px;
           <button class="btn" id="mn-sync">🔄 同步</button>
           <button class="btn" id="mn-csv">📄 导入文件</button>
           <button class="btn" id="mn-rules">⚙️ 设置</button>
-          <input type="file" id="mn-file" accept=".csv,.xlsx,text/csv" hidden>
+          <input type="file" id="mn-file" accept=".csv,.xlsx,text/csv" multiple hidden>
         </div>
         <div class="mn-status" id="mn-status"></div>
         <div id="mn-body"></div>
@@ -14780,9 +14780,15 @@ margin-left: -22px;
       if(Math.abs(Date.parse(a[i].d+"T00:00:00")-td)<=3*86400000){a[i].used=1;return true;}}
     return false;}
 
-  function mnImportRows(rows,src,ignoreSince){
+  // bno：这一批导入的编号，盖在每笔上（t.b）。有它才能「撤销上次导入」——
+  // 别叫它 batch —— 函数里已经有个 batch 是「本次文件内部的同名计数」，
+  // 撞名的话参数会被它整个盖掉，每笔的 b 存进去的是那张计数表。
+  // 否则调规则时只能整批清掉重导，一轮三个文件点到手酸。
+  // quiet：一次选了好几个文件时，各自不报告、不重画，最后由调用方汇总一次。
+  function mnImportRows(rows,src,ignoreSince,bno,quiet){
     var H=mnCsvHead(rows);
-    if(!H){mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);return;}
+    if(!H){if(!quiet)mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);
+      return {bad:-1,add:0,dup:0,bankDup:0,early:0,curs:{}};}
     var have={};mnTxns.forEach(function(t){have[t.id]=1;});
     var ix=mnAkahuIx();
     var add=0,early=0,bad=0,dup=0,bankDup=0,curs={},batch={};
@@ -14817,22 +14823,26 @@ margin-left: -22px;
       var id=n>1?(base+"#"+(n-1)):base;
       if(have[id]){dup++;continue;}
       var t={id:id,d:d,date:d,desc:desc,amt:amt,cur:cur,merchant:"",acat:"",agrp:"",ref:"",
-        acct:H.acct>=0?String(r[H.acct]||"").trim():"",src:src};
+        acct:H.acct>=0?String(r[H.acct]||"").trim():"",src:src,b:bno||0};
       // 「类型」列如果明说是转账/理财，直接照它定，不用猜
       var forced=H.type>=0?mnTypeCat(r[H.type]):"";
       t.cat=forced||mnGuess(t);
       mnTxns.push(t);have[id]=1;add++;}
     mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
     mnSave();
-    var cl=Object.keys(curs).sort(function(a,b){return curs[b]-curs[a];});
-    mnStatus("导入完成：新增 <b>"+add+"</b> 笔"+
-      (cl.length>1?("（"+cl.map(function(c){return c+" "+curs[c];}).join("、")+"，用上面的币种下拉切换）"):"")+
-      (dup?("，跳过 "+dup+" 笔已经导过的"):"")+
-      (bankDup?("，<b>跳过 "+bankDup+" 笔跟 🏦 银行同步重复的</b>（"+
-        ix.lo+" 起银行那边已经有了）"):"")+
-      (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
-      (bad?("，跳过 "+bad+" 行读不出日期/金额的"):""));
-    mnRender();}
+    var st={add:add,dup:dup,bankDup:bankDup,early:early,bad:bad,curs:curs,lo:ix.lo};
+    if(!quiet){mnStatus(mnImportMsg(st));mnRender();}
+    return st;}
+  function mnImportMsg(st,nf){
+    var cl=Object.keys(st.curs).sort(function(a,b){return st.curs[b]-st.curs[a];});
+    return "导入完成："+(nf>1?("<b>"+nf+"</b> 个文件，"):"")+"新增 <b>"+st.add+"</b> 笔"+
+      (cl.length>1?("（"+cl.map(function(c){return c+" "+st.curs[c];}).join("、")+
+        "，用上面的币种下拉切换）"):"")+
+      (st.dup?("，跳过 "+st.dup+" 笔已经导过的"):"")+
+      (st.bankDup?("，<b>跳过 "+st.bankDup+" 笔跟 🏦 银行同步重复的</b>（"+
+        st.lo+" 起银行那边已经有了）"):"")+
+      (st.early?("，跳过 "+st.early+" 笔 "+mnCfg.since+" 之前的"):"")+
+      (st.bad>0?("，跳过 "+st.bad+" 行读不出日期/金额的"):"");}
 
   // ---- 读 xlsx ----
   // xlsx 其实就是个 zip。浏览器自带 DecompressionStream("deflate-raw")，
@@ -15013,6 +15023,12 @@ margin-left: -22px;
     {n:"Kaisi 退税",   kw:MN_IRD, own:"Kaisi"},
     {n:"Pingping 退税",kw:MN_IRD, own:"Pingping"},
     {n:"IRD 退税",     kw:MN_IRD},
+    // 房客把你先垫的钱还回来（「PERRON, F Microsoft365」）—— 付款人是房客，
+    // 但那不是房租。所以这条要排在收租之前，靠备注里的东西名认出来。
+    // 这不算收入，只是钱回来了，跟退款是一回事，但来源是人不是商家，单列一栏。
+    {n:"代付回款",kw:["microsoft","office 365","netflix","spotify","adobe","icloud",
+      "broadband","wifi","internet","electric","power bill","insur","代付","垫付",
+      "电费","水费","网费","话费","分摊"]},
     {n:"收租",kw:["perron","room lyttel","lyttelton","chen,yan-yu","yan-yu","vakilipour","收租"]},
     {n:"定期利息",kw:["int wbc","t/d int","term deposit int","credit interest","interest earned","利息"]},
     {n:"定期利息",own:"定期"},
@@ -15711,9 +15727,10 @@ margin-left: -22px;
   // 导错了、同步早了，得有路可退。没有删除功能的话，起始日期改了也白改 ——
   // 那道闸只管以后不再收，不会动已经进来的。
   function mnDataHtml(){
-    var n=mnTxns.length,bank=0,imp=0,pre=0;
+    var n=mnTxns.length,bank=0,imp=0,pre=0,B=+mnCfg.impN||0,last=0;
     mnTxns.forEach(function(t){
       if(t.src==="akahu")bank++;else imp++;
+      if(B&&(+t.b||0)===B)last++;
       if(mnCfg.since&&t.d<mnCfg.since)pre++;});
     // 每种来源各自的日期范围。判断「Akahu 到底能给多早」全靠这个 ——
     // 明细列表翻到底太慢，而且以前日期行还不写年份。
@@ -15731,6 +15748,8 @@ margin-left: -22px;
       (n?'<button class="btn" data-exp="json">⬇️ 导出 JSON</button>':"")+
       '</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      // 调规则的时候只想把刚导的那批拿掉重来，不该被逼着整本清空
+      (last?('<button class="btn" data-clr="last">↩️ 撤销上次导入（'+last+' 笔）</button>'):"")+
       (pre?('<button class="btn" data-clr="pre">清掉 '+mnCfg.since+' 之前的 '+pre+' 笔</button>'):"")+
       (imp?('<button class="btn" data-clr="imp">清掉导入的 '+imp+' 笔</button>'):"")+
       (bank?('<button class="btn" data-clr="bank">清掉银行同步的 '+bank+' 笔</button>'):"")+
@@ -15775,6 +15794,8 @@ margin-left: -22px;
     if(kind==="pre"){
       keep=mnTxns.filter(function(t){return !(mnCfg.since&&t.d<mnCfg.since);});}
     else if(kind==="imp"){keep=mnTxns.filter(function(t){return t.src==="akahu";});}
+    else if(kind==="last"){var B=+mnCfg.impN||0;
+      keep=mnTxns.filter(function(t){return (+t.b||0)!==B;});}
     else if(kind==="bank"){keep=mnTxns.filter(function(t){return t.src!=="akahu";});}
     else keep=[];
     gone={};mnTxns.forEach(function(t){gone[t.id]=1;});
@@ -15843,23 +15864,37 @@ margin-left: -22px;
       document.getElementById("mn-csv").addEventListener("click",function(){
         document.getElementById("mn-file").click();});
       document.getElementById("mn-file").addEventListener("change",async function(){
-        var f=this.files&&this.files[0];this.value="";if(!f)return;
-        var xlsx=/\.xlsx$/i.test(f.name);
+        // 可以一次选好几个 —— 她每轮要导三个文件，一个一个点太磨人。
+        // 选中的算作同一批，撤销时一起撤掉。
+        var fs=Array.prototype.slice.call(this.files||[]);this.value="";
+        if(!fs.length)return;
         // 搬旧账（钱迹那种）本来就全在起始日期之前，一刀切掉就白导了 —— 先问清楚
         var old=false;
         if(mnCfg.since)old=await ttConfirm(
-          "这个文件里早于 "+mnCfg.since+" 的记录要一起导进来吗？\n（搬历史账选「都导」，导本月新流水点取消）",
+          (fs.length>1?("这 "+fs.length+" 个文件"):"这个文件")+
+          "里早于 "+mnCfg.since+" 的记录要一起导进来吗？\n（搬历史账选「都导」，导本月新流水点取消）",
           {okText:"都导进来",anchor:document.getElementById("mn-csv")});
-        mnStatus("读取中…");
-        try{
-          if(xlsx){
-            var buf=await f.arrayBuffer();
-            var rows=await mnReadXlsx(buf);
-            mnImportRows(rows,"xlsx",old);
-          }else{
-            var text=await f.text();
-            mnImportRows(mnCsvRows(text),"csv",old);}
-        }catch(e){mnStatus("这个文件读不了："+esc(String(e&&e.message||e)),true);}});
+        var B=(+mnCfg.impN||0)+1;
+        var tot={add:0,dup:0,bankDup:0,early:0,bad:0,curs:{},lo:""},fail=[],ok=0;
+        for(var i=0;i<fs.length;i++){
+          var f=fs[i];
+          mnStatus("读取中… "+esc(f.name)+(fs.length>1?("（"+(i+1)+"/"+fs.length+"）"):""));
+          try{
+            var st;
+            if(/\.xlsx$/i.test(f.name))st=mnImportRows(await mnReadXlsx(await f.arrayBuffer()),"xlsx",old,B,true);
+            else st=mnImportRows(mnCsvRows(await f.text()),"csv",old,B,true);
+            if(st.bad<0){fail.push(f.name+"（认不出表头）");continue;}
+            ok++;
+            ["add","dup","bankDup","early","bad"].forEach(function(k){tot[k]+=st[k];});
+            for(var c in st.curs)tot.curs[c]=(tot.curs[c]||0)+st.curs[c];
+            if(st.lo)tot.lo=st.lo;
+          }catch(e){fail.push(f.name+"（"+String(e&&e.message||e)+"）");}}
+        // 一笔都没进就别占用批次号，否则「撤销上次导入」会指向一批空的
+        if(tot.add){mnCfg.impN=B;save("tt_mncfg",mnCfg);}
+        mnStatus(mnImportMsg(tot,ok)+
+          (fail.length?('<br><b style="color:#d9534f">读不了：'+esc(fail.join("、"))+'</b>'):""),
+          !ok);
+        mnRender();});
       document.getElementById("mn-rules").addEventListener("click",function(){
         mnView=mnView==="rules"?"list":"rules";
         this.classList.toggle("primary",mnView==="rules");
@@ -16012,12 +16047,16 @@ margin-left: -22px;
         var clr=e.target.closest("[data-clr]");
         if(clr){
           var kind=clr.getAttribute("data-clr"),label=clr.textContent.trim();
+          // 「撤销上次导入」是调规则时的常规操作，同一个文件再导一次就回来了 ——
+          // 不用自动备份，也不用二次确认，否则每轮都要清一次下载文件夹。
+          var undo=(kind==="last");
           // Akahu 只给得出有限的历史，比它更早的数据这个账本就是唯一一份 ——
           // 清空之前先自动导一份，不指望你记得手动备份。
-          ttConfirm("确定「"+label+"」？\n撤不回来。会先自动导出一份备份到下载文件夹。",
-            {danger:true,anchor:clr}).then(function(ok){
+          ttConfirm("确定「"+label+"」？"+
+            (undo?"\n（同一个文件再导一次就回来了）":"\n撤不回来。会先自动导出一份备份到下载文件夹。"),
+            {danger:!undo,anchor:clr}).then(function(ok){
             if(!ok)return;
-            try{mnExport("json");}catch(e2){}
+            if(!undo){try{mnExport("json");}catch(e2){}}
             // 「全部清空」会把比 Akahu 能给的还早的那段一起删掉，那段没处找回来。
             // 备份已经导了，但还是再挡一下 —— 这一步撤不回来。
             var risky=(kind==="all"||kind==="imp");
@@ -16028,8 +16067,10 @@ margin-left: -22px;
               {danger:true,okText:"删",anchor:clr}):Promise.resolve(true)).then(function(ok2){
             if(!ok2)return;
             var r=mnClear(kind);
+            // 撤完把批次号退回去，再点一次就撤上上批
+            if(undo&&mnCfg.impN){mnCfg.impN=+mnCfg.impN-1;save("tt_mncfg",mnCfg);}
             mnStatus("删掉了 <b>"+r.n+"</b> 笔"+(r.tax?("，同时撤掉 "+r.tax+" 条税务记录"):"")+
-              "　·　备份已导到下载文件夹");
+              (undo?"　·　同一个文件再导一次就回来":"　·　备份已导到下载文件夹"));
             mnRender();try{renderTax();}catch(e2){}});});
           return;}
         if(e.target.id==="mn-rule-back"){
