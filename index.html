@@ -4295,9 +4295,12 @@ margin-left: -22px;
   function load(k,d){try{var v=LS.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
   // 副屏模式：同一个 app 以 ?solo=1 装进 iframe 当第二个阅读窗口
   var SOLO=false;try{SOLO=(new URLSearchParams(location.search).get("solo")==="1");}catch(e){}
-  var SOLO_SKIP={tt_tab:1,tt_rdbook:1,tt_rdzen:1,tt_rdbi:1,tt_rdnotes:1,tt_rdtoc:1,tt_rdsplit:1};
+  var SOLO_SKIP={tt_tab:1,tt_rdbook:1,tt_rdzen:1,tt_rdbi:1,tt_rdnotes:1,tt_rdtoc:1,tt_rdsplit:1,tt_pomorun:1};
   function save(k,v){if(SOLO&&SOLO_SKIP[k])return;try{LS.setItem(k,JSON.stringify(v));}catch(e){}schedulePush(k);}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+  // 这个标签页的身份证。同一个人可能开着好几个网页（分屏副屏、划词小窗、手滑开的第二个），
+  // 它们共用一份 localStorage —— 番茄钟得认准"归谁管"，否则每个都自己跑一份、结束时各记一条。
+  var TABID="tab"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   function pad(n){return(n<10?"0":"")+n;}
   function fmt(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
   function parse(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
@@ -6937,6 +6940,7 @@ margin-left: -22px;
     var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked),note:note||null};
     if(pomoStep)ev.stepId=pomoStep.st;                     // 这段时间算到那一步头上
     if(segs)ev.segs=segs;
+    events=load("tt_events",events)||events;   // 别的网页刚记过东西的话，先把最新那份拿回来，免得整个盖掉
     events.push(ev);
     save("tt_events",events);
     // 之前这里要求"当场握着 token"，可 token 只活 1 小时 —— 过期那会儿做的番茄钟就静静地没上去。
@@ -6954,7 +6958,9 @@ margin-left: -22px;
     return n<=1?(base.trim()||"#ec8b76"):darken(base,Math.min(0.55,(n-1)*0.2));}
   var UPMAX=MAXMIN*60;                                    // 正计时上限 3 小时（和表盘能拖到的上限一致）
   var pomoSetBox=document.querySelector(".pomo-set"),noteUntil=0;
-  function hintText(){return timerMode==="up"?"正计时 · 一圈 60 分，最多 3 小时":"拖动圆环设时长 · 一圈 60 分";}
+  function hintText(){
+    if(pFollow)return "这次计时在另一个网页里跑着，这边只跟着看 · 想在这边继续就点「接管」";
+    return timerMode==="up"?"正计时 · 一圈 60 分，最多 3 小时":"拖动圆环设时长 · 一圈 60 分";}
   // 从技能页点「▶」进来的那一步：这次计时算到它头上
   var pomoStep=load("tt_pomostep",null);
   function drawStepChip(){
@@ -6964,6 +6970,7 @@ margin-left: -22px;
     var x=document.getElementById("pomo-step-x");
     if(x)x.addEventListener("click",function(){pomoStep=null;save("tt_pomostep",null);drawStepChip();});}
   function startStep(sk,st){
+    if(pFollow){pomoNote("这次计时在另一个网页里跑着，先去那边结束、或者在番茄钟那点「接管」");return;}
     if(pTimer&&!window.confirm("现在有计时在跑，要换成「"+st.t+"」吗？（当前这段先结束并记下来）"))return;
     if(pTimer)finishUp();
     pomoStep={sk:sk.name,t:st.t,st:st.id};save("tt_pomostep",pomoStep);
@@ -6978,21 +6985,21 @@ margin-left: -22px;
   function drawPomo(){
     try{liveRefresh();}catch(e){}                          // 日历上那一块跟着长（开始/暂停/结束也靠它清理）
     var tk=(pomoTask.value||"").trim();
-    var idleDial=(timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
-    ring.style.cursor=(timerMode==="down"&&!pTimer)?"grab":"default";
+    var idleDial=(!pFollow&&timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
+    ring.style.cursor=(!pFollow&&timerMode==="down"&&!pTimer)?"grab":"default";
     if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
     renderSegs();
     if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
       if(!noting)pomoHint.textContent=hintText();
-      pomoHint.style.visibility=(noting||idleDial||(timerMode==="up"&&!pTimer&&!pElapsed))?"visible":"hidden";}
+      pomoHint.style.visibility=(noting||pFollow||idleDial||(timerMode==="up"&&!pTimer&&!pElapsed))?"visible":"hidden";}
     if(timerMode==="up"){var e2=Math.min(pElapsed,UPMAX),m=Math.floor(e2/60),s=e2%60;pTime.textContent=pad(m)+":"+pad(s);
-      pMode.textContent=(pTimer?"计时中":(pElapsed>0?"已暂停":"正计时"))+(tk?" · "+tk:"");ring.classList.remove("brk");
+      pMode.textContent=(pFollow?"另一个网页在计时":(pTimer?"计时中":(pElapsed>0?"已暂停":"正计时")))+(tk?" · "+tk:"");ring.classList.remove("brk");
       var mins=e2/60,lap=Math.min(Math.floor(mins/60)+1,MAXMIN/60),cp=(e2>=UPMAX)?100:(mins%60)/60*100; // 一圈 60 分，第二三圈颜色变深
       var cur=lapShade(lap),rest=lap>=2?lapShade(lap-1):"var(--surface-2)";
       ring.style.background="conic-gradient("+cur+" 0 "+cp.toFixed(1)+"%,"+rest+" "+cp.toFixed(1)+"% 100%)";
       ring.style.setProperty("--p",cp.toFixed(1));
     }else{var mm=Math.floor(pLeft/60),ss=pLeft%60;pTime.textContent=pad(mm)+":"+pad(ss);
-      pMode.textContent=(pMode2==="focus"?("专注"+(tk?" · "+tk:"")):"休息");ring.classList.toggle("brk",pMode2==="break");
+      pMode.textContent=(pFollow?"另一个网页在计时 · ":"")+(pMode2==="focus"?("专注"+(tk?" · "+tk:"")):"休息");ring.classList.toggle("brk",pMode2==="break");
       if(idleDial){var min=Math.max(1,Math.round(pTotal/60)),curLap=Math.ceil(min/60),cp=(((min-1)%60)+1)/60*100;
         var cur=lapShade(curLap),rest=curLap>=2?lapShade(curLap-1):"var(--surface-2)";
         ring.style.background="conic-gradient("+cur+" 0 "+cp.toFixed(1)+"%,"+rest+" "+cp.toFixed(1)+"% 100%)";
@@ -7011,24 +7018,94 @@ margin-left: -22px;
     pMode2="focus";pTotal=min*60;pLeft=pTotal;drawPomo();
   }
   var ringDrag=false;
-  ring.addEventListener("mousedown",function(e){if(timerMode!=="down"||pTimer)return;ringDrag=true;dialRevs=0;dialPrevAng=null;ring.style.cursor="grabbing";ringSetFromEvent(e);e.preventDefault();});
+  ring.addEventListener("mousedown",function(e){if(timerMode!=="down"||pTimer||pFollow)return;ringDrag=true;dialRevs=0;dialPrevAng=null;ring.style.cursor="grabbing";ringSetFromEvent(e);e.preventDefault();});
   document.addEventListener("mousemove",function(e){if(ringDrag)ringSetFromEvent(e);});
   document.addEventListener("mouseup",function(){if(ringDrag){ringDrag=false;drawPomo();}});
-  ring.addEventListener("touchstart",function(e){if(timerMode!=="down"||pTimer)return;ringDrag=true;dialRevs=0;dialPrevAng=null;ringSetFromEvent(e);e.preventDefault();},{passive:false});
+  ring.addEventListener("touchstart",function(e){if(timerMode!=="down"||pTimer||pFollow)return;ringDrag=true;dialRevs=0;dialPrevAng=null;ringSetFromEvent(e);e.preventDefault();},{passive:false});
   document.addEventListener("touchmove",function(e){if(ringDrag){ringSetFromEvent(e);e.preventDefault();}},{passive:false});
   document.addEventListener("touchend",function(){if(ringDrag){ringDrag=false;drawPomo();}});
   // 计时靠"墙上时钟"而不是每秒减一：切到后台被浏览器降频也不会走慢；关掉网页也能接着算
   var pEndAt=0,pStartAt=0,pBase=0,pTitleOld=null;
+  // ---- 只让一个网页真的在计时 ----
+  // 两个网页都开着的时候，以前两边都会 restorePomoRun() 各起一个 interval，
+  // 各自数各自的秒，结束时各写一条事件 —— 于是"一次专注出现两条记录"。
+  // 现在存档里记着 owner（哪个标签页管着这次计时）和 at（心跳时间）：
+  // 不是自己的就进"跟着看"模式，只显示不计时、不落库；那边关了就自动接手。
+  var pFollow=false,pFollowT=null,pHeartT=null,pFollowSig=null;
+  // 后台标签页的 setInterval 会被浏览器降到一分钟一次，所以心跳 5 秒一发、90 秒才判定"那边没了"。
+  // 判早了会两边同时跑；判晚也不亏 —— 时间是按墙上时钟算的，接手时一秒都不会少。
+  var PB_BEAT=5000,PB_STALE=90000;
+  function pomoRunOther(){                                     // 别的活着的标签页管着的那份存档（没有就 null）
+    var r=load("tt_pomorun",null);
+    if(!r||!r.mode||!r.owner||r.owner===TABID)return null;
+    if(Date.now()-(+r.at||0)>PB_STALE)return null;              // 心跳停了：那个网页已经关了，这份归我
+    return r;}
+  function pomoOwned(){                                        // 这次计时确实归我管 —— 只有它为真才可以记进日历
+    if(pFollow)return false;
+    var r=load("tt_pomorun",null);
+    if(!r||!r.owner||r.owner===TABID)return true;
+    return Date.now()-(+r.at||0)>PB_STALE;}
+  function claimPomo(){                                        // 把这次计时记到自己名下
+    if(SOLO||pFollow)return;
+    var r=load("tt_pomorun",null);
+    if(r&&r.mode){r.owner=TABID;r.at=Date.now();save("tt_pomorun",r);}}
+  function startFollow(){
+    if(pFollow)return;
+    pFollow=true;pFollowSig=null;
+    if(pTimer){clearInterval(pTimer);pTimer=null;}              // 自己那份先停掉，别重复计时
+    cancelPause();pomoTitle();
+    if(!pFollowT)pFollowT=setInterval(followTick,500);
+    followTick();}
+  function followTick(){                                       // 只读地把那边的进度画出来
+    var r=pomoRunOther();
+    if(!r){leaveFollow();return;}
+    timerMode=r.mode;pMode2=r.p2||"focus";pTotal=+r.total||pTotal;
+    document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
+    // 任务名/分类只在那边真的改了才抄过来 —— 每半秒无脑覆盖的话，这边正打字就被抹掉了
+    var sig=(r.task||"")+"|"+(r.cat||"")+"|"+(r.sub||"")+"|"+(r.tocal!==false);
+    if(sig!==pFollowSig){pFollowSig=sig;
+      pomoTask.value=r.task||"";
+      if(r.cat&&pomoCat.value!==r.cat){pomoCat.value=r.cat;fillPomoSubs();}
+      if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
+      pomoToCal.checked=(r.tocal!==false);}
+    pSegs=(r.segs&&r.segs.length)?r.segs.slice():[];pSegStart=+r.segStart||0;
+    if(timerMode==="up")pElapsed=r.run?Math.min(UPMAX,(+r.base||0)+Math.max(0,Math.round((Date.now()-(+r.startAt||Date.now()))/1000))):(+r.elapsed||+r.base||0);
+    else pLeft=r.run?Math.max(0,Math.round(((+r.endAt||0)-Date.now())/1000)):Math.max(0,+r.left||0);
+    if(startBtn.textContent!=="接管")startBtn.textContent="接管";
+    drawPomo();}
+  function leaveFollow(){                                      // 那边结束了、或者那个网页关了
+    if(!pFollow)return;
+    pFollow=false;
+    if(pFollowT){clearInterval(pFollowT);pFollowT=null;}
+    var r=load("tt_pomorun",null);
+    if(r&&r.mode){claimPomo();restorePomoRun0();return;}         // 存档还在 → 这边接着跑（先认领，落库那步要认这个）
+    pElapsed=0;pBase=0;pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;
+    clearSegs();startBtn.textContent="开始";drawPomo();}
+  function takeOver(){                                         // 手动点「接管」
+    if(!pFollow)return;
+    pFollow=false;
+    if(pFollowT){clearInterval(pFollowT);pFollowT=null;}
+    claimPomo();restorePomoRun0();
+    pomoNote("这次计时接到这个网页了，另一边只跟着看");}
+  function followGuard(){                                      // 跟着看的时候别去动那边的计时
+    if(!pFollow)return false;
+    pomoNote("这次计时在另一个网页里跑着，先点「接管」再操作");
+    return true;}
+  function onPomoRunChanged(){                                 // 别的标签页写了 tt_pomorun
+    if(SOLO)return;
+    if(pomoRunOther()){startFollow();return;}
+    if(pFollow)leaveFollow();}
   function savePomoRun(){
     // 暂停也要存！原来这里是 if(!pTimer) 就清空，而 stopTimer 正是先把 pTimer 置空再调这个 ——
     // 于是一按暂停存档就没了，刷新后走过的时间全丢。真正该清空的是「结束」和「重置」，
     // 那两处自己会 save("tt_pomorun",null)，不需要这里代劳。
+    if(pFollow)return;                                         // 只是跟着看别的标签页，别去覆盖人家的存档
     var walked=(timerMode==="up")?(pElapsed>0):(pLeft>0&&pLeft<pTotal);
     if(!pTimer&&!walked){save("tt_pomorun",null);return;}      // 没跑过也没暂停 → 确实没什么可存
     save("tt_pomorun",{mode:timerMode,p2:pMode2,run:!!pTimer,endAt:pEndAt,startAt:pStartAt,base:pBase,
       left:pLeft,elapsed:pElapsed,total:pTotal,
       task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",tocal:!!pomoToCal.checked,
-      segs:pSegs,segStart:pSegStart,at:Date.now()});}
+      segs:pSegs,segStart:pSegStart,at:Date.now(),owner:TABID});}
   function pomoTitle(){
     if(!pTimer){if(pTitleOld!==null){document.title=pTitleOld;pTitleOld=null;}return;}
     if(pTitleOld===null)pTitleOld=document.title;
@@ -7065,19 +7142,38 @@ margin-left: -22px;
     save("tt_pomorun",null);drawPomo();}
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
-  function finishUp(endMs){var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
+  // 落库的两个出口。进来前先确认这次计时真归自己管 —— 后台被浏览器冻住的标签页
+  // 解冻后可能还攥着一个旧 interval，没有这道闸就会把同一次专注再记一条。
+  function finishUp(endMs){if(!pomoOwned()){startFollow();return;}
+    var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
     if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
     if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
     pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);
     pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
     try{if(state.tab==="todo")renderSkills();}catch(e){}
     drawPomo();}
-  function onComplete(endMs){stopTimer();try{beep();}catch(e){}
+  function onComplete(endMs){if(!pomoOwned()){startFollow();return;}
+    stopTimer();try{beep();}catch(e){}
     if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     save("tt_pomorun",null);drawPomo();}
   // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）
   function restorePomoRun(){
+    if(SOLO)return;                                   // 分屏副屏只是同一个 app 装在 iframe 里，它不该也跑一份
+    var r=pomoRunOther();
+    if(!r){claimPomo();restorePomoRun0();return;}
+    // 存档挂在别的标签页名下。可上次是崩溃/强关的话，这个名字也还留着 ——
+    // 先喊一嗓子：真开着的那个收到就会立刻补一次心跳；半秒没人应就当它不在了，这边接手。
+    startFollow();
+    var was=+r.at||0;
+    save("tt_pomoping",{from:TABID,at:Date.now()});
+    setTimeout(function(){
+      if(!pFollow)return;
+      var r2=load("tt_pomorun",null);
+      if(r2&&r2.owner&&r2.owner!==TABID&&(+r2.at||0)>was)return;   // 有人应答，那确实开着
+      leaveFollow();
+    },600);}
+  function restorePomoRun0(){
     var r=load("tt_pomorun",null);
     if(!r||!r.mode)return;
     timerMode=r.mode;pMode2=r.p2||"focus";pTotal=+r.total||pTotal;
@@ -7121,11 +7217,12 @@ margin-left: -22px;
     noteUntil=Date.now()+6000;
     el.textContent=t;el.style.visibility="visible";el.style.color="var(--primary)";
     setTimeout(function(){noteUntil=0;el.style.color="";el.textContent=hintText();drawPomo();},6000);}
-  startBtn.addEventListener("click",function(){if(pTimer)stopTimer();else startTimer();});
-  document.getElementById("pomo-reset").addEventListener("click",resetPomo);
-  skipBtn.addEventListener("click",function(){if(timerMode==="up")finishUp();else{pLeft=0;pEndAt=Date.now();if(pTimer)pomoTick();else onComplete();}});
+  startBtn.addEventListener("click",function(){if(pFollow){takeOver();return;}if(pTimer)stopTimer();else startTimer();});
+  document.getElementById("pomo-reset").addEventListener("click",function(){if(followGuard())return;resetPomo();});
+  skipBtn.addEventListener("click",function(){if(followGuard())return;if(timerMode==="up")finishUp();else{pLeft=0;pEndAt=Date.now();if(pTimer)pomoTick();else onComplete();}});
   document.getElementById("pomo-mode-seg").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;var tm=b.getAttribute("data-tm");if(tm===timerMode)return;
+    if(followGuard())return;
     stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
     skipBtn.textContent=(tm==="up"?"结束":"跳过");
     pBase=0;save("tt_pomorun",null);clearSegs();savePomoLast();   // 记住这次选的模式，下次打开还是它
@@ -15718,6 +15815,43 @@ margin-left: -22px;
   renderCal();drawPomo();renderPomoStats();renderTodos();
   try{applyPomoMode();}catch(e){}      // 先回到上次用的倒计时/正计时
   try{restorePomoRun();}catch(e){}     // 再让还没跑完的那个番茄钟接着走（它自带模式，会覆盖上面这句）
+
+  // ---------- 同一个人开着好几个网页 ----------
+  // localStorage 是共用的，但 events/todos 这些数组每个网页在内存里各存了一份。
+  // A 记一条 → 写回整个数组；B 手里还是打开时那份老的，B 再存一次就把 A 那条整个抹掉。
+  // storage 事件只在"别的网页写了"时才触发（自己写不触发），收到就把内存重读一遍。
+  if(!SOLO){
+    var xtabT=null;
+    window.addEventListener("storage",function(e){
+      if(!e.key)return;                                        // 整个 clear()：不管
+      if(e.newValue===e.oldValue)return;                       // 值没变（重读时又原样写回来的）：别互相惊动
+      if(e.key==="tt_pomorun"){try{onPomoRunChanged();}catch(_e){}return;}
+      if(e.key==="tt_pomoping"){                               // 新开的网页在问"这次计时还有人管吗"
+        try{if(!pFollow){var pr=load("tt_pomorun",null);
+          if(pr&&pr.owner===TABID){pr.at=Date.now();save("tt_pomorun",pr);}}}catch(_e){}
+        return;}
+      if(CLOUD_KEYS.indexOf(e.key)<0)return;
+      if(xtabT)clearTimeout(xtabT);
+      xtabT=setTimeout(function(){xtabT=null;                  // 连着好几个键一起变（比如云端拉下来）时只重读一次
+        applyingCloud=true;try{reloadAllFromStorage();}catch(_e){}applyingCloud=false;},400);
+    });
+    // 心跳：告诉别的网页"这次计时还有人管着"。停了 90 秒就当这个网页已经关了，谁看见谁接手。
+    pHeartT=setInterval(function(){
+      if(pFollow)return;                                       // 跟着看的那边由 followTick 自己判
+      var r=load("tt_pomorun",null);
+      if(!r||!r.mode)return;
+      if(r.owner&&r.owner!==TABID){                            // 名分不在自己手上了
+        if(Date.now()-(+r.at||0)<=PB_STALE){startFollow();return;}   // 那边活着 → 让位，别两个网页一起数
+        if(!pTimer)return;                                     // 那边也没心跳了，自己又没在跑 → 谁都别抢
+      }
+      else if(!r.owner&&!pTimer)return;                        // 没人认领、自己也没在跑：留给"打开网页接着走"那一步
+      r.at=Date.now();r.owner=TABID;save("tt_pomorun",r);
+    },PB_BEAT);
+    // 关掉/刷新这个网页时把名字让出来，另一个网页立刻就能接手，不用干等 90 秒
+    window.addEventListener("pagehide",function(){
+      try{if(pFollow)return;var r=load("tt_pomorun",null);
+        if(r&&r.owner===TABID){r.owner=null;save("tt_pomorun",r);}}catch(_e){}});
+  }
   initLang();renderBookmarklet();
   // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
   window.addEventListener("tt-words-merged",function(){
