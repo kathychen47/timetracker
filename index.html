@@ -14992,9 +14992,54 @@ margin-left: -22px;
   // 收入来源的默认归并。左边是显示名，右边是摘要里出现就算的关键词。
   // 目的是让「钱迹导入的那几年」和「Westpac 同步的这几年」落到同一栏 ——
   // 否则同一份工资会因为分组依据不同（一个按摘要、一个按账户）裂成两栏。
-  var MN_PAYER_DEF={
-    "Kaisi":["我的工资","uc salary","university cntbry","uoc net pay"],
-    "Pingping":["宝贝工资","cai,yuele","wu ping","nzpost"]};
+  //
+  // 按顺序匹配，先命中先算。每条最多带三个条件，都满足才算命中：
+  //   kw   摘要 / 商户名里出现这些词（任一个）
+  //   own  钱进的那个账户归谁 —— 比的是 mnAcctLabel 的结果，不是账号，
+  //        所以设置里改了归属名，这里跟着走
+  //   min  单笔金额下限；"big" = 用设置里那个「算工资的门槛」（默认 1000）
+  //
+  // 顺序很要紧：
+  //   · 退税排在工资之前 —— IRD 退的钱也可能上千，排后面会被
+  //     「进 Pingping 账户且 ≥1000 就算工资」那条抢走
+  //   · 退款排在大额工资之前 —— 大额退款不是收入来源
+  //   · 带 kw 的具体规则排在只看账户的兜底之前
+  var MN_IRD=["inland revenue","i.r.d","ird ","commissioner of inland"];
+  var MN_PAYER_DEF=[
+    // 工资（认得出名字的，不看金额 —— 钱迹那几年的摘要就叫「我的工资」）
+    {n:"Kaisi 工资",   kw:["university cntbry","uoc net pay","uc salary","我的工资"]},
+    {n:"Pingping 工资",kw:["宝贝工资","cai,yuele","nzpost"]},
+    // 退税：同一个 IRD，进谁的卡就算谁的
+    {n:"Kaisi 退税",   kw:MN_IRD, own:"Kaisi"},
+    {n:"Pingping 退税",kw:MN_IRD, own:"Pingping"},
+    {n:"IRD 退税",     kw:MN_IRD},
+    {n:"收租",kw:["perron","room lyttel","lyttelton","chen,yan-yu","yan-yu","vakilipour","收租"]},
+    {n:"定期利息",kw:["int wbc","t/d int","term deposit int","credit interest","interest earned","利息"]},
+    {n:"定期利息",own:"定期"},
+    {n:"退款",kw:["refund","reversal","chargeback","退款","退货","退费","reimburse"]},
+    // 目前 Pingping 的工资来自 Michael Cai / Chi Yao / Best Health，
+    // 但雇主会换，所以真正的判据是「进她账户的大额」，名单只是加个保险。
+    {n:"Pingping 工资",kw:["michael cai","cai,michael","chi,yao","yao,chi","best health"],min:"big"},
+    {n:"Pingping 工资",own:"Pingping",min:"big"},
+    {n:"Kaisi 工资",   own:"Kaisi",   min:"big"}
+  ];
+  // 多大算工资。她的说法是「单笔大于 1000 的一般是」，设置里能改。
+  function mnBigPay(){var v=+(mnCfg&&mnCfg.payMin);return (v>0)?v:1000;}
+  function mnOwnerOf(id){
+    if(!id)return "";
+    var accs=mnCfg.accts||[];
+    for(var i=0;i<accs.length;i++)if(accs[i].id===id)return mnAcctLabel(accs[i]);
+    return "";}
+  function mnPayerRule(t,hay){
+    var own=null,amt=Math.abs(+t.amt||0);
+    for(var i=0;i<MN_PAYER_DEF.length;i++){
+      var R=MN_PAYER_DEF[i];
+      if(R.kw&&!mnHit(hay,R.kw))continue;
+      if(R.own){if(own===null)own=mnOwnerOf(t.acct);
+        if(own!==R.own)continue;}
+      if(R.min!=null&&!(amt>=((R.min==="big")?mnBigPay():+R.min)))continue;
+      return R.n;}
+    return "";}
   function mnAlias(s){
     s=String(s==null?"":s);
     for(var i=0;i<MN_ALIAS.length;i++)s=s.replace(MN_ALIAS[i][0],MN_ALIAS[i][1]);
@@ -15017,26 +15062,19 @@ margin-left: -22px;
     var pm=mnCfg.payers||{};
     for(var nm in pm){
       if(pm[nm]&&pm[nm].length&&mnHit(hay,pm[nm]))return nm;}
-    // 钱迹导入的记录没有账户信息，只能按摘要归并，于是同一份收入会出现两栏：
-    // Westpac 那几年叫「Kaisi」（按账户分），钱迹那几年叫「我的工资 UC salary」。
-    // 这张表把两边对到同一个名字上。设置里自己填的规则优先级更高。
-    for(var dn in MN_PAYER_DEF)
-      if(mnHit(hay,MN_PAYER_DEF[dn]))return dn;
-    // 其次按账户归属。账户是硬事实（钱进了谁的户头），
-    // 摘要写法是会变的 —— 只要设了归属，就比任何关键词都可靠。
-    var ow=mnCfg.owners||{};
-    if(Object.keys(ow).length)return ow[t.acct]||"其他收入";
-    // 没自定义归属时，只要认得出账户就按账户分 —— 钱进了谁的卡就是谁的，
-    // 工资也好、别人转的也好，都算那个人的。这比按摘要切靠谱得多：
-    // 摘要切出来会有一堆几十块的一次性收款各自成一类。
-    if(t.acct){
-      var accs=mnCfg.accts||[];
-      for(var i=0;i<accs.length;i++)
-        if(accs[i].id===t.acct)return mnAcctLabel(accs[i]);}
+    // 内置规则表（工资 / 退税 / 收租 / 定期利息 / 退款…）。
+    // 它同时也把钱迹那几年和 Westpac 这几年对到同一个名字上 ——
+    // 否则同一份工资会因为分组依据不同（一个按摘要、一个按账户）裂成两栏。
+    var byRule=mnPayerRule(t,hay);
+    if(byRule)return byRule;
+    // 有账户信息、又一条规则都没中 —— 那就是别人零星转来的钱。
+    // 这里不再按账户归成「Kaisi」「Pingping」两大栏了：
+    // 那样一来工资、退税、收租、别人还的钱全糊在一起，看不出结构。
+    if(t.acct)return "其他收入";
+    // 没有账户信息的（钱迹导入的）退回按摘要分 —— 人民币那本账全靠它，
+    // 一律归成「其他收入」会把「爸爸」「二手置换」这些来源全抹平。
     if(t.merchant)return t.merchant;
     var s=String(t.desc||"").trim();
-    if(/INT WBC/i.test(s))return "定期利息";
-    if(/I\.R\.D|INLAND REVENUE/i.test(s))return "IRD 退税";
     // 钱迹的摘要是「一级分类 二级分类 备注」拼起来的，取两个词会把
     // 「收租 bond返还」「收租 电费」拆成好几行 —— 中文摘要只取第一个词，
     // 一级分类本身就是它该归的那一类。
@@ -15537,7 +15575,16 @@ margin-left: -22px;
       '账户是硬事实，比摘要关键词可靠。<b>只要填了任意一个</b>，'+
       '收入就按账户归属分组，没填的账户一律归到「其他收入」。<br>'+
       '全部留空 = 按摘要自动归并（现在的做法）。上面的关键词规则优先级更高。</div>'):"";
-    return '<div class="panel"><h3>收入来源归并</h3>'+ownerBlock+
+    return '<div class="panel"><h3>收入来源归并</h3>'+
+      '<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">算工资的门槛</div>'+
+      '<div class="mn-rule"><span class="nm">单笔 ≥ 多少算工资</span>'+
+      '<input type="number" step="50" data-paymin value="'+esc(mnCfg.payMin||"")+'" placeholder="1000">'+
+      '<span style="flex:0 0 44px;color:var(--muted);font-size:12px">'+esc(mnFxBase())+'</span></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin:6px 0 16px;line-height:1.6">'+
+      '进 Pingping / Kaisi 账户、金额到这个数以上的进账，认成那个人的工资；'+
+      '够不到的算「其他收入」。<b>改完立刻生效。</b><br>'+
+      '工资、退税、收租、定期利息、退款这些有专门的识别规则，不受这个门槛影响。</div>'+
+      ownerBlock+
       '<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按关键词归并</div>'+
       (names.length?names.map(function(n){
         return '<div class="mn-rule"><span class="nm">'+esc(n)+'</span>'+
@@ -15848,6 +15895,12 @@ margin-left: -22px;
           if(ov)mnCfg.owners[oid]=ov;else delete mnCfg.owners[oid];
           save("tt_mncfg",mnCfg);
           mnStatus(ov?("这个账户的收入归到「"+esc(ov)+"」了"):"已取消这个账户的归属");
+          mnRender();return;}
+        if(t.matches("[data-paymin]")){
+          var pv=parseFloat(t.value);
+          if(isFinite(pv)&&pv>0)mnCfg.payMin=pv;else delete mnCfg.payMin;
+          save("tt_mncfg",mnCfg);
+          mnStatus("单笔 ≥ <b>"+mnMoney(mnBigPay(),mnFxBase())+"</b> 算工资");
           mnRender();return;}
         if(t.matches("[data-pay]")){
           var pn=t.getAttribute("data-pay");
