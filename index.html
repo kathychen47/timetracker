@@ -14857,6 +14857,14 @@ margin-left: -22px;
   // 收入没有"分类"可分 —— 全是 income 这一类。有意义的分法是按来源：
   // 你的工资、Pingping 的工资、房租、定期利息。银行摘要里带流水号和日期，
   // 每笔都不一样，所以要先归一化才能聚在一起。
+  // 银行给的账户名（"Joint Account"、"Chen Kaisi"）不是你平时的叫法。
+  // 这里只给个好认的默认，⚙️ 设置 → 收入来源归并 里随时能改成别的。
+  function mnAcctLabel(a){
+    var n=String(a&&a.name||"").toLowerCase(),ty=String(a&&a.type||"").toLowerCase();
+    if(/joint/.test(n))return "Pingping";
+    if(/kaisi|chen k/.test(n))return "Kaisi";
+    if(/term|invest|deposit/.test(n+" "+ty))return "定期";
+    return (a&&(a.name||a.bank))||"账户";}
   function mnPayer(t){
     // 你自己定的归并规则最优先。同一个人付款，银行摘要写法可能有好几种
     // （CAI,YUELE NZPost / NZP-Michael / Nzp …），只有你知道它们是同一笔来源。
@@ -14874,7 +14882,7 @@ margin-left: -22px;
     if(t.acct){
       var accs=mnCfg.accts||[];
       for(var i=0;i<accs.length;i++)
-        if(accs[i].id===t.acct)return accs[i].name||accs[i].bank||"账户";}
+        if(accs[i].id===t.acct)return mnAcctLabel(accs[i]);}
     if(t.merchant)return t.merchant;
     var s=String(t.desc||"").trim();
     if(/INT WBC/i.test(s))return "定期利息";
@@ -15294,7 +15302,7 @@ margin-left: -22px;
         return '<div class="mn-rule"><span class="nm">'+esc(a.name||a.bank||"账户")+
           (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+'</span>'+
           '<input data-own="'+esc(a.id)+'" value="'+esc(ow[a.id]||"")+
-          '" placeholder="这个账户的收入算谁的，比如「我的收入」"></div>';}).join("")+
+          '" placeholder="'+esc(mnAcctLabel(a))+'（默认，可以改）"></div>';}).join("")+
       '<div style="font-size:12px;color:var(--muted);margin:6px 0 16px;line-height:1.6">'+
       '账户是硬事实，比摘要关键词可靠。<b>只要填了任意一个</b>，'+
       '收入就按账户归属分组，没填的账户一律归到「其他收入」。<br>'+
