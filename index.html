@@ -14058,7 +14058,10 @@ margin-left: -22px;
     {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
     {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
-    {k:"fee",      n:"银行费用", i:"🏦", c:"#b0895f"},
+    {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
+    {k:"post",     n:"快递物流", i:"📦", c:"#9b8ec4"},
+    {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
+    {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
     {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
     {k:"transfer", n:"转账",     i:"↔", c:"#9aa1b0"},
     {k:"other",    n:"其他",     i:"📦", c:"#a8adba"}
@@ -14067,7 +14070,9 @@ margin-left: -22px;
   // 内置关键词按新西兰常见商户写的。匹配的干草堆两头补了空格，
   // 所以想要「整词」的关键词自己带前导空格（" rent" 不会被 "current" 撞上）。
   var MN_KW={
-    grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy"],
+    // 除了大连锁，也放通用词 —— Akahu 万一没给类目，靠这些还能认出独立小店
+    grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy",
+      "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"],
     food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell "],
     transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
     housing:[" rent","tenancy","property manag","spark nz","vodafone","one nz","2degrees","skinny","contact energy","mercury","genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy","watercare","city council","district council"," rates","chorus","body corp"],
@@ -14094,6 +14099,77 @@ margin-left: -22px;
     income:["工资","收租","返现","外快","报销","奖金","红包","分红","退款","退费","代写","薪"],
     transfer:["转账","还款","信用卡还款","结转","借出","借入","理财","理財","基金"]
   };
+  // ---- NZFCC → 我的分类 ----
+  // Akahu 按 NZFCC（新西兰官方财务分类，208 个类目 / 11 个分组）给每笔交易标了类。
+  // 这才是分类该依赖的东西 —— 靠列举商户品牌名永远列不完：
+  // 大连锁能覆盖，"Sunson Asian Food Market"、"Home Butcher"、"Growers Direct"
+  // 这种独立小店一个都覆盖不了，而人恰恰天天在这些地方花钱。
+  //
+  // 先按分组给个默认，再用具体类目名覆盖那些跟默认不符的。
+  var MN_NZ_GROUP={
+    "Food":"grocery","Lifestyle":"fun","Transport":"transport","Health":"health",
+    "Household":"shop","Appearance":"shop","Education":"edu",
+    "Utilities":"housing","Housing":"housing","Professional Services":"fee"};
+  var MN_NZ_CAT={
+    // 吃 —— NZFCC 把餐厅放在 Lifestyle 里，把超市放在 Food 里，跟直觉相反
+    "cafes and restaurants":"food","fast food stores":"food","caterers":"food",
+    "bars, pubs, nightclubs":"food","liquor stores":"food",
+    "wineries, breweries, and distilleries":"food","bakeries":"food",
+    "ice cream, gelato, nut, and confectionary stores":"food",
+    // 旅行
+    "air transport services":"travel","airports":"travel",
+    "hotels, motels, and other temporary accommodation":"travel",
+    "travel agencies and tour operators":"travel",
+    "motor parks, campgrounds, holiday parks, recreational camps":"travel",
+    // 快递物流
+    "courier and freight delivery services":"post","postal services":"post",
+    // 保险
+    "insurance":"insure",
+    // 住房 —— 修房子、园艺、垃圾、仓储都算住的开销，不是购物
+    "building and carpentry services":"housing","plumbing and gasfitting supplies and services":"housing",
+    "roofing services":"housing","electrical supplies and services":"housing",
+    "cleaning, sanitation, and pest control services":"housing",
+    "waste and recycling services":"housing","storage facilities":"housing",
+    "landscaping, garden, and horticultural services":"housing",
+    "nurseries and garden supplies":"housing","real estate services":"housing",
+    // 运动健身归娱乐，不归医疗
+    "gyms, fitness, aquatic facilities, yoga, pilates":"fun",
+    "sports and athletic clubs":"fun",
+    "cosmetic, health spas, and relaxation massage services":"health",
+    "membership organisations (not elsewhere classified)":"fun",
+    "gift and souvenir stores":"shop",
+    // 教育
+    "student loans":"edu",
+    // 钱只是换了个地方，不是花掉 —— 进合计会凭空抬高收支
+    "debt repayments":"transfer","foreign exchange and money transfer services":"transfer",
+    "financial asset brokers, exchanges, and managed funds":"transfer",
+    "atm or branch deposits":"transfer","cash advances on credit":"transfer",
+    "investment withdrawals":"transfer","loan drawdowns":"transfer","peer to peer":"transfer",
+    // 取现之后花在哪不知道，但钱确实出去了 —— 算支出，只是归不了类
+    "cash withdrawals":"other",
+    "child support":"other","welfare and charity":"other",
+    "religious organisations":"other","political organisations":"other",
+    "tax payments":"fee"};
+  // 精确名对不上时（NZFCC 改名、或者拿到的是简写）先按子串猜一轮，
+  // 再退到分组 —— 分组兜底有时会错得离谱：NZFCC 的 Food 组默认是超市，
+  // 可餐厅根本不在 Food 组里（在 Lifestyle），光靠分组会把餐厅算成超市。
+  var MN_NZ_WORD=[
+    ["supermarket","grocery"],["grocery","grocery"],["convenience store","grocery"],
+    ["meat","grocery"],["seafood","grocery"],["specialty food","grocery"],
+    ["restaurant","food"],["cafe","food"],["fast food","food"],["takeaway","food"],
+    ["bakery","food"],["bakeries","food"],["bar","food"],["liquor","food"],
+    ["fuel","transport"],["parking","transport"],["rideshare","transport"],["taxi","transport"],
+    ["automotive","transport"],["vehicle","transport"],["transport","transport"],
+    ["pharmac","health"],["dental","health"],["doctor","health"],["medical","health"],
+    ["hospital","health"],["optometr","health"],["physio","health"],
+    ["insurance","insure"],["courier","post"],["postal","post"],
+    ["rent","housing"],["electricity","housing"],["gas service","housing"],
+    ["water and sanitation","housing"],["internet service","housing"],
+    ["telecommunication","housing"],["local government","housing"],
+    ["hotel","travel"],["air transport","travel"],["travel agenc","travel"],
+    ["clothing","shop"],["apparel","shop"],["shoe","shop"],["hardware","shop"],
+    ["school","edu"],["education","edu"],["universit","edu"],["book store","edu"],
+    ["cinema","fun"],["streaming","fun"],["gaming","fun"],["gym","fun"]];
   // 币种符号。混币种加总没有意义，所以页面永远只看一种，符号跟着走。
   var MN_SYM={NZD:"$",AUD:"$",USD:"$",CNY:"¥",HKD:"$",GBP:"£",EUR:"€",JPY:"¥"};
   var mnTxns=load("tt_txns",[])||[];
@@ -14148,10 +14224,15 @@ margin-left: -22px;
     for(var j=0;j<MN_CATS.length;j++){var k2=MN_CATS[j].k;
       if(MN_KW[k2]&&mnHit(hay,MN_KW[k2]))return k2;
       if(MN_KW_ZH[k2]&&mnHit(hay,MN_KW_ZH[k2]))return k2;}
-    // 3) Akahu 已经按 NZFCC 标准分过一道，拿它的类目名再模糊匹一次 —— 白捡的
-    var ac=" "+((t.acat||"")+" "+(t.agrp||"")).toLowerCase()+" ";
-    if(ac.trim())for(var m=0;m<MN_CATS.length;m++){var k3=MN_CATS[m].k;
-      if(MN_KW[k3]&&mnHit(ac,MN_KW[k3]))return k3;}
+    // 3) Akahu 按 NZFCC 标好的类目 —— 先对具体类目名，再退到分组。
+    //    这一层比关键词可靠得多：它认得出独立小店，而品牌名表永远认不出。
+    var an=String(t.acat||"").toLowerCase().trim();
+    if(an){
+      if(MN_NZ_CAT[an])return MN_NZ_CAT[an];
+      for(var w=0;w<MN_NZ_WORD.length;w++)
+        if(an.indexOf(MN_NZ_WORD[w][0])>=0)return MN_NZ_WORD[w][1];}
+    var ag=String(t.agrp||"").trim();
+    if(ag&&MN_NZ_GROUP[ag])return MN_NZ_GROUP[ag];
     // 4) 认不出来：进账当收入，出账当其他
     return (+t.amt>0)?"income":"other";}
 
@@ -14572,8 +14653,8 @@ margin-left: -22px;
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
           // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
-          // 人民币的收租记进去毫无意义
-          (t.amt>0&&mnCurOf(t)==="NZD"
+          // 人民币的收租记进去毫无意义。转账也排除：自己账户之间倒钱不是收入。
+          (t.amt>0&&mnCurOf(t)==="NZD"&&t.cat!=="transfer"
             ? ('<button class="tag'+(t.tax?" guess":"")+'" data-tax="'+esc(t.id)+'" title="'+
                (t.tax?"已经记进税务了，点一下撤回":"把这笔算进税务页的收入")+'">'+
                (t.tax?"已记税 ✓":"记入税务")+'</button>')
@@ -14671,6 +14752,10 @@ margin-left: -22px;
     return '<div class="panel"><h3>账本数据</h3>'+
       '<div style="font-size:13px;margin-bottom:10px">共 <b>'+n+'</b> 笔 · '+
       '银行同步 '+bank+' 笔 · 导入 '+imp+' 笔</div>'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
+      (n?'<button class="btn" data-exp="csv">⬇️ 导出 CSV</button>':"")+
+      (n?'<button class="btn" data-exp="json">⬇️ 导出 JSON</button>':"")+
+      '</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
       (pre?('<button class="btn" data-clr="pre">清掉 '+mnCfg.since+' 之前的 '+pre+' 笔</button>'):"")+
       (imp?('<button class="btn" data-clr="imp">清掉导入的 '+imp+' 笔</button>'):"")+
@@ -14679,8 +14764,32 @@ margin-left: -22px;
       (n?"":'<span style="font-size:13px;color:var(--muted)">还没有任何记录</span>')+
       '</div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      'CSV 给你自己在 Excel 里看；JSON 是原样导出（含 Akahu 的类目字段），'+
+      '分类不准时把 JSON 发我，我照真实数据补规则。<br>'+
       '删掉的记录如果曾经「记入税务」，税务页那一条会一起撤掉。<br>'+
       '银行同步的删了还能再同步回来（只要不早于起始日期）；导入的要重新导文件。</div></div>';}
+
+  // 导出整本账。JSON 是原样的，含 Akahu 给的 acat/agrp —— 分类不准时
+  // 看这两个字段就知道是规则没覆盖，还是 Akahu 本来就没标。
+  function mnExport(kind){
+    var name="记账-"+mnYmd(new Date()),blob;
+    if(kind==="json"){
+      blob=new Blob([JSON.stringify({txns:mnTxns,cfg:mnCfg,rules:mnRules},null,1)],
+        {type:"application/json"});name+=".json";}
+    else{
+      var q=function(v){var s=String(v===undefined||v===null?"":v);
+        return /[",\n]/.test(s)?('"'+s.replace(/"/g,'""')+'"'):s;};
+      var head=["日期","金额","币种","分类","商户","摘要","账户","来源","NZFCC类目","NZFCC分组","手动改过"];
+      var rows=[head.join(",")].concat(mnTxns.map(function(t){
+        var c=MN_CAT[t.cat]||MN_CAT.other;
+        return [t.d,t.amt,mnCurOf(t),c.n,t.merchant,t.desc,t.acct,t.src,t.acat,t.agrp,t.manual?"是":""]
+          .map(q).join(",");}));
+      // 加 BOM，否则 Excel 打开中文是乱码
+      blob=new Blob(["﻿"+rows.join("\r\n")],{type:"text/csv;charset=utf-8"});name+=".csv";}
+    var a=document.createElement("a"),u=URL.createObjectURL(blob);
+    a.href=u;a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);a.remove();},0);
+    mnStatus("已导出 <b>"+esc(name)+"</b>（"+mnTxns.length+" 笔）");}
 
   function mnClear(kind){
     var keep,gone;
@@ -14802,6 +14911,8 @@ margin-left: -22px;
           if(rt&&rt.src==="manual")mnAddForm(rt);
           return;}
         if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
+        var exp=e.target.closest("[data-exp]");
+        if(exp){mnExport(exp.getAttribute("data-exp"));return;}
         var clr=e.target.closest("[data-clr]");
         if(clr){
           var kind=clr.getAttribute("data-clr"),label=clr.textContent.trim();
