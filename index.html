@@ -14242,6 +14242,8 @@ margin-left: -22px;
     {k:"telco",    n:"通讯",     i:"📱", c:"#5aa9c9"},
     {k:"housing",  n:"住房水电", i:"🏠", c:"#7c83e6"},
     {k:"health",   n:"医疗",     i:"💊", c:"#61c4cf"},
+    // 工具建材要排在购物之前 —— 购物的关键词里原本就有 bunnings、mitre 10
+    {k:"tool",     n:"工具建材", i:"🔧", c:"#b08968"},
     {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
     {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
@@ -14298,7 +14300,10 @@ margin-left: -22px;
       "genesis energy","meridian","electric kiwi","flick electric","powershop","nova energy",
       "watercare","city council","district council"," rates","body corp","trustpower","ecotricity"],
     health:["pharmacy","chemist","unichem","medical","dental","dentist","physio","optometr","specsavers","radiology","southern cross"," nib ","accuro","white cross"],
-    shop:["kmart","warehouse","briscoes","farmers","mitre 10","bunnings","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu","pb tech","pbtech","furniture","appliance","mighty ape","the market"],
+    tool:["bunnings","mitre 10","mitre10","placemakers","itm ","carters","hammer hardware",
+      "repco tools","hirepool","kennards","resene","guthrie bowron","tile warehouse",
+      "plumbing world","hardware","timber","paint shop","garden centre","oderings","kings plant"],
+    shop:["kmart","warehouse","briscoes","farmers","amazon","aliexpress","trade me","trademe","temu","shein","noel leeming","jb hi-fi","harvey norman","rebel sport","glassons","cotton on","uniqlo","postie","hallenstein","torpedo7","macpac","kathmandu","pb tech","pbtech","furniture","appliance","mighty ape","the market"],
     fun:["netflix","spotify","disney","event cinema","hoyts","reading cinema","steam","playstation","nintendo","xbox","les mills","anytime fitness","jetts"," gym","graham condon","recreation and sport","leisure centre","pioneer rec","taiora","swim","youtube premium","audible","kindle","patreon","twitch"],
     edu:["university","massey","unitec","studylink","student loan","coursera","udemy","duolingo","tuition"],
     // 新西兰的保险公司。"insurance" 这个通用词能覆盖大半（AA INSURANCE、
@@ -14339,6 +14344,7 @@ margin-left: -22px;
     housing:["住房","房租","水电","水电网","物业","燃气","租金"],
     health:["医疗","药","看病","牙","体检","诊所","医院"],
     insure:["保险","车险","房险","寿险","投保","续保","保费"],
+    tool:["五金","建材","工具","装修","油漆","木材","园艺","花园"],
     shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
     fun:["娱乐","会员","游戏","电影","旅行","运动","健身","钓鱼","订阅"],
     edu:["学习","书","课程","培训","学费","教育","文具"],
@@ -14402,6 +14408,12 @@ margin-left: -22px;
     // NZFCC 的 Utilities 组里既有水电也有电信，组默认给了住房 ——
     // 手机费和宽带单独拎到通讯
     "internet services":"telco","telecommunication services":"telco",
+    // 五金建材：NZFCC 把它们放在 Household 组，组默认是购物
+    "hardware equipment and supplies":"tool","building supplies":"tool",
+    "painting supplies and services":"tool","electrical supplies and services":"tool",
+    "plumbing and gasfitting supplies and services":"tool",
+    "nurseries and garden supplies":"tool","floor covering stores":"tool",
+    "curtains, blinds, and window coverings":"tool","fireplaces and supplies":"tool",
     // NZFCC 把软件和云服务归在 Professional Services 组，跟税款、ACC、
     // 律师会计费同组。默认走那个组的话，OpenAI、Anthropic、Cloudflare
     // 会全掉进「费用 / 税」—— 明显不对，单独拎出来。
@@ -14427,7 +14439,8 @@ margin-left: -22px;
     ["water and sanitation","housing"],["internet service","telco"],
     ["telecommunication","telco"],["local government","housing"],
     ["hotel","travel"],["air transport","travel"],["travel agenc","travel"],
-    ["clothing","shop"],["apparel","shop"],["shoe","shop"],["hardware","shop"],
+    ["clothing","shop"],["apparel","shop"],["shoe","shop"],["hardware","tool"],
+    ["building suppl","tool"],["garden","tool"],
     ["school","edu"],["education","edu"],["universit","edu"],["book store","edu"],
     ["cinema","fun"],["streaming","fun"],["gaming","fun"],["gym","fun"],
     ["software","soft"],["cloud service","soft"],["saas","soft"]];
