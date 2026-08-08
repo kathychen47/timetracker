@@ -574,8 +574,16 @@
   .mn-donut .mid .v{font-size:15px;font-weight:680;letter-spacing:-.3px}
   .mn-cat .dlt{width:96px;flex:none;text-align:right;font-size:11px}
   .mn-cat .dlt .up{color:#d9534f}.mn-cat .dlt .dn{color:#4fae7d}
-  .mn-day{display:flex;align-items:baseline;gap:10px}
-  .mn-day .dsum{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:600;color:var(--text)}
+  /* 日期行以前只是小灰字，跟明细挤在一起分不出层次。
+     给底色和分隔线，让「哪天花了多少」一眼扫得到。 */
+  .mn-day{display:flex;align-items:center;gap:10px;font-size:12.5px;
+    background:var(--surface-2);border-radius:8px;padding:7px 11px;margin:16px 0 6px;
+    color:var(--text);font-weight:650}
+  .mn-day:first-child{margin-top:4px}
+  .mn-day .wd{color:var(--muted);font-weight:400;font-size:11.5px}
+  .mn-day .dsum{margin-left:auto;font-variant-numeric:tabular-nums;font-weight:700;font-size:13.5px}
+  .mn-day .dsum.out{color:#d9534f}
+  .mn-day .dsum .in{color:#4fae7d;font-weight:600;font-size:12px;margin-left:9px}
   .mn-rule{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px}
   .mn-rule .nm{width:104px;flex:none}
   .mn-rule input{flex:1;padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px}
@@ -14161,6 +14169,7 @@ margin-left: -22px;
     {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
     {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
+    {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
     {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
     {k:"post",     n:"快递物流", i:"📦", c:"#9b8ec4"},
     {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
@@ -14216,6 +14225,12 @@ margin-left: -22px;
     insure:["insurance","insurer","policy renewal"," ami ","ami ins","aa insurance","aa life",
       "state ins","tower ins","vero","fmg ","nzi ","initio","cove ins","ando ins",
       "partners life","asteron","fidelity life","aioi","trade me ins","suncorp"],
+    // AI、云服务、开发工具、各种订阅制软件
+    soft:["openai","chatgpt","anthropic","claude.ai","cloudflare","github","vercel","netlify",
+      "digitalocean","linode","aws ","amazon web","google cloud","gcp ","azure","supabase",
+      "notion","figma","adobe","jetbrains","cursor","midjourney","perplexity","copilot",
+      "dropbox","icloud","google one","microsoft 365","office 365","namecheap","godaddy",
+      "domain renewal","hosting","1password","lastpass","grammarly","canva","zoom.us"],
     fee:["account fee","monthly fee","service fee","transaction fee","foreign currency fee","offshore fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
     income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
     // 存起来的钱：定期、储蓄、KiwiSaver、基金。没花掉，回来时也不是收入，
@@ -14237,7 +14252,8 @@ margin-left: -22px;
     shop:["日用品","日用","购物","服饰","衣服","鞋","化妆","护肤","电子产品","家电","厨房电器","剁手","快递","海运","家居","二手置换","退换货"],
     fun:["娱乐","会员","游戏","电影","旅行","运动","健身","钓鱼","订阅"],
     edu:["学习","书","课程","培训","学费","教育","文具"],
-    fee:["手续费","利息","年费","服务费","罚款"],
+    soft:["软件","订阅","会员费","云服务","域名","服务器"],
+    fee:["手续费","利息","年费","服务费","罚款","税款","个税"],
     income:["工资","收租","返现","外快","报销","奖金","红包","分红","退款","退费","代写","薪"],
     saving:["存款","定期","理财","理財","基金","储蓄","投资","攒"],
     transfer:["转账","转入","转出","还款","信用卡还款","结转","借出","借入"]
@@ -14292,7 +14308,15 @@ margin-left: -22px;
     "cash withdrawals":"other",
     "child support":"other","welfare and charity":"other",
     "religious organisations":"other","political organisations":"other",
-    "tax payments":"fee"};
+    "tax payments":"fee",
+    // NZFCC 把软件和云服务归在 Professional Services 组，跟税款、ACC、
+    // 律师会计费同组。默认走那个组的话，OpenAI、Anthropic、Cloudflare
+    // 会全掉进「费用 / 税」—— 明显不对，单独拎出来。
+    "business software and cloud services":"soft",
+    "personal software (not elsewhere classified)":"soft",
+    "it and software development services":"soft",
+    "digital gaming products and services":"fun",
+    "media and entertainment streaming services":"fun"};
   // 精确名对不上时（NZFCC 改名、或者拿到的是简写）先按子串猜一轮，
   // 再退到分组 —— 分组兜底有时会错得离谱：NZFCC 的 Food 组默认是超市，
   // 可餐厅根本不在 Food 组里（在 Lifestyle），光靠分组会把餐厅算成超市。
@@ -14312,7 +14336,8 @@ margin-left: -22px;
     ["hotel","travel"],["air transport","travel"],["travel agenc","travel"],
     ["clothing","shop"],["apparel","shop"],["shoe","shop"],["hardware","shop"],
     ["school","edu"],["education","edu"],["universit","edu"],["book store","edu"],
-    ["cinema","fun"],["streaming","fun"],["gaming","fun"],["gym","fun"]];
+    ["cinema","fun"],["streaming","fun"],["gaming","fun"],["gym","fun"],
+    ["software","soft"],["cloud service","soft"],["saas","soft"]];
   // 币种符号。混币种加总没有意义，所以页面永远只看一种，符号跟着走。
   var MN_SYM={NZD:"$",AUD:"$",USD:"$",CNY:"¥",HKD:"$",GBP:"£",EUR:"€",JPY:"¥"};
   var mnTxns=load("tt_txns",[])||[];
@@ -14843,10 +14868,12 @@ margin-left: -22px;
       h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+(mnPick?"这一类":"")+'没有流水</div>';}
     else{
       // 先按天把支出汇总好，渲染时直接取
-      var dayOut={};
+      var dayOut={},dayIn={};
       list.forEach(function(t){
-        if(MN_NEUTRAL[t.cat]||t.amt>=0)return;
-        dayOut[t.d]=(dayOut[t.d]||0)+(-t.amt);});
+        if(MN_NEUTRAL[t.cat])return;
+        var a=mnAmt(t);
+        if(a<0)dayOut[t.d]=(dayOut[t.d]||0)+(-a);
+        else if(a>0)dayIn[t.d]=(dayIn[t.d]||0)+a;});
       var WD=["日","一","二","三","四","五","六"];
       h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
         '点分类标签可以改，改过的以后不会被自动分类覆盖</span>'+
@@ -14856,8 +14883,12 @@ margin-left: -22px;
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
           var p=day.split("-"),wd=WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
-          h+='<div class="mn-day"><span>'+(+p[1])+"."+mnP2(+p[2])+" 周"+wd+'</span>'+
-            (dayOut[day]?('<span class="dsum">支 '+mnMoney(-dayOut[day])+'</span>'):"")+'</div>';}
+          h+='<div class="mn-day"><span>'+(+p[1])+" 月 "+(+p[2])+' 日</span>'+
+            '<span class="wd">周'+wd+'</span>'+
+            ((dayOut[day]||dayIn[day])?('<span class="dsum'+(dayOut[day]?" out":"")+'">'+
+              (dayOut[day]?mnMoney(-dayOut[day]):"")+
+              (dayIn[day]?('<span class="in">+'+mnMoney(dayIn[day])+'</span>'):"")+
+              '</span>'):"")+'</div>';}
         var c=MN_CAT[t.cat]||MN_CAT.other;
         h+='<div class="mn-row" data-id="'+esc(t.id)+'">'+
           '<span class="ic">'+c.i+'</span>'+
