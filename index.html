@@ -15190,7 +15190,9 @@ margin-left: -22px;
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
           var p=day.split("-"),wd=WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
-          h+='<div class="mn-day"><span>'+(+p[1])+" 月 "+(+p[2])+' 日</span>'+
+          // 「全部」和跨年的自选区间里，不写年份就分不清是哪一年的 8 月 7 日
+          var showY=(mnScope==="all")||(mnScope==="range"&&mnFrom.slice(0,4)!==mnTo.slice(0,4));
+          h+='<div class="mn-day"><span>'+(showY?(p[0]+" 年 "):"")+(+p[1])+" 月 "+(+p[2])+' 日</span>'+
             '<span class="wd">周'+wd+'</span>'+
             ((dayOut[day]||dayIn[day])?('<span class="dsum'+(dayOut[day]?" out":"")+'">'+
               (dayOut[day]?mnMoney(-dayOut[day]):"")+
@@ -15422,9 +15424,17 @@ margin-left: -22px;
     mnTxns.forEach(function(t){
       if(t.src==="akahu")bank++;else imp++;
       if(mnCfg.since&&t.d<mnCfg.since)pre++;});
+    // 每种来源各自的日期范围。判断「Akahu 到底能给多早」全靠这个 ——
+    // 明细列表翻到底太慢，而且以前日期行还不写年份。
+    function span(f){
+      var ds=mnTxns.filter(f).map(function(t){return t.d;}).filter(Boolean).sort();
+      return ds.length?(ds[0]+" → "+ds[ds.length-1]):"—";}
+    var isBank=function(t){return t.src==="akahu";};
     return '<div class="panel"><h3>账本数据</h3>'+
-      '<div style="font-size:13px;margin-bottom:10px">共 <b>'+n+'</b> 笔 · '+
-      '银行同步 '+bank+' 笔 · 导入 '+imp+' 笔</div>'+
+      '<div style="font-size:13px;margin-bottom:4px">共 <b>'+n+'</b> 笔</div>'+
+      '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.8">'+
+      '🏦 银行同步 <b>'+bank+'</b> 笔　'+esc(span(isBank))+'<br>'+
+      '📄 导入 / 手记 <b>'+imp+'</b> 笔　'+esc(span(function(t){return !isBank(t);}))+'</div>'+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+
       (n?'<button class="btn" data-exp="csv">⬇️ 导出 CSV</button>':"")+
       (n?'<button class="btn" data-exp="json">⬇️ 导出 JSON</button>':"")+
