@@ -14867,6 +14867,12 @@ margin-left: -22px;
   // 「宝贝的应付税款」，备注里也有两百多处）。只在显示时替换，
   // 不动原始数据 —— 导出的 CSV/JSON 仍是原样，以后想改回去也行。
   var MN_ALIAS=[[/宝贝/g,"Pingping"]];
+  // 收入来源的默认归并。左边是显示名，右边是摘要里出现就算的关键词。
+  // 目的是让「钱迹导入的那几年」和「Westpac 同步的这几年」落到同一栏 ——
+  // 否则同一份工资会因为分组依据不同（一个按摘要、一个按账户）裂成两栏。
+  var MN_PAYER_DEF={
+    "Kaisi":["我的工资","uc salary","university cntbry","uoc net pay"],
+    "Pingping":["宝贝工资","cai,yuele","wu ping","nzpost"]};
   function mnAlias(s){
     s=String(s==null?"":s);
     for(var i=0;i<MN_ALIAS.length;i++)s=s.replace(MN_ALIAS[i][0],MN_ALIAS[i][1]);
@@ -14874,6 +14880,9 @@ margin-left: -22px;
   // 银行给的账户名（"Joint Account"、"Chen Kaisi"）不是你平时的叫法。
   // 这里只给个好认的默认，⚙️ 设置 → 收入来源归并 里随时能改成别的。
   function mnAcctLabel(a){
+    // 设置里自己填过归属名的，一切显示都以它为准
+    var own=(mnCfg&&mnCfg.owners||{})[a&&a.id];
+    if(own)return own;
     var n=String(a&&a.name||"").toLowerCase(),ty=String(a&&a.type||"").toLowerCase();
     if(/joint/.test(n))return "Pingping";
     if(/kaisi|chen k/.test(n))return "Kaisi";
@@ -14886,6 +14895,11 @@ margin-left: -22px;
     var pm=mnCfg.payers||{};
     for(var nm in pm){
       if(pm[nm]&&pm[nm].length&&mnHit(hay,pm[nm]))return nm;}
+    // 钱迹导入的记录没有账户信息，只能按摘要归并，于是同一份收入会出现两栏：
+    // Westpac 那几年叫「Kaisi」（按账户分），钱迹那几年叫「我的工资 UC salary」。
+    // 这张表把两边对到同一个名字上。设置里自己填的规则优先级更高。
+    for(var dn in MN_PAYER_DEF)
+      if(mnHit(hay,MN_PAYER_DEF[dn]))return dn;
     // 其次按账户归属。账户是硬事实（钱进了谁的户头），
     // 摘要写法是会变的 —— 只要设了归属，就比任何关键词都可靠。
     var ow=mnCfg.owners||{};
@@ -14901,9 +14915,14 @@ margin-left: -22px;
     var s=String(t.desc||"").trim();
     if(/INT WBC/i.test(s))return "定期利息";
     if(/I\.R\.D|INLAND REVENUE/i.test(s))return "IRD 退税";
-    // 取前两个词：'UNIVERSITY CNTBRY UOC NET PAY 260805' → 'UNIVERSITY CNTBRY'
-    var w=s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");
-    return mnAlias(w.slice(0,34))||"（无摘要）";}
+    // 钱迹的摘要是「一级分类 二级分类 备注」拼起来的，取两个词会把
+    // 「收租 bond返还」「收租 电费」拆成好几行 —— 中文摘要只取第一个词，
+    // 一级分类本身就是它该归的那一类。
+    var w=/^[一-龥]/.test(s)
+      ? s.split(/\s+/).filter(Boolean)[0]
+      // 英文摘要要两个词才认得出：'UNIVERSITY CNTBRY UOC NET PAY 260805'
+      : s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");
+    return mnAlias(String(w||"").slice(0,34))||"（无摘要）";}
 
   function mnAgg(list){
     var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},src:{},noFx:0};
@@ -14953,7 +14972,7 @@ margin-left: -22px;
         var sav=/TERM|SAVING|DEPOSIT|INVEST/i.test(String(a.type||"")+" "+String(a.name||""));
         return '<div class="mn-bal'+(a.id===mnAcct?" on":"")+(sav?" sav":"")+'" data-bal="'+esc(a.id)+'" '+
           'title="点一下只看这个账户">'+
-          '<div class="n">'+(sav?"💰 ":"")+esc(a.name||a.bank||"账户")+
+          '<div class="n">'+(sav?"💰 ":"")+esc(mnAcctLabel(a))+
             (a.num?('<span class="q"> ···'+esc(a.num)+'</span>'):"")+'</div>'+
           '<div class="b">'+mnMoney(a.bal,a.cur||"NZD")+'</div></div>';}).join("")+
       // 合计这格兼作"取消账户筛选" —— 筛了之后总得有地方点回来
@@ -15003,7 +15022,7 @@ margin-left: -22px;
     var sel=document.getElementById("mn-acct"),accts=mnCfg.accts||[];
     sel.innerHTML='<option value="">全部账户</option>'+accts.map(function(a){
       return '<option value="'+esc(a.id)+'"'+(a.id===mnAcct?" selected":"")+'>'+
-        esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+"</option>";}).join("");
+        esc(mnAcctLabel(a))+(a.num?(" ···"+esc(a.num)):"")+"</option>";}).join("");
     // 上面的余额卡片点一下就能筛账户，两个入口做同一件事 ——
     // 有卡片时就藏掉这个下拉，给工具栏腾地方
     var hasCards=accts.some(function(a){return typeof a.bal==="number";});
@@ -15247,8 +15266,11 @@ margin-left: -22px;
       '同步时一起取回来的</span></h3>'+
       accts.map(function(a){
         return '<div class="mn-cat" style="cursor:default">'+
-          '<span class="nm" style="width:auto;flex:1">'+esc(a.name||a.bank||"账户")+
+          '<span class="nm" style="width:auto;flex:1">'+esc(mnAcctLabel(a))+
             (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+
+            // 银行原名跟在后面，对账时能对上号
+            (a.name&&a.name!==mnAcctLabel(a)
+              ? ('<span style="color:var(--muted);font-size:11px"> · '+esc(a.name)+'</span>'):"")+
             (a.type?('<span style="color:var(--muted);font-size:11px"> · '+esc(a.type)+'</span>'):"")+'</span>'+
           '<span class="amt" style="width:120px">'+
             (typeof a.bal==="number"?mnMoney(a.bal,a.cur||"NZD"):"—")+'</span></div>';}).join("")+
@@ -15276,7 +15298,7 @@ margin-left: -22px;
       '<option value="__none"'+(mnCfg.taxAcct==="__none"?" selected":"")+'>（关掉，不显示这个按钮）</option>'+
       accts.map(function(a){
         return '<option value="'+esc(a.id)+'"'+(a.id===mnCfg.taxAcct?" selected":"")+'>'+
-          esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+'</option>';}).join("")+
+          esc(mnAcctLabel(a))+(a.num?(" ···"+esc(a.num)):"")+'</option>';}).join("")+
       '</select></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6">'+
       '选定之后，只有这个账户的 NZD 进账才会显示「记入税务」按钮。<br>'+
@@ -15317,7 +15339,10 @@ margin-left: -22px;
     var accts=mnCfg.accts||[],ow=mnCfg.owners||{};
     var ownerBlock=accts.length?('<div style="font-size:12.5px;font-weight:600;margin-bottom:8px">按账户归属</div>'+
       accts.map(function(a){
-        return '<div class="mn-rule"><span class="nm">'+esc(a.name||a.bank||"账户")+
+        // 这一栏是"给账户改名"的地方，左边必须显示银行原名，
+        // 否则改完之后两边都是新名字，你就分不清哪一行对应哪个账户了
+        return '<div class="mn-rule"><span class="nm" title="'+esc(a.name||a.bank||"")+'">'+
+          esc(a.name||a.bank||"账户")+
           (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+'</span>'+
           '<input data-own="'+esc(a.id)+'" value="'+esc(ow[a.id]||"")+
           '" placeholder="'+esc(mnAcctLabel(a))+'（默认，可以改）"></div>';}).join("")+
