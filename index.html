@@ -544,7 +544,13 @@
   .mn-cat.off{opacity:.4}
   .mn-cat .nm{width:96px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mn-cat .track{flex:1;height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden}
-  .mn-cat .fill{height:100%;border-radius:5px}
+  /* 必须 display:block —— span 默认是行内元素，height 对它不生效，条会永远是 0 高。
+     外面的 .track 能显示是因为它是 flex 子项被自动块级化了，.fill 不是。 */
+  .mn-cat .fill{display:block;height:100%;border-radius:5px}
+  .mn-mini{border:1px solid var(--border);background:transparent;color:var(--muted);
+    font-size:11px;padding:2px 8px;border-radius:20px;cursor:pointer;margin-top:5px}
+  .mn-mini:hover{border-color:var(--primary);color:var(--primary)}
+  .mn-note{font-size:12px;color:var(--muted);line-height:1.7;margin:-4px 0 14px;padding:0 2px}
   .mn-cat .amt{width:88px;flex:none;text-align:right;font-variant-numeric:tabular-nums}
   .mn-cat .pct{width:38px;flex:none;text-align:right;color:var(--muted);font-size:12px}
   .mn-day{font-size:12px;color:var(--muted);font-weight:600;padding:12px 4px 5px}
@@ -14063,6 +14069,7 @@ margin-left: -22px;
     {k:"insure",   n:"保险",     i:"🛡", c:"#7aa06d"},
     {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
     {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
+    {k:"saving",   n:"存款 / 资产", i:"💰", c:"#3f9e7c"},
     {k:"transfer", n:"转账",     i:"↔", c:"#9aa1b0"},
     {k:"other",    n:"其他",     i:"📦", c:"#a8adba"}
   ];
@@ -14074,6 +14081,14 @@ margin-left: -22px;
   // 进账时只允许这几类 —— 不然「UNIVERSITY CNTBRY UOC NET PAY」会因为
   // 含 "university" 被判成教育支出，工资就成了学费
   var MN_IN_OK={income:1,transfer:1,other:1};
+  // 反过来也一样：出账不能落到「收入」。
+  // 负数金额被判成收入的话，它会跑进支出的分类汇总里，
+  // 出现「收入 -$1,693」这种自相矛盾的一行。
+  function mnDirOk(k,inc){return inc?!!MN_IN_OK[k]:(k!=="income");}
+  // 这两类都不是"花掉"或"赚到"，一律不进收支合计：
+  // 转账 = 自己账户之间倒钱（两条腿一进一出，算进去会凭空翻倍）
+  // 存款 = 钱换个地方放着，取回来时也不是收入
+  var MN_NEUTRAL={transfer:1,saving:1};
   // 内置关键词按新西兰常见商户写的。匹配的干草堆两头补了空格，
   // 所以想要「整词」的关键词自己带前导空格（" rent" 不会被 "current" 撞上）。
   var MN_KW={
@@ -14095,7 +14110,12 @@ margin-left: -22px;
       "partners life","asteron","fidelity life","aioi","trade me ins","suncorp"],
     fee:["account fee","monthly fee","service fee","transaction fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
     income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
-    transfer:["transfer","tfr ","to a/c","from a/c","internet banking"]
+    // 存起来的钱：定期、储蓄、KiwiSaver、基金。没花掉，回来时也不是收入，
+    // 但你想知道存了多少 —— 所以单独一类，不跟纯粹的账户互转混在一起。
+    // Westpac 的定期在流水里写作 "T/DEP"。
+    saving:["t/dep","term dep","term deposit","td renew","kiwisaver","savings account",
+      "saver","investment","managed fund","sharesies","invest now","investnow","simplicity"],
+    transfer:["transfer","tfr ","tfr-","to a/c","from a/c","internet banking","on call","sweep","autopay to"]
   };
   // 从钱迹搬过来的历史账用的是中文分类（"吃"2204 笔、"快递/海运"227 笔这种），
   // 上面那张英文商户表一条都命中不了，所以单开一张中文的，一起参与匹配。
@@ -14156,9 +14176,9 @@ margin-left: -22px;
     "student loans":"edu",
     // 钱只是换了个地方，不是花掉 —— 进合计会凭空抬高收支
     "debt repayments":"transfer","foreign exchange and money transfer services":"transfer",
-    "financial asset brokers, exchanges, and managed funds":"transfer",
+    "financial asset brokers, exchanges, and managed funds":"saving",
     "atm or branch deposits":"transfer","cash advances on credit":"transfer",
-    "investment withdrawals":"transfer","loan drawdowns":"transfer","peer to peer":"transfer",
+    "investment withdrawals":"saving","loan drawdowns":"transfer","peer to peer":"transfer",
     // 取现之后花在哪不知道，但钱确实出去了 —— 算支出，只是归不了类
     "cash withdrawals":"other",
     "child support":"other","welfare and charity":"other",
@@ -14240,7 +14260,7 @@ margin-left: -22px;
     //    进账只许落到收入/转账/其他 —— 否则「UNIVERSITY … NET PAY」这笔工资
     //    会因为含 "university" 被判成教育支出。你自己写的规则不受这条限制。
     for(var j=0;j<cats.length;j++){var k2=cats[j].k;
-      if(inc&&!MN_IN_OK[k2])continue;
+      if(!mnDirOk(k2,inc))continue;
       if(MN_KW[k2]&&mnHit(hay,MN_KW[k2]))return k2;
       if(MN_KW_ZH[k2]&&mnHit(hay,MN_KW_ZH[k2]))return k2;}
     // 3) Akahu 按 NZFCC 标好的类目 —— 先对具体类目名，再退到分组。
@@ -14252,7 +14272,7 @@ margin-left: -22px;
         if(an.indexOf(MN_NZ_WORD[w][0])>=0)g3=MN_NZ_WORD[w][1];}
     if(!g3){var ag=String(t.agrp||"").trim();
       if(ag&&MN_NZ_GROUP[ag])g3=MN_NZ_GROUP[ag];}
-    if(g3&&!(inc&&!MN_IN_OK[g3]))return g3;
+    if(g3&&mnDirOk(g3,inc))return g3;
     // 4) 认不出来：进账当收入，出账当其他
     return (+t.amt>0)?"income":"other";}
 
@@ -14526,7 +14546,10 @@ margin-left: -22px;
     return mnCur==="__all"||mnCurOf(t)===mnCur;}
   function mnFiltered(){
     return mnTxns.filter(function(t){
-      return mnBase(t)&&(!mnPick||t.cat===mnPick);});}
+      if(!mnBase(t))return false;
+      // 转账和存款本来就不进合计，不想看见的话连明细里也藏掉
+      if(mnCfg.hideTf&&MN_NEUTRAL[t.cat]&&mnPick!==t.cat)return false;
+      return !mnPick||t.cat===mnPick;});}
   function mnCatOpts(sel){
     return mnCats().map(function(c){
       return '<option value="'+c.k+'"'+(c.k===sel?" selected":"")+'>'+c.i+" "+c.n+"</option>";}).join("");}
@@ -14547,15 +14570,36 @@ margin-left: -22px;
   // 一段期间的收支合计。转账一律不算 —— 自己账户之间倒钱两边一进一出，
   // 算进去会把收入和支出同时凭空抬高。
   function mnAgg(list){
-    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,cat:{},noFx:0};
+    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},noFx:0};
     list.forEach(function(t){
-      if(t.cat==="transfer"){o.tf++;return;}
       // 折算模式下缺汇率的那几笔宁可不算，也不能悄悄按 0 塞进去
       if(!mnHasFx(t)){o.noFx++;return;}
       var a=mnAmt(t);
+      if(MN_NEUTRAL[t.cat]){
+        o.tf++;
+        // 存进去记正、取回来记负，净额才是这段期间真正存下的钱
+        if(t.cat==="saving"){o.sav+=-a;o.nSav++;}
+        return;}
       if(a<0){o.out+=-a;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-a);}
       else if(a>0){o.inc+=a;o.nIn++;}});
     return o;}
+
+  // 这段期间要交多少税。数据来自税务页 —— 只有你点过「记入税务」的那些收入
+  // 才算得出来，所以这是「已申报部分」的税负，不是全部收入的。
+  //
+  // 税按税年累进，txCompute() 给的 mTax 是每笔的增量，逐笔相加正好等于
+  // 这段期间新增的税负 —— 不能拿总收入去乘一个平均税率，那样跨月会算错。
+  function mnTaxDue(){
+    if(mnCur!=="NZD"&&!(mnCur==="__all"&&mnFxBase()==="NZD"))return null;
+    var rows;
+    try{rows=txCompute();}catch(e){return null;}
+    var key=mnCurKey(),o={tax:0,acc:0,gst:0,gross:0,n:0};
+    rows.forEach(function(r){
+      var d=String(r.date||"");
+      var k=(mnScope==="year")?d.slice(0,4):d.slice(0,7);
+      if(k!==key)return;
+      o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;});
+    return o.n?o:null;}
 
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
@@ -14609,16 +14653,39 @@ margin-left: -22px;
       var d=cur-prev;if(Math.abs(d)<0.005)return "";
       return '<span class="'+(d>0?"up":"dn")+'">'+(d>0?"▲":"▼")+" "+mnMoney(Math.abs(d))+"</span>";}
 
+    // 税负（只算已经「记入税务」的那部分收入）
+    var TX=mnTaxDue(),due=TX?(TX.tax+TX.acc+TX.gst):0;
+    var afterTax=!!mnCfg.afterTax&&due>0;
+    var incShow=afterTax?(A.inc-due):A.inc;
+    var netShow=afterTax?(net-due):net;
+
     var h='<div class="mn-kpis">'+
       '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
         '<div class="sub">'+A.nOut+' 笔 '+delta(A.out,P.out)+'</div></div>'+
-      '<div class="mn-kpi"><div class="k">收入</div><div class="v in">'+mnMoney(A.inc)+'</div>'+
-        '<div class="sub">'+A.nIn+' 笔 '+delta(A.inc,P.inc)+'</div></div>'+
-      '<div class="mn-kpi"><div class="k">结余</div><div class="v'+(net<0?" out":"")+'">'+mnMoney(net)+'</div>'+
-        '<div class="sub">'+(A.tf?(A.tf+" 笔转账没算"):"收入减支出")+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">收入'+(afterTax?'（税后）':'')+'</div>'+
+        '<div class="v in">'+mnMoney(incShow)+'</div>'+
+        '<div class="sub">'+A.nIn+' 笔 '+
+          (afterTax?('· 税前 '+mnMoney(A.inc)):delta(A.inc,P.inc))+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">结余'+(afterTax?'（税后）':'')+'</div>'+
+        '<div class="v'+(netShow<0?" out":"")+'">'+mnMoney(netShow)+'</div>'+
+        '<div class="sub">'+(afterTax?('税前 '+mnMoney(net)):
+          (A.tf?(A.tf+" 笔转账/存款没算"):"收入减支出"))+'</div></div>'+
+      (A.nSav?('<div class="mn-kpi"><div class="k">存入</div>'+
+        '<div class="v'+(A.sav<0?"":" in")+'">'+mnMoney(A.sav>0?A.sav:A.sav)+'</div>'+
+        '<div class="sub">'+A.nSav+' 笔 · '+(A.sav>=0?"净存入":"净取出")+
+        '，不算支出</div></div>'):"")+
+      (TX?('<div class="mn-kpi"><div class="k">预估税负</div>'+
+        '<div class="v out">'+mnMoney(-due)+'</div>'+
+        '<div class="sub">PAYE '+mnMoney(-TX.tax)+' · ACC '+mnMoney(-TX.acc)+
+          (TX.gst?(' · GST '+mnMoney(-TX.gst)):"")+
+          '<br><button class="mn-mini" data-aftertax>'+
+          (afterTax?"改回按税前看":"收入改按税后看")+'</button></div></div>'):"")+
       '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
         '<div class="sub">按 '+span+(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
-      '</div>';
+      '</div>'+
+      (TX?('<div class="mn-note">预估税负只算你点过「记入税务」的那 <b>'+TX.n+
+        '</b> 笔（实收 '+mnMoney(TX.gross)+'）—— 已经在发薪时扣过 PAYE 的工资不该记进去，'+
+        '否则这里会算重。真扣税之后回来对一下，差多少一目了然。</div>'):"");
 
     // 分类统计：环形图 + 列表（带环比）
     var sum=A.cat,ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
@@ -14653,11 +14720,13 @@ margin-left: -22px;
       // 先按天把支出汇总好，渲染时直接取
       var dayOut={};
       list.forEach(function(t){
-        if(t.cat==="transfer"||t.amt>=0)return;
+        if(MN_NEUTRAL[t.cat]||t.amt>=0)return;
         dayOut[t.d]=(dayOut[t.d]||0)+(-t.amt);});
       var WD=["日","一","二","三","四","五","六"];
       h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
-        '点分类标签可以改，改过的以后不会被自动分类覆盖</span></h3>';
+        '点分类标签可以改，改过的以后不会被自动分类覆盖</span>'+
+        (A.tf?('<button class="mn-mini" data-hidetf style="float:right;margin:0">'+
+          (mnCfg.hideTf?"显示转账/存款":"藏起转账/存款（"+A.tf+" 笔）")+'</button>'):"")+'</h3>';
       var day="";
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
@@ -14676,7 +14745,7 @@ margin-left: -22px;
           // 人民币的收租记进去毫无意义。转账也排除：自己账户之间倒钱不是收入。
           // 再加一道账户闸：已经扣过税的 NET PAY 工资记进税务页会算重，
           // 所以只在你指定的那个「税务账户」上给按钮
-          (t.amt>0&&mnCurOf(t)==="NZD"&&t.cat!=="transfer"
+          (t.amt>0&&mnCurOf(t)==="NZD"&&!MN_NEUTRAL[t.cat]
            &&mnCfg.taxAcct!=="__none"
            &&(!mnCfg.taxAcct||t.acct===mnCfg.taxAcct)
             ? ('<button class="tag'+(t.tax?" guess":"")+'" data-tax="'+esc(t.id)+'" title="'+
@@ -14703,6 +14772,7 @@ margin-left: -22px;
       '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
       '<b>改完立刻生效</b>，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。<br>'+
       '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面「账本数据」里的按钮。</div></div>'+
+      mnAcctHtml()+
       mnTaxAcctHtml()+
       mnCustomHtml()+
       mnFxHtml()+
@@ -14719,6 +14789,32 @@ margin-left: -22px;
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
       '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
+
+  // 账户和余额。Akahu 每次同步都会把各账户的当前余额带回来（含定期存款，
+  // 只要你在 Akahu 那边把那个账户也连上了），以前一直取回来却没显示。
+  function mnAcctHtml(){
+    var accts=mnCfg.accts||[];
+    if(!accts.length)return "";
+    var sum={};
+    accts.forEach(function(a){
+      if(typeof a.bal==="number")sum[a.cur||"NZD"]=(sum[a.cur||"NZD"]||0)+a.bal;});
+    return '<div class="panel"><h3>账户与余额 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
+      '同步时一起取回来的</span></h3>'+
+      accts.map(function(a){
+        return '<div class="mn-cat" style="cursor:default">'+
+          '<span class="nm" style="width:auto;flex:1">'+esc(a.name||a.bank||"账户")+
+            (a.num?('<span style="color:var(--muted)"> ···'+esc(a.num)+'</span>'):"")+
+            (a.type?('<span style="color:var(--muted);font-size:11px"> · '+esc(a.type)+'</span>'):"")+'</span>'+
+          '<span class="amt" style="width:120px">'+
+            (typeof a.bal==="number"?mnMoney(a.bal,a.cur||"NZD"):"—")+'</span></div>';}).join("")+
+      (Object.keys(sum).length?('<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);'+
+        'display:flex;justify-content:space-between;font-size:13px;font-weight:600">'+
+        '<span>合计</span><span>'+Object.keys(sum).map(function(c){
+          return mnMoney(sum[c],c)+" "+esc(c);}).join("　")+'</span></div>'):"")+
+      '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
+      '这里少了定期存款之类的账户，说明它在 Akahu 那边还没连上 —— '+
+      '去 <a href="https://my.akahu.nz" target="_blank" rel="noopener">my.akahu.nz</a> 把那个账户也授权一下，'+
+      '再回来点 🔄 同步 就会出现。</div></div>';}
 
   // 哪个账户的进账要算税。
   // Kaisi 的 UC 工资是 NET PAY，发到手时 PAYE 已经扣过了，再记进税务页会重复算；
@@ -14992,6 +15088,12 @@ margin-left: -22px;
           mnTxns.forEach(function(x){if(String(x.id)===rid)rt=x;});
           if(rt&&rt.src==="manual")mnAddForm(rt);
           return;}
+        if(e.target.closest("[data-hidetf]")){
+          mnCfg.hideTf=!mnCfg.hideTf;save("tt_mncfg",mnCfg);mnRender();return;}
+        if(e.target.closest("[data-aftertax]")){
+          mnCfg.afterTax=!mnCfg.afterTax;save("tt_mncfg",mnCfg);
+          mnStatus(mnCfg.afterTax?"收入和结余改成按<b>税后</b>显示了":"改回按税前显示");
+          mnRender();return;}
         if(e.target.closest("[data-fxget]")){mnFxFetch(e.target.closest("[data-fxget]"));return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
