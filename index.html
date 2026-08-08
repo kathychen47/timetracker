@@ -521,7 +521,9 @@
   .tax-bar select{padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13px}
   .tax-bar .btn{padding:7px 13px;font-size:13px}
   /* ---- 记账 ---- */
-  .mn-wrap{max-width:940px;margin:0 auto}
+  /* 记账页表格列多（图标+摘要+分类+环比+金额+占比），940px 挤不下，
+     大屏两边又全空着。放宽到 1400，小屏自动收窄。 */
+  .mn-wrap{max-width:1400px;margin:0 auto}
   .mn-bar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
   .mn-bar .grow{flex:1}
   .mn-bar .btn{padding:7px 13px;font-size:13px}
@@ -551,10 +553,10 @@
   .mn-kpi .v.out{color:#d9534f}.mn-kpi .v.in{color:#4fae7d}
   .mn-kpi .sub{font-size:11px;color:var(--muted);margin-top:3px}
   .mn-cats{display:flex;flex-direction:column;gap:7px}
-  .mn-cat{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;border-radius:8px;padding:3px 5px}
+  .mn-cat{display:flex;align-items:center;gap:14px;font-size:13px;cursor:pointer;border-radius:8px;padding:5px 7px}
   .mn-cat:hover{background:var(--surface-2)}
   .mn-cat.off{opacity:.4}
-  .mn-cat .nm{width:96px;flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mn-cat .nm{flex:0 0 172px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mn-cat .track{flex:1;height:8px;border-radius:5px;background:var(--surface-2);overflow:hidden}
   /* 必须 display:block —— span 默认是行内元素，height 对它不生效，条会永远是 0 高。
      外面的 .track 能显示是因为它是 flex 子项被自动块级化了，.fill 不是。 */
@@ -563,10 +565,10 @@
     font-size:11px;padding:2px 8px;border-radius:20px;cursor:pointer;margin-top:5px}
   .mn-mini:hover{border-color:var(--primary);color:var(--primary)}
   .mn-note{font-size:12px;color:var(--muted);line-height:1.7;margin:-4px 0 14px;padding:0 2px}
-  .mn-cat .amt{width:88px;flex:none;text-align:right;font-variant-numeric:tabular-nums}
-  .mn-cat .pct{width:38px;flex:none;text-align:right;color:var(--muted);font-size:12px}
+  .mn-cat .amt{flex:0 0 116px;text-align:right;font-variant-numeric:tabular-nums}
+  .mn-cat .pct{flex:0 0 46px;text-align:right;color:var(--muted);font-size:12px}
   .mn-day{font-size:12px;color:var(--muted);font-weight:600;padding:12px 4px 5px}
-  .mn-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;font-size:13px}
+  .mn-row{display:flex;align-items:center;gap:13px;padding:9px 11px;border-radius:10px;font-size:13px}
   .mn-row:hover{background:var(--surface-2)}
   .mn-row .ic{width:24px;flex:none;text-align:center;font-size:15px}
   .mn-row .ds{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -574,19 +576,23 @@
   .mn-row .tag{flex:none;font-size:11px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--muted);background:transparent;cursor:pointer}
   .mn-row .tag:hover{border-color:var(--primary);color:var(--primary)}
   .mn-row .tag.guess{border-style:dashed}
-  .mn-row .am{width:104px;flex:none;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .mn-row .am{flex:0 0 128px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .mn-row .am.in{color:#4fae7d}
   .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
   .mn-row .am small.nofx{color:#d9534f}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
-  .mn-side{float:right;margin-top:-4px}
+  /* 原来用 float:right，宽度不够时会跟标题文字叠在一起。
+     改成让 h3 自己做 flex 容器，切换按钮永远靠右且不重叠。 */
+  #mn-body .panel h3{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  #mn-body .panel h3>.grow{flex:1;min-width:12px}
+  .mn-side{flex:none}
   .mn-side button{padding:4px 13px;font-size:12px}
   .mn-donut-wrap{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
   .mn-donut{width:148px;height:148px;border-radius:50%;flex:none;position:relative}
   .mn-donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   .mn-donut .mid .t{font-size:11px;color:var(--muted)}
   .mn-donut .mid .v{font-size:15px;font-weight:680;letter-spacing:-.3px}
-  .mn-cat .dlt{width:96px;flex:none;text-align:right;font-size:11px}
+  .mn-cat .dlt{flex:0 0 112px;text-align:right;font-size:11px}
   .mn-cat .dlt .up{color:#d9534f}.mn-cat .dlt .dn{color:#4fae7d}
   /* 日期行以前只是小灰字，跟明细挤在一起分不出层次。
      给底色和分隔线，让「哪天花了多少」一眼扫得到。 */
@@ -14915,7 +14921,7 @@ margin-left: -22px;
     h+='<div class="panel"><h3>'+(isIn?"收入来源":"分类统计")+
       ' <span style="font-weight:400;color:var(--muted);font-size:12px">'+
       (isIn?"点一类只看那一类 · 银行摘要按前两个词归并":"点一类只看那一类")+
-      ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span>'+toggle+'</h3>';
+      ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span><span class="grow"></span>'+toggle+'</h3>';
     if(!ranked.length){
       h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+'没有'+(isIn?"收入":"支出")+'</div></div>';
     }else{
