@@ -540,6 +540,7 @@
   .mn-range input{padding:5px 7px;border:1px solid var(--border);border-radius:9px;
     background:var(--surface);color:var(--text);font-size:12px}
   .mn-range .to{color:var(--muted);font-size:13px}
+  .mn-range .rng-txt{color:var(--muted);font-size:11.5px;white-space:nowrap;margin-left:2px}
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
@@ -3551,7 +3552,8 @@ margin-left: -22px;
             <button data-sc="all">全部</button>
           </div>
           <span class="mn-range" id="mn-range" hidden>
-            <input type="date" id="mn-from"><span class="to">→</span><input type="date" id="mn-to">
+            <input type="date" lang="zh-CN" id="mn-from"><span class="to">→</span><input type="date" lang="zh-CN" id="mn-to">
+            <span class="rng-txt" id="mn-rngtxt"></span>
           </span>
           <button class="mn-nav" id="mn-prev" title="上一期">‹</button>
           <span class="mn-month" id="mn-month">—</span>
@@ -3914,7 +3916,7 @@ margin-left: -22px;
   <div class="modal">
     <h3 id="modal-title">新建事件</h3>
     <div class="field"><label>标题</label><input type="text" id="ev-title" placeholder="不填就用「大类 · 小类」"></div>
-    <div class="field"><label>日期</label><input type="date" id="ev-date"></div>
+    <div class="field"><label>日期</label><input type="date" lang="zh-CN" id="ev-date"></div>
     <div class="field"><div class="row">
       <div><label>开始</label><input type="time" id="ev-start" value="09:00"></div>
       <div><label>结束</label><input type="time" id="ev-end" value="10:00"></div>
@@ -3959,7 +3961,7 @@ margin-left: -22px;
     </div></div>
     <div class="field"><div class="row">
       <div><label>优先级</label><select id="td-prio"><option value="high">高</option><option value="mid">中</option><option value="low">低</option></select></div>
-      <div><label>截止日期</label><input type="date" id="td-due"></div>
+      <div><label>截止日期</label><input type="date" lang="zh-CN" id="td-due"></div>
     </div></div>
     <div class="modal-actions">
       <button class="link-danger" id="td-delete">删除</button>
@@ -3986,8 +3988,8 @@ margin-left: -22px;
       <div><label>大类</label><select id="g-cat"></select></div>
     </div></div>
     <div class="field" id="g-range-field" style="display:none"><div class="row">
-      <div><label>开始日期</label><input type="date" id="g-from"></div>
-      <div><label>结束日期</label><input type="date" id="g-to"></div>
+      <div><label>开始日期</label><input type="date" lang="zh-CN" id="g-from"></div>
+      <div><label>结束日期</label><input type="date" lang="zh-CN" id="g-to"></div>
     </div></div>
     <div class="field"><label>小类（可选）</label><select id="g-sub"></select></div>
     <div class="field"><label>关键词（可选 · 只统计标题含此词的事件，如“游泳”）</label><input type="text" id="g-keyword" placeholder="留空则按大类/小类统计"></div>
@@ -4364,6 +4366,12 @@ margin-left: -22px;
   var TABID="tab"+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
   function pad(n){return(n<10?"0":"")+n;}
   function fmt(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
+  // 全站统一：年-月-日。原来到处用 toLocaleDateString()，那个跟着浏览器语言走 ——
+  // 浏览器是英文就变成 8/7/2026，既不是中文习惯也容易跟 7/8 搞混。
+  function dstr(v){var d=(v instanceof Date)?v:new Date(v);
+    return isNaN(d)?"":fmt(d);}
+  function dtstr(v){var d=(v instanceof Date)?v:new Date(v);
+    return isNaN(d)?"":(fmt(d)+" "+pad(d.getHours())+":"+pad(d.getMinutes()));}
   function parse(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
   function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
   function addMonths(d,n){var x=new Date(d);x.setMonth(x.getMonth()+n);return x;}
@@ -5712,7 +5720,7 @@ margin-left: -22px;
             (s.est?Math.min(100,s.act/s.est*100).toFixed(0):(s.act?100:0))+'%"></i></span>'+
             '<span class="spv'+(s.est&&s.act>s.est?" over":"")+'">'+hrs(s.act)+(s.est?(" / "+hrs(s.est)):" · 未估")+'</span></div>'+
         '</div>'+
-        (sk.arch?('<div class="sk-done">✓ '+new Date(sk.archAt||Date.now()).toLocaleDateString()+' 归档'+
+        (sk.arch?('<div class="sk-done">✓ '+dstr(sk.archAt||Date.now())+' 归档'+
           (skDays(sk)?(' · 从开工到学会 <b>'+skDays(sk)+'</b> 天，净投入 <b>'+hrs(s.act)+'</b>'):"")+'</div>'):"")+
         steps+
         '<div class="sk-add"><input type="text" data-newstep="'+sk.id+'" placeholder="下一步做什么？回车添加"><input type="number" class="est" data-newest="'+sk.id+'" placeholder="预计(分)" min="0" step="5"></div>'+
@@ -7724,7 +7732,7 @@ margin-left: -22px;
       '<div class="panel stat-controls">'+
         '<div class="seg" id="stat-mode">'+modes.map(function(o){return '<button data-m="'+o[0]+'"'+(statState.mode===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join("")+'</div>'+
         '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'+
-        '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
+        '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" lang="zh-CN" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" lang="zh-CN" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
         catRow+subRow+
       '</div>'+gcalNote+
       '<div class="stat-cards">'+
@@ -7978,7 +7986,7 @@ margin-left: -22px;
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   function pushCloud(){if(!SB||!sbUser)return;sbStatus("上传中…");
     SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()}).then(function(r){
-      if(r.error)sbStatus("上传失败："+r.error.message,true);else sbStatus("已同步 ✓（"+new Date().toLocaleTimeString()+"）");
+      if(r.error)sbStatus("上传失败："+r.error.message,true);else sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");
     },function(err){sbStatus("上传失败："+String(err),true);});}
   function applyCloud(obj){CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){}}});}
   function reloadAllFromStorage(){
@@ -7997,7 +8005,7 @@ margin-left: -22px;
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
-      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data);reloadAllFromStorage();applyingCloud=false;reconcileNotes();sbStatus("已同步 ✓（"+new Date().toLocaleTimeString()+"）");}
+      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data);reloadAllFromStorage();applyingCloud=false;reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");}
       else{pushCloud();}
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
@@ -10344,7 +10352,7 @@ margin-left: -22px;
     if(b.type==="pdf")return "第 "+(b.pos.page||1)+" 页";
     if(b.type==="epub")return "第 "+((b.pos.ch||0)+1)+" 节";
     return "读过";}
-  function docWhen(r){var t=r.upd||r.ts||0;return t?new Date(t).toLocaleDateString():"";}
+  function docWhen(r){var t=r.upd||r.ts||0;return t?dstr(t):"";}
   function docPreview(r){return String(r.note||"").replace(/[#*`>\-\[\]]/g," ").replace(/\s+/g," ").trim().slice(0,120);}
   function fxCrumb(){
     var el=document.getElementById("fx-crumb");if(!el)return;
@@ -10395,7 +10403,7 @@ margin-left: -22px;
         '<button class="x" data-delf="'+f.id+'" title="删除文件夹">✕</button></div>';}).join("");
     h+=fxBooks(all,fid).map(function(b){
       var ext=(rdView==="list")?'<span class="ext">'+esc(b.type)+'</span>':"",k="b:"+b.id;
-      var when=b.added?new Date(b.added).toLocaleDateString():"";
+      var when=b.added?dstr(b.added):"";
       var info=fmtSize(b.size||0)+' · '+bookWhere(b)+((rdView==="list"&&when)?' · '+when:'');
       return '<div class="rd-book'+on(k)+'" draggable="true" data-k="'+k+'" data-id="'+b.id+'">'+
         ckHTML(k)+'<div class="rd-cover">'+coverHTML(b,BICON[b.type]||"📘")+'</div><div class="n">'+esc(b.name)+'</div>'+
@@ -11199,7 +11207,7 @@ margin-left: -22px;
     if(ts>=t0)return "今天 "+d.toTimeString().slice(0,5);
     if(ts>=t0-day)return "昨天";
     if(ts>=t0-6*day)return Math.round((t0-ts)/day)+" 天前";
-    return d.toLocaleDateString();}
+    return dstr(d);}
   function nbBucket(ts){
     var now=new Date(),day=86400000;
     var t0=new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime();
@@ -11671,7 +11679,7 @@ margin-left: -22px;
       if(!byBook[k]){byBook[k]=[];order.push(k);}
       byBook[k].push(r);});
     var TN={hl:"高亮",ul:"下划线",bd:"加粗",nt:"笔记"};
-    var out=["# "+(title||"我的读书笔记"),"","> 导出时间："+new Date().toLocaleString()+"　共 "+rows.length+" 条",""];
+    var out=["# "+(title||"我的读书笔记"),"","> 导出时间："+dtstr()+"　共 "+rows.length+" 条",""];
     order.forEach(function(k){
       var list=byBook[k].slice().sort(function(x,y){return (x.pg-y.pg)||(x.ts-y.ts);});
       out.push("## "+(k==="__free"?"随手记":(list[0].bname||"未命名")),"");
@@ -11695,7 +11703,7 @@ margin-left: -22px;
           csvCell(r.pg?("第 "+r.pg+(String(r.sc).charAt(0)==="c"?" 节":" 页")):""),
           csvCell(TN[r.t]||r.t),csvCell(r.c||""),csvCell(r.x||""),csvCell(r.note||""),
           csvCell((r.tags||[]).map(function(g){return "#"+g;}).join(" ")),
-          csvCell(r.ts?new Date(r.ts).toLocaleString():"")].join(","));});
+          csvCell(r.ts?dtstr(r.ts):"")].join(","));});
     return out.join("\n");}
   function nbStamp(){var d=new Date();
     return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
@@ -13378,7 +13386,7 @@ margin-left: -22px;
         '<div class="od-m">'+(o.date?('<span>📅 '+esc(o.date)+'</span>'):"")+
         (o.meal?('<span>'+esc(MEALS[o.meal]||o.meal)+'</span>'):"")+
         (o.note?('<span>“'+esc(o.note)+'”</span>'):"")+
-        (o.done&&o.doneTs?('<span>✓ '+new Date(o.doneTs).toLocaleDateString()+' 做的</span>'):"")+
+        (o.done&&o.doneTs?('<span>✓ '+dstr(o.doneTs)+' 做的</span>'):"")+
         (o.rid?'<span>📖 有菜谱</span>':"")+'</div></div>'+
         '<button class="od-x" data-oddel="'+esc(o.id)+'" title="删掉这条记录">✕</button></div>';}
     box.innerHTML=(todo.length?('<div class="od-h">想吃的 '+todo.length+' 道</div>'+todo.map(item).join(""))
@@ -13411,7 +13419,7 @@ margin-left: -22px;
     return SB.from("shares").upsert({owner_id:sbUser.id,kind:"recipes",owner_email:sbUser.email||"",
       data:{recipes:recipes,orders:orders},updated_at:new Date().toISOString()}).then(function(r){
       if(r.error){shStatus("上传失败："+r.error.message+"（多半是还没跑下面那段 SQL）",true);return;}
-      shStatus("已分享 ✓（"+new Date().toLocaleTimeString()+"）");},
+      shStatus("已分享 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");},
       function(e){shStatus("上传失败："+String(e),true);});}
   function shareDown(){
     if(!SB||!sbUser){shStatus("要先登录",true);return Promise.resolve();}
@@ -13456,7 +13464,7 @@ margin-left: -22px;
         var d=s.data||{},rs=d.recipes||[],os=(d.orders||[]).filter(function(o){return !o.done;});
         return '<div class="sh-card"><h4><span class="sh-from">'+esc(s.owner_email||"某人")+'</span></h4>'+
           '<div class="sh-note">分享了 '+rs.length+' 道菜谱'+(os.length?('，现在想吃 '+os.length+' 道'):"")+
-          (s.updated_at?('　·　'+new Date(s.updated_at).toLocaleString()):"")+'</div>'+
+          (s.updated_at?('　·　'+dtstr(s.updated_at)):"")+'</div>'+
           (os.length?('<div class="od-h" style="margin-top:12px">TA 想吃的</div>'+os.map(function(o){
             return '<div class="od-item"><div class="od-c"><div class="od-n">'+esc(o.name||"")+'</div>'+
               '<div class="od-m">'+(o.date?('<span>📅 '+esc(o.date)+'</span>'):"")+
@@ -13680,7 +13688,7 @@ margin-left: -22px;
     saveOrders();foodTab="order";save("tt_foodtab",foodTab);renderFood();}
   function foodExportMD(){
     if(!recipes.length){ttAlert("还没有菜谱");return;}
-    var out=["# 我的菜谱","","> 导出时间："+new Date().toLocaleString()+"　共 "+recipes.length+" 道",""];
+    var out=["# 我的菜谱","","> 导出时间："+dtstr()+"　共 "+recipes.length+" 道",""];
     recipes.slice().sort(function(a,b){return (b.rate||0)-(a.rate||0);}).forEach(function(r){
       out.push("## "+(r.name||"未命名"));
       var meta=[];
@@ -14124,7 +14132,7 @@ margin-left: -22px;
   async function taxForm(rec){
     var isEdit=!!rec;
     var b=wbtOpen(isEdit?"编辑收入":"记一笔收入",
-      '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" id="tx-f-date" value="'+(rec?rec.date:fmt(new Date()))+'"></div>'+
+      '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" lang="zh-CN" id="tx-f-date" value="'+(rec?rec.date:fmt(new Date()))+'"></div>'+
       '<div class="wt-row"><label class="t">金额（实收）</label><input class="tx-in" type="number" step="0.01" id="tx-f-gross" value="'+(rec?rec.gross:"")+'" placeholder="4600.00"></div>'+
       '<div class="wt-row"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px">'+
       '<input type="checkbox" id="tx-f-gst"'+(rec&&rec.gstIncluded?" checked":"")+'> 这笔金额<b>含 GST</b>（会自动扣出 GST 部分）</label></div>'+
@@ -14964,7 +14972,8 @@ margin-left: -22px;
       if(ds.length)document.getElementById("mn-month").title=ds[0]+" → "+ds[ds.length-1];}
     if(isRange){
       document.getElementById("mn-from").value=mnFrom;
-      document.getElementById("mn-to").value=mnTo;}
+      document.getElementById("mn-to").value=mnTo;
+      document.getElementById("mn-rngtxt").textContent=mnFrom+" → "+mnTo;}
     // 币种下拉：只有一种货币时藏起来，不给界面添噪音
     var curs=mnCurList();if(!curs.length)curs=["NZD"];
     if(curs.indexOf(mnCur)<0)mnCur=curs[0];
@@ -15194,7 +15203,11 @@ margin-left: -22px;
   function mnRulesHtml(){
     return '<div class="panel"><h3>起始日期</h3>'+
       '<div class="mn-rule"><span class="nm">从这天起记</span>'+
-      '<input type="date" data-since value="'+esc(mnCfg.since||"")+'"></div>'+
+      '<input type="date" lang="zh-CN" data-since value="'+esc(mnCfg.since||"")+'">'+
+      // 日期框的显示格式由浏览器语言决定，改不了。旁边直接写出年-月-日，
+      // 免得看到 08/01 还要想是 8 月 1 号还是 1 月 8 号。
+      '<span style="flex:0 0 auto;color:var(--muted);font-size:12px">'+
+        esc(mnCfg.since||"未设")+'</span></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:6px;line-height:1.6">'+
       '这天之前的流水永远不进账本 —— 旧账你在别处记过了，拉进来会变成两份。<br>'+
       '<b>改完立刻生效</b>，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。<br>'+
@@ -15334,7 +15347,7 @@ margin-left: -22px;
   function mnFxHtml(){
     var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
     var fx=mnCfg.fx||{};
-    var when=mnCfg.fxAt?("上次拉取："+new Date(mnCfg.fxAt).toLocaleString()):"还没拉过";
+    var when=mnCfg.fxAt?("上次拉取："+dtstr(mnCfg.fxAt)):"还没拉过";
     return '<div class="panel"><h3>跨币种折算</h3>'+
       '<div class="mn-rule"><span class="nm">主币种</span>'+
       '<select data-fxbase style="flex:0 0 140px;padding:6px 9px;border:1px solid var(--border);'+
@@ -15718,7 +15731,7 @@ margin-left: -22px;
     if(curs.indexOf(mnCur)<0)curs.unshift(mnCur||"NZD");
     ["NZD","CNY","USD","AUD"].forEach(function(c){if(curs.indexOf(c)<0)curs.push(c);});
     var b=wbtOpen(isEdit?"编辑一笔":"记一笔",
-      '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" id="mn-f-date" value="'+
+      '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" lang="zh-CN" id="mn-f-date" value="'+
         esc(rec?rec.d:mnYmd(new Date()))+'"></div>'+
       '<div class="wt-row"><label class="t">金额</label><input class="tx-in" type="number" step="0.01" id="mn-f-amt" value="'+
         (rec?Math.abs(rec.amt):"")+'" placeholder="12.50"></div>'+
@@ -16022,7 +16035,7 @@ margin-left: -22px;
       '<div class="glu-add">'+
         '<input type="number" id="glu-v" step="0.1" min="0" placeholder="数值">'+
         '<input type="time" id="glu-t" value="'+nowHM()+'">'+
-        '<input type="date" id="glu-d" value="'+fmt(new Date())+'">'+
+        '<input type="date" lang="zh-CN" id="glu-d" value="'+fmt(new Date())+'">'+
         '<input type="text" id="glu-note" placeholder="备注（可选）">'+
         '<button class="btn primary" id="glu-save">记一笔</button>'+
       '</div>'+
@@ -16098,7 +16111,7 @@ margin-left: -22px;
         picker+
         '<div class="bd-ai"><input type="text" id="bd-ai" placeholder="用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿"><button class="btn" id="bd-ai-go">✨ 识别填入</button></div>'+
         '<div class="bd-tip bd-aitip" id="bd-ai-tip"></div>'+
-        '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" id="bd-date" value="'+today+'"></label>'+
+        '<div class="bd-form"><label class="bd-f bd-date"><span>日期</span><input type="date" lang="zh-CN" id="bd-date" value="'+today+'"></label>'+
         '<label class="bd-f bd-date"><span>时间</span><input type="time" id="bd-time" value="'+nowT+'"></label>'+form+
         '<label class="bd-f bd-note"><span>备注</span><input type="text" id="bd-note" value="'+esc((cur&&cur.note)||"")+'" placeholder="今天的感觉、饮食…"></label></div>'+
         '<div class="bd-actions"><button class="btn primary" id="bd-save">保存这一天</button><span class="bd-tip" id="bd-tip"></span></div></div>'+
