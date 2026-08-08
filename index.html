@@ -15017,9 +15017,14 @@ margin-left: -22px;
     {n:"定期利息",kw:["int wbc","t/d int","term deposit int","credit interest","interest earned","利息"]},
     {n:"定期利息",own:"定期"},
     {n:"退款",kw:["refund","reversal","chargeback","退款","退货","退费","reimburse"]},
-    // 目前 Pingping 的工资来自 Michael Cai / Chi Yao / Best Health，
-    // 但雇主会换，所以真正的判据是「进她账户的大额」，名单只是加个保险。
-    {n:"Pingping 工资",kw:["michael cai","cai,michael","chi,yao","yao,chi","best health"],min:"big"},
+    // 认得出名字的雇主不看金额 —— 这几家发的钱不管多少都是工资，
+    // 打零工的那几天可能只有几百块。
+    // 但它排在退税/收租/利息/退款之后：万一哪天收到「REFUND MICHAEL CAI」，
+    // 那是退款不是工资。
+    {n:"Pingping 工资",kw:["michael cai","cai,michael","chi,yao","yao,chi","best health"]},
+    // 名单会过期（换雇主），所以再加一条只看金额的兜底：
+    // 进她账户的大额，认不出付款人也算工资。
+    {n:"Pingping 工资",own:"Pingping",min:"big"},
     {n:"Pingping 工资",own:"Pingping",min:"big"},
     {n:"Kaisi 工资",   own:"Kaisi",   min:"big"}
   ];
