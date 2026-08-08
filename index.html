@@ -4191,6 +4191,12 @@ margin-left: -22px;
           </select>
         </div>
       </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">身体数据页的血糖卡片</div><div class="set-desc">不量血糖就选「不显示」，那一页会清爽很多。显示的时候点它标题那行可以收起来，收没收起会记住，下次打开还是你离开时的样子。</div></div>
+          <select id="set-glushow"><option value="1">显示</option><option value="0">不显示</option></select>
+        </div>
+      </div>
     </div>
     <div class="set-pane" data-pane="general">
       <div class="set-sec-h">🌐 通用 · General</div>
@@ -14841,6 +14847,13 @@ margin-left: -22px;
     // 摘要写法是会变的 —— 只要设了归属，就比任何关键词都可靠。
     var ow=mnCfg.owners||{};
     if(Object.keys(ow).length)return ow[t.acct]||"其他收入";
+    // 没自定义归属时，只要认得出账户就按账户分 —— 钱进了谁的卡就是谁的，
+    // 工资也好、别人转的也好，都算那个人的。这比按摘要切靠谱得多：
+    // 摘要切出来会有一堆几十块的一次性收款各自成一类。
+    if(t.acct){
+      var accs=mnCfg.accts||[];
+      for(var i=0;i<accs.length;i++)
+        if(accs[i].id===t.acct)return accs[i].name||accs[i].bank||"账户";}
     if(t.merchant)return t.merchant;
     var s=String(t.desc||"").trim();
     if(/INT WBC/i.test(s))return "定期利息";
@@ -15028,6 +15041,19 @@ margin-left: -22px;
     var isIn=(mnSide==="in");
     var sum=isIn?A.src:A.cat, prev=isIn?P.src:P.cat, tot=isIn?A.inc:A.out;
     var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
+    // 收入按摘要自动归并时，一次性的小额转账会各自成一类
+    // （MR A、GRICE S、PERRON F…），十几行几十块的把真正的大头淹掉。
+    // 占比不足 2% 且排在前 6 名之外的，收进「其他零散」。
+    // 支出不做这个 —— 支出的分类是固定那十几个，本来就不会长尾。
+    var tail=null;
+    if(isIn&&tot>0){
+      var big=[],small=[];
+      ranked.forEach(function(k,i){
+        (i<6||sum[k]/tot>=0.02?big:small).push(k);});
+      if(small.length>1){
+        tail={n:small.length,v:0};
+        small.forEach(function(k){tail.v+=sum[k];delete sum[k];});
+        ranked=big;}}
     // 收入来源没有固定颜色，按排名从一个色盘里取
     var SRCC=["#4fae7d","#5f9bd8","#eeb85f","#c77fd0","#61c4cf","#e06c5a","#8bb04f","#7c83e6","#b0895f","#9aa1b0"];
     var meta=function(k,i){
@@ -15047,6 +15073,7 @@ margin-left: -22px;
       ranked.forEach(function(k,i){
         var c=meta(k,i),a0=acc/tot*100;acc+=sum[k];
         stops.push(c.c+" "+a0.toFixed(2)+"% "+(acc/tot*100).toFixed(2)+"%");});
+      if(tail)stops.push("#c2c7d2 "+(acc/tot*100).toFixed(2)+"% 100%");
       h+='<div class="mn-donut-wrap">'+
         '<div class="mn-donut" style="background:conic-gradient('+stops.join(",")+');'+
           '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
@@ -15064,6 +15091,14 @@ margin-left: -22px;
             '<span class="dlt">'+delta(v,pv)+'</span>'+
             '<span class="amt">'+mnMoney(isIn?v:-v)+'</span>'+
             '<span class="pct">'+(tot?Math.round(v/tot*100):0)+'%</span></div>';}).join("")+
+        (tail?('<div class="mn-cat" style="cursor:default;opacity:.75" '+
+          'title="每一笔都不到总额的 2%，合并显示">'+
+          '<span class="nm">🧾 其他零散 <span style="color:var(--muted)">'+tail.n+' 项</span></span>'+
+          '<span class="track"><span class="fill" style="width:'+
+            Math.max(2,tail.v/sum[ranked[0]]*100).toFixed(1)+'%;background:#c2c7d2"></span></span>'+
+          '<span class="dlt"></span>'+
+          '<span class="amt">'+mnMoney(tail.v)+'</span>'+
+          '<span class="pct">'+Math.round(tail.v/tot*100)+'%</span></div>'):"")+
         '</div></div></div>';}
 
     // 明细，按天分组，日期行右边给当天合计
