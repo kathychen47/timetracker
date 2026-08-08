@@ -543,27 +543,6 @@
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
-  /* 设置内容比一屏长，原来整个弹窗一起滚，底部的保存/关闭被顶出屏幕。
-     改成三段：标题和按钮行钉住，只有中间滚。 */
-  /* 必须带 #mn-set-overlay 前缀：公共的 .modal / .modal h3 定义在这之后
-     （1607 行），同等特异性下后写的赢，不加 id 我这几条会被整个盖掉。 */
-  /* 上下各留 40px。不能写 92vh —— .overlay 自己还有 18px 内边距，
-     92vh + 36px 会超出视口，头尾就被切掉一点。用 calc 明确扣掉留白，
-     100dvh 是为了手机上地址栏收起/展开时也准。 */
-  #mn-set-overlay{padding:40px 18px}
-  #mn-set-overlay .modal{max-width:900px;padding:0;display:flex;flex-direction:column;
-    max-height:calc(100dvh - 80px);overflow:hidden}
-  @supports not (height:100dvh){
-    #mn-set-overlay .modal{max-height:calc(100vh - 80px)}}
-  #mn-set-overlay .modal h3{display:flex;align-items:center;margin:0;flex:none;
-    padding:16px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
-  #mn-set-overlay #mn-set-body{flex:1;min-height:0;overflow-y:auto;padding:16px 20px 4px}
-  #mn-set-overlay .modal-actions{flex:none;margin:0;padding:12px 20px;
-    border-top:1px solid var(--border);background:var(--bg)}
-  .mn-set-x{margin-left:auto;border:none;background:transparent;color:var(--muted);
-    font-size:24px;line-height:1;cursor:pointer;padding:0 4px;border-radius:8px}
-  .mn-set-x:hover{color:var(--text);background:var(--surface-2)}
-  #mn-set-body .panel{margin-bottom:14px}
   .mn-bals{display:flex;gap:9px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
   .mn-bal{flex:0 0 auto;min-width:132px;border:1px solid var(--border);border-radius:11px;
     background:var(--surface);padding:9px 13px;cursor:pointer;transition:border-color .12s}
@@ -3853,18 +3832,6 @@ margin-left: -22px;
 
   <!-- 生词本工具（导入 / 选词 / 测词汇量） -->
   <!-- 菜谱编辑 -->
-  <!-- 记账设置：做成弹窗，不再替换整个页面（原来要再点一次「返回」才回得去） -->
-  <div class="overlay" id="mn-set-overlay">
-    <div class="modal mn-set-modal">
-      <h3>记账设置<button class="mn-set-x" id="mn-set-x" title="关闭（Esc）">×</button></h3>
-      <div id="mn-set-body"></div>
-      <div class="modal-actions">
-        <div class="grow"></div>
-        <button class="btn" id="mn-set-close">关闭</button>
-        <button class="btn primary" id="mn-rule-save">保存并重新分类</button>
-      </div>
-    </div>
-  </div>
   <div class="overlay" id="rc-overlay">
     <div class="modal" style="max-width:640px">
       <h3 id="rc-title">新菜谱</h3>
@@ -14448,7 +14415,7 @@ margin-left: -22px;
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
-  var mnMonth="",mnAcct="",mnPick="",mnInit=false,mnBusy=false,mnCur="";
+  var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
   var mnScope="month",mnYear=0,mnSide="out",mnSrc="",mnFrom="",mnTo="";
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
@@ -14981,18 +14948,8 @@ margin-left: -22px;
         Object.keys(tot).map(function(c){return mnMoney(tot[c],c);}).join(" / ")+'</div></div>'+
       '</div>';}
 
-  function mnSetShown(){
-    var o=document.getElementById("mn-set-overlay");return !!o&&o.classList.contains("on");}
-  function mnSetOpen(on){
-    var o=document.getElementById("mn-set-overlay");if(!o)return;
-    o.classList.toggle("on",!!on);
-    document.getElementById("mn-rules").classList.toggle("primary",!!on);
-    if(on)document.getElementById("mn-set-body").innerHTML=mnRulesHtml();}
-
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
-    // 设置开着的时候，里面的数字（笔数、余额、来源列表）也要跟着刷新
-    if(mnSetShown())document.getElementById("mn-set-body").innerHTML=mnRulesHtml();
     document.getElementById("mn-month").textContent=mnPeriodLabel();
     document.querySelectorAll("#mn-scope button").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-sc")===mnScope);});
@@ -15028,6 +14985,8 @@ margin-left: -22px;
     var hasCards=accts.some(function(a){return typeof a.bal==="number";});
     sel.style.display=(accts.length&&!hasCards)?"":"none";
 
+
+    if(mnView==="rules"){body.innerHTML=mnRulesHtml();return;}
 
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
@@ -15252,6 +15211,9 @@ margin-left: -22px;
         return '<div class="mn-rule"><span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
           '<input data-rule="'+c.k+'" value="'+esc((mnRules[c.k]||[]).join(", "))+
           '" placeholder="'+esc((MN_KW[c.k]||[]).slice(0,3).join(", ")||"（没有内置词）")+'"></div>';}).join("")+
+      '<div style="display:flex;gap:8px;margin-top:14px">'+
+      '<button class="btn primary" id="mn-rule-save">保存并重新分类</button>'+
+      '<button class="btn" id="mn-rule-back">← 返回账本</button></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
       '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
@@ -15567,17 +15529,10 @@ margin-left: -22px;
             mnImportRows(mnCsvRows(text),"csv",old);}
         }catch(e){mnStatus("这个文件读不了："+esc(String(e&&e.message||e)),true);}});
       document.getElementById("mn-rules").addEventListener("click",function(){
-        mnSetOpen(true);});
-      document.getElementById("mn-set-x").addEventListener("click",function(){mnSetOpen(false);});
-      document.getElementById("mn-set-close").addEventListener("click",function(){mnSetOpen(false);});
-      document.getElementById("mn-set-overlay").addEventListener("click",function(e){
-        if(e.target===this)mnSetOpen(false);});
-      document.addEventListener("keydown",function(e){
-        if(e.key==="Escape"&&mnSetShown())mnSetOpen(false);});
-      // 设置面板在弹窗里，但用的是同一套事件委托 —— 挂两遍就行
-      var sb=document.getElementById("mn-set-body");
-      sb.addEventListener("change",mnOnChange);
-      sb.addEventListener("click",mnOnClick);
+        mnView=mnView==="rules"?"list":"rules";
+        this.classList.toggle("primary",mnView==="rules");
+        mnRender();
+        try{document.querySelector(".mn-wrap").scrollIntoView({block:"start"});}catch(e2){}});
       // 设置页里的日期/主币种/汇率，改完立刻存。
       // 原来它们要等你点最下面那个「保存并重新分类」才生效 —— 而那个按钮
       // 在另一个面板里，隔着一屏，看起来跟这几个框没关系。
@@ -15731,6 +15686,9 @@ margin-left: -22px;
               "　·　备份已导到下载文件夹");
             mnRender();try{renderTax();}catch(e2){}});});
           return;}
+        if(e.target.id==="mn-rule-back"){
+          mnView="list";document.getElementById("mn-rules").classList.remove("primary");
+          mnRender();return;}
         if(e.target.id==="mn-rule-save"){
           // 日期/主币种/汇率在 change 事件里已经各自存好了，这里只管分类规则
           var next={};
@@ -15738,7 +15696,8 @@ margin-left: -22px;
             var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
             if(ws.length)next[inp.getAttribute("data-rule")]=ws;});
           mnRules=next;save("tt_mnrules",mnRules);
-          var n=mnRecat();mnSetOpen(false);
+          var n=mnRecat();mnView="list";
+          document.getElementById("mn-rules").classList.remove("primary");
           mnStatus("规则已保存 · 重新分类了 <b>"+n+"</b> 笔（手动改过的不动）");
           mnRender();return;}
       }
