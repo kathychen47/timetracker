@@ -575,9 +575,12 @@
   .mn-bal .b{font-size:16px;font-weight:680;letter-spacing:-.3px;white-space:nowrap;
     font-variant-numeric:tabular-nums}
   .mn-bal.tot{background:var(--surface-2);border-style:dashed}
-  /* align-items:start —— grid 默认 stretch，六张卡会被最高的那张（预估税负：两行小字＋按钮）
-     统一拔高，剩下几张下面就空出一大块。让每张卡只占自己内容那么高。 */
-  .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px;align-items:start}
+  /* 高度统一（grid 默认 stretch）。之前改成 align-items:start 让每张卡只占
+     自己内容那么高，但参差不齐更难看 —— 宁可矮的那几张下面空一点。
+     同时把最高那张（预估税负）的文字压短，整排就不会被拔太高。 */
+  .mn-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+  .mn-kpi{display:flex;flex-direction:column}
+  .mn-kpi .sub{margin-top:auto}
   .mn-kpi{border:1px solid var(--border);border-radius:12px;background:var(--surface);padding:10px 12px}
   .mn-kpi .k{font-size:12px;color:var(--muted);margin-bottom:2px}
   .mn-kpi .v{font-size:20px;font-weight:680;letter-spacing:-.3px;line-height:1.25}
@@ -14857,6 +14860,14 @@ margin-left: -22px;
   // 收入没有"分类"可分 —— 全是 income 这一类。有意义的分法是按来源：
   // 你的工资、Pingping 的工资、房租、定期利息。银行摘要里带流水号和日期，
   // 每笔都不一样，所以要先归一化才能聚在一起。
+  // 从钱迹搬过来的记录里，Pingping 写作「宝贝」（分类名就叫「宝贝工资」
+  // 「宝贝的应付税款」，备注里也有两百多处）。只在显示时替换，
+  // 不动原始数据 —— 导出的 CSV/JSON 仍是原样，以后想改回去也行。
+  var MN_ALIAS=[[/宝贝/g,"Pingping"]];
+  function mnAlias(s){
+    s=String(s==null?"":s);
+    for(var i=0;i<MN_ALIAS.length;i++)s=s.replace(MN_ALIAS[i][0],MN_ALIAS[i][1]);
+    return s;}
   // 银行给的账户名（"Joint Account"、"Chen Kaisi"）不是你平时的叫法。
   // 这里只给个好认的默认，⚙️ 设置 → 收入来源归并 里随时能改成别的。
   function mnAcctLabel(a){
@@ -14889,7 +14900,7 @@ margin-left: -22px;
     if(/I\.R\.D|INLAND REVENUE/i.test(s))return "IRD 退税";
     // 取前两个词：'UNIVERSITY CNTBRY UOC NET PAY 260805' → 'UNIVERSITY CNTBRY'
     var w=s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");
-    return w.slice(0,34)||"（无摘要）";}
+    return mnAlias(w.slice(0,34))||"（无摘要）";}
 
   function mnAgg(list){
     var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},src:{},noFx:0};
@@ -15055,10 +15066,10 @@ margin-left: -22px;
         '，不算支出</div></div>'):"")+
       (TX?('<div class="mn-kpi"><div class="k">预估税负</div>'+
         '<div class="v out">'+mnMoney(-due)+'</div>'+
-        '<div class="sub">PAYE '+mnMoney(-TX.tax)+' · ACC '+mnMoney(-TX.acc)+
-          (TX.gst?(' · GST '+mnMoney(-TX.gst)):"")+
-          '<br><button class="mn-mini" data-aftertax>'+
-          (afterTax?"改回按税前看":"收入改按税后看")+'</button></div></div>'):"")+
+        '<div class="sub" title="PAYE '+mnMoney(-TX.tax)+' · ACC '+mnMoney(-TX.acc)+
+          (TX.gst?(' · GST '+mnMoney(-TX.gst)):"")+'">'+
+          '<button class="mn-mini" data-aftertax>'+
+          (afterTax?"改回税前":"改按税后看")+'</button></div></div>'):"")+
       '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
         '<div class="sub">按 '+span+(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
       '</div>'+
@@ -15165,8 +15176,8 @@ margin-left: -22px;
         h+='<div class="mn-row'+(MN_NEUTRAL[t.cat]?" neutral":"")+'" data-id="'+esc(t.id)+'"'+
           (MN_NEUTRAL[t.cat]?' title="转账/存款，不计入收支合计"':"")+'>'+
           '<span class="ic">'+c.i+'</span>'+
-          '<span class="ds">'+esc(t.merchant||t.desc||"（无摘要）")+
-            (t.merchant&&t.desc?'<small>'+esc(t.desc)+'</small>':"")+
+          '<span class="ds">'+esc(mnAlias(t.merchant||t.desc||"（无摘要）"))+
+            (t.merchant&&t.desc?'<small>'+esc(mnAlias(t.desc))+'</small>':"")+
             (t.src==="manual"?'<small>手记</small>':(t.src==="akahu"?"":'<small>导入</small>'))+'</span>'+
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
