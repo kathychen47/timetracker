@@ -3335,7 +3335,7 @@ margin-left: -22px;
     <button class="rail-w" id="rail-wide" type="button" aria-label="展开/收起导航" title="展开导航（显示文字）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg><span class="rl">收起</span></button>
     <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
     <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-1.4-1-8.2-5.6-8.2-11A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 8.2 2.2c0 5.4-6.8 10-8.2 11z"></path><path d="M6.6 11.4h2.6l1.5-2.7 1.9 5 1.4-2.3h3.4"></path></svg><span class="rl">身体</span></button>
-    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg><span class="rl">看书 · 笔记</span></button>
+    <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg><span class="rl">笔记</span></button>
     <div class="grow"></div>
     <button id="ai-btn" aria-label="AI 助手" title="AI 助手"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6L12 3z"></path><path d="M19 14l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"></path></svg></button>
     <button id="settings-btn" aria-label="设置" title="设置"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></button>
@@ -3676,7 +3676,9 @@ margin-left: -22px;
     <section class="view" id="view-body">
       <div class="page-h">身体数据 <span class="rd-sub">体重 / 围度 / 体脂 · 看变化曲线</span></div>
       <div class="body-wrap" id="body-wrap"></div>
-      <div class="panel" id="glu-card" style="max-width:920px;margin:16px auto 0"></div>
+      <!-- 宽度和上面那些卡片对齐：body-wrap 是 max-width:1000px 且靠左，
+           这里原来写的是 920px + margin auto（居中），于是整块往右偏了一截 -->
+      <div class="panel" id="glu-card" style="max-width:1000px;margin:14px 0 0"></div>
     </section>
 
     <section class="view" id="view-food">
