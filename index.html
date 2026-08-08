@@ -538,6 +538,12 @@
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
+  .mn-set-modal{max-width:900px}
+  .mn-set-modal h3{display:flex;align-items:center}
+  .mn-set-x{margin-left:auto;border:none;background:transparent;color:var(--muted);
+    font-size:24px;line-height:1;cursor:pointer;padding:0 4px;border-radius:8px}
+  .mn-set-x:hover{color:var(--text);background:var(--surface-2)}
+  #mn-set-body .panel{margin-bottom:14px}
   .mn-bals{display:flex;gap:9px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
   .mn-bal{flex:0 0 auto;min-width:132px;border:1px solid var(--border);border-radius:11px;
     background:var(--surface);padding:9px 13px;cursor:pointer;transition:border-color .12s}
@@ -582,6 +588,10 @@
   .mn-row .tag.guess{border-style:dashed}
   .mn-row .am{flex:0 0 128px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
   .mn-row .am.in{color:#4fae7d}
+  /* 不计入合计的（转账/存款）整行压暗，金额再淡一档 */
+  .mn-row.neutral{opacity:.62}
+  .mn-row.neutral .am{opacity:.55;font-weight:500}
+  .mn-row.neutral:hover{opacity:1}
   .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
   .mn-row .am small.nofx{color:#d9534f}
   .mn-empty{text-align:center;color:var(--muted);font-size:13px;padding:34px 10px;line-height:1.7}
@@ -3532,6 +3542,7 @@ margin-left: -22px;
             <button data-sc="month" class="on">月</button>
             <button data-sc="year">年</button>
             <button data-sc="range">区间</button>
+            <button data-sc="all">全部</button>
           </div>
           <span class="mn-range" id="mn-range" hidden>
             <input type="date" id="mn-from"><span class="to">→</span><input type="date" id="mn-to">
@@ -3813,6 +3824,18 @@ margin-left: -22px;
 
   <!-- 生词本工具（导入 / 选词 / 测词汇量） -->
   <!-- 菜谱编辑 -->
+  <!-- 记账设置：做成弹窗，不再替换整个页面（原来要再点一次「返回」才回得去） -->
+  <div class="overlay" id="mn-set-overlay">
+    <div class="modal mn-set-modal">
+      <h3>记账设置<button class="mn-set-x" id="mn-set-x" title="关闭（Esc）">×</button></h3>
+      <div id="mn-set-body"></div>
+      <div class="modal-actions">
+        <div class="grow"></div>
+        <button class="btn" id="mn-set-close">关闭</button>
+        <button class="btn primary" id="mn-rule-save">保存并重新分类</button>
+      </div>
+    </div>
+  </div>
   <div class="overlay" id="rc-overlay">
     <div class="modal" style="max-width:640px">
       <h3 id="rc-title">新菜谱</h3>
@@ -14265,7 +14288,11 @@ margin-left: -22px;
       "digitalocean","linode","aws ","amazon web","google cloud","gcp ","azure","supabase",
       "notion","figma","adobe","jetbrains","cursor","midjourney","perplexity","copilot",
       "dropbox","icloud","google one","microsoft 365","office 365","namecheap","godaddy",
-      "domain renewal","hosting","1password","lastpass","grammarly","canva","zoom.us"],
+      "domain renewal","hosting","1password","lastpass","grammarly","canva","zoom.us",
+      // Apple 的月费 Akahu 给的类目是 "Electronic and appliance stores"，
+      // 照类目走会掉进购物 —— 但 APPLE.COM/BILL 是订阅，不是买东西。
+      // 关键词这一层在 NZFCC 之前，所以能拦住。
+      "apple.com","apple.com/bill","itunes","app store","google play","play store"],
     fee:["account fee","monthly fee","service fee","transaction fee","foreign currency fee","offshore fee","overdraft","interest charg","atm fee","conversion charge","bank fee","late fee","dishonour"],
     income:["salary","wages","payroll","net pay","pay run","nett pay","inland revenue","working for families","dividend","interest earned","credit interest","tax refund","reimburse"],
     // 存起来的钱：定期、储蓄、KiwiSaver、基金。没花掉，回来时也不是收入，
@@ -14273,7 +14300,10 @@ margin-left: -22px;
     // Westpac 的定期在流水里写作 "T/DEP"。
     saving:["t/dep","t/d ","t/d maturity","term dep","term deposit","td renew","maturity","kiwisaver","savings account",
       "saver","investment","managed fund","sharesies","invest now","investnow","simplicity"],
-    transfer:["transfer","tfr ","tfr-","to a/c","from a/c","internet banking","on call","sweep","autopay to"]
+    // "wu ping ping" 是从国内汇过来的钱 —— 是把自己的钱搬过来，不是赚到的。
+    // 算成收入会让那个月凭空多出三万，7 月的收入会被放大近五倍。
+    transfer:["transfer","tfr ","tfr-","to a/c","from a/c","internet banking","on call","sweep","autopay to",
+      "wu ping ping","wu,ping"]
   };
   // 从钱迹搬过来的历史账用的是中文分类（"吃"2204 笔、"快递/海运"227 笔这种），
   // 上面那张英文商户表一条都命中不了，所以单开一张中文的，一起参与匹配。
@@ -14379,7 +14409,7 @@ margin-left: -22px;
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
-  var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
+  var mnMonth="",mnAcct="",mnPick="",mnInit=false,mnBusy=false,mnCur="";
   var mnScope="month",mnYear=0,mnSide="out",mnSrc="",mnFrom="",mnTo="";
   function mnSave(){save("tt_txns",mnTxns);}
   function mnP2(n){return (n<10?"0":"")+n;}
@@ -14419,12 +14449,23 @@ margin-left: -22px;
     for(var i=0;i<list.length;i++){var w=String(list[i]||"").toLowerCase();
       if(w&&hay.indexOf(w)>=0)return true;}
     return false;}
+  // 认一个商户用的 key。有商户名就用商户名，没有就取摘要前两个词
+  // （'APPLE.COM/BILL 02 524651****** 6759' → 'apple.com/bill 02'），
+  // 后面那串卡号和流水号每次都变，带上就永远匹配不上第二笔。
+  function mnMerchKey(t){
+    if(t&&t.merchant)return String(t.merchant).toLowerCase().trim();
+    var s=String(t&&t.desc||"").toLowerCase().trim();
+    return s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");}
   function mnGuess(t){
     var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
     // 1) 你自己加的规则 —— 内置表永远猜不到「房东 Mike」这种
     var cats=mnCats(),inc=(+t.amt>0);
     for(var i=0;i<cats.length;i++){var k=cats[i].k;
       if(mnRules[k]&&mnRules[k].length&&mnHit(hay,mnRules[k]))return k;}
+    // 1.5) 你手动改过并选了"以后都这样"的商户。排在内置表之前 ——
+    //      你亲手教过的，比我猜的准。
+    var lk=mnMerchKey(t),lc=(mnCfg&&mnCfg.learned||{})[lk];
+    if(lc&&MN_CAT[lc]&&mnDirOk(lc,inc))return lc;
     // 2) 内置商户表：英文（新西兰常见商户）+ 中文（钱迹搬来的分类名）
     //    进账只许落到收入/转账/其他 —— 否则「UNIVERSITY … NET PAY」这笔工资
     //    会因为含 "university" 被判成教育支出。你自己写的规则不受这条限制。
@@ -14717,6 +14758,7 @@ margin-left: -22px;
     var now=mnYmd(new Date()).slice(0,7);s[now]=1;
     return Object.keys(s).sort();}
   function mnShift(n){
+    if(mnScope==="all")return;                     // 全部模式没有上一段可翻
     if(mnScope==="year"){mnYear+=n;}
     else if(mnScope==="range"){
       // 整个窗口前后平移一整段，方便"上一个同样长的区间"这样比
@@ -14754,12 +14796,14 @@ margin-left: -22px;
     var p=(mnMonth||"").split("-");return new Date(+p[0],+p[1],0).getDate();}
   // 当前期间的 [起, 止]，都含端点
   function mnSpanOf(){
+    if(mnScope==="all")return ["0000-01-01","9999-12-31"];
     if(mnScope==="year")return [mnYear+"-01-01",mnYear+"-12-31"];
     if(mnScope==="range")return [mnFrom,mnTo];
     return [mnMonth+"-01",mnMonth+"-"+mnP2(mnDaysInMonth())];}
   // 上一期：月→上月，年→去年，区间→紧邻的等长窗口
   function mnPrevSpanOf(){
     var s=mnSpanOf();
+    if(mnScope==="all")return ["9999-12-31","9999-12-31"];   // 全部模式没有"上一期"
     if(mnScope==="year")return [(mnYear-1)+"-01-01",(mnYear-1)+"-12-31"];
     if(mnScope==="range"){
       var n=mnDaysBetween(s[0],s[1])+1;
@@ -14770,6 +14814,9 @@ margin-left: -22px;
   function mnInSpan(t,sp){var d=String(t&&t.d||"");return d>=sp[0]&&d<=sp[1];}
   function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
   function mnPeriodLabel(){
+    if(mnScope==="all"){
+      var ds=mnTxns.map(function(t){return t.d;}).filter(Boolean).sort();
+      return ds.length?("全部 "+ds[0]+" → "+ds[ds.length-1]):"全部";}
     if(mnScope==="year")return mnYear+" 年";
     if(mnScope==="range")return (mnFrom||"?")+" → "+(mnTo||"?");
     return (mnMonth||"").replace("-"," 年 ")+" 月";}
@@ -14853,14 +14900,26 @@ margin-left: -22px;
         Object.keys(tot).map(function(c){return mnMoney(tot[c],c);}).join(" / ")+'</div></div>'+
       '</div>';}
 
+  function mnSetShown(){
+    var o=document.getElementById("mn-set-overlay");return !!o&&o.classList.contains("on");}
+  function mnSetOpen(on){
+    var o=document.getElementById("mn-set-overlay");if(!o)return;
+    o.classList.toggle("on",!!on);
+    document.getElementById("mn-rules").classList.toggle("primary",!!on);
+    if(on)document.getElementById("mn-set-body").innerHTML=mnRulesHtml();}
+
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
+    // 设置开着的时候，里面的数字（笔数、余额、来源列表）也要跟着刷新
+    if(mnSetShown())document.getElementById("mn-set-body").innerHTML=mnRulesHtml();
     document.getElementById("mn-month").textContent=mnPeriodLabel();
     document.querySelectorAll("#mn-scope button").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-sc")===mnScope);});
     var rg=document.getElementById("mn-range"),isRange=(mnScope==="range");
     rg.hidden=!isRange;
     document.getElementById("mn-month").style.display=isRange?"none":"";
+    ["mn-prev","mn-next"].forEach(function(id){
+      document.getElementById(id).style.display=(mnScope==="all")?"none":"";});
     if(isRange){
       document.getElementById("mn-from").value=mnFrom;
       document.getElementById("mn-to").value=mnTo;}
@@ -14881,7 +14940,6 @@ margin-left: -22px;
         esc(a.name||a.bank||"账户")+(a.num?(" ···"+esc(a.num)):"")+"</option>";}).join("");
     sel.style.display=accts.length?"":"none";
 
-    if(mnView==="rules"){body.innerHTML=mnRulesHtml();return;}
 
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
@@ -14901,6 +14959,10 @@ margin-left: -22px;
     if(mnScope==="year"){
       var nowY=new Date().getFullYear();
       span=(mnYear===nowY)?(new Date().getMonth()+1):12;spanLb="月均支出";
+    }else if(mnScope==="all"){
+      var ds2=mnTxns.map(function(t){return t.d;}).filter(Boolean).sort();
+      span=ds2.length?Math.max(1,Math.round(mnDaysBetween(ds2[0],ds2[ds2.length-1])/30.44)):1;
+      spanLb="月均支出";
     }else if(mnScope==="range"){
       // 区间跨到未来时只按已经过去的天数算，不然会被没发生的日子稀释
       var end=(mnTo>today&&mnFrom<=today)?today:mnTo;
@@ -15005,7 +15067,9 @@ margin-left: -22px;
         else if(a>0)dayIn[t.d]=(dayIn[t.d]||0)+a;});
       var WD=["日","一","二","三","四","五","六"];
       h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
-        '点分类标签可以改，改过的以后不会被自动分类覆盖</span>'+
+        '点分类标签可以改，改过的以后不会被自动分类覆盖'+
+        (A.tf?('　·　<b style="color:var(--muted)">灰掉的 '+A.tf+' 笔是转账/存款，不计入合计</b>'):"")+
+        '</span>'+
         (A.tf?('<button class="mn-mini" data-hidetf style="float:right;margin:0">'+
           (mnCfg.hideTf?"显示转账/存款":"藏起转账/存款（"+A.tf+" 笔）")+'</button>'):"")+'</h3>';
       var day="";
@@ -15019,7 +15083,10 @@ margin-left: -22px;
               (dayIn[day]?('<span class="in">+'+mnMoney(dayIn[day])+'</span>'):"")+
               '</span>'):"")+'</div>';}
         var c=MN_CAT[t.cat]||MN_CAT.other;
-        h+='<div class="mn-row" data-id="'+esc(t.id)+'">'+
+        // 转账/存款不进任何合计，视觉上要能一眼分出来 ——
+        // 光靠分类标签得自己记住哪几类不算，太费脑子
+        h+='<div class="mn-row'+(MN_NEUTRAL[t.cat]?" neutral":"")+'" data-id="'+esc(t.id)+'"'+
+          (MN_NEUTRAL[t.cat]?' title="转账/存款，不计入收支合计"':"")+'>'+
           '<span class="ic">'+c.i+'</span>'+
           '<span class="ds">'+esc(t.merchant||t.desc||"（无摘要）")+
             (t.merchant&&t.desc?'<small>'+esc(t.desc)+'</small>':"")+
@@ -15069,9 +15136,6 @@ margin-left: -22px;
         return '<div class="mn-rule"><span class="nm">'+c.i+" "+esc(c.n)+'</span>'+
           '<input data-rule="'+c.k+'" value="'+esc((mnRules[c.k]||[]).join(", "))+
           '" placeholder="'+esc((MN_KW[c.k]||[]).slice(0,3).join(", ")||"（没有内置词）")+'"></div>';}).join("")+
-      '<div style="display:flex;gap:8px;margin-top:12px">'+
-      '<button class="btn primary" id="mn-rule-save">保存并重新分类</button>'+
-      '<button class="btn" id="mn-rule-back">返回</button></div>'+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '「重新分类」只动<b>自动猜的</b>那些，你手动改过的一律保留。<br>'+
       '想要整词匹配就在词前面加个空格，比如 <code> rent</code> —— 否则 <code>current</code> 也会被它撞上。</div></div>';}
@@ -15371,13 +15435,24 @@ margin-left: -22px;
             mnImportRows(mnCsvRows(text),"csv",old);}
         }catch(e){mnStatus("这个文件读不了："+esc(String(e&&e.message||e)),true);}});
       document.getElementById("mn-rules").addEventListener("click",function(){
-        mnView=mnView==="rules"?"list":"rules";
-        this.classList.toggle("primary",mnView==="rules");mnRender();});
+        mnSetOpen(true);});
+      document.getElementById("mn-set-x").addEventListener("click",function(){mnSetOpen(false);});
+      document.getElementById("mn-set-close").addEventListener("click",function(){mnSetOpen(false);});
+      document.getElementById("mn-set-overlay").addEventListener("click",function(e){
+        if(e.target===this)mnSetOpen(false);});
+      document.addEventListener("keydown",function(e){
+        if(e.key==="Escape"&&mnSetShown())mnSetOpen(false);});
+      // 设置面板在弹窗里，但用的是同一套事件委托 —— 挂两遍就行
+      var sb=document.getElementById("mn-set-body");
+      sb.addEventListener("change",mnOnChange);
+      sb.addEventListener("click",mnOnClick);
       // 设置页里的日期/主币种/汇率，改完立刻存。
       // 原来它们要等你点最下面那个「保存并重新分类」才生效 —— 而那个按钮
       // 在另一个面板里，隔着一屏，看起来跟这几个框没关系。
       // 结果就是：改了日期直接去点同步，改动悄悄丢了，还以为是同步坏了。
-      document.getElementById("mn-body").addEventListener("change",function(e){
+      document.getElementById("mn-body").addEventListener("change",mnOnChange);
+      document.getElementById("mn-body").addEventListener("click",mnOnClick);
+      function mnOnChange(e){
         var t=e.target;if(!t||!t.matches)return;
         if(t.matches("[data-since]")){
           var sv=String(t.value||"").trim();
@@ -15422,9 +15497,8 @@ margin-left: -22px;
           if(isFinite(v)&&v>0)mnCfg.fx[c]=v;else delete mnCfg.fx[c];
           save("tt_mncfg",mnCfg);
           mnStatus("汇率已保存：1 "+esc(mnFxBase())+" = "+esc(t.value||"（清空）")+" "+esc(c));
-          return;}});
-      // 列表和规则页都在 mn-body 里，事件委托一次挂完，重渲染不用重新绑
-      document.getElementById("mn-body").addEventListener("click",function(e){
+          return;}}
+      function mnOnClick(e){
         var bal=e.target.closest("[data-bal]");
         if(bal){var bk=bal.getAttribute("data-bal");
           mnAcct=(mnAcct===bk)?"":bk;mnPick="";mnRender();return;}
@@ -15505,8 +15579,6 @@ margin-left: -22px;
             mnStatus("删掉了 <b>"+r.n+"</b> 笔"+(r.tax?("，同时撤掉 "+r.tax+" 条税务记录"):""));
             mnRender();try{renderTax();}catch(e2){}});
           return;}
-        if(e.target.id==="mn-rule-back"){mnView="list";
-          document.getElementById("mn-rules").classList.remove("primary");mnRender();return;}
         if(e.target.id==="mn-rule-save"){
           // 日期/主币种/汇率在 change 事件里已经各自存好了，这里只管分类规则
           var next={};
@@ -15514,11 +15586,10 @@ margin-left: -22px;
             var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
             if(ws.length)next[inp.getAttribute("data-rule")]=ws;});
           mnRules=next;save("tt_mnrules",mnRules);
-          var n=mnRecat();mnView="list";
-          document.getElementById("mn-rules").classList.remove("primary");
+          var n=mnRecat();mnSetOpen(false);
           mnStatus("规则已保存 · 重新分类了 <b>"+n+"</b> 笔（手动改过的不动）");
           mnRender();return;}
-      });
+      }
     }
     mnRender();
     if(!mnCfg.lastSync)mnStatus("还没同步过 —— 点 🔄 同步（要先照 <code>supabase/AKAHU.md</code> 配好 Edge Function）");
@@ -15601,9 +15672,23 @@ margin-left: -22px;
     s.className="tag";s.innerHTML=mnCatOpts(t.cat);
     btn.replaceWith(s);s.focus();
     var closed=false;                        // change 之后 blur 还会补一发，别重渲染两次
-    s.addEventListener("change",function(){
+    s.addEventListener("change",async function(){
       if(closed)return;closed=true;
-      t.cat=s.value;t.manual=1;mnSave();mnRender();});
+      var old=t.cat;t.cat=s.value;t.manual=1;mnSave();mnRender();
+      // 问一次要不要记住。同一个商户以后就自动这么归，不用每笔都改。
+      var key=mnMerchKey(t),name=t.merchant||key;
+      if(!key||old===t.cat)return;
+      var cn=(MN_CAT[t.cat]||{}).n||t.cat;
+      if(!await ttConfirm("以后「"+name+"」都归到「"+cn+"」吗？\n会连同已有的同商户记录一起改，你手动改过的不动。",
+        {okText:"记住"}))return;
+      mnCfg.learned=mnCfg.learned||{};mnCfg.learned[key]=t.cat;
+      save("tt_mncfg",mnCfg);
+      var n=0;mnTxns.forEach(function(x){
+        if(x.manual||mnMerchKey(x)!==key)return;
+        if(x.cat!==t.cat){x.cat=t.cat;n++;}});
+      mnSave();
+      mnStatus("记住了：「"+esc(name)+"」→「"+esc(cn)+"」"+(n?("，顺带改了已有的 "+n+" 笔"):""));
+      mnRender();});
     s.addEventListener("blur",function(){
       if(closed)return;closed=true;mnRender();});}
 
