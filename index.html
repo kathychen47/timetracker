@@ -623,6 +623,21 @@
   .mn-donut .mid .v{font-size:15px;font-weight:680;letter-spacing:-.3px}
   .mn-cat .dlt{flex:0 0 112px;text-align:right;font-size:11px}
   .mn-cat .dlt .up{color:#d9534f}.mn-cat .dlt .dn{color:#4fae7d}
+  /* 「2/9 已申报」这种小标。挂在来源名后面，不另占一列 ——
+     那一行已经有进度条、环比、金额、占比四栏，再加一列就挤没了。 */
+  .mn-cat .nm .txn{margin-left:7px;font-size:10.5px;font-weight:500;padding:1px 6px;
+    border-radius:20px;background:rgba(79,174,125,.15);color:#3d8c63;white-space:nowrap}
+  .mn-cat .nm .txn.none{background:var(--surface-2);color:var(--muted)}
+  /* 名字那栏本来是死的 172px，塞进小标就会被 ellipsis 从尾巴切掉 ——
+     而尾巴正是小标。所以这一档把名字那栏放宽，并且改成 flex：
+     名字自己截断，小标 flex:none 永远留着。 */
+  .mn-cats.withtax .nm{flex:0 0 252px;display:flex;align-items:center;overflow:visible}
+  .mn-cats.withtax .nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mn-cats.withtax .nm .txn{flex:none}
+  /* 窄屏塞不下五栏，让名字那行单独占一整行，数字挤在下一行 */
+  @media(max-width:640px){
+    .mn-cats.withtax .mn-cat{flex-wrap:wrap;row-gap:3px}
+    .mn-cats.withtax .nm{flex:1 1 100%}}
   /* 日期行以前只是小灰字，跟明细挤在一起分不出层次。
      给底色和分隔线，让「哪天花了多少」一眼扫得到。 */
   .mn-day{display:flex;align-items:center;gap:10px;font-size:12.5px;
@@ -14701,11 +14716,39 @@ margin-left: -22px;
     var dt=new Date(s);return isNaN(dt)?"":mnYmd(dt);}
   // rows 可以来自 CSV 也可以来自 xlsx，到这里已经是统一的二维数组了。
   // ignoreSince：搬历史账时用，绕过起始日期那道闸（钱迹那份本来就是旧账）。
+  // 银行同步已经覆盖的那段日子里，CSV 里的同一笔跟 Akahu 拉来的会撞车 ——
+  // 两边 id 完全不同（Akahu 给的 _id vs 我们自己拼的 imp:…），
+  // 靠 id 去重根本抓不到，账直接翻倍。
+  //
+  // 所以按内容认：同币种、同金额、同方向、日期差 3 天以内，就当同一笔。
+  // 每条 Akahu 记录只认领一次 —— 房租每周 550，不做 1:1 认领的话
+  // 一条能把一整个月的房租全挡掉。
+  // 只在 Akahu 真正覆盖的那段日期里比，外面不比，免得误伤真的现金消费。
+  function mnAkahuIx(){
+    var ix={},lo="",hi="";
+    mnTxns.forEach(function(t){
+      if(t.src!=="akahu"||!t.d)return;
+      if(!lo||t.d<lo)lo=t.d;
+      if(!hi||t.d>hi)hi=t.d;
+      var k=(t.cur||"NZD")+"|"+(+t.amt<0?"-":"+")+Math.abs(+t.amt||0).toFixed(2);
+      (ix[k]=ix[k]||[]).push({d:t.d,used:0});});
+    return {m:ix,lo:lo,hi:hi};}
+  function mnAkahuHit(ix,d,amt,cur){
+    if(!ix.lo||d<ix.lo||d>ix.hi)return false;
+    var a=ix.m[(cur||"NZD")+"|"+(amt<0?"-":"+")+Math.abs(amt).toFixed(2)];
+    if(!a)return false;
+    var td=Date.parse(d+"T00:00:00");
+    for(var i=0;i<a.length;i++){
+      if(a[i].used)continue;
+      if(Math.abs(Date.parse(a[i].d+"T00:00:00")-td)<=3*86400000){a[i].used=1;return true;}}
+    return false;}
+
   function mnImportRows(rows,src,ignoreSince){
     var H=mnCsvHead(rows);
     if(!H){mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);return;}
     var have={};mnTxns.forEach(function(t){have[t.id]=1;});
-    var add=0,early=0,bad=0,dup=0,curs={},batch={};
+    var ix=mnAkahuIx();
+    var add=0,early=0,bad=0,dup=0,bankDup=0,curs={},batch={};
     for(var i=H.row+1;i<rows.length;i++){
       var r=rows[i];if(!r||!r.length)continue;
       var d=mnCsvDate(r[H.date]||"");
@@ -14718,6 +14761,9 @@ margin-left: -22px;
       // 金额为 0 的支出会算出 -0，而 -0<0 是 false，会被当成收入显示成绿色。
       if(sg)amt=Math.abs(amt)*sg||0;
       var cur=(H.cur>=0?String(r[H.cur]||"").trim().toUpperCase():"")||"NZD";
+      // 银行同步那段时间里已经有同样一笔了，跳过。这一步要在算 id 之前 ——
+      // 算了 id 再跳会把序号占掉，同一个文件导第二次就对不上号了。
+      if(mnAkahuHit(ix,d,amt,cur)){bankDup++;continue;}
       curs[cur]=(curs[cur]||0)+1;
       var desc=H.desc.map(function(j){return String(r[j]||"").trim();})
         .filter(Boolean).join(" ").replace(/\s+/g," ").trim();
@@ -14745,6 +14791,8 @@ margin-left: -22px;
     mnStatus("导入完成：新增 <b>"+add+"</b> 笔"+
       (cl.length>1?("（"+cl.map(function(c){return c+" "+curs[c];}).join("、")+"，用上面的币种下拉切换）"):"")+
       (dup?("，跳过 "+dup+" 笔已经导过的"):"")+
+      (bankDup?("，<b>跳过 "+bankDup+" 笔跟 🏦 银行同步重复的</b>（"+
+        ix.lo+" 起银行那边已经有了）"):"")+
       (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
       (bad?("，跳过 "+bad+" 行读不出日期/金额的"):""));
     mnRender();}
@@ -14962,7 +15010,10 @@ margin-left: -22px;
     return mnAlias(String(w||"").slice(0,34))||"（无摘要）";}
 
   function mnAgg(list){
-    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},src:{},noFx:0};
+    // srcN / srcTax：每个收入来源有几笔、其中几笔点过「记入税务」。
+    // 「税后」只对申报过的那几笔成立，不数出来的话，一栏里九笔只申报了两笔
+    // 也照样顶着「税后」两个字，看的人会以为整栏都扣过税。
+    var o={out:0,inc:0,nOut:0,nIn:0,tf:0,sav:0,nSav:0,cat:{},src:{},srcN:{},srcTax:{},noFx:0};
     var sa=mnSavAccts(),hasSa=sa.__n>0;
     list.forEach(function(t){
       // 折算模式下缺汇率的那几笔宁可不算，也不能悄悄按 0 塞进去
@@ -14977,7 +15028,9 @@ margin-left: -22px;
         return;}
       if(a<0){o.out+=-a;o.nOut++;o.cat[t.cat]=(o.cat[t.cat]||0)+(-a);}
       else if(a>0){o.inc+=a;o.nIn++;
-        var pk=mnPayer(t);o.src[pk]=(o.src[pk]||0)+a;}});
+        var pk=mnPayer(t);o.src[pk]=(o.src[pk]||0)+a;
+        o.srcN[pk]=(o.srcN[pk]||0)+1;
+        if(t.tax)o.srcTax[pk]=(o.srcTax[pk]||0)+1;}});
     return o;}
 
   // 这段期间要交多少税。数据来自税务页 —— 只有你点过「记入税务」的那些收入
@@ -15004,6 +15057,15 @@ margin-left: -22px;
       if(src){var nm=mnPayer(src);o.bySrc[nm]=(o.bySrc[nm]||0)+due;}
       else o.free+=due;});
     return o.n?o:null;}
+  // 每一栏后面挂个小标：这栏里几笔申报过。没申报的那些显示的是税前原数，
+  // 不标出来的话，整张表顶着「扣税」两个字，看的人会以为每一笔都扣干净了。
+  function mnTaxMark(n,d){
+    if(!n)return "";
+    return '<span class="txn'+(d?"":" none")+'">'+(d?(d+"/"+n+" 已申报"):"未扣税")+'</span>';}
+  function mnTaxTip(n,d){
+    if(!n)return "";
+    return d?(d+" 笔已申报，税从这一栏里扣掉了"+(n>d?("；另外 "+(n-d)+" 笔是税前原数"):""))
+            :("这 "+n+" 笔都没点过「记入税务」，显示的是税前原数");}
   // 把税从各个收入来源里扣掉。认得出来源的照实扣，认不出的按收入占比摊。
   // 扣完不能变负数 —— 税年跨期时某一栏可能只剩零头，硬扣会出现负的收入。
   function mnAfterTaxSrc(sum,TX,tot){
@@ -15130,8 +15192,10 @@ margin-left: -22px;
         '<div class="sub">'+A.nOut+' 笔 '+delta(A.out,P.out)+'</div></div>'+
       '<div class="mn-kpi"><div class="k">收入'+(afterTax?'（税后）':'')+'</div>'+
         '<div class="v in">'+mnMoney(incShow)+'</div>'+
+        // 「几笔已申报」要写在这儿 —— 只有申报过的那几笔扣了税，
+        // 光写「税后」会让人以为每一笔都扣干净了
         '<div class="sub">'+A.nIn+' 笔 '+
-          (afterTax?('· 税前 '+mnMoney(A.inc)):delta(A.inc,P.inc))+'</div></div>'+
+          (afterTax?('· '+TX.n+' 笔已申报 · 税前 '+mnMoney(A.inc)):delta(A.inc,P.inc))+'</div></div>'+
       '<div class="mn-kpi"><div class="k">结余'+(afterTax?'（税后）':'')+'</div>'+
         '<div class="v'+(netShow<0?" out":"")+'">'+mnMoney(netShow)+'</div>'+
         '<div class="sub">'+(afterTax?('税前 '+mnMoney(net)):
@@ -15178,8 +15242,9 @@ margin-left: -22px;
       ranked.forEach(function(k,i){
         (i<6||sum[k]/tot>=0.02?big:small).push(k);});
       if(small.length>1){
-        tail={n:small.length,v:0};
-        small.forEach(function(k){tail.v+=sum[k];delete sum[k];});
+        tail={n:small.length,v:0,sn:0,st:0};
+        small.forEach(function(k){tail.v+=sum[k];
+          tail.sn+=(A.srcN[k]||0);tail.st+=(A.srcTax[k]||0);delete sum[k];});
         ranked=big;}}
     // 收入来源没有固定颜色，按排名从一个色盘里取
     var SRCC=["#4fae7d","#5f9bd8","#eeb85f","#c77fd0","#61c4cf","#e06c5a","#8bb04f","#7c83e6","#b0895f","#9aa1b0"];
@@ -15189,9 +15254,13 @@ margin-left: -22px;
       [["out","支出"],["in","收入"]].map(function(x){
         return '<button data-side="'+x[0]+'"'+(mnSide===x[0]?' class="on"':"")+'>'+x[1]+'</button>';}).join("")+
       '</div>';
-    h+='<div class="panel"><h3>'+(isIn?("收入来源"+(afterTax?"（税后）":"")):"分类统计")+
+    // 标题不写「税后」—— 扣掉的只是你点过「记入税务」的那几笔的税。
+    // 一栏里九笔只申报了两笔，写「税后」就是在说整栏都扣干净了，不是实话。
+    h+='<div class="panel"><h3>'+(isIn?("收入来源"+(afterTax?"（已申报部分扣税）":"")):"分类统计")+
       ' <span style="font-weight:400;color:var(--muted);font-size:12px">'+
-      (isIn?"点一类只看那一类 · 银行摘要按前两个词归并":"点一类只看那一类")+
+      (isIn?(afterTax?"每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数"
+                     :"点一类只看那一类 · 银行摘要按前两个词归并")
+           :"点一类只看那一类")+
       ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span><span class="grow"></span>'+toggle+'</h3>';
     if(!ranked.length){
       h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+'没有'+(isIn?"收入":"支出")+'</div></div>';
@@ -15206,21 +15275,29 @@ margin-left: -22px;
           '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
           '<div class="mid"><span class="t">'+(isIn?("收入合计"+(afterTax?" · 税后":"")):"支出合计")+'</span>'+
           '<span class="v">'+mnMoney(isIn?tot:-tot)+'</span></div></div>'+
-        '<div class="mn-cats" style="flex:1;min-width:280px">'+
+        '<div class="mn-cats'+(isIn&&afterTax?" withtax":"")+'" style="flex:1;min-width:280px">'+
         ranked.map(function(k,i){
           var c=meta(k,i),v=sum[k],pv=prev[k]||0;
           var on=isIn?(mnSrc&&mnSrc!==k):(mnPick&&mnPick!==k);
           return '<div class="mn-cat'+(on?" off":"")+'" '+
             (isIn?('data-src="'+esc(k)+'"'):('data-pick="'+esc(k)+'"'))+'>'+
-            '<span class="nm" title="'+esc(c.n)+'">'+c.i+" "+esc(c.n)+'</span>'+
+            '<span class="nm" title="'+esc(c.n)+
+              (isIn&&afterTax?("　"+esc(mnTaxTip(A.srcN[k]||0,A.srcTax[k]||0))):"")+'">'+
+              (isIn&&afterTax
+                ? ('<span class="t">'+c.i+" "+esc(c.n)+'</span>'+
+                   mnTaxMark(A.srcN[k]||0,A.srcTax[k]||0))
+                : (c.i+" "+esc(c.n)))+'</span>'+
             '<span class="track"><span class="fill" style="width:'+
               Math.max(2,v/sum[ranked[0]]*100).toFixed(1)+'%;background:'+c.c+'"></span></span>'+
             '<span class="dlt">'+delta(v,pv)+'</span>'+
             '<span class="amt">'+mnMoney(isIn?v:-v)+'</span>'+
             '<span class="pct">'+(tot?Math.round(v/tot*100):0)+'%</span></div>';}).join("")+
         (tail?('<div class="mn-cat" style="cursor:default;opacity:.75" '+
-          'title="每一笔都不到总额的 2%，合并显示">'+
-          '<span class="nm">🧾 其他零散 <span style="color:var(--muted)">'+tail.n+' 项</span></span>'+
+          'title="每一笔都不到总额的 2%，合并显示'+
+            (afterTax?("　"+esc(mnTaxTip(tail.sn,tail.st))):"")+'">'+
+          '<span class="nm"><span class="t">🧾 其他零散 <span style="color:var(--muted)">'+
+            tail.n+' 项</span></span>'+
+            (afterTax?mnTaxMark(tail.sn,tail.st):"")+'</span>'+
           '<span class="track"><span class="fill" style="width:'+
             Math.max(2,tail.v/sum[ranked[0]]*100).toFixed(1)+'%;background:#c2c7d2"></span></span>'+
           '<span class="dlt"></span>'+
