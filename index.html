@@ -4289,6 +4289,26 @@ margin-left: -22px;
           <select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select>
         </div>
       </div>
+      <div class="set-sec-h" style="margin-top:22px">📊 统计</div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">熬夜算前一天</div>
+            <div class="set-desc">熬到凌晨的那段时间，统计上算作前一天 ——
+              不然一晚上的活儿会被零点劈成两半，两天都不像话。<b>只影响统计和番茄钟的「今日」，日历上还是画在真实日期。</b></div></div>
+          <label class="switch"><input type="checkbox" id="set-daycut"><span class="sw-track"></span></label>
+        </div>
+      </div>
+      <div class="set-item" id="set-daycut-row">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">几点之前算前一天</div>
+            <div class="set-desc">凌晨这个点之前开始的事，都记到前一天头上。<span id="set-daycut-eg"></span></div></div>
+          <select id="set-daycut-h">
+            <option value="1">凌晨 1 点</option><option value="2">凌晨 2 点</option>
+            <option value="3">凌晨 3 点</option><option value="4">凌晨 4 点</option>
+            <option value="5">凌晨 5 点</option><option value="6">凌晨 6 点</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="set-pane" data-pane="cats">
@@ -4494,6 +4514,26 @@ margin-left: -22px;
     return isNaN(d)?"":(fmt(d)+" "+pad(d.getHours())+":"+pad(d.getMinutes()));}
   function parse(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2]);}
   function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+  // ---- 熬夜算前一天 ----
+  // 熬到凌晨两点的那段活儿，日期上属于第二天，但人的感觉里就是"今天"的延长。
+  // 不这么算的话，一晚上会被零点劈成两半：今天显示 3 小时、明天 2 小时，
+  // 两天都不像话，"日均"也跟着虚高（分母多出一天）。
+  //
+  // 只动统计和番茄钟的「今日」。日历上不动 —— 那是时间轴，一件凌晨一点的事
+  // 画到前一天的格子里，反而没法看。
+  // 默认打开，界线默认凌晨 2 点，设置里能改（1–6 点）。
+  function dayCutOn(){return !settings||settings.dayCut!==false;}
+  function dayCutH(){var h=+(settings&&settings.dayCutH);return (h>=1&&h<=6)?h:2;}
+  // 一条记录在统计里算哪一天
+  function statDay(e){
+    if(!dayCutOn())return e&&e.date;
+    var m=toMin(e&&e.start);
+    if(!isFinite(m)||m>=dayCutH()*60)return e&&e.date;
+    try{return fmt(addDays(parse(e.date),-1));}catch(_e){return e.date;}}
+  // 统计意义上的「今天」
+  function statToday(){
+    var n=new Date();
+    return fmt((dayCutOn()&&n.getHours()<dayCutH())?addDays(n,-1):n);}
   function addMonths(d,n){var x=new Date(d);x.setMonth(x.getMonth()+n);return x;}
   function startOfWeek(d){var x=new Date(d);var day=(x.getDay()+6)%7;return addDays(x,-day);}
   function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
@@ -4801,6 +4841,27 @@ margin-left: -22px;
   window.addEventListener("resize",applyZoom);
   document.getElementById("set-zoom").addEventListener("change",function(){zoomPref=this.value;save("tt_zoom",zoomPref);applyZoom();});
   document.getElementById("set-lang").addEventListener("change",function(){save("tt_lang",this.value);location.reload();});
+  // 熬夜算前一天
+  (function(){
+    var on=document.getElementById("set-daycut"),hs=document.getElementById("set-daycut-h"),
+        row=document.getElementById("set-daycut-row"),eg=document.getElementById("set-daycut-eg");
+    if(!on||!hs)return;
+    function paint(){
+      on.checked=dayCutOn();hs.value=String(dayCutH());
+      row.style.opacity=on.checked?"":".45";
+      hs.disabled=!on.checked;
+      eg.textContent=on.checked
+        ? ("比如 8 月 9 日 0:00–"+pad(dayCutH())+":00 的记录，都算 8 月 8 日的。")
+        : "现在按真实日期算，零点一过就是新的一天。";}
+    function redraw(){
+      save("tt_settings",settings);paint();
+      try{renderDashboard();renderPomoStats();}catch(e){}
+      try{if(state.tab==="stats")renderStatsView();}catch(e){}}
+    on.addEventListener("change",function(){settings.dayCut=this.checked;redraw();});
+    hs.addEventListener("change",function(){settings.dayCutH=+this.value||2;redraw();});
+    paint();
+    document.getElementById("settings-btn").addEventListener("click",paint);
+  })();
   // 身体数据页那块血糖卡片：显示 / 不显示（收起与否是点标题控制的，记在 tt_folds 里）
   (function(){var s=document.getElementById("set-glushow");if(!s)return;
     s.value=load("tt_glushow",true)?"1":"0";
@@ -7205,7 +7266,10 @@ margin-left: -22px;
   }
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
   var skipBtn=document.getElementById("pomo-skip");
-  function todayKey(){return fmt(new Date());}
+  // 这里原来还有一个 function todayKey()。下面背单词那块（SM-2）也声明了一个同名的，
+  // 函数声明后来居上，前面这个从来没生效过 —— 两边返回的东西一样，所以一直没人发现。
+  // 番茄钟的「今日」要跟着"熬夜算前一天"走，背单词的到期日不能跟着动
+  // （一张卡今天到期就是今天到期），所以这里改成直接叫 statToday()。
   var MAXDIAL=90,MAXMIN=180,dialRevs=0,dialPrevAng=null,pomoHint=document.getElementById("pomo-hint");
   function darken(hex,amt){hex=(hex||"#ec8b76").trim().replace("#","");if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
     var r=parseInt(hex.slice(0,2),16)||236,g=parseInt(hex.slice(2,4),16)||139,b=parseInt(hex.slice(4,6),16)||118;
@@ -7490,7 +7554,7 @@ margin-left: -22px;
       pomoNote("补记好了："+dstr(e2)+" "+ev.start+"–"+ev.end);};
     document.getElementById("pomo-lost-x").onclick=function(){markSeenLogged();};}
 
-  function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
+  function logDone(sec,endMs){var k=statToday();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
   // 落库的两个出口。进来前先确认这次计时真归自己管 —— 后台被浏览器冻住的标签页
   // 解冻后可能还攥着一个旧 interval，没有这道闸就会把同一次专注再记一条。
@@ -7596,7 +7660,7 @@ margin-left: -22px;
     drawPomo();}
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
-  function renderPomoStats(){var k=todayKey(),st=pstats[k]||{count:0,min:0};
+  function renderPomoStats(){var k=statToday(),st=pstats[k]||{count:0,min:0};
     document.getElementById("stat-count").textContent=st.count;document.getElementById("stat-min").innerHTML=st.min+'<small> 分</small>';}
   function beep(){var ctx=new(window.AudioContext||window.webkitAudioContext)();var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=660;g.gain.value=0.08;o.start();setTimeout(function(){o.stop();ctx.close();},350);}
 
@@ -7765,7 +7829,7 @@ margin-left: -22px;
     return events.concat(gcalEvents.filter(function(e){
       return !gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
   function statEvents(p){var sf=fmt(p.start),ef=fmt(p.end);
-    return statPool().filter(function(e){if(e.date<sf||e.date>ef)return false;
+    return statPool().filter(function(e){var d=statDay(e);if(d<sf||d>ef)return false;
       return evHasCat(e,statState.cat,statState.sub);});}   // 分段事件：任一段命中就算，时长只算命中那部分
   function statMin(e){return evMinFor(e,statState.cat,statState.sub);}
   // 被重复计算了多少分钟 = 各事件时长相加 − 实际占用（按天把区间并起来）。
@@ -7773,7 +7837,9 @@ margin-left: -22px;
   function overlapMin(list){
     var byDay={};
     list.forEach(function(e){var m=evMinutes(e);if(!m)return;
-      (byDay[e.date]=byDay[e.date]||[]).push([toMin(e.start),toMin(e.start)+m]);});
+      var d=statDay(e),s0=toMin(e.start);
+      if(d!==e.date)s0+=1440;                 // 算到前一天头上的，时间轴接在那天后面
+      (byDay[d]=byDay[d]||[]).push([s0,s0+m]);});
     var sum=0,uni=0;
     Object.keys(byDay).forEach(function(d){
       var iv=byDay[d].sort(function(x,y){return x[0]-y[0];});
@@ -7933,7 +7999,7 @@ margin-left: -22px;
     // 分母＝真正有记录的天数，不是区间跨了几天。
     // 否则周三看"本周"，还没到的周四~周日也在分母里，13.6h 会被摊成 1.9h/天；
     // "今年"更离谱——一月到现在都算，哪怕你七月才开始记。
-    var dayset={};evs.forEach(function(e){if(statMin(e)>0)dayset[e.date]=1;});
+    var dayset={};evs.forEach(function(e){if(statMin(e)>0)dayset[statDay(e)]=1;});
     var days=Math.max(1,Object.keys(dayset).length),avgH=Math.round(totalMin/days/6)/10;
     // 大类全选时默认按大类汇总；切到「小类」就把所有大类下面的小类一起铺开，
     // 键用 "大类|小类" 拼（分类 key 是 c/s 开头的 uid，不含 |，拼起来不会撞）。
