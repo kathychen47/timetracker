@@ -480,6 +480,18 @@
   .pomo-lost button{border:0;border-radius:7px;padding:2px 9px;font-size:11.5px;cursor:pointer;
     background:#d9534f;color:#fff}
   .pomo-lost button#pomo-lost-x{background:transparent;color:#a8412d;padding:2px 4px;font-size:13px}
+  /* 番茄钟日志表。横向能滚 —— 列不少，窄屏挤不下时让它自己滚，
+     别把整个设置页撑出横向滚动条。 */
+  .plog-box{max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:10px}
+  .plog-box table{border-collapse:collapse;width:100%;font-size:11.5px;
+    font-variant-numeric:tabular-nums;white-space:nowrap}
+  .plog-box th,.plog-box td{padding:5px 9px;border-bottom:1px solid var(--border);text-align:left}
+  .plog-box th{position:sticky;top:0;background:var(--surface-2);color:var(--muted);
+    font-weight:640;z-index:1}
+  .plog-box tr:last-child td{border-bottom:none}
+  .plog-box .bad{color:#d9534f;font-weight:640}
+  .plog-box .ok{color:#3d8c63}
+  .plog-empty{padding:18px;text-align:center;color:var(--muted);font-size:12.5px}
   .todo-goals{margin-top:22px}
   .todo-goals .dash-empty{padding:6px 0}
   .todo-add select{max-width:150px}
@@ -4195,6 +4207,21 @@ margin-left: -22px;
           <button class="btn" id="set-sb-auth" type="button">登录</button>
         </div>
       </div>
+      <!-- 番茄钟丢时间时的排查入口。放在这儿而不是让她开 F12 —— 开发者工具
+           对她是一道墙，而这个日志正是查根因唯一的线索。 -->
+      <div class="set-sec-h" style="margin-top:22px">🍅 番茄钟日志（出问题时给我看）</div>
+      <div class="set-item">
+        <div class="set-desc" style="margin-bottom:10px">
+          每次番茄钟「结束 / 完成 / 让位给别的网页 / 归零」都会在这里记一行，只留最近 60 条。
+          哪次专注没记进日历，看这张表就知道卡在哪一步了 —— 截图发我，或者点导出。
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn" id="plog-refresh" type="button">🔄 刷新</button>
+          <button class="btn" id="plog-dl" type="button">⬇️ 导出</button>
+          <button class="btn" id="plog-clr" type="button">清空</button>
+        </div>
+        <div id="plog-box" class="plog-box"></div>
+      </div>
     </div>
 
     <div class="set-pane" data-pane="appear">
@@ -7332,6 +7359,26 @@ margin-left: -22px;
       while(a.length>60)a.shift();
       save("tt_pomolog",a);
     }catch(e){}}
+  // 日志画成表格摆在设置里 —— 她打不开开发者工具，而这是查根因唯一的线索。
+  // 最要紧的两列：走的哪条分支、当时手上有多少秒。
+  function renderPomoLog(){
+    var box=document.getElementById("plog-box");if(!box)return;
+    var a=(load("tt_pomolog",[])||[]).slice().reverse();      // 新的在上面
+    if(!a.length){box.innerHTML='<div class="plog-empty">还没有记录。做一次番茄钟再回来看。</div>';return;}
+    box.innerHTML='<table><thead><tr>'+
+      ["时间","发生了什么","当时多少秒","模式","在跑","跟着看","本页","归谁管","记入日历"]
+        .map(function(h){return "<th>"+h+"</th>";}).join("")+
+      '</tr></thead><tbody>'+
+      a.map(function(r){
+        var lost=/不归我管|丢弃|没勾|存档没了/.test(r.tag||"");
+        return '<tr><td>'+esc(r.t||"")+'</td>'+
+          '<td class="'+(lost?"bad":(/成功/.test(r.tag||"")?"ok":""))+'">'+esc(r.tag||"")+
+            (r.ev?('　'+esc(r.ev)):"")+'</td>'+
+          '<td>'+secLabel(+r.sec||0)+'</td><td>'+esc(r.mode||"")+'</td>'+
+          '<td>'+(r.run?"是":"否")+'</td><td>'+(r.fol?"是":"否")+'</td>'+
+          '<td>'+esc(r.me||"")+'</td><td>'+esc(r.own||"")+'</td>'+
+          '<td>'+(r.cal?"勾了":'<b class="bad">没勾</b>')+'</td></tr>';}).join("")+
+      '</tbody></table>';}
   var pSeenAt=0;
   function savePomoSeen(force){
     if(pFollow||SOLO)return;
@@ -8038,6 +8085,7 @@ margin-left: -22px;
     document.querySelectorAll(".set-nav-i").forEach(function(x){x.classList.toggle("on",x===b);});
     document.querySelectorAll(".set-pane").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-pane")===p);});
     if(p==="dict")openDictSettings();
+    if(p==="cloud")try{renderPomoLog();}catch(_e){}     // 每次打开都是最新的
     if(p==="cats"){renderCatColors();renderCatSettings();}});
 
   // ---------- 分类管理（设置里） ----------
@@ -8282,6 +8330,19 @@ margin-left: -22px;
       if(!gcalHasRT())qp.prompt="consent";              // 还没拿到过 refresh token，就明确再要一次同意
       SB.auth.signInWithOAuth({provider:"google",options:{scopes:"https://www.googleapis.com/auth/calendar.events",queryParams:qp,redirectTo:location.href.split("#")[0].split("?")[0]}});}}
   document.getElementById("set-sb-auth").addEventListener("click",cloudAuthClick);
+  (function(){
+    var rf=document.getElementById("plog-refresh"),dl=document.getElementById("plog-dl"),
+        cl=document.getElementById("plog-clr");
+    if(rf)rf.addEventListener("click",function(){renderPomoLog();});
+    if(dl)dl.addEventListener("click",function(){
+      dlFile("番茄钟日志-"+fmt(new Date())+".json",
+        JSON.stringify(load("tt_pomolog",[])||[],null,2),"application/json");});
+    if(cl)cl.addEventListener("click",async function(){
+      if(!await ttConfirm("清空番茄钟日志？（只是排查用的记录，不影响日历）",
+        {danger:true,anchor:cl}))return;
+      save("tt_pomolog",[]);renderPomoLog();});
+    try{renderPomoLog();}catch(e){}
+  })();
   document.getElementById("acct-login").addEventListener("click",cloudAuthClick);
   if(!SOLO)(function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
 
