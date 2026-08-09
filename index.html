@@ -251,11 +251,15 @@
 
   /* week + single-day grid */
   .grid-head{display:grid;border-bottom:1px solid var(--border)}
-  .grid-head .gh{padding:8px 4px;text-align:center;border-left:1px solid var(--line)}
+  /* 星期和日期原来上下两行，加上内边距一条 57px。竖着一格不多，
+     但网格补到 24 点之后整页就装不下了 —— 改成并排一行，省下 25px。 */
+  .grid-head .gh{padding:3px 4px;text-align:center;border-left:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;gap:5px;min-height:30px}
   .grid-head .gh:first-child{border-left:none}
   .grid-head .gh .n{font-size:11px;color:var(--muted)}
-  .grid-head .gh .d{font-size:15px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;cursor:pointer}
-  .grid-head .gh.today .d{background:var(--primary);color:var(--primary-ink);font-size:13px}
+  .grid-head .gh .d{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;
+    display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;cursor:pointer}
+  .grid-head .gh.today .d{background:var(--primary);color:var(--primary-ink);font-size:12px}
   .grid-body{display:grid;position:relative}
   .gutter{position:relative}
   .gutter span{position:absolute;right:6px;font-size:10px;color:var(--muted);transform:translateY(-6px);font-variant-numeric:tabular-nums}
@@ -5939,6 +5943,13 @@ margin-left: -22px;
     var top=el.getBoundingClientRect().top;
     el.style.setProperty("--tch",Math.max(300,Math.round(window.innerHeight-top-18))+"px");}
   window.addEventListener("resize",function(){try{fitTodoCols();}catch(e){}});
+  // 窗口一变（缩放、分屏、转屏）行高就得重算，否则要么又装不下、要么白留一截
+  (function(){var t=null;
+    window.addEventListener("resize",function(){
+      if(t)clearTimeout(t);
+      t=setTimeout(function(){t=null;
+        if(state.tab==="calendar"&&(state.view==="week"||state.view==="day"))
+          try{renderCal();}catch(e){}},180);});})();
   function renderSkills(){
     try{fitTodoCols();}catch(e){}
     var w=document.getElementById("sk-wrap");if(!w)return;
@@ -6147,6 +6158,23 @@ margin-left: -22px;
   // 早上那头不往前扩：凌晨基本不记事，多铺七行空网格只会让白天挤成一团。
   // （试过按当天最早的事自动扩展，Kaisi 说不要 —— 晚上到 24 点就够了。）
   var HS=7,HE=24,PH=44,GH=(HE-HS)*PH;
+  // 一小时多高，按窗口剩下的空间算。补到 24 点之后 17 行 × 44px = 748px，
+  // 加上工具栏和表头，笔记本屏幕就装不下了，得一直往下滚。
+  // 所以量一下网格上面已经占掉多少，把剩下的分给这 17 行；
+  // 太矮了点不动块，所以有地板 30px，也不超过原来的 44px。
+  var PHMIN=30,PHMAX=44;
+  function fitPH(){
+    var ph=PHMAX;
+    try{
+      var top=calBody.getBoundingClientRect().top;         // 网格容器离视口顶多远
+      var chrome=34+30+18;                                 // 星期表头 + 待办条 + 底部留白
+      var avail=window.innerHeight-top-chrome;
+      var n=Math.max(1,HE-HS);
+      ph=Math.floor(avail/n);
+    }catch(e){}
+    if(!isFinite(ph)||ph<PHMIN)ph=PHMIN;
+    if(ph>PHMAX)ph=PHMAX;
+    PH=ph;GH=(HE-HS)*PH;}
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
   var todoBandCollapsed=load("tt_todoband",false);
   function todosOn(ds){return todos.filter(function(t){return t.due===ds&&!t.archived;});}
@@ -6320,6 +6348,7 @@ margin-left: -22px;
   function renderDay(){
     var d=state.cursor,ds=fmt(d),today=new Date();
     calTitle.innerHTML=(d.getMonth()+1)+"月"+d.getDate()+"日<em>周"+WD[(d.getDay()+6)%7]+"</em>";
+    fitPH();                                   // 先按窗口高度定行高，再算位置
     var dayEvents=eventsOn(ds);
     var dtds=todosOn(ds);
     var tStrip=dtds.length?'<div class="dv-allday"><div class="dv-allday-h" data-todoband>'+(todoBandCollapsed?"▸":"▾")+' 待办 '+dtds.length+'</div>'+(todoBandCollapsed?'':'<div class="dv-allday-list">'+dtds.map(todoChipHTML).join("")+'</div>')+'</div>':'';
@@ -6364,6 +6393,7 @@ margin-left: -22px;
   function renderWeek(){
     var start=startOfWeek(state.cursor),today=new Date(),end=addDays(start,6);
     calTitle.innerHTML=(start.getMonth()+1)+"月"+start.getDate()+"–"+(end.getMonth()!==start.getMonth()?(end.getMonth()+1)+"月":"")+end.getDate()+"日<em>"+start.getFullYear()+"</em>";
+    fitPH();
     var head='<div class="grid-head" style="grid-template-columns:46px repeat(7,1fr)"><div class="gh"></div>';
     var body='<div class="grid-body" style="grid-template-columns:46px repeat(7,1fr)"><div class="gutter" style="height:'+GH+'px">'+hoursGutter()+'</div>';
     var weekHasToday=false;
