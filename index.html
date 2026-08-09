@@ -6079,18 +6079,13 @@ margin-left: -22px;
   });
 
   // ---------- calendar core ----------
-  // 一天里画出来的那段时间。原来是写死的 7–23，两头都会吃掉东西：
-  //   · HE=23 时 23:00 只是最后一条格线，23:00–24:00 那一小时压根没有行 ——
-  //     记在那儿的事情直接看不见
-  //   · 早于 7 点的事情会被 evPos 里的 top<0 分支压扁在顶上，位置也不对
-  // 现在下界固定到 24:00，上界跟着当天最早那件事往前挪。
+  // 一天里画出来的那段时间：7:00 – 24:00，写死的。
+  // 原来 HE 是 23 —— 那样 23:00 只是最后一条格线，23:00–24:00 那一小时
+  // 压根没有行，记在那儿的事情直接看不见。
+  //
+  // 早上那头不往前扩：凌晨基本不记事，多铺七行空网格只会让白天挤成一团。
+  // （试过按当天最早的事自动扩展，Kaisi 说不要 —— 晚上到 24 点就够了。）
   var HS=7,HE=24,PH=44,GH=(HE-HS)*PH;
-  function fitHours(list){
-    var s=7;
-    (list||[]).forEach(function(e){
-      var m=toMin(e&&e.start);
-      if(isFinite(m)&&m>=0)s=Math.min(s,Math.floor(m/60));});
-    HS=Math.max(0,Math.min(7,s));HE=24;GH=(HE-HS)*PH;}
   var calBody=document.getElementById("cal-body"),calTitle=document.getElementById("cal-title");
   var todoBandCollapsed=load("tt_todoband",false);
   function todosOn(ds){return todos.filter(function(t){return t.due===ds&&!t.archived;});}
@@ -6265,7 +6260,6 @@ margin-left: -22px;
     var d=state.cursor,ds=fmt(d),today=new Date();
     calTitle.innerHTML=(d.getMonth()+1)+"月"+d.getDate()+"日<em>周"+WD[(d.getDay()+6)%7]+"</em>";
     var dayEvents=eventsOn(ds);
-    fitHours(dayEvents);                       // 有凌晨的事就把网格往前拉，别压在顶上
     var dtds=todosOn(ds);
     var tStrip=dtds.length?'<div class="dv-allday"><div class="dv-allday-h" data-todoband>'+(todoBandCollapsed?"▸":"▾")+' 待办 '+dtds.length+'</div>'+(todoBandCollapsed?'':'<div class="dv-allday-list">'+dtds.map(todoChipHTML).join("")+'</div>')+'</div>':'';
     var catKeys=[];dayEvents.forEach(function(e){if(catKeys.indexOf(e.cat)<0)catKeys.push(e.cat);});
@@ -6309,9 +6303,6 @@ margin-left: -22px;
   function renderWeek(){
     var start=startOfWeek(state.cursor),today=new Date(),end=addDays(start,6);
     calTitle.innerHTML=(start.getMonth()+1)+"月"+start.getDate()+"–"+(end.getMonth()!==start.getMonth()?(end.getMonth()+1)+"月":"")+end.getDate()+"日<em>"+start.getFullYear()+"</em>";
-    // 七天的事先收齐再定时间范围 —— 每列各算各的会导致行高对不齐
-    var weekEvs=[];for(var wi=0;wi<7;wi++)weekEvs=weekEvs.concat(eventsOn(fmt(addDays(start,wi))));
-    fitHours(weekEvs);
     var head='<div class="grid-head" style="grid-template-columns:46px repeat(7,1fr)"><div class="gh"></div>';
     var body='<div class="grid-body" style="grid-template-columns:46px repeat(7,1fr)"><div class="gutter" style="height:'+GH+'px">'+hoursGutter()+'</div>';
     var weekHasToday=false;
