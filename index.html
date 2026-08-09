@@ -472,6 +472,14 @@
   .pomo-step{display:flex;align-items:center;gap:6px;justify-content:center;font-size:11.5px;color:var(--primary);
     background:var(--primary-soft);border-radius:9px;padding:5px 9px;margin-top:8px}
   .pomo-step button{border:none;background:transparent;color:var(--muted);cursor:pointer;font-size:13px;line-height:1;padding:0 2px}
+  /* 「上次那 70 分钟没记进日历」的补记条。用告警色 —— 这是丢数据，不是提示 */
+  .pomo-lost{display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;
+    font-size:11.5px;color:#a8412d;background:rgba(217,83,79,.12);
+    border-radius:9px;padding:5px 9px;margin-top:-2px}
+  .pomo-lost b{font-weight:700}
+  .pomo-lost button{border:0;border-radius:7px;padding:2px 9px;font-size:11.5px;cursor:pointer;
+    background:#d9534f;color:#fff}
+  .pomo-lost button#pomo-lost-x{background:transparent;color:#a8412d;padding:2px 4px;font-size:13px}
   .todo-goals{margin-top:22px}
   .todo-goals .dash-empty{padding:6px 0}
   .todo-add select{max-width:150px}
@@ -3439,6 +3447,7 @@ margin-left: -22px;
             <div class="pomo-task">
               <input type="text" id="pomo-task" placeholder="这次专注做什么？（记进日历备注）">
             <div id="pomo-step-box"></div>
+            <div id="pomo-lost-box"></div>
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
@@ -7060,7 +7069,12 @@ margin-left: -22px;
     // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
     if(segs)segs.forEach(function(s){if(!s.gap&&s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
     else if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
-    if(!pomoToCal.checked)return;
+    // 没勾「完成后记入日历」就不落库 —— 这是你自己选的，但一个小时的专注
+    // 悄没声地过去了还是会让人以为出了 bug，所以说一句
+    if(!pomoToCal.checked){
+      pLog("落库:没勾记入日历");
+      try{pomoNote("这次没记进日历（「完成后记入日历」没勾）· "+secLabel(focusSec));}catch(e){}
+      return;}
     var pc=pomoCat.value,ps=pomoSub.value||null;
     var note=typed;                      // 你打的字进「备注」，标题统一是「大类 · 小类」
     if(segs){
@@ -7091,6 +7105,8 @@ margin-left: -22px;
       return;}
     // 之前这里要求"当场握着 token"，可 token 只活 1 小时 —— 过期那会儿做的番茄钟就静静地没上去。
     if(gcalAuto.pomo)try{gcalApply(ev,true);}catch(e){}
+    pLog("落库:成功",{ev:ev.date+" "+ev.start+"-"+ev.end});
+    markSeenLogged();                        // 真落库了，黑匣子那条销掉
     if(state.tab==="calendar")renderCal();
   }
   var timerMode="down",pMode2="focus",pLeft=settings.focus*60,pTotal=settings.focus*60,pElapsed=0,pTimer=null;
@@ -7225,8 +7241,11 @@ margin-left: -22px;
     if(pFollowT){clearInterval(pFollowT);pFollowT=null;}
     var r=load("tt_pomorun",null);
     if(r&&r.mode){claimPomo();restorePomoRun0();return;}         // 存档还在 → 这边接着跑（先认领，落库那步要认这个）
+    // 存档没了、这边手上却还攥着一段时间 —— 那边八成已经结束并记好了，
+    // 但也可能是被谁清掉的。归零之前先落进黑匣子，别让它无声无息地没。
+    if(pElapsed>=60){pLog("leaveFollow:存档没了，手上还有时间");savePomoSeen(true);}
     pElapsed=0;pBase=0;pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;
-    clearSegs();startBtn.textContent="开始";drawPomo();}
+    clearSegs();startBtn.textContent="开始";drawPomo();try{drawLostChip();}catch(e){}}
   function takeOver(){                                         // 手动点「接管」
     if(!pFollow)return;
     pFollow=false;
@@ -7261,9 +7280,11 @@ margin-left: -22px;
     var now=Date.now();
     if(timerMode==="up"){pElapsed=pBase+Math.max(0,Math.round((now-pStartAt)/1000));
       if(pElapsed>=UPMAX){pElapsed=UPMAX;finishUp(upHitMs());pomoNote("正计时到 3 小时上限，已自动结束并记好了 ✓");return;}
+      savePomoSeen();
       drawPomo();pomoTitle();return;}
     pLeft=Math.max(0,Math.round((pEndAt-now)/1000));
     if(pLeft<=0){onComplete();return;}
+    savePomoSeen();
     drawPomo();pomoTitle();}
   function stopTimer(){
     if(pTimer){clearInterval(pTimer);pTimer=null;
@@ -7272,6 +7293,7 @@ margin-left: -22px;
         if(cs>0){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:cs});pSegStart=pElapsed;}
         if(pElapsed>0){pPauseAt=Date.now();                      // 洞从这一刻开始往下长
           pPauseT=setInterval(function(){try{liveRefresh();}catch(e){}},1000);}}}
+    savePomoSeen(true);                                        // 暂停这一刻的进度，黑匣子先记牢
     startBtn.textContent="开始";savePomoRun();pomoTitle();try{drawPomo();}catch(e){}}
   function startTimer(){
     if(pTimer)return;
@@ -7283,22 +7305,98 @@ margin-left: -22px;
     var _t=(pomoTask.value||"").trim();
     if(pomoManual&&_t)rememberCat(_t,pomoCat.value,pomoSub.value||null);   // 你手选了分类就开始 → 当场记住，下次打同样的任务名自动认出来
     startBtn.textContent="暂停";savePomoRun();savePomoLast();pomoTick();}
-  function resetPomo(){stopTimer();pBase=0;pomoManual=false;autoPomoCat();clearSegs();
+  function resetPomo(){pLog("重置");stopTimer();pBase=0;pomoManual=false;autoPomoCat();clearSegs();
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     save("tt_pomorun",null);drawPomo();}
+  // ---------- 番茄钟黑匣子 ----------
+  // 一次 70 分钟的专注结束后没出现在日历上，查不出走的是哪条路 ——
+  // 番茄钟有太多能悄悄丢时间的分支：不是自己管的就直接 return、
+  // 跟着看的那边发现存档没了就把 pElapsed 归零、没勾「记入日历」就不落库。
+  // 每条都不出声。
+  //
+  // 所以单开一个键记「上一次跑到哪儿了」，跟 tt_pomorun 分开，
+  // 而且结束时不删，只把 logged 标成 true。哪条路径把时间弄丢了，
+  // 下次打开都能看见「那 70 分钟没记上」，一键补进日历。
+  // 顺带记一条流水账：每次「结束/完成/让位/归零」走的是哪条分支。
+  // 今天那 70 分钟到底怎么没的，我靠猜查不出来 —— 下次它再发生，
+  // 这里会写着走了哪一步，谁是 owner，当时手上有多少秒。只留最近 60 条。
+  function pLog(tag,extra){
+    try{
+      var a=load("tt_pomolog",[])||[];
+      var r=load("tt_pomorun",null);
+      a.push(Object.assign({t:dtstr(new Date()),tag:tag,mode:timerMode,
+        sec:(timerMode==="up"?pElapsed:Math.max(0,pTotal-pLeft)),
+        run:!!pTimer,fol:!!pFollow,me:TABID.slice(-5),
+        own:(r&&r.owner)?String(r.owner).slice(-5):"-",
+        cal:!!(document.getElementById("pomo-tocal")||{}).checked},extra||{}));
+      while(a.length>60)a.shift();
+      save("tt_pomolog",a);
+    }catch(e){}}
+  var pSeenAt=0;
+  function savePomoSeen(force){
+    if(pFollow||SOLO)return;
+    var now=Date.now();
+    if(!force&&now-pSeenAt<15000)return;       // 15 秒写一次够了，别把 localStorage 写爆
+    var sec=(timerMode==="up")?pElapsed:Math.max(0,pTotal-pLeft);
+    if(sec<60)return;
+    pSeenAt=now;
+    save("tt_pomoseen",{sec:sec,end:now,mode:timerMode,
+      task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",
+      par:!!(document.getElementById("pomo-par")||{}).checked,logged:false});}
+  function markSeenLogged(){
+    var r=load("tt_pomoseen",null);
+    if(r&&!r.logged){r.logged=true;save("tt_pomoseen",r);}
+    try{drawLostChip();}catch(e){}}
+  function lostRun(){
+    var r=load("tt_pomoseen",null);
+    if(!r||r.logged||!(+r.sec>=60))return null;
+    if(Date.now()-(+r.end||0)>7*86400000)return null;    // 一周前的就别再提了
+    return r;}
+  function drawLostChip(){
+    var box=document.getElementById("pomo-lost-box");if(!box)return;
+    var r=lostRun();
+    if(!r){box.innerHTML="";return;}
+    box.innerHTML='<div class="pomo-lost">⏱ 上次那 <b>'+secLabel(r.sec)+
+      '</b> 没记进日历<button type="button" id="pomo-lost-add">补记</button>'+
+      '<button type="button" id="pomo-lost-x" title="不用了">✕</button></div>';
+    document.getElementById("pomo-lost-add").onclick=function(){
+      var e2=new Date(+r.end||Date.now());
+      var s2=new Date(e2.getTime()-(+r.sec)*1000);
+      var day0=new Date(e2.getFullYear(),e2.getMonth(),e2.getDate(),0,0,0);
+      if(s2<day0)s2=day0;
+      var ev={id:uid(),date:fmt(e2),start:pad(s2.getHours())+":"+pad(s2.getMinutes()),
+        end:pad(e2.getHours())+":"+pad(e2.getMinutes()),
+        title:catLabelOf(r.cat,r.sub||null),cat:r.cat,sub:r.sub||null,
+        done:true,par:!!r.par,note:(r.task||null)};
+      events=load("tt_events",events)||events;events.push(ev);
+      if(!save("tt_events",events)){pomoNote("还是没存住 —— 浏览器存储可能满了");return;}
+      markSeenLogged();
+      if(state.tab==="calendar")renderCal();
+      try{renderDashboard();}catch(e){}
+      pomoNote("补记好了："+dstr(e2)+" "+ev.start+"–"+ev.end);};
+    document.getElementById("pomo-lost-x").onclick=function(){markSeenLogged();};}
+
   function logDone(sec,endMs){var k=todayKey();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
   // 落库的两个出口。进来前先确认这次计时真归自己管 —— 后台被浏览器冻住的标签页
   // 解冻后可能还攥着一个旧 interval，没有这道闸就会把同一次专注再记一条。
-  function finishUp(endMs){if(!pomoOwned()){startFollow();return;}
+  function finishUp(endMs){
+    // 名分不在自己手上就不落库（防后台标签页解冻后重记一条），但不能一声不吭地
+    // 把手上这段时间扔掉 —— 先落进黑匣子，再说清楚发生了什么
+    if(!pomoOwned()){pLog("finishUp:不归我管");savePomoSeen(true);startFollow();
+      pomoNote("这次计时算在另一个网页名下，这边没法结束 —— 点「接管」再试");
+      try{drawLostChip();}catch(e){}return;}
     var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
     if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
+    pLog("finishUp:落库");
     if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
+    else if(pElapsed>0){pLog("finishUp:不到1分钟丢弃");pomoNote("不到 1 分钟，没记进日历");}
     pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);
     pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
     try{if(state.tab==="todo")renderSkills();}catch(e){}
     drawPomo();}
-  function onComplete(endMs){if(!pomoOwned()){startFollow();return;}
+  function onComplete(endMs){
+    if(!pomoOwned()){pLog("onComplete:不归我管");savePomoSeen(true);startFollow();try{drawLostChip();}catch(e){}return;}
     stopTimer();try{beep();}catch(e){}
     if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
@@ -16724,6 +16822,7 @@ margin-left: -22px;
   renderCal();drawPomo();renderPomoStats();renderTodos();
   try{applyPomoMode();}catch(e){}      // 先回到上次用的倒计时/正计时
   try{restorePomoRun();}catch(e){}     // 再让还没跑完的那个番茄钟接着走（它自带模式，会覆盖上面这句）
+  try{drawLostChip();}catch(e){}       // 上次有没有一段时间没记进日历
 
   // ---------- 同一个人开着好几个网页 ----------
   // localStorage 是共用的，但 events/todos 这些数组每个网页在内存里各存了一份。
