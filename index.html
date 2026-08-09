@@ -621,6 +621,15 @@
   .mn-donut .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
   .mn-donut .mid .t{font-size:11px;color:var(--muted)}
   .mn-donut .mid .v{font-size:15px;font-weight:680;letter-spacing:-.3px}
+  /* 存储满了的横幅。固定在顶上、盖过一切 —— 这条要是被忽略，
+     用户接下来做的每一件事都是白做的。 */
+  #ls-full{position:fixed;left:0;right:0;top:0;z-index:99999;padding:12px 16px;
+    background:#d9534f;color:#fff;font-size:13px;line-height:1.7;
+    box-shadow:0 3px 14px rgba(0,0,0,.25)}
+  #ls-full b{font-size:14px}
+  #ls-full button{margin-top:8px;padding:5px 14px;border:0;border-radius:8px;
+    background:rgba(255,255,255,.22);color:#fff;font-size:12.5px;cursor:pointer}
+  #ls-full button:hover{background:rgba(255,255,255,.34)}
   .mn-cat .dlt{flex:0 0 112px;text-align:right;font-size:11px}
   .mn-cat .dlt .up{color:#d9534f}.mn-cat .dlt .dn{color:#4fae7d}
   /* 「2/9 已申报」这种小标。挂在来源名后面，不另占一列 ——
@@ -4382,7 +4391,36 @@ margin-left: -22px;
   // 副屏模式：同一个 app 以 ?solo=1 装进 iframe 当第二个阅读窗口
   var SOLO=false;try{SOLO=(new URLSearchParams(location.search).get("solo")==="1");}catch(e){}
   var SOLO_SKIP={tt_tab:1,tt_rdbook:1,tt_rdzen:1,tt_rdbi:1,tt_rdnotes:1,tt_rdtoc:1,tt_rdsplit:1,tt_pomorun:1};
-  function save(k,v){if(SOLO&&SOLO_SKIP[k])return;try{LS.setItem(k,JSON.stringify(v));}catch(e){}schedulePush(k);}
+  // localStorage 满了会抛 QuotaExceededError。
+  // 原来这里是 catch(e){} —— 一声不吭地吞掉：内存里的东西还在，页面看着一切正常，
+  // 刷新之后才发现刚做的事全没了。更糟的是 collectBlob() 是从 localStorage 读的，
+  // 云端跟着存回旧值，等于本地和云端一起丢。
+  // 所以：存不下就必须喊出来，而且不再往云端推（推上去也是旧值）。
+  var lsFull=false;
+  function lsBytes(){                       // localStorage 按 UTF-16 存，一个字符两字节
+    var n=0;try{for(var i=0;i<LS.length;i++){var k=LS.key(i);n+=k.length+(LS.getItem(k)||"").length;}}catch(e){}
+    return n*2;}
+  function lsTop(n){
+    var a=[];try{for(var i=0;i<LS.length;i++){var k=LS.key(i);
+      a.push([k,(k.length+(LS.getItem(k)||"").length)*2]);}}catch(e){}
+    return a.sort(function(x,y){return y[1]-x[1];}).slice(0,n||5);}
+  function kb(b){return b>=1048576?((b/1048576).toFixed(2)+" MB"):(Math.round(b/1024)+" KB");}
+  function lsWarn(k){
+    lsFull=true;
+    var el=document.getElementById("ls-full");
+    if(!el){el=document.createElement("div");el.id="ls-full";document.body.appendChild(el);}
+    el.innerHTML='<b>⚠️ 浏览器存不下了，刚才那条没能存住</b>'+
+      '<div>已用 '+kb(lsBytes())+'（浏览器上限约 5 MB）。占得最多的：'+
+      lsTop(3).map(function(x){return esc(x[0])+" "+kb(x[1]);}).join("、")+'。<br>'+
+      '现在做的任何改动<b>都存不进去</b>，刷新就没了 —— 先去 💰 记账 → ⚙️ 设置 → 账本数据 '+
+      '导出 JSON 备份，再清掉一部分。</div>'+
+      '<button type="button">知道了</button>';
+    el.querySelector("button").onclick=function(){el.remove();};}
+  function save(k,v){
+    if(SOLO&&SOLO_SKIP[k])return true;
+    try{LS.setItem(k,JSON.stringify(v));}
+    catch(e){try{lsWarn(k);}catch(_e){}return false;}
+    schedulePush(k);return true;}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
   // 这个标签页的身份证。同一个人可能开着好几个网页（分屏副屏、划词小窗、手滑开的第二个），
   // 它们共用一份 localStorage —— 番茄钟得认准"归谁管"，否则每个都自己跑一份、结束时各记一条。
@@ -7043,7 +7081,14 @@ margin-left: -22px;
     if(segs)ev.segs=segs;
     events=load("tt_events",events)||events;   // 别的网页刚记过东西的话，先把最新那份拿回来，免得整个盖掉
     events.push(ev);
-    save("tt_events",events);
+    // 存不进去的话这条只活在内存里，刷新就没了 —— 一次专注就这么凭空消失。
+    // 当场把它单独导成一个文件，至少手上有据可查，回头能照着补一条。
+    if(!save("tt_events",events)){
+      try{dlFile("没能存住的专注-"+fmt(end)+"-"+pad(end.getHours())+pad(end.getMinutes())+".json",
+        JSON.stringify(ev,null,2),"application/json");}catch(e){}
+      try{ttAlert("这次 "+secLabel(focusSec)+" 的专注<b>没能存进浏览器</b>（存储满了）。<br>"+
+        "已经把这条记录导到下载文件夹，腾出空间后照着手动补一条。");}catch(e){}
+      return;}
     // 之前这里要求"当场握着 token"，可 token 只活 1 小时 —— 过期那会儿做的番茄钟就静静地没上去。
     if(gcalAuto.pomo)try{gcalApply(ev,true);}catch(e){}
     if(state.tab==="calendar")renderCal();
@@ -8011,7 +8056,12 @@ margin-left: -22px;
     SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()}).then(function(r){
       if(r.error)sbStatus("上传失败："+r.error.message,true);else sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");
     },function(err){sbStatus("上传失败："+String(err),true);});}
-  function applyCloud(obj){CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){}}});}
+  // 拉下来写不进去也要喊 —— 原来是静默 catch，结果是「同步 ✓」显示成功，
+  // 实际有几个键根本没落地，页面上却是从内存渲染的，看不出来。
+  function applyCloud(obj){var bad=[];
+    CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){
+      try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){bad.push(k);}}});
+    if(bad.length)try{lsWarn(bad[0]);}catch(e){}}
   function reloadAllFromStorage(){
     events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
@@ -15738,7 +15788,17 @@ margin-left: -22px;
       var ds=mnTxns.filter(f).map(function(t){return t.d;}).filter(Boolean).sort();
       return ds.length?(ds[0]+" → "+ds[ds.length-1]):"—";}
     var isBank=function(t){return t.src==="akahu";};
+    // 浏览器的 localStorage 大约只有 5 MB，而账本是这里面最占地方的一份。
+    // 快满的时候必须看得见 —— 满了之后所有改动都存不进去，而且是静默的。
+    var used=lsBytes(),pct=Math.min(100,Math.round(used/5242880*100));
+    var warn=pct>=80;
     return '<div class="panel"><h3>账本数据</h3>'+
+      '<div style="font-size:12.5px;margin-bottom:10px;line-height:1.7;'+
+        (warn?'color:#d9534f;font-weight:600':'color:var(--muted)')+'">'+
+        (warn?"⚠️ ":"")+'浏览器存储已用 <b>'+kb(used)+'</b> / 约 5 MB（'+pct+'%）'+
+        (warn?'<br>满了之后新记的东西会存不进去。占得最多的：'+
+          lsTop(3).map(function(x){return esc(x[0])+" "+kb(x[1]);}).join("、"):"")+
+      '</div>'+
       '<div style="font-size:13px;margin-bottom:4px">共 <b>'+n+'</b> 笔</div>'+
       '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.8">'+
       '🏦 银行同步 <b>'+bank+'</b> 笔　'+esc(span(isBank))+'<br>'+
