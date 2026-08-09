@@ -1678,6 +1678,11 @@
   .cs-pal{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:9px;padding:8px;background:var(--surface-2);border-radius:9px}
   .cs-pal .sw{width:20px;height:20px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-pal .sw.on{border-color:var(--text)}
+  .cs-pal .sw-any{width:20px;height:20px}
+  /* 事件弹窗里的色板是圆的，色轮格子跟着圆 */
+  .cat-colors .sw-any{width:24px;height:24px;border-radius:50%}
+  .cat-colors .sw-any::-webkit-color-swatch{border-radius:50%}
+  .cat-colors .sw-any::-moz-color-swatch{border-radius:50%}
   .cs-pal-tip{font-size:11px;color:var(--muted);flex-basis:100%}
   /* 笔记：自己写的文档 */
   .nb-docitem{cursor:pointer}
@@ -1901,6 +1906,16 @@
   .cs-colors{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
   .cs-colors .sw{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent}
   .cs-colors .sw.on{border-color:var(--text)}
+  /* 色板末尾的「自己挑」格子。原生 <input type=color> 自带内边距和边框，
+     全压掉才能跟旁边 28 个方块长得一样大。底下垫一圈色环，
+     一眼看出这个格子是"随便选"，不是某个具体颜色。 */
+  .sw-any{width:22px;height:22px;padding:0;border:2px solid transparent;border-radius:6px;
+    cursor:pointer;vertical-align:top;-webkit-appearance:none;appearance:none;
+    background:conic-gradient(#e06c5a,#eeb85f,#8bb04f,#3fae87,#5aa9d6,#7c83e6,#c77fd0,#e57ea0,#e06c5a)}
+  .sw-any::-webkit-color-swatch-wrapper{padding:2px}
+  .sw-any::-webkit-color-swatch{border:none;border-radius:4px}
+  .sw-any::-moz-color-swatch{border:none;border-radius:4px}
+  .sw-any.on{border-color:var(--text)}
   .cat-manage{display:flex;flex-direction:column;gap:6px;margin-top:12px}
   .cat-manage .cm{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text)}
   .cat-manage .cm i{width:10px;height:10px;border-radius:50%;flex:none}
@@ -4623,6 +4638,31 @@ margin-left: -22px;
     {key:"habit",name:"习惯",color:"var(--cat-habit)",kw:["冥想","早起","喝水","日记","打卡","habit","meditate","journal","water"],subs:[]},
     {key:"life",name:"生活",color:"var(--cat-life)",kw:["午餐","吃饭","晚餐","休息","购物","家务","睡","lunch","dinner","breakfast","rest","break","shopping","sleep","nap"],subs:[]}
   ];
+  // <input type="color"> 只认 #rrggbb，而内置分类的颜色写的是 var(--cat-focus) 这种，
+  // 得先让浏览器把它算成具体的值，再转成十六进制，色轮打开时才停在当前颜色上。
+  var _hexEl=null;
+  function hexOf(c,fb){
+    c=String(c||"").trim();
+    if(!c)return fb||"#7c83e6";
+    if(/^#[0-9a-f]{6}$/i.test(c))return c.toLowerCase();
+    if(/^#[0-9a-f]{3}$/i.test(c))return ("#"+c[1]+c[1]+c[2]+c[2]+c[3]+c[3]).toLowerCase();
+    try{
+      if(!_hexEl){_hexEl=document.createElement("span");
+        _hexEl.style.cssText="position:absolute;left:-9999px;width:0;height:0";
+        document.body.appendChild(_hexEl);}
+      _hexEl.style.color="";_hexEl.style.color=c;
+      // 浏览器不认这个写法时会把赋值丢掉，留下空串 —— 这时候
+      // getComputedStyle 给的是继承来的颜色（通常是黑），拿它当结果就成了"莫名其妙变黑"
+      if(!_hexEl.style.color)return fb||"#7c83e6";
+      var m=(getComputedStyle(_hexEl).color||"").match(/\d+/g);
+      if(m&&m.length>=3)return "#"+m.slice(0,3).map(function(x){
+        return ("0"+(+x).toString(16)).slice(-2);}).join("");
+    }catch(e){}
+    return fb||"#7c83e6";}
+  // 色板末尾那个彩虹格子：28 个预设不够用时，点它开系统色轮，什么颜色都能选
+  function swPicker(attr,cur){
+    return '<input type="color" class="sw-any" '+attr+' value="'+hexOf(cur)+
+      '" title="自己挑一个颜色">';}
   var PALETTE=[
     "#ec8b76","#e06c5a","#d9925f","#eeb85f","#e8c95c","#c9b64a",
     "#8bb04f","#5cbd90","#3fae87","#54bcae","#61c4cf","#5aa9d6",
@@ -6695,10 +6735,19 @@ margin-left: -22px;
   var addPanel=document.getElementById("cat-add"),addTitle=document.getElementById("cat-add-title"),
     catNameI=document.getElementById("cat-name"),colorsWrap=document.getElementById("cat-colors-wrap"),
     colorsBox=document.getElementById("cat-colors"),manageBox=document.getElementById("cat-manage");
-  colorsBox.innerHTML=PALETTE.map(function(c){return '<span class="sw" data-c="'+c+'" style="background:'+c+'"></span>';}).join("");
-  function markColor(){colorsBox.querySelectorAll(".sw").forEach(function(s){s.classList.toggle("on",s.getAttribute("data-c")===selAddColor);});}
+  colorsBox.innerHTML=PALETTE.map(function(c){return '<span class="sw" data-c="'+c+'" style="background:'+c+'"></span>';}).join("")+
+    swPicker('id="cat-any"',selAddColor);
+  function markColor(){
+    colorsBox.querySelectorAll(".sw").forEach(function(s){s.classList.toggle("on",s.getAttribute("data-c")===selAddColor);});
+    var any=document.getElementById("cat-any");
+    if(any){any.value=hexOf(selAddColor);any.classList.toggle("on",PALETTE.indexOf(selAddColor)<0);}}
   markColor();
   colorsBox.addEventListener("click",function(e){var s=e.target.closest(".sw");if(!s)return;selAddColor=s.getAttribute("data-c");markColor();});
+  colorsBox.addEventListener("input",function(e){
+    if(e.target.id!=="cat-any")return;
+    selAddColor=e.target.value;
+    colorsBox.querySelectorAll(".sw").forEach(function(x){x.classList.remove("on");});
+    e.target.classList.add("on");});
   function closeAddPanel(){addPanel.setAttribute("hidden","");}
   function openAddPanel(mode){addMode=mode;
     addTitle.textContent=(mode==="parent"?"新建大类":"在「"+catName(selCat)+"」下新建小类");
@@ -8099,13 +8148,16 @@ margin-left: -22px;
   // ---------- 分类管理（设置里） ----------
   var csColor=PALETTE[0];
   function renderCatColors(){var el=document.getElementById("cs-colors");if(!el)return;
-    el.innerHTML=PALETTE.map(function(c){return '<span class="sw'+(c===csColor?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></span>';}).join("");}
+    var inPal=PALETTE.indexOf(csColor)>=0;
+    el.innerHTML=PALETTE.map(function(c){return '<span class="sw'+(c===csColor?" on":"")+'" data-c="'+c+'" style="background:'+c+'"></span>';}).join("")+
+      swPicker('id="cs-any"'+(inPal?"":' class="sw-any on"'),csColor);}
   function renderCatSettings(){var box=document.getElementById("cat-settings");if(!box)return;
     box.innerHTML=cats.map(function(c){var subs=c.subs||[],kw=c.kw||[];
       return '<div class="cs-cat"><div class="cs-cat-h"><button class="cs-dot" type="button" data-colcat="'+c.key+'" title="点一下换颜色" style="background:'+c.color+'"></button><b class="cs-name" data-rencat="'+c.key+'" title="点一下改名">'+esc(c.name)+'</b>'+
         '<button class="cs-del" type="button" data-delcat="'+c.key+'">删除</button></div>'+
         '<div class="cs-pal" data-pal="'+c.key+'" hidden>'+PALETTE.map(function(x){return '<span class="sw'+(x===c.color?" on":"")+'" data-setcol="'+c.key+'|'+x+'" style="background:'+x+'"></span>';}).join("")+
-        '<span class="cs-pal-tip">小类会自动跟着这个颜色做深浅</span></div>'+
+        swPicker('data-anycol="'+c.key+'"',c.color)+
+        '<span class="cs-pal-tip">28 个预设不够就点最后那个彩虹格 · 小类会自动跟着这个颜色做深浅</span></div>'+
         '<div class="cs-subs">'+subs.map(function(s){return '<span class="cs-sub"><i style="background:'+subColor(c.key,s.key)+'"></i><span class="cs-name" data-rensub="'+c.key+'|'+s.key+'" title="点一下改名">'+esc(s.name)+'</span>'+
           '<button class="cs-subkw" type="button" data-kwsub="'+c.key+'|'+s.key+'" title="这个小类的关键词">🏷</button>'+
           '<button class="cs-subdel" type="button" data-delsub="'+c.key+'|'+s.key+'" title="删除">✕</button></span>';}).join("")+
@@ -8117,7 +8169,22 @@ margin-left: -22px;
   function afterCatChange(){renderCatSettings();save("tt_cats",cats);try{renderParents();renderSubs();}catch(e){}try{refreshCatSelects();}catch(e){}renderCal();renderDashboard();if(state.tab==="todo")renderTodos();if(state.tab==="stats")try{renderStatsView();}catch(e){}}
   (function(){var box=document.getElementById("cat-settings");if(!box)return;
     renderCatColors();renderCatSettings();
-    var cc=document.getElementById("cs-colors");if(cc)cc.addEventListener("click",function(e){var s=e.target.closest(".sw");if(!s)return;csColor=s.getAttribute("data-c");renderCatColors();});
+    var cc=document.getElementById("cs-colors");if(cc){
+      cc.addEventListener("click",function(e){var s=e.target.closest(".sw");if(!s)return;csColor=s.getAttribute("data-c");renderCatColors();});
+      // input 事件是拖色轮时实时来的，重画整块会把色轮关掉 —— 只记值，不重画
+      cc.addEventListener("input",function(e){
+        if(e.target.id==="cs-any"){csColor=e.target.value;
+          cc.querySelectorAll(".sw").forEach(function(x){x.classList.remove("on");});
+          e.target.classList.add("on");}});}
+    // 大类改色：拖色轮时实时预览，松手（change）才存
+    box.addEventListener("input",function(e){
+      var k=e.target.getAttribute&&e.target.getAttribute("data-anycol");if(!k)return;
+      var c=parentObj(k);if(!c)return;c.color=e.target.value;
+      var dot=box.querySelector('[data-colcat="'+k+'"]');if(dot)dot.style.background=c.color;
+      box.querySelectorAll('[data-pal="'+k+'"] .sw').forEach(function(x){x.classList.remove("on");});});
+    box.addEventListener("change",function(e){
+      var k=e.target.getAttribute&&e.target.getAttribute("data-anycol");if(!k)return;
+      var c=parentObj(k);if(!c)return;c.color=e.target.value;afterCatChange();});
     var add=document.getElementById("cs-addcat");if(add)add.addEventListener("click",function(){
       var i=document.getElementById("cs-newcat"),nm=i.value.trim();if(!nm){i.focus();return;}
       cats.push({key:"c"+uid(),name:nm,color:csColor,kw:[nm],subs:[]});i.value="";afterCatChange();});
