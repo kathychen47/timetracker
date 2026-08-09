@@ -811,6 +811,8 @@
   .rd-book .x:hover{background:var(--danger);color:#fff}
   .rd-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
   .rd-bar .btn{padding:6px 11px;font-size:13px}
+  /* 清晰度下拉借用 .btn 的外观，但 select 默认自带原生边框和箭头，得压掉 */
+  .rd-bar select.btn{padding:6px 9px;font-size:12.5px;cursor:pointer}
   .rd-bar .grow{flex:1}
   .rd-title{font-size:15px;font-weight:650;max-width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rd-pos{font-size:12.5px;color:var(--muted);text-align:center}
@@ -3808,6 +3810,12 @@ margin-left: -22px;
           <span class="grow"></span>
           <button class="btn" id="rd-fs-down" title="缩小字号">A−</button>
           <button class="btn" id="rd-fs-up" title="放大字号">A+</button>
+          <select id="rd-q" class="btn" title="PDF 清晰度：按屏幕像素的几倍来渲染。调高更清楚，也更吃内存">
+            <option value="1">清晰度 1×</option>
+            <option value="1.5">清晰度 1.5×</option>
+            <option value="2">清晰度 2×</option>
+            <option value="3">清晰度 3×</option>
+          </select>
           <div class="seg" id="rd-mode" title="阅读方式">
             <button data-rm="page" class="on">📄 翻页</button>
             <button data-rm="scroll">📜 滚动</button>
@@ -11017,7 +11025,7 @@ margin-left: -22px;
     try{
       var as=await page.getAnnotations({intent:"display"});
       var layer=document.createElement("div");layer.className="pdf-annots";
-      layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
+      layer.style.width=Math.round(vp.width)+"px";layer.style.height=Math.round(vp.height)+"px";
       var done=pdfDone();
       as.forEach(function(a){
         if(PDFSKIP[a.subtype]||!a.rect)return;
@@ -11049,6 +11057,27 @@ margin-left: -22px;
     else await showPdfPage(startP);
     scanPdfAnnots();}
 
+  // ---- PDF 清晰度 ----
+  // 原来只按 window.devicePixelRatio 渲染，也就是一个屏幕像素画一个点。
+  // 单看没错，但本地 PDF 阅读器（Edge、Adobe）默认是超采样的 ——
+  // 画得比屏幕细，再让浏览器缩下来，文字边缘因此更实。
+  // 一比一渲染的字，笔画落在像素缝里就只能靠灰度糊过去，看着就"比本地模糊"。
+  //
+  // 所以这里乘一个倍率 Q（默认 2），并且：
+  //   · CSS 尺寸先取整，画布尺寸再由它乘出来 —— 两边各自 floor 会差半个像素，
+  //     浏览器缩放时又得重采样一次，白白糊一层
+  //   · 总宽度封顶 6000 像素，免得 A0 图纸那种页面把内存吃穿
+  var rdQ=+load("tt_rdq",2)||2;
+  function pdfPR(cssW){
+    var pr=(Math.min(3,window.devicePixelRatio||1))*rdQ;
+    if(cssW*pr>6000)pr=6000/cssW;
+    return Math.max(1,pr);}
+  function sizeCanvas(canvas,vp){
+    var w=Math.round(vp.width),h=Math.round(vp.height),pr=pdfPR(w);
+    canvas.style.width=w+"px";canvas.style.height=h+"px";
+    canvas.width=Math.round(w*pr);canvas.height=Math.round(h*pr);
+    return pr;}
+
   async function showPdfPage(n){
     if(!curPdf)return;
     n=Math.max(1,Math.min(n,curPdf.n));curPdf.page=n;
@@ -11059,12 +11088,10 @@ margin-left: -22px;
     var scale=Math.min(4,avail/base.width);
     var vp=page.getViewport({scale:scale});
     var wrap=document.createElement("div");wrap.className="rd-page";
-    var dpr=Math.min(3,window.devicePixelRatio||1);      // 高分屏按像素比渲染，才不糊
     var canvas=document.createElement("canvas");
-    canvas.width=Math.floor(vp.width*dpr);canvas.height=Math.floor(vp.height*dpr);
-    canvas.style.width=Math.floor(vp.width)+"px";canvas.style.height=Math.floor(vp.height)+"px";
+    var dpr=sizeCanvas(canvas,vp);
     var layer=document.createElement("div");layer.className="rd-textlayer";layer.style.setProperty("--scale-factor",scale);
-    layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
+    layer.style.width=Math.round(vp.width)+"px";layer.style.height=Math.round(vp.height)+"px";
     wrap.appendChild(canvas);wrap.appendChild(layer);
     wrap.setAttribute("data-p",n);
     rdContent.innerHTML="";rdContent.appendChild(wrap);rdContent.scrollTop=0;addPageNo(wrap,n);
@@ -11115,12 +11142,10 @@ margin-left: -22px;
   async function renderPdfInto(wrap,n,scale){
     try{
       var page=await curPdf.doc.getPage(n),vp=page.getViewport({scale:scale});
-      var dpr=Math.min(3,window.devicePixelRatio||1);
       var canvas=document.createElement("canvas");
-      canvas.width=Math.floor(vp.width*dpr);canvas.height=Math.floor(vp.height*dpr);
-      canvas.style.width=Math.floor(vp.width)+"px";canvas.style.height=Math.floor(vp.height)+"px";
+      var dpr=sizeCanvas(canvas,vp);
       var layer=document.createElement("div");layer.className="rd-textlayer";layer.style.setProperty("--scale-factor",scale);
-      layer.style.width=Math.floor(vp.width)+"px";layer.style.height=Math.floor(vp.height)+"px";
+      layer.style.width=Math.round(vp.width)+"px";layer.style.height=Math.round(vp.height)+"px";
       wrap.innerHTML="";wrap.classList.remove("ph");wrap.appendChild(canvas);wrap.appendChild(layer);
       wrap.style.height="";
       await page.render({canvasContext:canvas.getContext("2d"),viewport:vp,
@@ -13379,6 +13404,16 @@ margin-left: -22px;
       document.getElementById("rd-next").addEventListener("click",rdNext);
       document.getElementById("rd-fs-up").addEventListener("click",function(){rdFs=Math.min(30,rdFs+1);save("tt_rdfs",rdFs);applyRdFs();});
       document.getElementById("rd-fs-down").addEventListener("click",function(){rdFs=Math.max(12,rdFs-1);save("tt_rdfs",rdFs);applyRdFs();});
+      (function(){
+        var q=document.getElementById("rd-q");if(!q)return;
+        q.value=String(rdQ);
+        // 只对 PDF 有意义，别的格式（epub/txt/笔记）是真文字，不存在清晰度这回事
+        q.addEventListener("change",function(){
+          rdQ=+this.value||2;save("tt_rdq",rdQ);
+          if(!curPdf){rdNote("清晰度已保存，打开 PDF 时生效");return;}
+          // 重画就是最好的反馈，不用再写一行字（rd-note 那个元素在书架上，读书时看不见）
+          if(rdMode()==="scroll")renderPdfScroll(curPdf.page);else showPdfPage(curPdf.page);});
+      })();
       rdContent.addEventListener("mouseup",function(){setTimeout(rdSelHandler,10);});
       // —— 触屏（iPad/手机）：点一下查词；长按选中后自动查/翻译 ——
       var touchMoved=false,tStart=null;
