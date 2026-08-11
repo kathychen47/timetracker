@@ -5,14 +5,32 @@
 
   let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page" };
 
-  chrome.runtime.sendMessage({ type: "settings" }, s => { if (s && !s.error) settings = Object.assign(settings, s); });
+  // 重新加载扩展之后，早就开着的标签页里还跑着旧的这份脚本，
+  // 它手上那条通往后台的通道已经作废 —— 再调 chrome.runtime.* 就抛
+  // 「Extension context invalidated」，而且是 Uncaught，直接在扩展卡片上
+  // 堆成一片红字。其实什么都没坏，刷新那个页面就好。
+  // 所以所有跟后台说话都走这里：通道没了就安静地回一句人看得懂的话。
+  function dead() { try { return !(chrome.runtime && chrome.runtime.id); } catch (e) { return true; } }
+  function tell(msg, cb) {
+    if (dead()) { cb && cb({ error: "扩展刚更新过 —— 刷新一下这个页面就好" }); return; }
+    try {
+      chrome.runtime.sendMessage(msg, res => {
+        const e = chrome.runtime.lastError;
+        cb && cb(e ? { error: "扩展刚更新过 —— 刷新一下这个页面就好" } : res);
+      });
+    } catch (e) {
+      cb && cb({ error: "扩展刚更新过 —— 刷新一下这个页面就好" });
+    }
+  }
+
+  tell({ type: "settings" }, s => { if (s && !s.error) settings = Object.assign(settings, s); });
   // 设置只在脚本加载时读一次 —— 那样关掉划词之后，已经开着的每个标签页
   // 都还在弹卡片，得挨个刷新才生效。听 storage 的变化，当场生效。
-  chrome.storage.onChanged.addListener((ch, area) => {
+  try { chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;
     ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
     if (settings.ttEnabled === false || settings.ttMode === "off") { try { destroy(); } catch (e) {} lastSel = ""; }
-  });
+  }); } catch (e) {}
 
   const isCJK = s => /[一-鿿]/.test(s);
   const wordCount = s => s.trim().split(/\s+/).filter(Boolean).length;
@@ -138,7 +156,7 @@
       if (a === "tr") return doTranslate(bd, text);
       if (a === "star") {
         const item = { w: text.trim().toLowerCase(), disp: text.trim(), dict: isCJK(text) ? "collins" : "oald", ts: Date.now() };
-        chrome.runtime.sendMessage({ type: "save", item }, res => {
+        tell({ type: "save", item }, res => {
           b.classList.add("on"); b.textContent = "✓ 已存";
           const tip = document.createElement("div");
           tip.className = "muted"; tip.style.marginTop = "6px";
@@ -152,7 +170,7 @@
   }
 
   function doLookup(bd, text) {
-    chrome.runtime.sendMessage({ type: "lookup", text }, res => {
+    tell({ type: "lookup", text }, res => {
       if (!res || res.error) { bd.innerHTML = `<div class="muted">出错了：${esc(res && res.error || "未知")}</div>`; return; }
       if (!res.hits || !res.hits.length) {
         bd.innerHTML = `<div class="muted">词典里没找到「${esc(text)}」。点上面「🌐 译」翻译，或去设置页导入词典。</div>`;
@@ -170,7 +188,7 @@
 
   function doTranslate(bd, text) {
     bd.innerHTML = `<div class="muted">翻译中…</div>`;
-    chrome.runtime.sendMessage({ type: "translate", text }, res => {
+    tell({ type: "translate", text }, res => {
       if (!res || res.error || !res.text) { bd.innerHTML = `<div class="muted">翻译失败：${esc(res && res.error || "无结果")}</div>`; return; }
       bd.innerHTML = `<div class="tr">${esc(res.text)}<span class="src">${esc(text)}</span></div>`;
     });

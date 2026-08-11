@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "划词查词 · Timetracker",
-  "version": "1.4.0",
+  "version": "1.4.2",
   "description": "在任意网页选中单词即就地显示牛津/柯林斯释义，选中句子自动翻译，生词存入 Timetracker 生词本。",
   "permissions": [
     "storage",

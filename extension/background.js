@@ -101,7 +101,14 @@ async function translate(text, tl) {
 function poke() {
   try {
     chrome.tabs.query({ url: "https://kathychen47.github.io/timetracker/*" }, tabs => {
-      (tabs || []).forEach(t => { try { chrome.tabs.sendMessage(t.id, { type: "drain" }); } catch (e) {} });
+      (tabs || []).forEach(t => {
+        try {
+          // 一定要带回调并读一下 lastError：扩展刚重新加载时，早就开着的那些
+          // 标签页里没有内容脚本，发过去必然失败。不读它 Chrome 就记成
+          // 「未捕获的错误」，扩展卡片上冒一行红字 —— 其实什么事也没有。
+          chrome.tabs.sendMessage(t.id, { type: "drain" }, () => { void chrome.runtime.lastError; });
+        } catch (e) {}
+      });
     });
   } catch (e) {}
 }
@@ -131,12 +138,19 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({ id: "tt-lookup", title: "用 Timetracker 查词/翻译：“%s”", contexts: ["selection"] });
+  // 先清干净再建：重新加载扩展时旧菜单项可能还在，重复的 id 会报错
+  chrome.contextMenus.removeAll(() => {
+    void chrome.runtime.lastError;
+    chrome.contextMenus.create(
+      { id: "tt-lookup", title: "用 Timetracker 查词/翻译：“%s”", contexts: ["selection"] },
+      () => { void chrome.runtime.lastError; });
+  });
   paintAction();
 });
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "tt-lookup" && tab && tab.id) {
-    chrome.tabs.sendMessage(tab.id, { type: "showFor", text: info.selectionText });
+    chrome.tabs.sendMessage(tab.id, { type: "showFor", text: info.selectionText },
+      () => { void chrome.runtime.lastError; });
   }
 });
 // 工具栏图标 = 开关。原来点它是打开设置页，而开关埋在设置页里 ——

@@ -8,7 +8,12 @@
 (() => {
   const PENDING = new Set();
 
+  // 扩展重新加载后，旧的这份脚本通道已作废，再调 chrome.* 会抛
+  // 「Extension context invalidated」。安静退出就好 —— 刷新页面自然会跑新的。
+  function dead() { try { return !(chrome.runtime && chrome.runtime.id); } catch (e) { return true; } }
+
   async function offer() {
+    if (dead()) return;
     const { ttQueue = [] } = await chrome.storage.local.get("ttQueue");
     if (!ttQueue.length) return;
     ttQueue.forEach(x => x && x.w && PENDING.add(x.w));
@@ -17,6 +22,7 @@
 
   // 网站合并完了：把它确认收下的那些从队列里删掉（没确认的留着，下次再递）
   window.addEventListener("tt-ext-merged", async e => {
+    if (dead()) return;
     const took = (e.detail && e.detail.took) || [];
     if (!took.length) return;
     const { ttQueue = [] } = await chrome.storage.local.get("ttQueue");
@@ -29,8 +35,8 @@
   window.addEventListener("tt-ext-ready", offer);
 
   // 已经开着的标签页：刚收了个词，后台会让这边立刻递一次，不用等刷新
-  chrome.runtime.onMessage.addListener(msg => { if (msg && msg.type === "drain") offer(); });
+  try { chrome.runtime.onMessage.addListener(msg => { if (msg && msg.type === "drain") offer(); }); } catch (e) {}
 
   // 网站要是先于这个脚本喊过 ready（时序说不准），主动递几次兜底
-  [0, 400, 1500, 4000].forEach(t => setTimeout(offer, t));
+  [0, 400, 1500, 4000].forEach(t => setTimeout(() => { offer().catch(() => {}); }, t));
 })();
