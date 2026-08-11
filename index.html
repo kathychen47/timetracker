@@ -4450,14 +4450,17 @@ margin-left: -22px;
         <div class="set-sec-h" style="font-size:14px">更省事：装浏览器扩展（推荐）</div>
         <div class="set-desc" style="margin-bottom:10px">
           书签那条路每次都要弹一个新窗口，还会被 GitHub 这类网站的安全策略挡住。
+          <b>公司/学校管理的浏览器（顶上写着 managed by your organization）可能禁止装未打包的扩展</b>，
+          点了报错就还用书签。
           扩展是<b>就地在词旁弹卡片</b>：选中单词出释义、选中句子出翻译，点 ★ 收进生词本，
           下次打开 Timetracker 自动并进来（之后跟着云同步）。装一次，以后什么都不用点。
         </div>
         <div class="set-desc" style="margin-bottom:10px;line-height:2">
           ① 浏览器地址栏输 <code>chrome://extensions</code>（Edge 是 <code>edge://extensions</code>）<br>
-          ② 打开右上角<b>「开发者模式」</b><br>
-          ③ 点<b>「加载已解压的扩展程序」</b>，选中项目里的 <code>extension</code> 文件夹<br>
-          ④ 装好后在任意网页选中一个英文单词试试
+          ② 打开右上角<b>「开发者模式」/ Developer mode</b><br>
+          ③ 点左上角<b>「加载已解压的扩展程序」/ Load unpacked</b>，
+             选中 <code>extension</code> <b>文件夹本身</b>（不要进去选文件）<br>
+          ④ 列表里出现「划词查词 · Timetracker」就成了，随便找个英文网页选中一个单词试试
         </div>
         <button class="btn" id="ext-copy" type="button">复制 extension 文件夹路径</button>
         <div class="set-desc" id="ext-path" style="margin-top:8px;word-break:break-all"></div>
