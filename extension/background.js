@@ -122,10 +122,35 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
 
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({ id: "tt-lookup", title: "用 Timetracker 查词/翻译：“%s”", contexts: ["selection"] });
+  paintAction();
 });
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "tt-lookup" && tab && tab.id) {
     chrome.tabs.sendMessage(tab.id, { type: "showFor", text: info.selectionText });
   }
 });
-chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
+// 工具栏图标 = 开关。原来点它是打开设置页，而开关埋在设置页里 ——
+// 想临时关掉划词要点两下再等页面加载，太重了。
+// 设置页改从图标右键 →「选项 / Options」进，那是浏览器自带的入口。
+async function ttEnabled() {
+  const { ttEnabled = true } = await chrome.storage.local.get({ ttEnabled: true });
+  return ttEnabled;
+}
+async function paintAction() {
+  const on = await ttEnabled();
+  chrome.action.setBadgeText({ text: on ? "" : "OFF" });
+  chrome.action.setBadgeBackgroundColor({ color: "#9aa1b0" });
+  chrome.action.setTitle({
+    title: on ? "划词查词：开着 —— 点一下关掉（右键 → 选项）"
+              : "划词查词：关着 —— 点一下打开（右键 → 选项）"
+  });
+}
+chrome.action.onClicked.addListener(async () => {
+  await chrome.storage.local.set({ ttEnabled: !(await ttEnabled()) });
+  paintAction();
+});
+chrome.runtime.onStartup.addListener(paintAction);
+chrome.storage.onChanged.addListener((ch, area) => {
+  if (area === "local" && ch.ttEnabled) paintAction();   // 设置页里改的也要反映到图标上
+});
+paintAction();

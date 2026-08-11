@@ -6,6 +6,13 @@
   let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true };
 
   chrome.runtime.sendMessage({ type: "settings" }, s => { if (s && !s.error) settings = Object.assign(settings, s); });
+  // 设置只在脚本加载时读一次 —— 那样关掉划词之后，已经开着的每个标签页
+  // 都还在弹卡片，得挨个刷新才生效。听 storage 的变化，当场生效。
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area !== "local") return;
+    ["ttMode", "ttTargetLang", "ttEnabled"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
+    if (settings.ttEnabled === false || settings.ttMode === "off") { try { destroy(); } catch (e) {} lastSel = ""; }
+  });
 
   const isCJK = s => /[一-鿿]/.test(s);
   const wordCount = s => s.trim().split(/\s+/).filter(Boolean).length;
