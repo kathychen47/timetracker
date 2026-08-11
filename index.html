@@ -8898,13 +8898,17 @@ margin-left: -22px;
     if(dictInitP)return dictInitP;
     dictInitP=refreshDictCounts().then(function(){bindDictUI();dictInit=true;},function(){bindDictUI();dictInit=true;});
     return dictInitP;}
-  function openDict(){ensureDictInit().then(function(){
-    var dt=load("tt_dicttab","look");
+  // 查词 / 背单词 两个面板的切换。persist=false 时不记住 ——
+  // 划词小窗是临时开的，它切到查词页不该改掉你在主界面选的那一页。
+  function dictPane(dt,persist){
     var tb=document.querySelector('#dict-tabs button[data-dt="'+dt+'"]');
-    if(tb&&!tb.classList.contains("on")){
-      document.querySelectorAll("#dict-tabs button").forEach(function(x){x.classList.toggle("on",x===tb);});
-      document.getElementById("dict-look").style.display=dt==="look"?"":"none";
-      document.getElementById("dict-study").style.display=dt==="study"?"":"none";}
+    if(tb)document.querySelectorAll("#dict-tabs button").forEach(function(x){x.classList.toggle("on",x===tb);});
+    var lk=document.getElementById("dict-look"),st=document.getElementById("dict-study");
+    if(lk)lk.style.display=dt==="look"?"":"none";
+    if(st)st.style.display=dt==="study"?"":"none";
+    if(persist!==false)save("tt_dicttab",dt);}
+  function openDict(){ensureDictInit().then(function(){
+    dictPane(load("tt_dicttab","look"),false);
     renderWordbook();
     var q=document.getElementById("dict-q");if(q)setTimeout(function(){q.focus();},50);});}
   function bookmarkletCode(){var base=location.origin+location.pathname;
@@ -9983,10 +9987,7 @@ margin-left: -22px;
   function bindDictUI(){
     document.getElementById("dict-tabs").addEventListener("click",function(e){
       var b=e.target.closest("button[data-dt]");if(!b)return;
-      document.querySelectorAll("#dict-tabs button").forEach(function(x){x.classList.toggle("on",x===b);});
-      var dt=b.getAttribute("data-dt");save("tt_dicttab",dt);
-      document.getElementById("dict-look").style.display=dt==="look"?"":"none";
-      document.getElementById("dict-study").style.display=dt==="study"?"":"none";
+      var dt=b.getAttribute("data-dt");dictPane(dt,true);
       if(dt==="study")renderWordbook();});
     var q=document.getElementById("dict-q"),timer=null;
     q.addEventListener("input",function(){if(timer)clearTimeout(timer);var v=q.value;timer=setTimeout(function(){getSuggest(v).then(renderSugg);},160);});
@@ -17157,6 +17158,10 @@ margin-left: -22px;
       var btn=document.querySelector('.rail button[data-tab="dict"]');if(btn)btn.click();
       save("tt_tab",prevTab); // 划词窗口不改变主界面默认页
       ensureDictInit().then(function(){
+        // 上次要是停在「背单词」那一页，查词结果会渲染进一个 display:none 的容器 ——
+        // 窗口打开看到的是书桌和统计，查的词一个字都看不见。
+        // 这里强制切到查词，但不记住：主界面停在哪一页是你自己选的。
+        dictPane("look",false);
         var inp=document.getElementById("dict-q");if(inp)inp.value=w;
         return doLookup(w);
       }).then(function(){
