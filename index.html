@@ -4444,6 +4444,24 @@ margin-left: -22px;
         <button class="btn" id="bm-copy" type="button" style="margin-left:8px">复制代码</button>
         <div class="set-desc" style="margin-top:8px">手机上没有书签栏，可用「复制代码」新建一个书签把网址替换成它。少数网站（如 GitHub）有安全限制会挡住书签脚本，属正常。</div>
       </div>
+      <!-- 扩展一直躺在仓库里没人提过，界面上只写了书签那条路。
+           书签每次都要弹一个新窗口、还会被 GitHub 这类站点挡住；扩展是就地弹卡片。 -->
+      <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">更省事：装浏览器扩展（推荐）</div>
+        <div class="set-desc" style="margin-bottom:10px">
+          书签那条路每次都要弹一个新窗口，还会被 GitHub 这类网站的安全策略挡住。
+          扩展是<b>就地在词旁弹卡片</b>：选中单词出释义、选中句子出翻译，点 ★ 收进生词本，
+          下次打开 Timetracker 自动并进来（之后跟着云同步）。装一次，以后什么都不用点。
+        </div>
+        <div class="set-desc" style="margin-bottom:10px;line-height:2">
+          ① 浏览器地址栏输 <code>chrome://extensions</code>（Edge 是 <code>edge://extensions</code>）<br>
+          ② 打开右上角<b>「开发者模式」</b><br>
+          ③ 点<b>「加载已解压的扩展程序」</b>，选中项目里的 <code>extension</code> 文件夹<br>
+          ④ 装好后在任意网页选中一个英文单词试试
+        </div>
+        <button class="btn" id="ext-copy" type="button">复制 extension 文件夹路径</button>
+        <div class="set-desc" id="ext-path" style="margin-top:8px;word-break:break-all"></div>
+      </div>
     </div>
       </div>
     </div>
@@ -10161,6 +10179,31 @@ margin-left: -22px;
       bmc.textContent=ok?"已复制 ✓":"复制失败";setTimeout(function(){bmc.textContent="复制代码";},1600);});
     var bml=document.getElementById("bm-link");
     if(bml)bml.addEventListener("click",function(e){e.preventDefault();ttAlert("这个按钮是用来「拖到书签栏」的，不是直接点。拖过去之后，在别的网页选中单词再点书签栏上的它。");});
+    // extension 文件夹在源码仓库里，网页拿不到本机路径 —— 只能记在设置里。
+    // 第一次填完存下来，换台电脑再填一次。
+    (function(){
+      var b=document.getElementById("ext-copy"), p=document.getElementById("ext-path");
+      if(!b||!p)return;
+      function paint(){
+        var v=load("tt_extpath","");
+        p.innerHTML=v?('扩展文件夹：<code>'+esc(v)+'</code>　<a href="#" id="ext-edit">改</a>')
+          :'<a href="#" id="ext-edit">还没填过路径，点这里填一次</a>（就是你电脑上 Timetracker 项目里的 extension 文件夹）';
+        var ed=document.getElementById("ext-edit");
+        if(ed)ed.addEventListener("click",async function(e){e.preventDefault();
+          var v2=await ttPrompt("extension 文件夹在哪？（在资源管理器里打开那个文件夹，地址栏复制过来）",
+            load("tt_extpath","")||"C:\\Users\\你\\OneDrive\\1_Code\\Timetracker\\extension");
+          if(v2===null)return;save("tt_extpath",String(v2).trim());paint();});}
+      paint();
+      b.addEventListener("click",function(){
+        var v=load("tt_extpath","");
+        if(!v){var ed=document.getElementById("ext-edit");if(ed)ed.click();return;}
+        var ta=document.createElement("textarea");ta.value=v;ta.style.position="fixed";ta.style.opacity="0";
+        document.body.appendChild(ta);ta.select();
+        var ok=false;try{ok=document.execCommand("copy");}catch(e){}document.body.removeChild(ta);
+        if(!ok&&navigator.clipboard)try{navigator.clipboard.writeText(v);ok=true;}catch(e){}
+        b.textContent=ok?"已复制 ✓":"复制失败";
+        setTimeout(function(){b.textContent="复制 extension 文件夹路径";},1600);});
+    })();
     document.getElementById("flash-close").addEventListener("click",closeFlash);
     document.getElementById("flash-overlay").addEventListener("click",function(e){if(e.target.id==="flash-overlay")closeFlash();});
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
