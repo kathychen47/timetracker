@@ -130,7 +130,7 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
       }
       else if (msg.type === "save") { const n = await queueWord(msg.item); poke(); send({ n }); }
       else if (msg.type === "counts") send({ oald: await idbCount("oald"), collins: await idbCount("collins") });
-      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page" }));
+      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page", ttAutoAdd: false }));
       else send({});
     } catch (e) { send({ error: String(e && e.message || e) }); }
   })();

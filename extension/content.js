@@ -3,7 +3,7 @@
   if (window.__ttDictLoaded) return;
   window.__ttDictLoaded = true;
 
-  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page" };
+  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
 
   // 重新加载扩展之后，早就开着的标签页里还跑着旧的这份脚本，
   // 它手上那条通往后台的通道已经作废 —— 再调 chrome.runtime.* 就抛
@@ -28,7 +28,7 @@
   // 都还在弹卡片，得挨个刷新才生效。听 storage 的变化，当场生效。
   try { chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;
-    ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
+    ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme", "ttAutoAdd"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
     if (settings.ttEnabled === false || settings.ttMode === "off") { try { destroy(); } catch (e) {} lastSel = ""; }
   }); } catch (e) {}
 
@@ -154,22 +154,32 @@
       if (a === "x") return destroy();
       if (a === "speak") return speak(text);
       if (a === "tr") return doTranslate(bd, text);
-      if (a === "star") {
-        const item = { w: text.trim().toLowerCase(), disp: text.trim(), dict: isCJK(text) ? "collins" : "oald", ts: Date.now() };
-        tell({ type: "save", item }, res => {
-          b.classList.add("on"); b.textContent = "✓ 已存";
-          const tip = document.createElement("div");
-          tip.className = "muted"; tip.style.marginTop = "6px";
-          tip.textContent = "已存入待同步（共 " + ((res && res.n) || 1) + " 个），下次打开 Timetracker 自动并入生词本。";
-          bd.appendChild(tip);
-        });
-      }
+      if (a === "star") saveWord(true);
     });
 
-    if (isWord) doLookup(bd, text); else doTranslate(bd, text);
+    // ★ 和「查到就自动收」走同一条路。auto=true 是手点的，会多说一句话；
+    // 自动收只把星星点亮 —— 每查一个词都弹一行提示太吵。
+    let saved = false;
+    function saveWord(loud) {
+      if (saved) return; saved = true;
+      const item = { w: text.trim().toLowerCase(), disp: text.trim(), dict: isCJK(text) ? "collins" : "oald", ts: Date.now() };
+      tell({ type: "save", item }, res => {
+        const b = r.querySelector('[data-a="star"]');
+        if (b) { b.classList.add("on"); b.textContent = "✓ 已存"; }
+        if (!loud) return;
+        const tip = document.createElement("div");
+        tip.className = "muted"; tip.style.marginTop = "6px";
+        tip.textContent = "已存入待同步（共 " + ((res && res.n) || 1) + " 个），下次打开 Timetracker 自动并入生词本。";
+        bd.appendChild(tip);
+      });
+    }
+
+    if (isWord) doLookup(bd, text, () => { if (settings.ttAutoAdd) saveWord(false); });
+    else doTranslate(bd, text);
   }
 
-  function doLookup(bd, text) {
+  // onHit：词典里确实查到了才回调 —— 拼错的、根本不是词的不该被自动收进生词本
+  function doLookup(bd, text, onHit) {
     tell({ type: "lookup", text }, res => {
       if (!res || res.error) { bd.innerHTML = `<div class="muted">出错了：${esc(res && res.error || "未知")}</div>`; return; }
       if (!res.hits || !res.hits.length) {
@@ -183,6 +193,7 @@
       bd.querySelectorAll(".box_title").forEach(t => t.addEventListener("click", () => {
         const u = t.closest(".unbox"); if (u) u.classList.toggle("is-active");
       }));
+      if (onHit) try { onHit(); } catch (e) {}
     });
   }
 

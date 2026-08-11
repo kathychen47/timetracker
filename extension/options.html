@@ -51,10 +51,14 @@
       <select id="mode">
         <option value="auto">单词直接出释义，句子先出小按钮（推荐）</option>
         <option value="bubble">一律先出小按钮，点了才查（最不打扰）</option>
-        <option value="instant">一律直接弹出卡片</option>
+        <option value="instant">单词和句子都直接出，不用点</option>
         <option value="off">关闭（只用右键菜单）</option>
       </select>
     </label>
+    <label class="row"><input type="checkbox" id="autoadd"> 查到的单词自动收进生词本（不用点 ★）</label>
+    <p style="color:#8a8f98;font-size:13px;margin:2px 0 10px">
+      只收<b>词典里真查到的单词</b> —— 拼错的、整句翻译的都不收。
+      同一个词重复选中也只算一次。不想要就取消这个勾，还是点 ★ 才收。</p>
     <label class="row">卡片配色：
       <select id="theme">
         <option value="page">跟着网页走（推荐）</option>
