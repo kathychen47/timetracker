@@ -96,6 +96,16 @@ async function translate(text, tl) {
   return { text: out, from: j[2] || "" };
 }
 
+// 已经开着的 Timetracker 标签页，戳一下让它立刻来取 ——
+// 不然要等她下次刷新那个页面，词看着"已存"却半天不出现。
+function poke() {
+  try {
+    chrome.tabs.query({ url: "https://kathychen47.github.io/timetracker/*" }, tabs => {
+      (tabs || []).forEach(t => { try { chrome.tabs.sendMessage(t.id, { type: "drain" }); } catch (e) {} });
+    });
+  } catch (e) {}
+}
+
 async function queueWord(item) {
   const { ttQueue = [] } = await chrome.storage.local.get("ttQueue");
   if (!ttQueue.some(x => x.w === item.w)) ttQueue.push(item);
@@ -111,9 +121,9 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
         const { ttTargetLang = "zh-CN" } = await chrome.storage.local.get("ttTargetLang");
         send(await translate(msg.text, msg.tl || ttTargetLang));
       }
-      else if (msg.type === "save") send({ n: await queueWord(msg.item) });
+      else if (msg.type === "save") { const n = await queueWord(msg.item); poke(); send({ n }); }
       else if (msg.type === "counts") send({ oald: await idbCount("oald"), collins: await idbCount("collins") });
-      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true }));
+      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page" }));
       else send({});
     } catch (e) { send({ error: String(e && e.message || e) }); }
   })();

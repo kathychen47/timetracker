@@ -8426,7 +8426,7 @@ margin-left: -22px;
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
-      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data);reloadAllFromStorage();applyingCloud=false;reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");}
+      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data);reloadAllFromStorage();applyingCloud=false;reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
       else{pushCloud();}
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
@@ -17177,11 +17177,36 @@ margin-left: -22px;
         if(r&&r.owner===TABID){r.owner=null;save("tt_pomorun",r);}}catch(_e){}});
   }
   initLang();renderBookmarklet();
+  try{extReady();}catch(e){}      // 告诉划词扩展：可以把攒下的生词递过来了
   // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
   window.addEventListener("tt-words-merged",function(){
     words=load("tt_words",[])||[];updateWbCount();
     if(state.tab==="dict")renderWordbook();
     schedulePush("tt_words");});
+  // ---- 跟浏览器扩展的握手 ----
+  // 扩展原来是直接改 localStorage.tt_words 的。看着能用，其实必输一场竞速：
+  // 它在 document_start 写完，网站随后启动、拉一次云端，applyCloud 把
+  // tt_words 整个覆盖回去 —— 刚存的词就这么没了，而扩展那边显示"已存"。
+  //
+  // 改成握手：网站喊「准备好了」，扩展才把词递过来；网站合并完回一句「收下了」，
+  // 扩展才清队列。中间任何一步断了，词还在扩展的队列里，下次再来。
+  function extReady(){try{window.dispatchEvent(new CustomEvent("tt-ext-ready"));}catch(e){}}
+  window.addEventListener("tt-ext-words",function(e){
+    var list=(e.detail&&e.detail.list)||[];if(!list.length)return;
+    var def="default";try{if(wbGroups&&wbGroups.def)def=wbGroups.def;}catch(_e){}
+    var have={};words.forEach(function(x){have[x.w]=1;});
+    var took=[],add=0;
+    list.forEach(function(it){
+      if(!it||!it.w)return;
+      took.push(it.w);                       // 已经有了也算收下，不然它永远留在队列里
+      if(have[it.w])return;
+      have[it.w]=1;add++;
+      words.push({w:it.w,disp:it.disp||it.w,dict:it.dict||"oald",ts:it.ts||Date.now(),group:def});});
+    if(add){
+      if(!save("tt_words",words)){took=[];}   // 存不下就别确认，让扩展留着下次再给
+      else{updateWbCount();if(state.tab==="dict")renderWordbook();}}
+    try{window.dispatchEvent(new CustomEvent("tt-ext-merged",{detail:{took:took}}));}catch(_e){}
+    if(add)try{sbStatus("从划词扩展收进 "+add+" 个生词 ✓");}catch(_e){}});
   // 划词查词入口：?w=单词 [&add=1 自动收藏] [&mini=1 小窗模式]；否则恢复上次所在页面
   (function(){
     if(SOLO){                       // 副屏：只显示看书页，等主窗口告诉它开哪本

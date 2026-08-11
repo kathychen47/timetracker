@@ -3,14 +3,14 @@
   if (window.__ttDictLoaded) return;
   window.__ttDictLoaded = true;
 
-  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true };
+  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page" };
 
   chrome.runtime.sendMessage({ type: "settings" }, s => { if (s && !s.error) settings = Object.assign(settings, s); });
   // 设置只在脚本加载时读一次 —— 那样关掉划词之后，已经开着的每个标签页
   // 都还在弹卡片，得挨个刷新才生效。听 storage 的变化，当场生效。
   chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;
-    ["ttMode", "ttTargetLang", "ttEnabled"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
+    ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
     if (settings.ttEnabled === false || settings.ttMode === "off") { try { destroy(); } catch (e) {} lastSel = ""; }
   });
 
@@ -44,12 +44,34 @@
   .srcname:first-child{margin-top:0}
   .bubble{font:13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#6366F1;color:#fff;border:none;
     border-radius:8px;padding:5px 10px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22)}
-  @media (prefers-color-scheme: dark){
-    .card{background:#1c1f26;color:#e8eaed;border-color:#2c3038}
-    .hd{background:#1c1f26;border-bottom-color:#2c3038}
-    .b{background:#252932;border-color:#343945;color:#d5d8de}
-    .tr .src{border-top-color:#2c3038}
-  }`;
+  /* 深色规则原来挂在 @media (prefers-color-scheme: dark) 上 —— 那是跟着系统走的。
+     于是在一个白底网页上读英文，弹出来一张黑卡，跟正文完全两个世界。
+     改成挂在 :host(.dark)，由 JS 决定挂不挂：默认看这张网页自己是深是浅。 */
+  :host(.dark) .card{background:#1c1f26;color:#e8eaed;border-color:#2c3038}
+  :host(.dark) .hd{background:#1c1f26;border-bottom-color:#2c3038}
+  :host(.dark) .b{background:#252932;border-color:#343945;color:#d5d8de}
+  :host(.dark) .tr .src{border-top-color:#2c3038}`;
+
+  // 这张网页是深色还是浅色：从选区往上找第一个不透明的背景色，算它的亮度。
+  // 找不到就退回系统设置。
+  function pageIsDark() {
+    const t = settings.ttTheme || "page";
+    if (t === "dark") return true;
+    if (t === "light") return false;
+    if (t === "system") return matchMedia("(prefers-color-scheme: dark)").matches;
+    let el = null;
+    try { const sel = getSelection(); el = sel && sel.anchorNode; } catch (e) {}
+    el = (el && el.nodeType === 1) ? el : (el && el.parentElement);
+    for (let n = el || document.body, i = 0; n && i < 12; n = n.parentElement, i++) {
+      const c = getComputedStyle(n).backgroundColor;
+      const m = /rgba?\(([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/.exec(c || "");
+      if (!m) continue;
+      if (m[4] !== undefined && +m[4] < 0.5) continue;          // 透明的不算数
+      const lum = (0.299 * +m[1] + 0.587 * +m[2] + 0.114 * +m[3]) / 255;
+      return lum < 0.5;
+    }
+    return matchMedia("(prefers-color-scheme: dark)").matches;
+  }
 
   function destroy() { if (host) { host.remove(); host = null; root = null; } }
 
@@ -57,6 +79,7 @@
     destroy();
     host = document.createElement("div");
     host.style.cssText = "all:initial;position:absolute;z-index:2147483647;left:0;top:0";
+    if (pageIsDark()) host.classList.add("dark");
     root = host.attachShadow({ mode: "open" });
     document.documentElement.appendChild(host);
     place(x, y);
@@ -171,7 +194,12 @@
       if (s === lastSel && host) return;
       lastSel = s;
       const rect = selRect(); if (!rect) return;
-      if (settings.ttMode === "instant" || looksLikeWord(s)) showCard(s, rect);
+      // bubble：不管划的是一个词还是一整句，都先出那颗小按钮，点了才查。
+      //   读英文的时候手一滑就选中一个词是常事，auto 模式下卡片会自己冒出来挡住正文。
+      // instant：一律直接弹卡片
+      // auto：单词直接弹，句子先出按钮
+      if (settings.ttMode === "bubble") showBubble(s, rect);
+      else if (settings.ttMode === "instant" || looksLikeWord(s)) showCard(s, rect);
       else showBubble(s, rect);
     }, 10);
   }, true);
