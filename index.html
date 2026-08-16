@@ -1497,7 +1497,14 @@
     padding:2px 8px;font-size:12px;cursor:pointer;line-height:1.6}
   .flash-zoom button:hover{border-color:var(--primary);color:var(--primary)}
   .flash-zoom .v{font-size:11px;color:var(--muted);min-width:34px;text-align:center;font-variant-numeric:tabular-nums}
+  /* 关闭键。它在 HTML 里是第一个子元素，而 .flash-card 现在是竖向 flex ——
+     不摆出去的话会被默认的 stretch 拉成一条通栏大空框，✕ 孤零零居中在里面。
+     摆到右上角，和左上角那排字号键一个做派。 */
+  .flash-card>.modal-x{position:absolute;top:14px;right:16px;z-index:2;border:1px solid var(--border);
+    background:var(--surface-2);color:var(--muted);border-radius:8px;font-size:13px;line-height:1.6;padding:2px 9px;cursor:pointer}
+  .flash-card>.modal-x:hover{border-color:var(--danger);color:var(--danger)}
   .fp-bar{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:2px 0 10px}
+  .flash-card>.fp-bar{margin-top:26px}   /* 让开悬浮在上面的字号键和关闭键，别叠在一起 */
   .fp-bar i{display:block;height:100%;background:var(--primary);border-radius:99px;transition:width .25s}
   .flash-prog{font-size:.8em;color:var(--muted);text-align:center;margin-bottom:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
   .flash-prog b{color:var(--text);font-weight:600}
