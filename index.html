@@ -9145,18 +9145,21 @@ margin-left: -22px;
             '<div class="rd-tr">'+esc(tres.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div></div>';
         }catch(e){box.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎。</div>';}
         return;}
-      if(!dictCounts.oald&&!dictCounts.collins){box.innerHTML='<div class="dict-hint">词典还没加载，去 ⚙️设置 → 📖词典 里导入/下载。</div>';return;}
+      // 一本词典都没加载：以前到这里就 return 了，什么都不给。可划词卡走的是 wbDefHTML，
+      // 它不看 dictCounts —— 同一台机器上「划词能翻、查词框不能翻」。这里也补一张翻译卡。
+      if(!dictCounts.oald&&!dictCounts.collins){
+        box.innerHTML=wordNoteHTML(key)+'<div class="dict-hint">词典还没加载（去 ⚙️设置 → 📖词典 里导入/下载）。先给你翻一下：</div>'+
+          mineBtnHTML(key,q)+
+          '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
+        // 这支不做自动收藏：一本词典都没装的时候「查不到」是常态，照收会把生词本灌满
+        await trFillFB(q,box.querySelector("#dict-fallback"));return;}
       var sug=await fuzzySuggest(q);
       var dym=sug.length?'<div class="dym">'+sug.map(function(s){return '<span class="dym-i" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'</span>';}).join("")+'</div>':'';
       box.innerHTML=wordNoteHTML(key)+'<div class="dict-hint">词典没收录 “'+esc(q)+'”。'+(sug.length?'你是不是想查：':'')+'</div>'+dym+
         mineBtnHTML(key,q)+
         '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
-      try{var tr2=await translateText(q);
-        var fb=document.getElementById("dict-fallback");
-        if(fb)fb.innerHTML='<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(q)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr2.by)+'</span></div>'+
-          '<div class="rd-tr">'+esc(tr2.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div>';
-        if(dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);}
-      catch(err2){var fb2=document.getElementById("dict-fallback");if(fb2)fb2.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err2&&err2.message||err2))+'</div>';}
+      var tr2=await trFillFB(q,box.querySelector("#dict-fallback"));
+      if(tr2&&dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);
       return;}
     // 笔记挂在真正匹配上的那个词头上（查 running 命中 run 时，笔记是 run 的）
     var nk=matches.length?matches[0][1].k:key;
@@ -9543,6 +9546,59 @@ margin-left: -22px;
           '<div class="dict-def">'+rec.html+'</div></div>';}}
     var out=html+(cards?(via+cards):"");
     return out||'<div class="dict-hint">词典未加载或查不到（去 ⚙️设置 → 📖词典 加载）。</div>';}
+  // ===== 词典查不到 → 用翻译兜底（查词页 / 生词本 / 背单词卡片 / 划词卡 共用）=====
+  // 牛津柯林斯收的是通用词，Lorentzian、Fresnel 这种学术词和专有名词一个都没有。
+  // 以前四个界面里三个各写了一份兜底，背单词卡片漏了 —— 背到这种词就只剩一片空白。
+  // 这里只抽「取译文」和「拼卡片」两件事，判断和后续动作留在各自那边：
+  // 划词卡要重新量尺寸摆位置、生词本要保住黄色笔记卡、背单词卡片连输入框都放不了，
+  // 硬塞进 wbDefHTML 得传三套回调进去，反而更乱。
+  var trWordCache={},trWordPend={},TRTMO=20000;
+  // 大小写不并成一条：Lorentzian（人名派生）和 lorentzian 该给的译文本来就不一样。
+  // AI 那档还要把 provider/模型带上，换了模型不该还端出旧模型的译文。
+  function trWordKey(w){return String(w||"")+"@"+trLang+"@"+trEngine+
+    ((trEngine==="ai")?("@"+aiProvider+"/"+(aiProvider==="ollama"?ollamaModel:apiModel)):"");}
+  function trOffline(){                        // 本地模型、本地 Ollama 断网照样能跑，别一刀切
+    if(navigator.onLine!==false)return false;
+    if(trEngine==="local")return false;
+    if(trEngine==="ai"&&aiProvider==="ollama")return false;
+    return true;}
+  function trWord(w){                          // → Promise<{text,by}>；失败照抛，各处自己渲染
+    var k=trWordKey(w);
+    if(trWordCache[k])return Promise.resolve(trWordCache[k]);   // 翻过的记住：同一个词第二次不再走网络
+    if(trWordPend[k])return trWordPend[k];                      // 正在翻的，两处同时要也只发一个请求
+    if(trOffline())return Promise.reject(new Error("现在没网"));
+    // 超时不能省：fetch 本身没有默认超时，卡住一次的话 trWordPend 里那条永远不 settle，
+    // 这个词往后在四个界面里都会拿到同一个死 Promise，永远停在「翻译中…」，重试也没用。
+    var p=Promise.race([translateText(w),
+        new Promise(function(_,rej){setTimeout(function(){rej(new Error("翻译超时，再点一次试试"));},TRTMO);})])
+      .then(function(r){
+        // 「Google（AI 不可用：…）」这种是降级来的结果 —— 只是这一次抖了一下。
+        // 存进缓存的话这个词一整场都挂着那行错误标签，还刷不掉。
+        if(!/不可用/.test(r.by||""))trWordCache[k]=r;
+        delete trWordPend[k];return r;},
+        function(e){delete trWordPend[k];throw e;});
+    trWordPend[k]=p;return p;}
+  function trCached(w){return trWordCache[trWordKey(w)]||null;}   // 已经翻好的（自动收藏时拿来当草稿）
+  // opt.pick=false → 不给「点一下换引擎」那个入口（背单词卡片上放不了，见 showFlash 那边的说明）
+  // opt.src=false  → 不再重复一遍原词（生词本、背单词卡片上，词就在正上方）
+  function trCardHTML(w,tr,opt){
+    opt=opt||{};
+    var head=(opt.pick===false)?('<span class="dict-src">翻译 · '+esc(tr.by)+'</span>')
+      :('<span class="dict-src trpick" data-trpick="'+esc(w)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span>');
+    return '<div class="dict-card"><div class="dict-card-top">'+head+'</div>'+
+      '<div class="rd-tr">'+esc(tr.text)+'</div>'+
+      ((opt.src===false)?'':('<div class="rd-tr-src">'+esc(w)+'</div>'))+'</div>';}
+  async function trFillFB(w,fb){               // 查词页专用：往刚插进页面的那个空壳里填
+    var tr=null,err=null;
+    try{tr=await trWord(w);}catch(e){err=e;}
+    // 认元素，不认 id：等翻译的工夫要是又查了别的词，box.innerHTML 已经整块重写过，
+    // 新壳的 id 一模一样 —— 按 id 去找会找到人家的壳，把上一个词的译文写进这个词的卡里。
+    if(!fb||!fb.isConnected)return null;
+    fb.innerHTML=tr?('<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w)+
+        '" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
+        '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w)+'</div>')
+      :('<div class="dict-hint">翻译失败：'+esc(String(err&&err.message||err))+'</div>');
+    return tr;}
   async function toggleWbItem(item){if(!item)return;var def=item.querySelector(".wb-def");if(!def)return;
     if(!def.hasAttribute("hidden")){def.setAttribute("hidden","");item.classList.remove("open");return;}
     if(!def.getAttribute("data-loaded")){
@@ -9552,9 +9608,8 @@ margin-left: -22px;
       if(!def.querySelector(".dict-card:not(.mynote)")){
         var mine=def.querySelector(".dict-card.mynote"),keep=mine?mine.outerHTML:"";   // 自己写的解释留着，别被翻译顶掉
         def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译中…</div>';
-        try{var tr=await translateText(w);
-          def.innerHTML=keep+'<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
-            '<div class="rd-tr">'+esc(tr.text)+'</div></div>';}
+        try{var tr=await trWord(w);
+          def.innerHTML=keep+trCardHTML(w,tr,{src:false});}   // 词就在这一行的标题上，不用再写一遍
         catch(e){def.innerHTML=keep+'<div class="dict-hint">词典没收录，翻译也失败了</div>';}
         if(!keep)def.innerHTML+='<div class="rd-mine"><button class="dict-add" data-note="'+esc(w)+'">✎ 自己写释义</button>'+
           '<span>词典没有这个词，写下来的解释会顶在最上面，背诵时也看得到</span></div>';}
@@ -9891,7 +9946,10 @@ margin-left: -22px;
           openBuild(LVORD.slice(Math.max(0,idx),Math.min(LVORD.length,idx+2)));});});
     },function(e){b.innerHTML='<div class="wt-note">读取失败：'+esc(String(e&&e.message||e))+'</div>';});}
 
-  var flashDone=0,flashRevealed=false,flashStart=0;
+  // flashSeq：每渲染一张卡就 +1。查词典和翻译都是异步的，跳过/评分又都是同步就换下一张 ——
+  // 没有它的话，慢的那一趟回来会把上一个词的内容糊到当前这张卡上（查不到的词要把每个词形
+  // 变体 × 每本词典都问一遍 IndexedDB，几乎必然比查得到的那次晚回来）。
+  var flashDone=0,flashRevealed=false,flashStart=0,flashSeq=0;
   function hhmm(t){var d=new Date(t);return pad(d.getHours())+":"+pad(d.getMinutes());}
   function endStudySession(){                       // 结束一轮：记时长，按设置写入日历
     if(!flashStart)return;
@@ -9974,7 +10032,7 @@ margin-left: -22px;
   async function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
       ttAlert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
-    var x=srsInit(flashArr[flashIdx]),word=x.disp||x.w;
+    var x=srsInit(flashArr[flashIdx]),word=x.disp||x.w,seq=++flashSeq;
     flashRevealed=false;flashProgress();
     document.getElementById("flash-word").innerHTML=esc(word)+'<button class="fw-spk" id="flash-spk" title="朗读">🔊</button>';
     document.getElementById("flash-spk").onclick=function(e){e.stopPropagation();pronounce(word,isCJK(word));};
@@ -9983,10 +10041,32 @@ margin-left: -22px;
     var def=document.getElementById("flash-def");
     def.className="flash-def blurred";
     def.innerHTML='<div class="dict-hint">加载释义…</div>';
-    def.innerHTML=await wbDefHTML(x.w);
+    var defHTML=await wbDefHTML(x.w);
+    if(seq!==flashSeq)return;           // 等词典的工夫已经翻页了：这一趟整个作废，一个 DOM 都别碰
+    def.innerHTML=defHTML;
     def.scrollTop=0;                    // 换词了，中间那段滚回顶上，别停在上一个词的半截
     document.getElementById("flash-btns").innerHTML='<button class="gb g2" id="flash-reveal" style="grid-column:1/-1">显示释义 <small>空格</small></button>';
-    document.getElementById("flash-reveal").onclick=revealFlash;}
+    document.getElementById("flash-reveal").onclick=revealFlash;
+    // 词典没收录（Lorentzian 这种学术词、专有名词）→ 用翻译顶上，别让卡片空着。
+    // 判定要看「有没有真正的词典卡」：光判有没有内容不行 —— 你自己写的黄色笔记卡
+    // 也是内容，可词典其实还是没查到。另外三处兜底也是这么判的。
+    // 放在按钮之后：翻译要走一趟网络，「显示释义」不该跟着一起等。
+    if(!def.querySelector(".dict-card:not(.mynote)")){
+      var mine=def.querySelector(".dict-card.mynote"),keep=mine?mine.outerHTML:"";   // 自己写的解释留着，别被翻译顶掉
+      def.innerHTML=keep+'<div class="dict-hint" id="flash-trwait">词典没收录，翻译中…</div>';
+      var tr=null,terr=null;
+      try{tr=await trWord(x.disp||x.w);}catch(e){terr=e;}
+      if(seq!==flashSeq)return;                              // 同上：翻译慢，人已经翻到下一个词了
+      // 只换「翻译中…」这一个节点，不重写整块 —— 上面那张黄色笔记是能当场点开改的，
+      // 整块重写会把刚敲进去还没保存的字吞掉。
+      var wait=document.getElementById("flash-trwait");
+      if(!wait)return;
+      // 卡片上不给「换引擎」那个入口：菜单开着时按 1-4 会给背后这张卡打分、Esc 会关掉整个面板。
+      // 词就在正上方大字写着，也不用在译文底下再重复一遍。
+      wait.outerHTML=tr?trCardHTML(x.disp||x.w,tr,{pick:false,src:false})
+        :('<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(terr&&terr.message||terr))+
+          (keep?'':'（可以在生词本里展开这个词，点「✎ 自己写释义」补一条）')+'</div>');
+      def.scrollTop=0;}}
   function revealFlash(){
     if(flashRevealed)return;flashRevealed=true;
     var x=flashArr[flashIdx];
@@ -10012,7 +10092,8 @@ margin-left: -22px;
     var x=flashArr[flashIdx];if(!x)return;
     x.mastered=true;x.due=Date.now()+365*DAY;saveWords();
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
-  function closeFlash(){stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
+  function closeFlash(){flashSeq++;   // 关掉了：还在路上的查词/翻译作废，别往已经收起来的卡片上写
+    stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   // 这两个以前是 catch(e){} 全吞。绑定挂了的话，按钮就是死的，而且一点线索都没有。
   try{bindRec();}catch(e){console.error("录音页绑定失败",e);}
@@ -10416,6 +10497,7 @@ margin-left: -22px;
       var body=card.querySelector(".rd-tr");if(body)body.textContent="重翻中…";
       translateText(txt).then(function(r){
         if(body)body.textContent=r.text;
+        try{if(!/不可用/.test(r.by||""))trWordCache[trWordKey(txt)]=r;}catch(e){}   // 换了引擎重翻的结果也存一份，别下次又端出旧的
         t.textContent="翻译 · "+r.by;t.setAttribute("data-trpick",txt);},
         function(err){if(body)body.textContent="翻译失败："+String(err&&err.message||err);});});
   },true);
@@ -12707,13 +12789,14 @@ margin-left: -22px;
       var w0=rdPopWord.disp,mine=mineBtnHTML(me.w,me.disp);
       bd.innerHTML='<div class="dict-hint">词典没收录，正在翻译，请稍等…</div>';
       applyPopSize(true);placeRdPop(rect);
-      try{var tr=await translateText(w0);
-        bd.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w0)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
-          '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w0)+'</div></div>'+mine;
+      try{var tr=await trWord(w0);
+        if(rdPopWord!==me)return;                            // 翻译慢，这中间又划了别的词：别写串，也别把窗口拽回上一个词
+        bd.innerHTML=trCardHTML(w0,tr)+mine;
         if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)&&!trashHas(me.w)){   // 开了自动收藏：查不到的也收
           addUnknownWord(me.w,me.disp,tr.text);
           star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}}
-      catch(err){bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>'+mine;}
+      catch(err){if(rdPopWord!==me)return;
+        bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>'+mine;}
       applyPopSize(false);placeRdPop(rect);}
     rdPopIdle(6000);}
   // ===== 阅读标注：高亮 / 下划线 / 加粗 =====
@@ -17250,10 +17333,24 @@ margin-left: -22px;
         var inp=document.getElementById("dict-q");if(inp)inp.value=w;
         return doLookup(w);
       }).then(function(){
-        var found=!!document.querySelector("#dict-result .dict-card");
+        // #dict-fallback 是翻译卡的空壳（在 await 之前就插进页面了），.mynote 是你自己写的笔记卡 ——
+        // 这两个都不算「词典查到了」。原来的判断把它们也算上，于是 found 恒为真，
+        // 「没找到」这句只在一本词典都没装时才出现过，语义整个是错位的。
+        var found=!!document.querySelector("#dict-result .dict-card:not(.mynote):not(#dict-fallback)");
+        var lw=(w||"").toLowerCase(),inWb=false;
         if(auto&&found){var a=document.querySelector("#dict-result .dict-add");
-          if(a&&!a.classList.contains("saved"))a.click();}
-        if(note)note.textContent=found?(auto?"「"+w+"」已加入生词本 ✓":"「"+w+"」"):"没找到「"+w+"」";
+          // 已经是 saved 的（设置里开了「查词后自动加入生词本」，doLookup 里就收好了）也算数 ——
+          // 只认「这一下有没有点成」的话，那句 ✓ 反而永远不出现。
+          if(a){if(!a.classList.contains("saved"))a.click();inWb=true;}}
+        // 查不到的词以前一律哑火（那张兜底卡上根本没有 .dict-add 按钮可点）。
+        // wordIssue 挡数字/网址/超长串，trashHas 挡「删过的别再自动收」，两道都不能省。
+        else if(auto&&!found){
+          if(isSaved(lw))inWb=true;                          // doLookup 那边的自动收藏已经收过了
+          else if(!wordIssue(w)&&!trashHas(lw)){
+            var td=trCached(w)||trCached(lw);                // 刚翻好的译文顺手当草稿，别存个空的
+            try{addUnknownWord(lw,w,(td&&td.text)||"");inWb=true;}catch(e){}}}
+        if(note)note.textContent=inWb?("「"+w+"」已加入生词本 ✓"):
+          (found?("「"+w+"」"):("词典没收录「"+w+"」，给你翻译了"));
       });
       return;
     }
