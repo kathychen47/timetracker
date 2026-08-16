@@ -4540,8 +4540,34 @@ margin-left: -22px;
       '导出 JSON 备份，再清掉一部分。</div>'+
       '<button type="button">知道了</button>';
     el.querySelector("button").onclick=function(){el.remove();};}
+  // ---- tt_events 不整盘覆盖，按条合并 ----
+  // 它是整个数组一把写的：两个网页、或者两台设备，谁后写谁说了算。
+  // 番茄钟刚记的那条要是只在先写的那份里，就这么没了 —— 黑匣子显示「落库:成功」，
+  // 回头日历上却找不到，走的就是这条路（云端旧数据在下次打开时整盘盖回来）。
+  // 好在 uid() 的前缀就是创建时刻：对方那份里没有的事件，
+  // 生在对方写盘之后 → 是新记录，捡回来；生在之前 → 是对方删掉的，尊重删除，不还魂。
+  function evBorn(e){try{var t=parseInt(String((e&&e.id)||"").slice(0,-5),36);
+    return (t>15e11&&t<Date.now()+864e5)?t:0;}catch(err){return 0;}}
+  function evMergeInto(base,extra,cutMs){        // 把 extra 里「base 没有、又生在 cutMs 之后」的捡进 base，返回捡了几条
+    if(!Array.isArray(base)||!Array.isArray(extra)||!isFinite(cutMs))return 0;
+    var has={},got=0;base.forEach(function(e){if(e&&e.id)has[e.id]=1;});
+    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&evBorn(e)>cutMs){base.push(e);got++;}});
+    return got;}
+  // 同一台机器开着两个网页：A 刚记完番茄钟，B 拿着旧内存随手一存（勾个待办、挪个事件）
+  // 就把那条顶掉了。写盘前把盘上「比我上次对账更新」的事件捡回来，新增永远不丢。
+  var evSyncAt=Date.now();
+  function mergeEventsFromDisk(v){
+    try{
+      var disk=JSON.parse(LS.getItem("tt_events")||"[]");
+      var got=evMergeInto(v,disk,evSyncAt);
+      if(got){try{pLog("写盘前捡回被覆盖的事件",{n:got});}catch(e){}
+        try{if(state.tab==="calendar")renderCal();}catch(e){}}
+    }catch(e){}
+    evSyncAt=Date.now();
+    return v;}
   function save(k,v){
     if(SOLO&&SOLO_SKIP[k])return true;
+    if(k==="tt_events")try{mergeEventsFromDisk(v);}catch(e){}
     try{LS.setItem(k,JSON.stringify(v));}
     catch(e){try{lsWarn(k);}catch(_e){}return false;}
     schedulePush(k);return true;}
@@ -8420,18 +8446,53 @@ margin-left: -22px;
       else as.textContent="还没登录。点上面按钮用 Google 登录 —— 云同步和 Google 日历一次搞定。";}}
   function schedulePush(key){if(SOLO||applyingCloud||!SB||!sbUser)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
+  // updated_at 是推送那台设备的电脑时钟写的，两台设备差几分钟很正常 —— 宁可多留，不可错删
+  var PULL_SKEW=600000;
   function pushCloud(){if(!SB||!sbUser)return;sbStatus("上传中…");
-    SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()}).then(function(r){
-      if(r.error)sbStatus("上传失败："+r.error.message,true);else sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");
+    // 先看一眼云端再写 —— 那里可能有别的设备刚推上去的新事件，闭着眼 upsert 会把它们顶掉。
+    // 云端有、本机没有、又生在「我上次和云端对账」之后的，捡进这次要推的包里一起上去。
+    SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){
+      var blob=collectBlob();
+      try{
+        var cev=r&&r.data&&r.data.data&&r.data.data.tt_events;
+        var got=evMergeInto(blob.tt_events,cev,(+load("tt_pullat",0)||0)-PULL_SKEW);
+        if(got){try{LS.setItem("tt_events",JSON.stringify(blob.tt_events));}catch(e){}
+          try{pLog("推送前捡回云端的事件",{n:got});}catch(e){}
+          try{events=load("tt_events",events)||events;renderCal();}catch(e){}}
+      }catch(e){}
+      return SB.from("states").upsert({user_id:sbUser.id,data:blob,updated_at:new Date().toISOString()});
+    },function(){   // 云端读不到（断网那种）：按老样子直接推，别把改动闷在本机
+      return SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()});
+    }).then(function(r){
+      if(!r)return;
+      if(r.error)sbStatus("上传失败："+r.error.message,true);
+      else{try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}   // 推完云端==本机，对账时间从现在算
+        sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");}
     },function(err){sbStatus("上传失败："+String(err),true);});}
   // 拉下来写不进去也要喊 —— 原来是静默 catch，结果是「同步 ✓」显示成功，
   // 实际有几个键根本没落地，页面上却是从内存渲染的，看不出来。
-  function applyCloud(obj){var bad=[];
+  function applyCloud(obj,cloudAt){var bad=[];
+    // 云端那份 tt_events 可能比本机旧（上次推送没来得及就关了页面 / 推送失败 /
+    // 另一台设备拿旧数据顶掉了云端）。整盘照抄会把本机刚记的事件抹掉 ——
+    // 「番茄钟结束时日历上明明有，后来没了」就是这条路。
+    // 合并规则：同一条以云端为准（别的设备改过的要生效）；
+    // 本机独有、且生在云端那份写盘之后的，是还没来得及上云的新记录，捡回来。
+    try{
+      if(Array.isArray(obj.tt_events)){
+        var ct=cloudAt?new Date(cloudAt).getTime():NaN;
+        if(!isFinite(ct))ct=Date.now()-7*864e5;      // 没拿到 updated_at 就退一步：最近一周的本机新增都留下
+        var local=JSON.parse(LS.getItem("tt_events")||"[]");
+        var got=evMergeInto(obj.tt_events,local,ct-PULL_SKEW);
+        if(got)try{pLog("拉取时捡回本机的事件",{n:got});}catch(e){}
+      }
+    }catch(e){}
     CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){
       try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){bad.push(k);}}});
+    try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}
     if(bad.length)try{lsWarn(bad[0]);}catch(e){}}
   function reloadAllFromStorage(){
-    events=load("tt_events",[])||[];todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
+    events=load("tt_events",[])||[];evSyncAt=Date.now();   // 内存刚跟盘对齐，写盘合并的「上次对账」从现在起算
+    todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
@@ -8444,9 +8505,11 @@ margin-left: -22px;
     try{renderCatSettings();refreshCatSelects();}catch(e){}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
-    SB.from("states").select("data").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
+    SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
-      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data);reloadAllFromStorage();applyingCloud=false;reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
+      if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data,r.data.updated_at);reloadAllFromStorage();applyingCloud=false;
+        schedulePush();                     // 拉取时捡回过本机事件的话，得推一次让云端也补上；没捡回就是白推一次，不亏
+        reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
       else{pushCloud();}
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
