@@ -1478,9 +1478,17 @@
   /* flash card */
   /* 窗口能拖大：resize 要生效，overflow 不能是 visible。--fz 是这张卡自己的字号倍数，
      卡里的字号全用 em 跟着它走，所以调一个数就整卡一起变。 */
-  .flash-card{position:relative;background:var(--surface);border-radius:18px;width:min(94vw,600px);max-height:88vh;
-    overflow:auto;padding:22px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.3);
-    resize:both;min-width:300px;min-height:260px;max-width:98vw;font-size:calc(15px * var(--fz,1))}
+  /* 大小固定，不跟着释义长短变 —— 以前整张卡 overflow:auto，遇到牛津那种长词条，
+     「忘记 / 模糊 / 认识 / 简单」被顶到屏幕外面，得先滚到底才能评分。
+     现在是竖着的 flex：上面词头、下面按钮都钉住，只有中间释义那段自己滚。
+     尺寸对齐设置弹窗（880px / 92vh 那一档）。 */
+  .flash-card{position:relative;background:var(--surface);border-radius:18px;
+    width:min(94vw,860px);height:min(88vh,820px);
+    display:flex;flex-direction:column;
+    overflow:hidden;padding:22px 24px 20px;box-shadow:0 20px 60px rgba(0,0,0,.3);
+    resize:both;min-width:300px;min-height:260px;max-width:98vw;max-height:94vh;font-size:calc(15px * var(--fz,1))}
+  .flash-card>.fp-bar,.flash-card>.flash-prog,.flash-card>.flash-word,
+  .flash-card>.flash-tip,.flash-card>.flash-btns,.flash-card>.flash-extra{flex:none}
   /* 右下角给个看得见的抓手，不然没人知道能拖 */
   .flash-card::after{content:"";position:absolute;right:3px;bottom:3px;width:12px;height:12px;pointer-events:none;
     border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);opacity:.4;border-radius:0 0 4px 0}
@@ -1498,8 +1506,13 @@
   .flash-word{font-size:2.13em;font-weight:700;text-align:center;margin-bottom:4px;word-break:break-word}
   .flash-word .fw-spk{border:1px solid var(--border);background:var(--surface-2);border-radius:9px;font-size:1em;padding:2px 9px;cursor:pointer;vertical-align:middle;margin-left:8px}
   .flash-tip{text-align:center;color:var(--muted);font-size:.83em;margin-bottom:10px}
-  .flash-def{border-top:1px solid var(--border);margin-top:12px;padding-top:14px;overflow-y:auto}
-  .flash-def.blurred{filter:blur(8px);cursor:pointer;user-select:none;max-height:180px;overflow:hidden}
+  /* 中间这段就是那根滑杆：占满剩下的高度，自己滚。min-height:0 必须写 ——
+     flex 子项默认不肯缩到内容以下，不写的话它照样把按钮顶出去。 */
+  .flash-def{border-top:1px solid var(--border);margin-top:12px;padding-top:14px;
+    flex:1 1 auto;min-height:0;overflow-y:auto}
+  /* 盖住答案时不再限高 180px：卡片高度已经固定，让它把中间填满，
+     揭开答案时按钮不会往下跳一格 */
+  .flash-def.blurred{filter:blur(8px);cursor:pointer;user-select:none;overflow:hidden}
   .flash-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
   .flash-btns .gb{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:11px;
     padding:10px 6px;cursor:pointer;font-family:inherit;font-size:.9em;font-weight:600;line-height:1.35;text-align:center}
@@ -9971,6 +9984,7 @@ margin-left: -22px;
     def.className="flash-def blurred";
     def.innerHTML='<div class="dict-hint">加载释义…</div>';
     def.innerHTML=await wbDefHTML(x.w);
+    def.scrollTop=0;                    // 换词了，中间那段滚回顶上，别停在上一个词的半截
     document.getElementById("flash-btns").innerHTML='<button class="gb g2" id="flash-reveal" style="grid-column:1/-1">显示释义 <small>空格</small></button>';
     document.getElementById("flash-reveal").onclick=revealFlash;}
   function revealFlash(){
