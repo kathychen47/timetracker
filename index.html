@@ -4421,8 +4421,10 @@ margin-left: -22px;
           <div class="set-desc" style="margin-top:4px">在书里高亮或划线一段话，自动用<b>下面选的引擎</b>翻译，结果直接存进右侧笔记栏（卡片上带 🌐 译 标记，可以再编辑）。</div>
         </div>
         <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">翻译成</div></div>
+          <div class="set-row-txt"><div class="set-row-t">翻译成</div>
+            <div class="set-desc">「中⇄英 自动」按这段话本身是什么语言定方向：中文多就翻成英文，英文多就翻成中文 —— 不会再出现「输入中文、译文还是那段中文」。</div></div>
           <select id="tr-lang">
+            <option value="auto">中⇄英 自动（推荐）</option>
             <option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option>
             <option value="en">English</option><option value="ja">日本語</option>
             <option value="ko">한국어</option><option value="fr">français</option>
@@ -9625,7 +9627,7 @@ margin-left: -22px;
   var trWordCache={},trWordPend={},TRTMO=20000;
   // 大小写不并成一条：Lorentzian（人名派生）和 lorentzian 该给的译文本来就不一样。
   // AI 那档还要把 provider/模型带上，换了模型不该还端出旧模型的译文。
-  function trWordKey(w){return String(w||"")+"@"+trLang+"@"+trEngine+
+  function trWordKey(w){return String(w||"")+"@"+trTL(w)+"@"+trEngine+   // 自动判断时按真正翻成的那个语言记，别混着存
     ((trEngine==="ai")?("@"+aiProvider+"/"+(aiProvider==="ollama"?ollamaModel:apiModel)):"");}
   function trOffline(){                        // 本地模型、本地 Ollama 断网照样能跑，别一刀切
     if(navigator.onLine!==false)return false;
@@ -10377,8 +10379,22 @@ margin-left: -22px;
     document.addEventListener("click",function(e){var b=e.target.closest(".dict-def .box_title,.dict-def .heading,.dict-def pnc");if(b){var u=b.closest(".unbox");if(u){u.classList.toggle("is-active");e.preventDefault();}}});}
 
   // ---------- 翻译（整句） ----------
-  var trEngine=load("tt_trengine","google"),trLang=load("tt_trlang","zh-CN");
-  var LANGN={"zh-CN":"简体中文","zh-TW":"繁體中文","en":"English","ja":"日本語","ko":"한국어","fr":"français","de":"Deutsch","es":"español"};
+  var trEngine=load("tt_trengine","google"),trLang=load("tt_trlang","auto");
+  var LANGN={"auto":"中⇄英 自动","zh-CN":"简体中文","zh-TW":"繁體中文","en":"English","ja":"日本語","ko":"한국어","fr":"français","de":"Deutsch","es":"español"};
+  // 老用户存的是 zh-CN —— 那是以前唯一的默认值，多半不是特意选的。
+  // 中文翻成中文本来就是空转（输入一段中文，译文原样吐回来），换成自动判断不会有任何一种情况变差。
+  // 只迁一次，之后你自己再选回简体中文就一直是它。
+  if(!load("tt_trlangv2",false)){save("tt_trlangv2",true);
+    if(trLang==="zh-CN"){trLang="auto";save("tt_trlang",trLang);}}
+  // 「中⇄英 自动」：按这段文字自己定方向 —— 中文字数比英文单词数多就是中文，翻成英文；反之翻成中文。
+  // 比的是「中文字数 vs 英文单词数」而不是字符数：中文一个字≈英文一个词，
+  // 按字符比的话，夹着几条 \cite{Zernike_1942_Phaseb} 的中文段落会被判成英文。
+  function trTL(text){
+    if(trLang!=="auto")return trLang;
+    var s=String(text||"");
+    var cjk=(s.match(/[㐀-鿿豈-﫿]/g)||[]).length;
+    var en=(s.match(/[A-Za-z]+/g)||[]).length;
+    return cjk>en?"en":"zh-CN";}
   // 这个接口是 Google 翻译网页自己用的那个，不用 key、不计费，所以没有"配额"可查；
   // 但它按 IP 限速 —— 发猛了就 429/503，隔一阵才恢复。得认出来，别当成普通错误。
   function isRateErr(e){return !!(e&&e.rate);}
@@ -10572,7 +10588,7 @@ margin-left: -22px;
         function(err){if(body)body.textContent="翻译失败："+String(err&&err.message||err);});});
   },true);
   function translateText(text){
-    var tl=trLang,name=LANGN[tl]||tl;
+    var tl=trTL(text),name=LANGN[tl]||tl;
     if(trEngine==="local"){
       return trLocal([String(text)],tl).then(function(r){
         if(!r[0])throw new Error("本地模型没给出译文");
@@ -12448,7 +12464,7 @@ margin-left: -22px;
     }).then(function(){return out;});}
   function translateBlocks(texts,onp){
     if(!texts.length)return Promise.resolve([]);
-    var tl=trLang;
+    var tl=trTL(texts.slice(0,20).join("\n"));   // 抽前 20 段判方向：整本书的语言是一致的，不用全扫
     // 本地模型没有配额，所以整本书这种大批量它最合适 —— 慢，但不会翻到一半被拦
     if(trEngine==="local")return trLocal(texts,tl,onp).catch(function(){return trGoogle(texts,tl,onp);});
     if(trEngine==="mymemory")return seqRun2(texts,function(t){return myMemory(t,tl);}).catch(function(){return trGoogle(texts,tl,onp);});
