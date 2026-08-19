@@ -14725,7 +14725,8 @@ margin-left: -22px;
     box.innerHTML='<div class="tx-tbl"><h4>收入记录 · '+rows.length+' 笔</h4><div class="tx-scroll"><table>'+
       '<thead><tr><th>日期</th><th class="num">实收</th><th class="num">税前收入</th><th class="num">PAYE</th><th class="num">ACC</th><th class="num">GST</th><th class="num">到手</th><th>付款方</th><th></th></tr></thead><tbody>'+
       r2.map(function(c){
-        return '<tr data-id="'+c.id+'"><td>'+esc(c.date)+(c.gstIncluded?'<span class="tx-gst">含GST</span>':'')+'</td>'+
+        return '<tr data-id="'+c.id+'"><td>'+esc(c.date)+(c.gstIncluded?'<span class="tx-gst">含GST</span>':'')+
+          (c.gstTodo?'<span class="tx-gst" style="color:#B4720B;background:#FFF1DC">GST 待定</span>':'')+'</td>'+
           '<td class="num">'+txMoney(c.gross)+'</td><td class="num">'+txMoney(c.inc)+'</td>'+
           '<td class="num" style="color:'+TXC.tax+'">'+txMoney(c.mTax)+'</td>'+
           '<td class="num" style="color:'+TXC.acc+'">'+txMoney(c.mAcc)+'</td>'+
@@ -14829,7 +14830,9 @@ margin-left: -22px;
     b.querySelector("#tx-f-save").addEventListener("click",function(){
       var d=b.querySelector("#tx-f-date").value,g=parseFloat(b.querySelector("#tx-f-gross").value);
       if(!d||isNaN(g)||g<=0){b.querySelector("#tx-f-msg").textContent="日期和金额要填对";return;}
-      var o={date:d,gross:g,gstIncluded:b.querySelector("#tx-f-gst").checked,
+      // gstTodo 必须显式清掉：下面是 Object.assign 覆盖，o 里没有这个字段的话，
+      // 旧值会原样留着 —— 你明明已经把 GST 勾好了，那个「待定」标记还挂在那儿。
+      var o={date:d,gross:g,gstIncluded:b.querySelector("#tx-f-gst").checked,gstTodo:0,
         payer:b.querySelector("#tx-f-payer").value.trim(),note:b.querySelector("#tx-f-note").value.trim()};
       if(isEdit)taxRecs=taxRecs.map(function(x){return x.id===rec.id?Object.assign({},x,o):x;});
       else taxRecs.push(Object.assign({id:uid()},o));
@@ -14976,7 +14979,9 @@ margin-left: -22px;
     grocery:["new world","countdown","woolworths","pak'nsave","paknsave","pak n save","four square","freshchoice","fresh choice","supervalue","moore wilson","night owl","farro","huckleberry","bin inn","costco","tai ping","dairy",
       "butcher","grocer","greengrocer","food market","asian food","produce","growers","fruit","vege","veggie","seafood","fishmonger","meat market","deli","supermarket"," meat","meat ","sunson","yubuy","orchard","darlings","ken's mart","kens mart","big t asian","jrn asian","asian mart","asian grocer"],
     food:["mcdonald","kfc","burger","subway","starbucks","cafe","café","coffee","restaurant","uber eats","ubereats","doordash","domino","pizza","sushi","bakery","wendy","nando","dumpling","noodle","tavern","kebab","bubble tea","chatime","gong cha","eatery","bistro","dining","takeaway","hell ","old street","hotpot","ramen","dim sum","yum cha","charcoal","grill","canteen","seoul mate","seoulmate","makan","chahao","bubble","boba","korean","japanese","thai ","vietnam","malaysia"],
-    transport:["z energy","bp connect","bp2go","mobil","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
+    // "mobil" 后面那个空格不能省：不带空格的话它会吃掉 "2DEGREES MOBILE"、
+    // "ONE NZ MOBILE"、"SKINNY MOBILE" —— 而交通排在通讯前面，手机费就全被判成加油。
+    transport:["z energy","bp connect","bp2go","mobil ","caltex","gull ","waitomo","at hop","snapper","bee card","metlink","uber","ola ","zoomy","parking","care park","secure park","air new zealand","jetstar","intercity","mevo","cityhop","vtnz","nzta","warrant of fitness","repco","supercheap auto"],
     // 银行摘要会截断商户名（"Holmwood Property Management" → "Holmwood Property Ma"），
     // 所以关键词要用短的、截不掉的那截："property" 而不是 "property manag"。
     // 同理 "Spark Billing" 命中不了 "spark nz"。
@@ -15247,6 +15252,20 @@ margin-left: -22px;
     if(t&&t.merchant)return String(t.merchant).toLowerCase().trim();
     var s=String(t&&t.desc||"").toLowerCase().trim();
     return s.split(/\s+/).filter(Boolean).slice(0,2).join(" ");}
+  // 按付款人规则自动记税。新流水进来（同步/导入/手记）时跑一遍。
+  // 只认 mnTaxable 那套闸（NZD、进账、非转账、在指定的税务账户上），
+  // 再叠一道：这个付款人得设过 auto。已经记过的（t.tax）不重复记。
+  function mnAutoTax(list){
+    var done=0;
+    (list||[]).forEach(function(t){
+      if(!t||t.tax||!mnTaxable(t))return;
+      var r=mnPayerTax(t);
+      if(!r||!r.auto)return;
+      if(mnTaxRecOf(t))return;                 // 保险：税务页已经有这一条了
+      mnAddTaxRec(t,!!r.gst,false);done++;});
+    return done;}
+  // 存量回填：规则是后设的，之前那些流水补不上 —— 同步对已存在的记录直接 early return。
+  function mnAutoTaxAll(){return mnAutoTax(mnTxns);}
   function mnGuess(t){
     var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
     // 1) 你自己加的规则 —— 内置表永远猜不到「房东 Mike」这种
@@ -15328,7 +15347,7 @@ margin-left: -22px;
           (o.j&&o.j.detail?(" <span style='opacity:.7'>("+esc(String(o.j.detail).slice(0,120))+")</span>"):""),true);
         return;}
       if(o.j.accounts&&o.j.accounts.length){mnCfg.accts=o.j.accounts;}
-      var byId={},add=0,early=0;
+      var byId={},add=0,early=0,fresh=[];
       mnTxns.forEach(function(t){byId[t.id]=t;});
       (o.j.txns||[]).forEach(function(t){
         var old=byId[t.id];
@@ -15341,11 +15360,14 @@ margin-left: -22px;
         // 这道闸每次同步都在，不只是第一次。
         if(mnCfg.since&&t.d<mnCfg.since){early++;return;}
         t.src="akahu";t.cat=mnGuess(t);
-        mnTxns.push(t);byId[t.id]=t;add++;});
+        mnTxns.push(t);byId[t.id]=t;add++;fresh.push(t);});
       mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
       mnCfg.lastSync=Date.now();
+      var autoN=mnAutoTax(fresh);              // 设过「以后都自动记税」的付款人，进账当场记进税务
       mnSave();save("tt_mncfg",mnCfg);
+      if(autoN)try{renderTax();}catch(e2){}
       mnStatus("同步完成：新增 <b>"+add+"</b> 笔"+
+        (autoN?("，其中 <b>"+autoN+"</b> 笔按规则记进了税务"):"")+
         (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
         (o.j.truncated?"（历史太长没拉完，分段再拉一次）":"")+
         " · 上次 "+mnAgo(mnCfg.lastSync));
@@ -15452,7 +15474,7 @@ margin-left: -22px;
     var H=mnCsvHead(rows);
     if(!H){if(!quiet)mnStatus("认不出表头 —— 需要有「日期/时间」和「金额」两列。",true);
       return {bad:-1,add:0,dup:0,bankDup:0,early:0,curs:{}};}
-    var have={};mnTxns.forEach(function(t){have[t.id]=1;});
+    var have={},fresh=[];mnTxns.forEach(function(t){have[t.id]=1;});
     var ix=mnAkahuIx();
     var add=0,early=0,bad=0,dup=0,bankDup=0,curs={},batch={};
     for(var i=H.row+1;i<rows.length;i++){
@@ -15490,10 +15512,12 @@ margin-left: -22px;
       // 「类型」列如果明说是转账/理财，直接照它定，不用猜
       var forced=H.type>=0?mnTypeCat(r[H.type]):"";
       t.cat=forced||mnGuess(t);
-      mnTxns.push(t);have[id]=1;add++;}
+      mnTxns.push(t);have[id]=1;add++;fresh.push(t);}
     mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
+    var autoN=mnAutoTax(fresh);                 // 设过规则的付款人，导进来就直接记进税务
     mnSave();
-    var st={add:add,dup:dup,bankDup:bankDup,early:early,bad:bad,curs:curs,lo:ix.lo};
+    if(autoN)try{renderTax();}catch(e2){}
+    var st={add:add,dup:dup,bankDup:bankDup,early:early,bad:bad,curs:curs,lo:ix.lo,autoTax:autoN};
     if(!quiet){mnStatus(mnImportMsg(st));mnRender();}
     return st;}
   function mnImportMsg(st,nf){
@@ -15646,6 +15670,26 @@ margin-left: -22px;
     var pm=d.getFullYear()+"-"+mnP2(d.getMonth()+1);
     return [pm+"-01",pm+"-"+mnP2(new Date(d.getFullYear(),d.getMonth()+1,0).getDate())];}
   function mnInSpan(t,sp){var d=String(t&&t.d||"");return d>=sp[0]&&d<=sp[1];}
+  // 「这笔能不能记进税务」以前内联写在行模板里，自动记税要用同一套判定，
+  // 抽出来共用 —— 两份判定迟早会分叉。
+  // 人民币的收租记进去毫无意义；转账/存款是自己账户之间倒钱，不是收入；
+  // 再加一道账户闸：已经扣过税的 NET PAY 工资记进来会算重。
+  function mnTaxable(t){
+    return !!(t&&t.amt>0&&mnCurOf(t)==="NZD"&&!MN_NEUTRAL[t.cat]
+      &&mnCfg.taxAcct!=="__none"
+      &&(!mnCfg.taxAcct||t.acct===mnCfg.taxAcct));}
+  function mnTaxRecOf(t){                       // 这笔在税务页对应的那条
+    for(var i=0;i<taxRecs.length;i++)if(taxRecs[i].taxFrom===t.id)return taxRecs[i];
+    return null;}
+  function mnGstTodo(t){var r=mnTaxRecOf(t);return !!(r&&r.gstTodo);}
+  // 按付款人的自动规则：{ "Pingping 工资": {auto:1, gst:1} }
+  // 挂在 mnPayer(t) 这个名字上，不是 mnMerchKey —— 后者取摘要前两个词，
+  // 同一个人「CAI,YUELE NZPost / NZP-Michael / Nzp」会裂成三条规则；
+  // 而 mnPayer 内置识别词里本来就有 cai,yuele 和 nzpost，零配置就认得出。
+  function mnPayerTax(t){
+    var m=mnCfg.payerTax||{};
+    var nm=mnPayer(t);
+    return (nm&&m[nm])?m[nm]:null;}
   function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
   // 记完/改完一笔，按现在的筛选它到底看不看得见？看不见就说清是哪一道挡的。
   // 顺序必须和 mnBase / mnFiltered 里的判定一致，不然会怪罪到不相干的那道闸上。
@@ -16124,12 +16168,11 @@ margin-left: -22px;
           // 人民币的收租记进去毫无意义。转账也排除：自己账户之间倒钱不是收入。
           // 再加一道账户闸：已经扣过税的 NET PAY 工资记进税务页会算重，
           // 所以只在你指定的那个「税务账户」上给按钮
-          (t.amt>0&&mnCurOf(t)==="NZD"&&!MN_NEUTRAL[t.cat]
-           &&mnCfg.taxAcct!=="__none"
-           &&(!mnCfg.taxAcct||t.acct===mnCfg.taxAcct)
+          (mnTaxable(t)
             ? ('<button class="tag'+(t.tax?" guess":"")+'" data-tax="'+esc(t.id)+'" title="'+
-               (t.tax?"已经记进税务了，点一下撤回":"把这笔算进税务页的收入")+'">'+
-               (t.tax?"已记税 ✓":"记入税务")+'</button>')
+               (t.tax?(mnGstTodo(t)?"已记税，但 GST 还没定 —— 点一下撤回重记":"已经记进税务了，点一下撤回")
+                     :"把这笔算进税务页的收入")+'">'+
+               (t.tax?(mnGstTodo(t)?"已记税 · GST 待定":"已记税 ✓"):"记入税务")+'</button>')
             : "")+
           // 折算模式下显示折算值，底下用小字挂上原币金额 ——
           // 只显示折算值的话，你回头核对银行账单会对不上号
@@ -16262,6 +16305,7 @@ margin-left: -22px;
   // （CAI,YUELE NZPost / CAI,YUELE NZP-Michael / CAI,YUELE Nzp），
   // 自动归并只能按前两个词切，切不到一起 —— 只有你知道它们是同一个来源。
   function mnPayerHtml(){
+    var pt=mnCfg.payerTax||{},ptn=Object.keys(pt);
     var pm=mnCfg.payers||{},names=Object.keys(pm);
     // 把这段期间实际出现过的来源列出来，方便照着填
     var seen={};
@@ -16301,6 +16345,20 @@ margin-left: -22px;
       '<input data-paynew placeholder="显示成什么名字，比如「Pingping 工资」">'+
       '<input data-paynewk placeholder="关键词，比如 cai,yuele">'+
       '<button class="btn primary" data-payadd style="padding:5px 12px;font-size:12px">添加</button></div>'+
+      // 自动记税规则：看得见、删得掉。库里已经有个反面教材 —— mnCfg.learned
+      // （商户分类记忆）没有任何界面能查看或撤销，点错一次只能去改 JSON。
+      '<div style="font-size:12.5px;font-weight:600;margin:14px 0 8px">自动记入税务</div>'+
+      (ptn.length?ptn.map(function(nm2){
+        var r=pt[nm2]||{};
+        return '<div class="mn-rule"><span class="nm">'+esc(nm2)+'</span>'+
+          '<span style="flex:1;font-size:12px;color:var(--muted)">进账自动记税 · '+
+            (r.gst?"按<b>含 GST</b>算":"按<b>不含 GST</b>算")+'</span>'+
+          '<button class="btn" data-ptdel="'+esc(nm2)+'" style="padding:4px 9px;font-size:12px">删</button></div>';}).join("")
+        :'<div style="font-size:13px;color:var(--muted);margin-bottom:8px">还没设过。'+
+         '在明细里点某笔的「记入税务」，菜单最下面就能设成「以后都自动记」。</div>')+
+      (ptn.length?('<button class="btn" data-ptfill style="margin-top:6px;padding:5px 12px;font-size:12px">'+
+        '把以前的也补记上</button>'+
+        '<span style="font-size:12px;color:var(--muted);margin-left:8px">规则是后设的，之前那些进账不会自动补</span>'):"")+
       '<div style="font-size:12px;color:var(--muted);margin-top:10px;line-height:1.6">'+
       '摘要里出现这些词就归到这个名字下。改完立刻生效。<br>'+
       (Object.keys(seen).length?('这'+(mnScope==="year"?"年":"个月")+'出现过的来源：<b>'+
@@ -16728,6 +16786,15 @@ margin-left: -22px;
           mnRender();return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
+        var ptd=e.target.closest("[data-ptdel]");
+        if(ptd){var pk2=ptd.getAttribute("data-ptdel");
+          if(mnCfg.payerTax)delete mnCfg.payerTax[pk2];
+          save("tt_mncfg",mnCfg);
+          mnStatus("「"+esc(pk2)+"」的自动记税规则删了 · 已经记进去的不动");mnRender();return;}
+        if(e.target.closest("[data-ptfill]")){
+          var fn=mnAutoTaxAll();
+          mnStatus(fn?("按规则补记了 <b>"+fn+"</b> 笔进税务"):"没有需要补记的 —— 该记的都记过了");
+          mnRender();try{renderTax();}catch(e2){}return;}
         if(e.target.closest("[data-payadd]")){
           var pn=((mnQ("[data-paynew]")||{}).value||"").trim();
           var pk=((mnQ("[data-paynewk]")||{}).value||"").trim();
@@ -16857,6 +16924,7 @@ margin-left: -22px;
       else mnTxns.push(nt);
       mnTxns.sort(function(x,y){return (x.d<y.d)?1:((x.d>y.d)?-1:0);});
       mnSave();
+      if(mnAutoTax([nt]))try{renderTax();}catch(e2){}   // 这个付款人设过规则的话，手记的也自动记税
       // 记完不抢视图。以前这里无条件 mnCur=o.cur —— 你本来在「合计」上看得好好的，
       // 记一笔 CNY 就被踢到 CNY 那一档去了。合计根本不挑币种（mnBase 里 mnIsAll() 直接放行），
       // 从合计跳走纯属帮倒忙。只有在"这笔按现在的视图真看不见"时才动，而且只动挡住它的那一维。
@@ -16899,13 +16967,41 @@ margin-left: -22px;
       saveTax();t.tax=0;mnSave();
       mnStatus("已从税务记录里撤回");mnRender();try{renderTax();}catch(e){}
       return;}
-    var gst=await ttConfirm("这笔 "+mnMoney(t.amt,"NZD")+" 含 GST 吗？\n（不确定就点取消，之后在税务页也能改）",
-      {okText:"含 GST",anchor:btn});
-    taxRecs.push({id:uid(),taxFrom:t.id,date:t.d,gross:Math.abs(t.amt),gstIncluded:!!gst,
-      payer:t.merchant||"",note:(t.desc||"")+"（记账页自动带入）"});
-    saveTax();t.tax=1;mnSave();
+    // 这个人有规则就直接照办，不再问 —— 「又得回计税页面重新编辑 GST」省掉的就是这一步
+    var rule=mnPayerTax(t),nm=mnPayer(t);
+    if(rule&&rule.gst!=null){
+      mnAddTaxRec(t,!!rule.gst,false);
+      mnStatus("已记入税务（"+esc(nm)+" 的规则："+(rule.gst?"含 GST":"不含 GST")+"）· 去「税务」页还能改");
+      mnRender();try{renderTax();}catch(e){}return;}
+    // 以前是个二选一确认框，注释还写着「不确定就点取消」——
+    // 于是「不确定」和「明确不含」压成了同一个答案，点弹窗外面 / 按 Esc 也算「不含」，
+    // 静默记成一笔不含 GST 的收入。而 GST 是先扣掉再累进算 PAYE/ACC 的，
+    // 这一笔定错，会把这个税年里它之后每一笔的税率档位都抬高。所以改成三个明确的选项。
+    var items=[{v:"y",label:"含 GST（倒扣 15%）"},{v:"n",label:"不含 GST"},{sep:true},
+      {v:"q",label:"先记下，GST 待定"}];
+    if(nm)items.push({sep:true},
+      {v:"ry",label:"以后「"+nm+"」都按含 GST 自动记"},
+      {v:"rn",label:"以后「"+nm+"」都按不含 GST 自动记"});
+    var v=await ttMenu(items,{anchor:btn});
+    if(v===null)return;                        // 点外面 = 什么都不做，不再等于「不含」
+    if(v==="ry"||v==="rn"){
+      mnCfg.payerTax=mnCfg.payerTax||{};
+      mnCfg.payerTax[nm]={auto:1,gst:(v==="ry")?1:0};
+      save("tt_mncfg",mnCfg);}
+    mnAddTaxRec(t,(v==="y"||v==="ry"),v==="q");
+    mnStatus((v==="q"?"已记入税务 · <b>GST 还没定</b>，回头在税务页确认一下"
+                     :"已记入税务 · 去「税务」页可以改金额或 GST")+
+      ((v==="ry"||v==="rn")?("　·　以后「"+esc(nm)+"」的进账自动这么记"):""));
+    mnRender();try{renderTax();}catch(e){}}
+  // 落一条税务记录。payer 用 mnPayer 而不是 t.merchant —— P2P 转账的 merchant 恒为空串，
+  // 税务页那一列会永远空白，跟税负归因用的 key 也对不上。
+  function mnAddTaxRec(t,gst,todo){
+    var rec={id:uid(),taxFrom:t.id,date:t.d,gross:Math.abs(t.amt),gstIncluded:!!gst,
+      payer:mnPayer(t)||t.merchant||"",note:(t.desc||"")+"（记账页自动带入）"};
+    if(todo)rec.gstTodo=1;   // 待定先按「不含」算：不扣 GST → 税算得偏高，宁可多留税钱，不会少交
+    taxRecs.push(rec);saveTax();t.tax=1;mnSave();
     taxYear=taxYearOf(t.d);
-    mnStatus("已记入税务 · 去「税务」页可以改金额或 GST");mnRender();try{renderTax();}catch(e){}}
+    return rec;}
 
   // 点分类标签 → 就地换成下拉，选完存 manual，以后自动分类不再动它
   function mnTagEdit(btn){
