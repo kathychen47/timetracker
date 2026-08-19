@@ -1958,6 +1958,17 @@
   .ai-msg.err{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--border))}
   .ai-msg.ok{border-color:color-mix(in srgb,var(--cat-sport) 45%,var(--border))}
 
+  .wbt-modal{max-width:600px}
+  /* 工具弹窗的「大窗口」形态：和背单词卡片同一套 —— 大小固定不跟内容长，
+     标题和底下那排按钮钉住，只有中间自己上下滚。右下角能拖着改大小。 */
+  .modal.wbt-tall{width:min(94vw,880px);height:min(88vh,820px);max-width:none;max-height:92vh;
+    display:flex;flex-direction:column;overflow:hidden;position:relative;
+    resize:both;min-width:320px;min-height:340px}
+  .modal.wbt-tall>h3,.modal.wbt-tall>.modal-actions{flex:none}
+  .modal.wbt-tall>#wbtool-body{flex:1;min-height:0;overflow-y:auto;margin:10px -4px 0;padding:0 4px}
+  .modal.wbt-tall::after{content:"";position:absolute;right:3px;bottom:3px;width:12px;height:12px;pointer-events:none;
+    border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);opacity:.4;border-radius:0 0 4px 0}
+
   /* settings — sidebar + panes */
   .set-modal{max-width:880px}
   .set-shell{display:flex;gap:18px;margin-top:10px;align-items:flex-start}
@@ -3979,7 +3990,7 @@ margin-left: -22px;
   </div>
 
   <div class="overlay" id="wbtool-overlay">
-    <div class="modal" style="max-width:600px">
+    <div class="modal wbt-modal">
       <h3 id="wbtool-title">工具</h3>
       <div id="wbtool-body"></div>
       <div class="modal-actions"><div class="grow"></div><button class="btn" id="wbtool-close">关闭</button></div>
@@ -9794,7 +9805,12 @@ margin-left: -22px;
     document.getElementById("wbtool-body").innerHTML=html;
     wbtOverlay.classList.add("on");
     return document.getElementById("wbtool-body");}
-  function wbtClose(){if(wbtOverlay)wbtOverlay.classList.remove("on");}
+  function wbtClose(){
+    if(wbtOverlay){
+      wbtOverlay.classList.remove("on");
+      var m=wbtOverlay.querySelector(".modal");if(m)m.classList.remove("wbt-tall");}
+    try{if(mnRulesWin){mnRulesWin=false;
+      var b=document.getElementById("mn-rules");if(b)b.classList.remove("primary");}}catch(e){}}
   function groupOptions(){return wbGroups.list.map(function(g){
     return '<option value="'+g.id+'"'+((wbActive!=="all"&&wbActive===g.id)||(wbActive==="all"&&g.id===wbGroups.def)?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
     '<option value="__new">＋ 新建分组…</option>';}
@@ -15631,6 +15647,17 @@ margin-left: -22px;
     return [pm+"-01",pm+"-"+mnP2(new Date(d.getFullYear(),d.getMonth()+1,0).getDate())];}
   function mnInSpan(t,sp){var d=String(t&&t.d||"");return d>=sp[0]&&d<=sp[1];}
   function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
+  // 记完/改完一笔，按现在的筛选它到底看不看得见？看不见就说清是哪一道挡的。
+  // 顺序必须和 mnBase / mnFiltered 里的判定一致，不然会怪罪到不相干的那道闸上。
+  function mnWhyHidden(t){
+    if(!mnInPeriod(t))return "　·　这笔在 "+esc(t.d)+"，不在当前「"+esc(mnPeriodLabel())+"」里";
+    if(mnAcct&&t.acct!==mnAcct)return "　·　手记的不挂在任何账户上，被<b>账户筛选</b>挡着，切回「全部账户」就看得到";
+    if(!mnIsAll()&&mnCurOf(t)!==mnCur)return "　·　现在只在看 <b>"+esc(mnCur)+"</b>，这笔是 "+esc(mnCurOf(t));
+    if(mnCfg.hideTf&&MN_NEUTRAL[t.cat]&&mnPick!==t.cat)return "　·　转账/存款在设置里藏起来了";
+    if(mnSide==="in"&&mnSrc&&!(t.amt>0&&mnPayer(t)===mnSrc))return "　·　被<b>收入来源</b>筛选挡着，点一下那个来源取消";
+    if(mnPick&&t.cat!==mnPick)return "　·　被<b>分类筛选</b>挡着，再点一下那一类取消";
+    if(mnIsAll()&&!mnHasFx(t))return "　·　"+esc(mnCurOf(t))+" 还没填汇率，这笔在合计里按 <b>0</b> 算（设置 → 跨币种折算）";
+    return "";}
   function mnPeriodLabel(){
     if(mnScope==="all")return "全部";
     if(mnScope==="year")return mnYear+" 年";
@@ -15886,7 +15913,10 @@ margin-left: -22px;
     sel.style.display=(accts.length&&!hasCards)?"":"none";
 
 
-    if(mnView==="rules"){body.innerHTML=mnRulesHtml();return;}
+    // 设置改成弹窗之后，底下这一页照常画（关掉窗口就在原地，不用重新找路），
+    // 窗口开着就顺带把里面的内容也刷一遍 —— 改分类、加规则之后要当场看见。
+    if(mnRulesWin){var rb=document.getElementById("wbtool-body");
+      if(rb&&!rb.contains(document.activeElement))rb.innerHTML=mnRulesHtml();}
 
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
@@ -16119,6 +16149,14 @@ margin-left: -22px;
       h+='</div>';}
     body.innerHTML=h;}
 
+  // 设置做成一个固定大小的窗口：内容多得很（账户、分类、付款人、汇率、账本数据…），
+  // 以前是整页换成设置，看完还得再点一次回来，中间那一屏筛选状态也跟着没了。
+  var mnRulesWin=false;
+  function mnOpenRules(){
+    var b=wbtOpen("记账设置",mnRulesHtml());
+    var m=b&&b.closest(".modal");if(m)m.classList.add("wbt-tall");   // 固定大小 + 中间自己上下滚
+    mnRulesWin=true;
+    var btn=document.getElementById("mn-rules");if(btn)btn.classList.add("primary");}
   function mnRulesHtml(){
     return '<div class="panel"><h3>起始日期</h3>'+
       '<div class="mn-rule"><span class="nm">从这天起记</span>'+
@@ -16276,7 +16314,20 @@ margin-left: -22px;
     var b=mnFxBase(),others=mnCurList().filter(function(c){return c!==b;});
     var fx=mnCfg.fx||{};
     var when=mnCfg.fxAt?("上次拉取："+dtstr(mnCfg.fxAt)):"还没拉过";
+    // 默认币种视图：打开记账页时停在哪一档。空 = 跟着上次选的走（老行为）。
+    var curs2=mnCurList();if(!curs2.length)curs2=["NZD"];
+    var dOpt=[{v:"",t:"跟上次选的一样"}]
+      .concat(curs2.map(function(c){return {v:c,t:"只看 "+c};}))
+      .concat(curs2.map(function(c){return {v:"__all:"+c,t:"合计（折算成 "+c+"）"};}));
     return '<div class="panel"><h3>跨币种折算</h3>'+
+      '<div class="mn-rule"><span class="nm">默认看哪档</span>'+
+      '<select data-defcur style="flex:1;padding:6px 9px;border:1px solid var(--border);'+
+        'border-radius:8px;background:var(--bg);color:var(--text);font-size:12px">'+
+        dOpt.map(function(o){return '<option value="'+esc(o.v)+'"'+
+          ((mnCfg.defCur||"")===o.v?" selected":"")+'>'+esc(o.t)+'</option>';}).join("")+
+      '</select></div>'+
+      '<div style="font-size:12px;color:var(--muted);margin:-2px 0 10px;line-height:1.6">'+
+      '每次打开记账页停在这一档。选「合计」的话，几种货币会按下面的汇率折成一个数。</div>'+
       '<div class="mn-rule"><span class="nm">主币种</span>'+
       '<select data-fxbase style="flex:0 0 140px;padding:6px 9px;border:1px solid var(--border);'+
         'border-radius:8px;background:var(--bg);color:var(--text);font-size:12px">'+
@@ -16477,7 +16528,7 @@ margin-left: -22px;
     if(!mnYear)mnYear=new Date().getFullYear();
     if(!mnFrom){mnFrom=mnCfg.from||mnYmd(new Date()).slice(0,8)+"01";}
     if(!mnTo){mnTo=mnCfg.to||mnYmd(new Date());}
-    if(!mnCur)mnCur=mnCfg.cur||"NZD";
+    if(!mnCur)mnCur=mnCfg.defCur||mnCfg.cur||"NZD";   // 设了默认档就按它，没设才跟着上次选的走
     if(mnCfg.scope)mnScope=mnCfg.scope;
     if(!mnInit){
       mnInit=true;
@@ -16553,10 +16604,12 @@ margin-left: -22px;
           !ok);
         mnRender();});
       document.getElementById("mn-rules").addEventListener("click",function(){
-        mnView=mnView==="rules"?"list":"rules";
-        this.classList.toggle("primary",mnView==="rules");
-        mnRender();
-        try{document.querySelector(".mn-wrap").scrollIntoView({block:"start"});}catch(e2){}});
+        if(mnRulesWin){wbtClose();return;}
+        mnOpenRules();});
+      // 设置面板和明细共用 mnOnClick/mnOnChange 这两个委托，以前只挂在 #mn-body 上。
+      // 搬进弹窗后得给弹窗也挂一份，否则里面所有按钮和下拉都是死的。
+      var wbb=document.getElementById("wbtool-body");
+      if(wbb){wbb.addEventListener("click",mnOnClick);wbb.addEventListener("change",mnOnChange);}
       // 设置页里的日期/主币种/汇率，改完立刻存。
       // 原来它们要等你点最下面那个「保存并重新分类」才生效 —— 而那个按钮
       // 在另一个面板里，隔着一屏，看起来跟这几个框没关系。
@@ -16578,6 +16631,12 @@ margin-left: -22px;
             (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清用下面「账本数据」里的按钮"):"")+
             "　·　点 🔄 同步 就从这天开始拉");
           return;}
+        if(t.matches("[data-defcur]")){
+          if(t.value)mnCfg.defCur=t.value;else delete mnCfg.defCur;
+          save("tt_mncfg",mnCfg);
+          if(t.value){mnCur=t.value;mnCfg.cur=mnCur;save("tt_mncfg",mnCfg);mnPick="";}
+          mnStatus(t.value?"以后打开记账页就停在这一档了":"改回跟着上次选的走");
+          mnRender();return;}
         if(t.matches("[data-taxacct]")){
           mnCfg.taxAcct=t.value;save("tt_mncfg",mnCfg);
           mnStatus("税务账户已保存");mnRender();return;}
@@ -16615,6 +16674,15 @@ margin-left: -22px;
           save("tt_mncfg",mnCfg);
           mnStatus("汇率已保存：1 "+esc(mnFxBase())+" = "+esc(t.value||"（清空）")+" "+esc(c));
           return;}}
+      // 设置面板现在装在弹窗里（#wbtool-body），但同一套委托也还挂在 #mn-body 上，
+      // 所以取值不能写死容器 —— 谁开着就在谁里面找。
+      function mnQ(sel){
+        var w=document.getElementById("wbtool-body");
+        return (mnRulesWin&&w&&w.querySelector(sel))||document.querySelector("#mn-body "+sel);}
+      function mnQA(sel){
+        var w=document.getElementById("wbtool-body");
+        if(mnRulesWin&&w&&w.querySelector(sel))return w.querySelectorAll(sel);
+        return document.querySelectorAll("#mn-body "+sel);}
       function mnOnClick(e){
         var bal=e.target.closest("[data-bal]");
         if(bal){var bk=bal.getAttribute("data-bal")||"";
@@ -16661,8 +16729,8 @@ margin-left: -22px;
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
         if(e.target.closest("[data-payadd]")){
-          var pn=((document.querySelector("#mn-body [data-paynew]")||{}).value||"").trim();
-          var pk=((document.querySelector("#mn-body [data-paynewk]")||{}).value||"").trim();
+          var pn=((mnQ("[data-paynew]")||{}).value||"").trim();
+          var pk=((mnQ("[data-paynewk]")||{}).value||"").trim();
           if(!pn||!pk){mnStatus("名字和关键词都要填",true);return;}
           mnCfg.payers=mnCfg.payers||{};
           mnCfg.payers[pn]=pk.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
@@ -16673,10 +16741,10 @@ margin-left: -22px;
           delete (mnCfg.payers||{})[dn];save("tt_mncfg",mnCfg);
           mnStatus("已删掉「"+esc(dn)+"」");mnRender();return;}
         if(e.target.closest("[data-cadd]")){
-          var nm=(document.querySelector("#mn-body [data-cnew]")||{}).value||"";
+          var nm=(mnQ("[data-cnew]")||{}).value||"";
           nm=nm.trim();
           if(!nm){mnStatus("先给新分类起个名字",true);return;}
-          var ic=((document.querySelector("#mn-body [data-cnewi]")||{}).value||"").trim()||"🏷";
+          var ic=((mnQ("[data-cnewi]")||{}).value||"").trim()||"🏷";
           mnCfg.cats=mnCfg.cats||[];
           if(mnCats().some(function(c){return c.n===nm;})){
             mnStatus("已经有叫「"+esc(nm)+"」的分类了",true);return;}
@@ -16730,18 +16798,15 @@ margin-left: -22px;
               (undo?"　·　同一个文件再导一次就回来":"　·　备份已导到下载文件夹"));
             mnRender();try{renderTax();}catch(e2){}});});
           return;}
-        if(e.target.id==="mn-rule-back"){
-          mnView="list";document.getElementById("mn-rules").classList.remove("primary");
-          mnRender();return;}
+        if(e.target.id==="mn-rule-back"){wbtClose();mnRender();return;}
         if(e.target.id==="mn-rule-save"){
           // 日期/主币种/汇率在 change 事件里已经各自存好了，这里只管分类规则
           var next={};
-          document.querySelectorAll("#mn-body [data-rule]").forEach(function(inp){
+          mnQA("[data-rule]").forEach(function(inp){
             var ws=inp.value.split(",").map(function(x){return x.trim().toLowerCase();}).filter(Boolean);
             if(ws.length)next[inp.getAttribute("data-rule")]=ws;});
           mnRules=next;save("tt_mnrules",mnRules);
-          var n=mnRecat();mnView="list";
-          document.getElementById("mn-rules").classList.remove("primary");
+          var n=mnRecat();wbtClose();
           mnStatus("规则已保存 · 重新分类了 <b>"+n+"</b> 笔（手动改过的不动）");
           mnRender();return;}
       }
@@ -16787,11 +16852,21 @@ margin-left: -22px;
       var o={d:d,date:d,amt:amt,cur:b.querySelector("#mn-f-cur").value,
         cat:b.querySelector("#mn-f-cat").value,manual:1,
         desc:b.querySelector("#mn-f-desc").value.trim(),merchant:"",acat:"",agrp:"",ref:"",acct:"",src:"manual"};
-      if(isEdit)mnTxns=mnTxns.map(function(x){return x.id===rec.id?Object.assign({},x,o):x;});
-      else mnTxns.push(Object.assign({id:"manual:"+uid()},o));
+      var nt=isEdit?Object.assign({},rec,o):Object.assign({id:"manual:"+uid()},o);
+      if(isEdit)mnTxns=mnTxns.map(function(x){return x.id===rec.id?nt:x;});
+      else mnTxns.push(nt);
       mnTxns.sort(function(x,y){return (x.d<y.d)?1:((x.d>y.d)?-1:0);});
-      mnSave();mnCur=o.cur;mnMonth=d.slice(0,7);wbtClose();
-      mnStatus(isEdit?"已保存":"记好了");mnRender();});
+      mnSave();
+      // 记完不抢视图。以前这里无条件 mnCur=o.cur —— 你本来在「合计」上看得好好的，
+      // 记一笔 CNY 就被踢到 CNY 那一档去了。合计根本不挑币种（mnBase 里 mnIsAll() 直接放行），
+      // 从合计跳走纯属帮倒忙。只有在"这笔按现在的视图真看不见"时才动，而且只动挡住它的那一维。
+      if(!mnIsAll()&&mnCurOf(nt)!==mnCur)mnCur=nt.cur;
+      if(!mnInPeriod(nt)){                      // 期间也一样：已经看得见就别翻页
+        if(mnScope==="month")mnMonth=nt.d.slice(0,7);
+        else if(mnScope==="year")mnYear=+nt.d.slice(0,4);}
+      wbtClose();
+      // 还是被别的筛选挡着的话，说清是哪一道 —— 记进去了却不出现在列表里，比跳走还吓人
+      mnStatus((isEdit?"已保存":"记好了")+mnWhyHidden(nt));mnRender();});
     if(isEdit)b.querySelector("#mn-f-del").addEventListener("click",async function(){
       if(!await ttConfirm("删掉这笔？",{danger:true,anchor:this}))return;
       taxRecs=taxRecs.filter(function(x){return x.taxFrom!==rec.id;});saveTax();
