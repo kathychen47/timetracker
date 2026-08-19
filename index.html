@@ -14934,9 +14934,12 @@ margin-left: -22px;
     // 工具建材要排在购物之前 —— 购物的关键词里原本就有 bunnings、mitre 10
     {k:"tool",     n:"工具建材", i:"🔧", c:"#b08968"},
     {k:"shop",     n:"购物",     i:"🛍", c:"#c77fd0"},
+    // 软件/订阅要排在娱乐订阅之前 —— 娱乐订阅的中文词里有个很通用的「会员」，
+    // 排在后面的话「iCloud 2T 会员」「各种会员 icloud2T」会被它抢走。
+    // 具体品牌名（icloud / microsoft 365 / adobe / openai…）该压过通用词。
+    {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
     {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
-    {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
     {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
     {k:"post",     n:"快递 / 海运", i:"🚢", c:"#9b8ec4"},
     {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
@@ -15007,7 +15010,7 @@ margin-left: -22px;
     soft:["openai","chatgpt","anthropic","claude.ai","cloudflare","github","vercel","netlify",
       "digitalocean","linode","aws ","amazon web","google cloud","gcp ","azure","supabase",
       "notion","figma","adobe","jetbrains","cursor","midjourney","perplexity","copilot",
-      "dropbox","icloud","google one","microsoft 365","office 365","namecheap","godaddy",
+      "dropbox","icloud","icloud+","apple one","google one","microsoft 365","office 365","namecheap","godaddy",
       "domain renewal","hosting","1password","lastpass","grammarly","canva","zoom.us",
       // Apple 的月费 Akahu 给的类目是 "Electronic and appliance stores"，
       // 照类目走会掉进购物 —— 但 APPLE.COM/BILL 是订阅，不是买东西。
@@ -15175,6 +15178,80 @@ margin-left: -22px;
   function mnP2(n){return (n<10?"0":"")+n;}
   function mnYmd(d){return d.getFullYear()+"-"+mnP2(d.getMonth()+1)+"-"+mnP2(d.getDate());}
   function mnCurOf(t){return (t&&t.cur)||"NZD";}
+  // ---------- 周期记账 ----------
+  // 房租、保险、订阅这些每隔一段时间就来一笔的，设一条规则让它自己记。
+  // 规则存 mnCfg.recur（跟着 tt_mncfg 上云），生成的流水 id 是
+  // "recur:<规则id>:<日期>" —— 定死的，所以每次进页面重跑都不会记重。
+  // 时间只按"日期"算，不碰时分，也就不存在时区问题。
+  var MN_EVK={day:"天",week:"周",month:"个月",year:"年"};
+  function mnRecList(){return (mnCfg.recur||[]).slice();}
+  function mnRecSave(list){mnCfg.recur=list;save("tt_mncfg",mnCfg);}
+  function mnYmdAdd(ymd,n){var p=ymd.split("-");
+    var d=new Date(+p[0],+p[1]-1,+p[2]);d.setDate(d.getDate()+n);return mnYmd(d);}
+  // 按月/年加：撞上短月要往回收。1 月 31 号每月一次 → 2 月给 28（或闰年 29），
+  // 不能让它溢出成 3 月 3 号，否则往后每个月都跑偏一天。
+  function mnYmdAddM(ymd,n,dom){
+    var p=ymd.split("-"),y=+p[0],m=+p[1]-1;
+    var want=dom||+p[2];
+    m+=n;y+=Math.floor(m/12);m=((m%12)+12)%12;
+    var last=new Date(y,m+1,0).getDate();
+    return mnYmd(new Date(y,m,Math.min(want,last)));}
+  function mnRecStep(r,ymd){
+    var n=Math.max(1,+r.ev.n||1);
+    if(r.ev.k==="day")return mnYmdAdd(ymd,n);
+    if(r.ev.k==="week")return mnYmdAdd(ymd,7*n);
+    if(r.ev.k==="year")return mnYmdAddM(ymd,12*n,r.ev.dom);
+    return mnYmdAddM(ymd,n,r.ev.dom);}
+  // 这条规则从"还没执行过的下一次"起，到 upTo（含）为止，该落哪几天。
+  // 已经执行过 r.n 次、最后一次在 r.last。
+  function mnRecOcc(r,upTo){
+    var out=[];
+    if(!r||!r.start||!r.ev)return out;
+    var cnt=+r.n||0;
+    var cur=r.last?mnRecStep(r,r.last):r.start;
+    var guard=0;
+    while(cur<=upTo&&guard++<3000){
+      if(r.end&&r.end.k==="date"&&r.end.v&&cur>r.end.v)break;
+      if(r.end&&r.end.k==="count"&&cnt>=(+r.end.v||0))break;
+      out.push(cur);cnt++;
+      cur=mnRecStep(r,cur);}
+    return out;}
+  function mnRecNext(r){                      // 下一次会在哪天（已停/已到头就返回空）
+    if(!r||r.paused)return "";
+    var cur=r.last?mnRecStep(r,r.last):r.start;
+    if(r.end&&r.end.k==="date"&&r.end.v&&cur>r.end.v)return "";
+    if(r.end&&r.end.k==="count"&&(+r.n||0)>=(+r.end.v||0))return "";
+    return cur;}
+  function mnRecEvText(r){
+    var n=Math.max(1,+r.ev.n||1),k=r.ev.k;
+    var WD=["周日","周一","周二","周三","周四","周五","周六"];
+    var base=(n===1?("每"+(k==="day"?"天":k==="week"?"周":k==="month"?"月":"年"))
+                   :("每 "+n+" "+MN_EVK[k]));
+    if(k==="week"){var p=r.start.split("-");
+      base+="（"+WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()]+"）";}
+    if(k==="month"||k==="year")base+="（"+(r.ev.dom||+r.start.split("-")[2])+" 号）";
+    var end=(r.end&&r.end.k==="date")?("，到 "+r.end.v+" 为止")
+      :((r.end&&r.end.k==="count")?("，共 "+r.end.v+" 次"):"，永不结束");
+    return base+end;}
+  // 进记账页时跑一遍：把该记的都补上。补的是"今天及以前"，不预支未来。
+  function mnRecurRun(){
+    var list=mnRecList();if(!list.length)return 0;
+    var today=mnYmd(new Date()),have={},made=0,changed=false;
+    mnTxns.forEach(function(t){have[t.id]=1;});
+    list.forEach(function(r){
+      if(r.paused)return;
+      var days=mnRecOcc(r,today);
+      days.forEach(function(d){
+        var id="recur:"+r.id+":"+d;
+        if(have[id])return;                   // 定死的 id：重跑、换设备同步回来都不会记重
+        mnTxns.push({id:id,d:d,date:d,amt:+r.amt||0,cur:r.cur||"NZD",cat:r.cat||"other",
+          desc:r.desc||"",merchant:"",acat:"",agrp:"",ref:"",acct:r.acct||"",
+          src:"recur",recur:r.id,manual:1});
+        have[id]=1;made++;});
+      if(days.length){r.n=(+r.n||0)+days.length;r.last=days[days.length-1];changed=true;}});
+    if(made){mnTxns.sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});mnSave();}
+    if(changed)mnRecSave(list);
+    return made;}
   // ---- 跨币种折算 ----
   // mnCfg.fx[X] 的含义是「1 主币种 = 多少 X」，跟你在汇率网站上看到的写法一致。
   // 所以把 X 换算回主币种是除，不是乘。
@@ -16161,7 +16238,7 @@ margin-left: -22px;
           '<span class="ic">'+c.i+'</span>'+
           '<span class="ds">'+esc(mnAlias(t.merchant||t.desc||"（无摘要）"))+
             (t.merchant&&t.desc?'<small>'+esc(mnAlias(t.desc))+'</small>':"")+
-            (t.src==="manual"?'<small>手记</small>':(t.src==="akahu"?"":'<small>导入</small>'))+'</span>'+
+            (t.src==="manual"?'<small>手记</small>':(t.src==="recur"?'<small>周期</small>':(t.src==="akahu"?"":'<small>导入</small>')))+'</span>'+
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
           // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
@@ -16213,6 +16290,7 @@ margin-left: -22px;
       '<b>改完立刻生效</b>，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。<br>'+
       '往前改可以补更早的账；往后改<b>不会</b>删掉已经记进来的，要清用下面「账本数据」里的按钮。</div></div>'+
       mnAcctHtml()+
+      mnRecurHtml()+
       mnTaxAcctHtml()+
       mnCustomHtml()+
       mnPayerHtml()+
@@ -16304,6 +16382,64 @@ margin-left: -22px;
   // 收入来源归并。同一个人付款，银行摘要可能有好几种写法
   // （CAI,YUELE NZPost / CAI,YUELE NZP-Michael / CAI,YUELE Nzp），
   // 自动归并只能按前两个词切，切不到一起 —— 只有你知道它们是同一个来源。
+  // 周期记账面板：能看见每条规则跑到哪了，随时暂停 / 继续 / 删掉。
+  function mnRecurHtml(){
+    var list=mnRecList(),today=mnYmd(new Date());
+    var curs=mnCurList();if(!curs.length)curs=["NZD"];
+    ["NZD","CNY","USD","AUD"].forEach(function(c){if(curs.indexOf(c)<0)curs.push(c);});
+    var accts=mnCfg.accts||[];
+    var rows=list.map(function(r){
+      var nx=mnRecNext(r),cn=(MN_CAT[r.cat]||{}),over=(!nx&&!r.paused);
+      return '<div class="mn-rule" style="align-items:flex-start;flex-wrap:wrap">'+
+        '<span class="nm" style="flex:0 0 100%;font-weight:650;margin-bottom:2px">'+
+          (cn.i||"🏷")+' '+esc(cn.n||r.cat)+(r.desc?('　<span style="font-weight:400;color:var(--muted)">'+esc(r.desc)+'</span>'):"")+
+          '<span class="tx-gst" style="margin-left:8px;'+
+            (r.paused?'color:#B4720B;background:#FFF1DC':(over?'':'color:#2C8F68;background:#E7F7EF'))+'">'+
+            (r.paused?"已暂停":(over?"已结束":"进行中"))+'</span></span>'+
+        '<span style="flex:0 0 130px;font-weight:700;color:'+((+r.amt<0)?"#d9534f":"#3fae87")+'">'+
+          mnMoney(r.amt,r.cur)+'</span>'+
+        '<span style="flex:1;min-width:150px;font-size:12px;color:var(--muted)">'+
+          esc(mnRecEvText(r))+'　·　已执行 <b>'+(+r.n||0)+'</b> 次'+
+          (nx?('　·　下次 <b>'+esc(nx)+'</b>'+(nx<=today?"（进页面就补记）":"")):"")+'</span>'+
+        '<button class="btn" data-recpause="'+esc(r.id)+'" style="padding:4px 9px;font-size:12px">'+
+          (r.paused?"继续":"暂停")+'</button>'+
+        '<button class="btn" data-recdel="'+esc(r.id)+'" style="padding:4px 9px;font-size:12px">删</button>'+
+        '</div>';}).join("");
+    var inp='padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px';
+    return '<div class="panel"><h3>周期记账</h3>'+
+      '<div style="font-size:12.5px;color:var(--muted);margin-bottom:10px;line-height:1.6">'+
+      '房租、保险、订阅这些每隔一阵就来一笔的，设一条规则让它自己记。'+
+      '每次打开记账页会把<b>今天及以前</b>该记的补上，不预支未来。'+
+      '暂停之后不再产生新的，已经记进去的不动。</div>'+
+      (rows||'<div style="font-size:13px;color:var(--muted);margin-bottom:10px">还没设过。下面加一条。</div>')+
+      '<div style="font-size:12.5px;font-weight:600;margin:14px 0 8px">加一条</div>'+
+      '<div class="mn-rule" style="flex-wrap:wrap;gap:8px">'+
+        '<select data-rcsign style="'+inp+';flex:0 0 76px"><option value="-1">支出</option><option value="1">收入</option></select>'+
+        '<input data-rcamt type="number" step="0.01" placeholder="金额" style="'+inp+';flex:0 0 110px">'+
+        '<select data-rccur style="'+inp+';flex:0 0 84px">'+curs.map(function(c){
+          return '<option value="'+esc(c)+'"'+(c===mnFxBase()?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select>'+
+        '<select data-rccat style="'+inp+';flex:0 0 120px">'+mnCatOpts("")+'</select>'+
+        '<input data-rcdesc placeholder="摘要，比如 房租 / iCloud" style="'+inp+';flex:1;min-width:140px">'+
+      '</div>'+
+      '<div class="mn-rule" style="flex-wrap:wrap;gap:8px;margin-top:8px">'+
+        '<span style="font-size:12px;color:var(--muted);flex:0 0 60px">从</span>'+
+        '<input data-rcstart type="date" lang="zh-CN" value="'+esc(today)+'" style="'+inp+';flex:0 0 150px">'+
+        '<span style="font-size:12px;color:var(--muted)">起，每</span>'+
+        '<input data-rcn type="number" min="1" step="1" value="1" style="'+inp+';flex:0 0 66px">'+
+        '<select data-rck style="'+inp+';flex:0 0 84px">'+
+          '<option value="month">个月</option><option value="week">周</option>'+
+          '<option value="day">天</option><option value="year">年</option></select>'+
+        '<select data-rcend style="'+inp+';flex:0 0 118px">'+
+          '<option value="never">永不结束</option><option value="date">到某天为止</option>'+
+          '<option value="count">共 N 次</option></select>'+
+        '<input data-rcendv placeholder="日期或次数" style="'+inp+';flex:0 0 130px">'+
+        (accts.length?('<select data-rcacct style="'+inp+';flex:0 0 150px"><option value="">不指定账户</option>'+
+          accts.map(function(a){return '<option value="'+esc(a.id)+'">'+esc(mnAcctLabel(a))+'</option>';}).join("")+'</select>'):"")+
+        '<button class="btn primary" data-recadd style="padding:5px 12px;font-size:12px">添加</button>'+
+      '</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:8px">'+
+      '「每 1 个月」按开始日期那一号走；碰上短月（31 号遇到 2 月）会收到当月最后一天，下个月照旧回到 31 号。</div>'+
+      '</div>';}
   function mnPayerHtml(){
     var pt=mnCfg.payerTax||{},ptn=Object.keys(pt);
     var pm=mnCfg.payers||{},names=Object.keys(pm);
@@ -16587,6 +16723,7 @@ margin-left: -22px;
     if(!mnFrom){mnFrom=mnCfg.from||mnYmd(new Date()).slice(0,8)+"01";}
     if(!mnTo){mnTo=mnCfg.to||mnYmd(new Date());}
     if(!mnCur)mnCur=mnCfg.defCur||mnCfg.cur||"NZD";   // 设了默认档就按它，没设才跟着上次选的走
+    try{mnRecurRun();}catch(e){}                      // 周期记账：把今天及以前该记的补上
     if(mnCfg.scope)mnScope=mnCfg.scope;
     if(!mnInit){
       mnInit=true;
@@ -16786,6 +16923,46 @@ margin-left: -22px;
           mnRender();return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
+        var rcp=e.target.closest("[data-recpause]");
+        if(rcp){var pid=rcp.getAttribute("data-recpause"),lst=mnRecList(),hit=null;
+          lst.forEach(function(x){if(x.id===pid)hit=x;});
+          if(hit){hit.paused=hit.paused?0:1;mnRecSave(lst);
+            // 从暂停里恢复：把停掉这段时间该记的一次补齐（last 还停在暂停前那次）
+            var made=hit.paused?0:mnRecurRun();
+            mnStatus(hit.paused?"这条周期记账停了 · 已经记进去的不动"
+              :("接着跑了"+(made?("　·　顺手补记了 <b>"+made+"</b> 笔"):"")));
+            mnRender();}
+          return;}
+        var rcd=e.target.closest("[data-recdel]");
+        if(rcd){var did=rcd.getAttribute("data-recdel");
+          ttConfirm("删掉这条周期记账？（已经记进账本的那些流水不动，要删得去明细里删）",
+            {danger:true,anchor:rcd}).then(function(ok){
+            if(!ok)return;
+            mnRecSave(mnRecList().filter(function(x){return x.id!==did;}));
+            mnStatus("删了 · 已经记进去的流水还在");mnRender();});
+          return;}
+        if(e.target.closest("[data-recadd]")){
+          var amt0=parseFloat((mnQ("[data-rcamt]")||{}).value);
+          var st0=String((mnQ("[data-rcstart]")||{}).value||"").trim();
+          if(isNaN(amt0)||!amt0||!/^\d{4}-\d{2}-\d{2}$/.test(st0)){
+            mnStatus("金额和开始日期要填对",1);return;}
+          var ek=(mnQ("[data-rck]")||{}).value||"month";
+          var endk=(mnQ("[data-rcend]")||{}).value||"never";
+          var endv=String((mnQ("[data-rcendv]")||{}).value||"").trim();
+          if(endk==="date"&&!/^\d{4}-\d{2}-\d{2}$/.test(endv)){mnStatus("结束日期要写成 2026-12-31 这种",1);return;}
+          if(endk==="count"&&!(+endv>0)){mnStatus("次数要填个大于 0 的数",1);return;}
+          var r={id:"r"+uid(),amt:Math.abs(amt0)*(+(mnQ("[data-rcsign]")||{}).value||-1),
+            cur:(mnQ("[data-rccur]")||{}).value||mnFxBase(),
+            cat:(mnQ("[data-rccat]")||{}).value||"other",
+            desc:String((mnQ("[data-rcdesc]")||{}).value||"").trim(),
+            acct:(mnQ("[data-rcacct]")||{}).value||"",
+            start:st0,ev:{k:ek,n:Math.max(1,parseInt((mnQ("[data-rcn]")||{}).value,10)||1)},
+            end:{k:endk,v:endv},n:0,last:""};
+          if(ek==="month"||ek==="year")r.ev.dom=+st0.split("-")[2];
+          var lst2=mnRecList();lst2.push(r);mnRecSave(lst2);
+          var made2=mnRecurRun();
+          mnStatus("加好了："+esc(mnRecEvText(r))+(made2?("　·　当场补记了 <b>"+made2+"</b> 笔"):"　·　到日子会自己记"));
+          mnRender();return;}
         var ptd=e.target.closest("[data-ptdel]");
         if(ptd){var pk2=ptd.getAttribute("data-ptdel");
           if(mnCfg.payerTax)delete mnCfg.payerTax[pk2];
