@@ -16449,13 +16449,15 @@ margin-left: -22px;
         '<select data-rcend style="'+inp+';flex:0 0 118px">'+
           '<option value="never">永不结束</option><option value="date">到某天为止</option>'+
           '<option value="count">共 N 次</option></select>'+
-        '<input data-rcendv placeholder="日期或次数" style="'+inp+';flex:0 0 130px">'+
+        '<input data-rcendv placeholder="哪天为止" style="'+inp+';flex:0 0 140px;display:none">'+
         (accts.length?('<select data-rcacct style="'+inp+';flex:0 0 150px"><option value="">不指定账户</option>'+
           accts.map(function(a){return '<option value="'+esc(a.id)+'">'+esc(mnAcctLabel(a))+'</option>';}).join("")+'</select>'):"")+
         '<button class="btn primary" data-recadd style="padding:5px 12px;font-size:12px">添加</button>'+
       '</div>'+
-      '<div style="font-size:12px;color:var(--muted);margin-top:8px">'+
-      '「每 1 个月」按开始日期那一号走；碰上短月（31 号遇到 2 月）会收到当月最后一天，下个月照旧回到 31 号。</div>'+
+      '<div style="font-size:12px;color:var(--muted);margin-top:8px;line-height:1.7">'+
+      '<b>每月固定一天扣费</b>就这么填：开始日期选那一天 → 每 <b>1</b> <b>个月</b> → <b>永不结束</b>，'+
+      '右边那个框不用管（选了「到某天为止」或「共 N 次」它才会出来）。<br>'+
+      '碰上短月（31 号遇到 2 月）会收到当月最后一天，下个月照旧回到 31 号。</div>'+
       '</div>';}
   function mnPayerHtml(){
     var pt=mnCfg.payerTax||{},ptn=Object.keys(pt);
@@ -16843,6 +16845,15 @@ margin-left: -22px;
             (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清用下面「账本数据」里的按钮"):"")+
             "　·　点 🔄 同步 就从这天开始拉");
           return;}
+        if(t.matches("[data-rcend]")){
+          // 就地改，绝不 mnRender：这几个输入框的值只活在 DOM 里，重画一次你填的全丢
+          var ev2=mnQ("[data-rcendv]");
+          if(ev2){var k3=t.value;
+            ev2.style.display=(k3==="never")?"none":"";
+            ev2.type=(k3==="date")?"date":(k3==="count"?"number":"text");
+            ev2.placeholder=(k3==="date")?"哪天为止":"记几次";
+            ev2.value="";}
+          return;}
         if(t.matches("[data-defcur]")){
           if(t.value)mnCfg.defCur=t.value;else delete mnCfg.defCur;
           save("tt_mncfg",mnCfg);
@@ -16965,7 +16976,7 @@ margin-left: -22px;
             mnStatus("金额和开始日期要填对",1);return;}
           var ek=(mnQ("[data-rck]")||{}).value||"month";
           var endk=(mnQ("[data-rcend]")||{}).value||"never";
-          var endv=String((mnQ("[data-rcendv]")||{}).value||"").trim();
+          var endv=(endk==="never")?"":String((mnQ("[data-rcendv]")||{}).value||"").trim();
           if(endk==="date"&&!/^\d{4}-\d{2}-\d{2}$/.test(endv)){mnStatus("结束日期要写成 2026-12-31 这种",1);return;}
           if(endk==="count"&&!(+endv>0)){mnStatus("次数要填个大于 0 的数",1);return;}
           var r={id:"r"+uid(),amt:Math.abs(amt0)*(+(mnQ("[data-rcsign]")||{}).value||-1),
