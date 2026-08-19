@@ -14937,15 +14937,15 @@ margin-left: -22px;
     // 软件/订阅要排在娱乐订阅之前 —— 娱乐订阅的中文词里有个很通用的「会员」，
     // 排在后面的话「iCloud 2T 会员」「各种会员 icloud2T」会被它抢走。
     // 具体品牌名（icloud / microsoft 365 / adobe / openai…）该压过通用词。
-    {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#6f7fd6"},
+    {k:"soft",     n:"软件 / 订阅", i:"💻", c:"#7b5ea8"},
     {k:"fun",      n:"娱乐订阅", i:"🎬", c:"#eeb85f"},
     {k:"edu",      n:"教育",     i:"📚", c:"#8bb04f"},
-    {k:"travel",   n:"旅行",     i:"✈️", c:"#4fa8c5"},
+    {k:"travel",   n:"旅行",     i:"✈️", c:"#2f8f96"},
     {k:"post",     n:"快递 / 海运", i:"🚢", c:"#9b8ec4"},
-    {k:"fee",      n:"费用 / 税", i:"🏦", c:"#b0895f"},
-    {k:"income",   n:"收入",     i:"💵", c:"#4fae7d"},
-    {k:"saving",   n:"存款 / 资产", i:"💰", c:"#3f9e7c"},
-    {k:"transfer", n:"转账",     i:"↔", c:"#9aa1b0"},
+    {k:"fee",      n:"费用 / 税", i:"🏦", c:"#c9a227"},
+    {k:"income",   n:"收入",     i:"💵", c:"#2e9e58"},
+    {k:"saving",   n:"存款 / 资产", i:"💰", c:"#2b7d63"},
+    {k:"transfer", n:"转账",     i:"↔", c:"#6f7887"},
     {k:"other",    n:"其他",     i:"📦", c:"#a8adba"}
   ];
   // 内置的那些是死的，你自己加的存在 mnCfg.cats 里，两边合起来才是完整的分类表。
@@ -15770,6 +15770,20 @@ margin-left: -22px;
   function mnInPeriod(t){return mnInSpan(t,mnSpanOf());}
   // 记完/改完一笔，按现在的筛选它到底看不看得见？看不见就说清是哪一道挡的。
   // 顺序必须和 mnBase / mnFiltered 里的判定一致，不然会怪罪到不相干的那道闸上。
+  // 筛了某个账户又一条都没有时，把这个账户在整本账里的情况说出来
+  function mnAcctHint(){
+    if(!mnAcct)return "";
+    var all=mnTxns.filter(function(t){return t.acct===mnAcct;});
+    var a=(mnCfg.accts||[]).filter(function(x){return x.id===mnAcct;})[0];
+    var nm=a?mnAcctLabel(a):"这个账户";
+    if(!all.length)
+      return '<br><span style="font-size:12px">「'+esc(nm)+'」<b>一笔流水都没拉到过</b> —— '+
+        '同步是一次把所有账户的交易一起要回来的，不是按账户分开拉。<br>'+
+        '定期存款、储蓄这类账户很多银行只给余额、不给明细，那就确实拉不到。'+
+        '账户余额还是准的（上面那张卡片就是同步回来的）。</span>';
+    all.sort(function(x,y){return (x.d<y.d)?1:((x.d>y.d)?-1:0);});
+    return '<br><span style="font-size:12px">「'+esc(nm)+'」在整本账里一共 <b>'+all.length+'</b> 笔，'+
+      '最近一笔是 <b>'+esc(all[0].d)+'</b>　·　把上面的时间范围切到「全部」就看得到</span>';}
   function mnWhyHidden(t){
     if(!mnInPeriod(t))return "　·　这笔在 "+esc(t.d)+"，不在当前「"+esc(mnPeriodLabel())+"」里";
     if(mnAcct&&t.acct!==mnAcct)return "　·　手记的不挂在任何账户上，被<b>账户筛选</b>挡着，切回「全部账户」就看得到";
@@ -16202,7 +16216,10 @@ margin-left: -22px;
     // 明细，按天分组，日期行右边给当天合计
     var list=mnFiltered();
     if(!list.length){
-      h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+(mnPick?"这一类":"")+'没有流水</div>';}
+      // 空列表要说清是"这段时间没有"还是"这个账户压根没拉到过" ——
+      // 定期存款很多银行不给明细，只给余额，光看一句"没有流水"会以为是同步坏了。
+      h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+(mnPick?"这一类":"")+'没有流水'+
+        mnAcctHint()+'</div>';}
     else{
       // 先按天把支出汇总好，渲染时直接取
       var dayOut={},dayIn={};
