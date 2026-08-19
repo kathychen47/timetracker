@@ -3669,6 +3669,7 @@ margin-left: -22px;
           <button class="btn primary" id="mn-add">＋ 记一笔</button>
           <button class="btn" id="mn-sync">🔄 同步</button>
           <button class="btn" id="mn-csv">📄 导入文件</button>
+          <button class="btn" id="mn-recur">🔁 周期</button>
           <button class="btn" id="mn-rules">⚙️ 设置</button>
           <input type="file" id="mn-file" accept=".csv,.xlsx,text/csv" multiple hidden>
         </div>
@@ -9809,8 +9810,9 @@ margin-left: -22px;
     if(wbtOverlay){
       wbtOverlay.classList.remove("on");
       var m=wbtOverlay.querySelector(".modal");if(m)m.classList.remove("wbt-tall");}
-    try{if(mnRulesWin){mnRulesWin=false;
-      var b=document.getElementById("mn-rules");if(b)b.classList.remove("primary");}}catch(e){}}
+    try{if(mnRulesWin){mnRulesWin=false;mnWinFn=null;
+      var b=document.getElementById(mnWinBtn||"mn-rules");if(b)b.classList.remove("primary");
+      mnWinBtn="";}}catch(e){}}
   function groupOptions(){return wbGroups.list.map(function(g){
     return '<option value="'+g.id+'"'+((wbActive!=="all"&&wbActive===g.id)||(wbActive==="all"&&g.id===wbGroups.def)?" selected":"")+'>'+esc(g.name)+'</option>';}).join("")+
     '<option value="__new">＋ 新建分组…</option>';}
@@ -16050,8 +16052,8 @@ margin-left: -22px;
 
     // 设置改成弹窗之后，底下这一页照常画（关掉窗口就在原地，不用重新找路），
     // 窗口开着就顺带把里面的内容也刷一遍 —— 改分类、加规则之后要当场看见。
-    if(mnRulesWin){var rb=document.getElementById("wbtool-body");
-      if(rb&&!rb.contains(document.activeElement))rb.innerHTML=mnRulesHtml();}
+    if(mnRulesWin&&mnWinFn){var rb=document.getElementById("wbtool-body");
+      if(rb&&!rb.contains(document.activeElement))rb.innerHTML=mnWinFn();}
 
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
@@ -16288,12 +16290,16 @@ margin-left: -22px;
 
   // 设置做成一个固定大小的窗口：内容多得很（账户、分类、付款人、汇率、账本数据…），
   // 以前是整页换成设置，看完还得再点一次回来，中间那一屏筛选状态也跟着没了。
-  var mnRulesWin=false;
-  function mnOpenRules(){
-    var b=wbtOpen("记账设置",mnRulesHtml());
-    var m=b&&b.closest(".modal");if(m)m.classList.add("wbt-tall");   // 固定大小 + 中间自己上下滚
-    mnRulesWin=true;
-    var btn=document.getElementById("mn-rules");if(btn)btn.classList.add("primary");}
+  var mnRulesWin=false,mnWinFn=null,mnWinBtn="",mnRecSel="";
+  // 记账页的两个窗口（设置 / 周期记账）共用一套：固定大小、中间自己滚，
+  // mnRender 时按 mnWinFn 把里面的内容重画一遍。
+  function mnOpenWin(title,fn,btnId){
+    var b=wbtOpen(title,fn());
+    var m=b&&b.closest(".modal");if(m)m.classList.add("wbt-tall");
+    mnRulesWin=true;mnWinFn=fn;mnWinBtn=btnId;
+    var btn=document.getElementById(btnId);if(btn)btn.classList.add("primary");}
+  function mnOpenRules(){mnOpenWin("记账设置",mnRulesHtml,"mn-rules");}
+  function mnOpenRecur(){mnRecSel="";mnOpenWin("周期记账",mnRecurHtml,"mn-recur");}
   function mnRulesHtml(){
     return '<div class="panel"><h3>起始日期</h3>'+
       '<div class="mn-rule"><span class="nm">从这天起记</span>'+
@@ -16400,7 +16406,79 @@ margin-left: -22px;
   // （CAI,YUELE NZPost / CAI,YUELE NZP-Michael / CAI,YUELE Nzp），
   // 自动归并只能按前两个词切，切不到一起 —— 只有你知道它们是同一个来源。
   // 周期记账面板：能看见每条规则跑到哪了，随时暂停 / 继续 / 删掉。
-  function mnRecurHtml(){
+  function mnRecurHtml(){return mnRecSel?mnRecDetailHtml(mnRecSel):mnRecListHtml();}
+  // 点开一条：上半截是这条规则本身（能改），下半截是它已经记出来的每一笔。
+  function mnRecDetailHtml(id){
+    var r=null;mnRecList().forEach(function(x){if(x.id===id)r=x;});
+    if(!r){mnRecSel="";return mnRecListHtml();}
+    var mine=mnTxns.filter(function(t){return t.recur===id;})
+      .sort(function(a,b){return (a.d<b.d)?1:((a.d>b.d)?-1:0);});
+    var sum=0;mine.forEach(function(t){sum+=(+t.amt||0);});
+    var cn=(MN_CAT[r.cat]||{}),nx=mnRecNext(r),ran=(+r.n||0)>0;
+    var inp='padding:6px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px';
+    var curs=mnCurList();if(!curs.length)curs=["NZD"];
+    ["NZD","CNY","USD","AUD"].forEach(function(c){if(curs.indexOf(c)<0)curs.push(c);});
+    var accts=mnCfg.accts||[];
+    return '<div class="panel"><h3>'+
+        '<button class="btn" data-recback style="padding:4px 10px;font-size:12px">← 全部周期</button>'+
+        '<span style="margin-left:10px">'+(cn.i||"🏷")+' '+esc(cn.n||r.cat)+(r.desc?("　"+esc(r.desc)):"")+'</span>'+
+        '<span class="grow"></span>'+
+        '<span class="tx-gst" style="'+(r.paused?'color:#B4720B;background:#FFF1DC':'color:#2C8F68;background:#E7F7EF')+'">'+
+          (r.paused?"已暂停":(nx?"进行中":"已结束"))+'</span></h3>'+
+      '<div class="mn-rule"><span class="nm">开始日期</span>'+
+        (ran?('<span style="flex:1;font-size:13px">'+esc(r.start)+
+              '　<span style="color:var(--muted);font-size:12px">已经跑过 '+(+r.n||0)+' 次了，改开始日期会把账算乱，不给改</span></span>')
+            :('<input data-rdstart type="date" lang="zh-CN" value="'+esc(r.start)+'" style="'+inp+';flex:0 0 160px">'))+'</div>'+
+      '<div class="mn-rule"><span class="nm">重复周期</span>'+
+        '<span style="font-size:12px;color:var(--muted)">每</span>'+
+        '<input data-rdn type="number" min="1" step="1" value="'+(Math.max(1,+r.ev.n||1))+'" style="'+inp+';flex:0 0 70px">'+
+        '<select data-rdk style="'+inp+';flex:0 0 90px">'+
+          [["month","个月"],["week","周"],["day","天"],["year","年"]].map(function(o){
+            return '<option value="'+o[0]+'"'+(r.ev.k===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+
+        '</select></div>'+
+      '<div class="mn-rule"><span class="nm">结束方式</span>'+
+        '<select data-rdend style="'+inp+';flex:0 0 130px">'+
+          [["never","永不结束"],["date","到某天为止"],["count","共 N 次"]].map(function(o){
+            return '<option value="'+o[0]+'"'+(((r.end||{}).k||"never")===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("")+
+        '</select>'+
+        '<input data-rdendv value="'+esc((r.end||{}).v||"")+'" placeholder="哪天为止 / 记几次" style="'+inp+
+          ';flex:0 0 150px'+((((r.end||{}).k||"never")==="never")?";display:none":"")+'"></div>'+
+      '<div class="mn-rule"><span class="nm">金额</span>'+
+        '<select data-rdsign style="'+inp+';flex:0 0 80px">'+
+          '<option value="-1"'+((+r.amt<0)?" selected":"")+'>支出</option>'+
+          '<option value="1"'+((+r.amt>0)?" selected":"")+'>收入</option></select>'+
+        '<input data-rdamt type="number" step="0.01" value="'+Math.abs(+r.amt||0)+'" style="'+inp+';flex:0 0 120px">'+
+        '<select data-rdcur style="'+inp+';flex:0 0 90px">'+curs.map(function(c){
+          return '<option value="'+esc(c)+'"'+(c===(r.cur||"NZD")?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select></div>'+
+      '<div class="mn-rule"><span class="nm">分类</span>'+
+        '<select data-rdcat style="'+inp+';flex:0 0 150px">'+mnCatOpts(r.cat)+'</select>'+
+        '<input data-rddesc value="'+esc(r.desc||"")+'" placeholder="摘要" style="'+inp+';flex:1;min-width:120px"></div>'+
+      (accts.length?('<div class="mn-rule"><span class="nm">扣款账户</span>'+
+        '<select data-rdacct style="'+inp+';flex:1"><option value="">不指定</option>'+
+        accts.map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===r.acct?" selected":"")+'>'+
+          esc(mnAcctLabel(a))+'</option>';}).join("")+'</select></div>'):"")+
+      '<div class="mn-rule"><span class="nm">下次执行</span>'+
+        '<span style="flex:1;font-size:13px">'+(nx?esc(nx):'<span style="color:var(--muted)">没有了'+
+          (r.paused?"（暂停中）":"（已到结束条件）")+'</span>')+'</span></div>'+
+      '<div style="margin-top:12px">'+
+        '<button class="btn primary" data-rdsave="'+esc(r.id)+'" style="padding:5px 14px;font-size:12px">保存</button>'+
+        '<button class="btn" data-recpause="'+esc(r.id)+'" style="margin-left:8px;padding:5px 12px;font-size:12px">'+
+          (r.paused?"继续":"暂停")+'</button>'+
+        '<button class="btn" data-recdel="'+esc(r.id)+'" style="margin-left:8px;padding:5px 12px;font-size:12px">删掉这条</button>'+
+      '</div></div>'+
+      '<div class="panel"><h3>账单记录（'+mine.length+' 条）<span class="grow"></span>'+
+        '<span style="font-weight:700;color:'+((sum<0)?"#d9534f":"#3fae87")+'">'+mnMoney(sum,r.cur)+'</span></h3>'+
+        (mine.length?mine.map(function(t){
+          return '<div class="mn-rule" style="gap:10px">'+
+            '<span style="flex:0 0 110px;font-size:12.5px;color:var(--muted)">'+esc(t.d)+'</span>'+
+            '<span style="flex:1;font-size:13px">'+esc(t.desc||cn.n||"")+'</span>'+
+            '<span style="flex:0 0 120px;text-align:right;font-weight:650;color:'+
+              ((+t.amt<0)?"#d9534f":"#3fae87")+'">'+mnMoney(t.amt,t.cur)+'</span></div>';}).join("")
+          :'<div style="font-size:13px;color:var(--muted)">还没记出过 —— 到了日子会自己出现在明细里。</div>')+
+        '<div style="font-size:12px;color:var(--muted);margin-top:10px">'+
+        '这些就是账本明细里那些标着「周期」的流水，删掉某一笔不会再被重新生成。</div>'+
+      '</div>';}
+  function mnRecListHtml(){
     var list=mnRecList(),today=mnYmd(new Date());
     var curs=mnCurList();if(!curs.length)curs=["NZD"];
     ["NZD","CNY","USD","AUD"].forEach(function(c){if(curs.indexOf(c)<0)curs.push(c);});
@@ -16418,6 +16496,7 @@ margin-left: -22px;
         '<span style="flex:1;min-width:150px;font-size:12px;color:var(--muted)">'+
           esc(mnRecEvText(r))+'　·　已执行 <b>'+(+r.n||0)+'</b> 次'+
           (nx?('　·　下次 <b>'+esc(nx)+'</b>'+(nx<=today?"（进页面就补记）":"")):"")+'</span>'+
+        '<button class="btn" data-recopen="'+esc(r.id)+'" style="padding:4px 9px;font-size:12px">细则 ›</button>'+
         '<button class="btn" data-recpause="'+esc(r.id)+'" style="padding:4px 9px;font-size:12px">'+
           (r.paused?"继续":"暂停")+'</button>'+
         '<button class="btn" data-recdel="'+esc(r.id)+'" style="padding:4px 9px;font-size:12px">删</button>'+
@@ -16818,8 +16897,13 @@ margin-left: -22px;
           !ok);
         mnRender();});
       document.getElementById("mn-rules").addEventListener("click",function(){
-        if(mnRulesWin){wbtClose();return;}
+        if(mnRulesWin&&mnWinBtn==="mn-rules"){wbtClose();return;}
+        if(mnRulesWin)wbtClose();
         mnOpenRules();});
+      document.getElementById("mn-recur").addEventListener("click",function(){
+        if(mnRulesWin&&mnWinBtn==="mn-recur"){wbtClose();return;}
+        if(mnRulesWin)wbtClose();
+        mnOpenRecur();});
       // 设置面板和明细共用 mnOnClick/mnOnChange 这两个委托，以前只挂在 #mn-body 上。
       // 搬进弹窗后得给弹窗也挂一份，否则里面所有按钮和下拉都是死的。
       var wbb=document.getElementById("wbtool-body");
@@ -16844,6 +16928,13 @@ margin-left: -22px;
           mnStatus("起始日期 <b>"+esc(sv)+"</b> 已保存"+
             (pre?("　·　账本里还有 "+pre+" 笔在这天之前，要清用下面「账本数据」里的按钮"):"")+
             "　·　点 🔄 同步 就从这天开始拉");
+          return;}
+        if(t.matches("[data-rdend]")){
+          var ev3=mnQ("[data-rdendv]");
+          if(ev3){var k4=t.value;
+            ev3.style.display=(k4==="never")?"none":"";
+            ev3.type=(k4==="date")?"date":(k4==="count"?"number":"text");
+            ev3.placeholder=(k4==="date")?"哪天为止":"记几次";}
           return;}
         if(t.matches("[data-rcend]")){
           // 就地改，绝不 mnRender：这几个输入框的值只活在 DOM 里，重画一次你填的全丢
@@ -16951,6 +17042,36 @@ margin-left: -22px;
           mnRender();return;}
         var exp=e.target.closest("[data-exp]");
         if(exp){mnExport(exp.getAttribute("data-exp"));return;}
+        var rco=e.target.closest("[data-recopen]");
+        if(rco){mnRecSel=rco.getAttribute("data-recopen");
+          if(!mnRulesWin||mnWinBtn!=="mn-recur"){if(mnRulesWin)wbtClose();mnOpenRecur();mnRecSel=rco.getAttribute("data-recopen");}
+          mnRender();return;}
+        if(e.target.closest("[data-recback]")){mnRecSel="";mnRender();return;}
+        var rds=e.target.closest("[data-rdsave]");
+        if(rds){var sid=rds.getAttribute("data-rdsave"),lst3=mnRecList(),hit3=null;
+          lst3.forEach(function(x){if(x.id===sid)hit3=x;});
+          if(!hit3)return;
+          var a3=parseFloat((mnQ("[data-rdamt]")||{}).value);
+          if(isNaN(a3)||!a3){mnStatus("金额要填对",1);return;}
+          var ek3=(mnQ("[data-rdk]")||{}).value||hit3.ev.k;
+          var end3=(mnQ("[data-rdend]")||{}).value||"never";
+          var endv3=(end3==="never")?"":String((mnQ("[data-rdendv]")||{}).value||"").trim();
+          if(end3==="date"&&!/^\d{4}-\d{2}-\d{2}$/.test(endv3)){mnStatus("结束日期要写成 2026-12-31 这种",1);return;}
+          if(end3==="count"&&!(+endv3>0)){mnStatus("次数要填个大于 0 的数",1);return;}
+          var st3=(mnQ("[data-rdstart]")||{}).value;
+          if(st3&&/^\d{4}-\d{2}-\d{2}$/.test(st3))hit3.start=st3;
+          hit3.amt=Math.abs(a3)*(+(mnQ("[data-rdsign]")||{}).value||-1);
+          hit3.cur=(mnQ("[data-rdcur]")||{}).value||hit3.cur;
+          hit3.cat=(mnQ("[data-rdcat]")||{}).value||hit3.cat;
+          hit3.desc=String((mnQ("[data-rddesc]")||{}).value||"").trim();
+          var ac3=mnQ("[data-rdacct]");if(ac3)hit3.acct=ac3.value||"";
+          hit3.ev={k:ek3,n:Math.max(1,parseInt((mnQ("[data-rdn]")||{}).value,10)||1)};
+          if(ek3==="month"||ek3==="year")hit3.ev.dom=+String(hit3.start).split("-")[2];
+          hit3.end={k:end3,v:endv3};
+          mnRecSave(lst3);
+          var made3=mnRecurRun();
+          mnStatus("改好了 · "+esc(mnRecEvText(hit3))+(made3?("　·　顺手补记了 <b>"+made3+"</b> 笔"):""));
+          mnRender();return;}
         var rcp=e.target.closest("[data-recpause]");
         if(rcp){var pid=rcp.getAttribute("data-recpause"),lst=mnRecList(),hit=null;
           lst.forEach(function(x){if(x.id===pid)hit=x;});
@@ -16967,6 +17088,7 @@ margin-left: -22px;
             {danger:true,anchor:rcd}).then(function(ok){
             if(!ok)return;
             mnRecSave(mnRecList().filter(function(x){return x.id!==did;}));
+            if(mnRecSel===did)mnRecSel="";           // 正看着它的细则页，退回列表
             mnStatus("删了 · 已经记进去的流水还在");mnRender();});
           return;}
         if(e.target.closest("[data-recadd]")){
