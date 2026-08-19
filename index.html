@@ -1969,6 +1969,8 @@
   .modal.wbt-tall::after{content:"";position:absolute;right:3px;bottom:3px;width:12px;height:12px;pointer-events:none;
     border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);opacity:.4;border-radius:0 0 4px 0}
 
+  /* 记账 / 税务 的切换器：它俩共用左边导航里的一个入口 */
+  .mnx-tabs{margin:-4px 0 12px}
   /* settings — sidebar + panes */
   .set-modal{max-width:880px}
   .set-shell{display:flex;gap:18px;margin-top:10px;align-items:flex-start}
@@ -3440,7 +3442,6 @@ margin-left: -22px;
     <button data-tab="todo" aria-label="待办" title="待办"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l2 2 3.5-3.5"></path><path d="M4 13l2 2 3.5-3.5"></path><path d="M4 19.5l2 2 3.5-3.5"></path><path d="M13 6h7M13 12.5h7M13 19h7"></path></svg><span class="rl">待办</span></button>
     <button data-tab="stats" aria-label="统计" title="统计"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v16.5A1.5 1.5 0 0 0 4.5 21H21"></path><rect x="7" y="12" width="3" height="5" rx="1"></rect><rect x="12.5" y="8" width="3" height="9" rx="1"></rect><rect x="18" y="4.5" width="3" height="12.5" rx="1"></rect></svg><span class="rl">统计</span></button>
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.8"></circle><path d="M15.4 15.4L20.5 20.5"></path><path d="M7.6 8.7h5.8M7.6 12.2h3.4"></path></svg><span class="rl">词典</span></button>
-    <button data-tab="tax" aria-label="税务" title="税务 · 收入与税费"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-1.6L14 21l-3-1.6L8 21l-3-1.6z"></path><path d="M9 8.5h6M9 12h6M9 15.5h3"></path></svg><span class="rl">税务</span></button>
     <button data-tab="money" aria-label="记账" title="记账 · 银行流水"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"></rect><path d="M2.5 10.5h19"></path><path d="M6 15h3"></path></svg><span class="rl">记账</span></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg><span class="rl">菜谱</span></button>
     <button class="rail-w" id="rail-wide" type="button" aria-label="展开/收起导航" title="展开导航（显示文字）"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg><span class="rl">收起</span></button>
@@ -3628,6 +3629,7 @@ margin-left: -22px;
     <!-- TAX -->
     <section class="view" id="view-tax">
       <div class="page-h">税务 <span class="rd-sub">新西兰 · 收入 / PAYE / ACC / GST</span></div>
+      <div class="seg mnx-tabs"><button type="button" data-mt="money">记账</button><button type="button" data-mt="tax" class="on">税务</button></div>
       <div class="tax-wrap">
         <div class="tax-bar">
           <div class="seg" id="tax-tabs">
@@ -3648,6 +3650,7 @@ margin-left: -22px;
 
     <section class="view" id="view-money">
       <div class="page-h">记账 <span class="rd-sub">新西兰 · 银行流水自动进账本</span></div>
+      <div class="seg mnx-tabs"><button type="button" data-mt="money" class="on">记账</button><button type="button" data-mt="tax">税务</button></div>
       <div class="mn-wrap">
         <div class="mn-bar">
           <div class="seg" id="mn-scope">
@@ -4961,7 +4964,7 @@ margin-left: -22px;
     // 按保存的顺序重排
     var order=load("tt_railorder",null);
     if(order&&order.length){
-      order=order.filter(function(k){return k!=="ai-btn";});   // AI 现在固定在底部
+      order=order.filter(function(k){return k!=="ai-btn"&&k!=="tax";});   // AI 固定在底部；税务并进「记账」了
       var map={};items().forEach(function(b){map[keyOf(b)]=b;});
       order.forEach(function(k){if(map[k])rail.insertBefore(map[k],grow);});
       items().forEach(function(b){if(order.indexOf(keyOf(b))<0)rail.insertBefore(b,grow);});}
@@ -4990,7 +4993,8 @@ margin-left: -22px;
   // ---------- rail nav ----------
   // 笔记和看书是同一个板块，只有一个图标。所以"哪个图标亮"不能直接用"点了哪个按钮"，
   // 得从页签反查 —— tab 是 notes 时亮的仍然是「看书」。
-  function railKeyOf(tab){return (tab==="notes")?"reader":tab;}
+  // 一个图标管多个页签：笔记跟着「看书」，税务跟着「记账」（它俩现在是同一个入口下的两档）
+  function railKeyOf(tab){return (tab==="notes")?"reader":((tab==="tax")?"money":tab);}
   (function(){var r=document.querySelector(".rail"),b=document.getElementById("rail-wide");
     if(!r||!b)return;
     function paint(on){r.classList.toggle("wide",on);
@@ -4999,12 +5003,21 @@ margin-left: -22px;
     paint(!!load("tt_railwide",false));
     b.addEventListener("click",function(){var on=!r.classList.contains("wide");
       save("tt_railwide",on);paint(on);});})();
+  // 记账 / 税务 是同一个入口下的两档，点一下就换 —— 和词典页「查词 / 生词本」一个做派。
+  // 两个 section 都留着、state.tab 仍然取 "money"/"tax"：
+  // 散在各处的 state.tab==="tax" 判断、上次所在页签、税务页的懒加载全都不用动。
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("[data-mt]");if(!b)return;
+    var t=b.getAttribute("data-mt");if(t===state.tab)return;
+    showTab(t);});
   function showTab(tab){
     if(zenOn)toggleZen(false);                            // 先按"当前页签"把状态存好，再切走
     state.tab=tab;save("tt_tab",tab);
     var lit=railKeyOf(tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-tab")===lit);});
+    document.querySelectorAll("[data-mt]").forEach(function(x){
+      x.classList.toggle("on",x.getAttribute("data-mt")===tab);});
     ["calendar","todo","stats","dict","reader","tax","money","food","body","notes","rec"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo"){renderTodos();renderSkills();setTimeout(function(){try{fitTodoCols();}catch(e){}},0);}
