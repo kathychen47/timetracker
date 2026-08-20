@@ -4568,7 +4568,7 @@ margin-left: -22px;
   function evMergeInto(base,extra,cutMs){        // 把 extra 里「base 没有、又生在 cutMs 之后」的捡进 base，返回捡了几条
     if(!Array.isArray(base)||!Array.isArray(extra)||!isFinite(cutMs))return 0;
     var has={},got=0;base.forEach(function(e){if(e&&e.id)has[e.id]=1;});
-    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&evBorn(e)>cutMs){base.push(e);got++;}});
+    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&!evIsDemo(e)&&evBorn(e)>cutMs){base.push(e);got++;}});
     return got;}
   // 同一台机器开着两个网页：A 刚记完番茄钟，B 拿着旧内存随手一存（勾个待办、挪个事件）
   // 就把那条顶掉了。写盘前把盘上「比我上次对账更新」的事件捡回来，新增永远不丢。
@@ -4881,9 +4881,35 @@ margin-left: -22px;
   var gcalAuto=load("tt_gcalauto",null);
   if(!gcalAuto||typeof gcalAuto!=="object")gcalAuto={pomo:!!gcalDefault,goal:!!gcalDefault};   // 老设置沿用「新建事件」那一项
 
-  if(events===null){
+  // 首次打开时铺的那 12 条示例事件。它们的 id 时间戳是「这台设备第一次打开」那一刻，
+  // 在 evMergeInto 眼里就成了「本机刚记的、还没上云的新事件」—— 拉云时被捡进去再推上云，
+  // 从此每台新设备都会往云里补一份，谁也删不干净。所以要能认出它们，并且不许进合并。
+  var DEMO_SIG={};
+  [["团队会议","09:00","10:00","meeting"],["专注 · 写方案","10:30","12:00","focus"],
+   ["健身","18:00","19:00","sport"],["背单词","14:00","15:30","study"],
+   ["周目标复盘","16:00","16:30","goal"],["晨会","09:00","09:30","meeting"],
+   ["专注 · 开发","10:00","11:30","focus"],["读书","14:00","15:00","study"],
+   ["跑步","17:00","18:00","sport"],["需求评审","11:00","12:00","meeting"],
+   ["写周报","09:00","09:30","meeting"],["爬山","10:00","11:00","sport"]
+  ].forEach(function(a){DEMO_SIG[a.join("|")]=1;});
+  function evIsDemo(e){
+    if(!e)return false;
+    if(e.demo)return true;                                 // 以后铺的都带记号，一眼认出
+    if(e.gid||e.done||e.note||e.live)return false;         // 打过卡的、写过备注的、Google 来的：一概不碰
+    return !!DEMO_SIG[[e.title,e.start,e.end,e.cat].join("|")];}
+  // 登录过云同步的设备一定不是第一次用，示例数据对它只有干扰
+  function hasCloudSession(){try{for(var i=0;i<LS.length;i++){
+    if(/^sb-.*-auth-token/.test(LS.key(i)||""))return true;}}catch(e){}return false;}   // 新版 supabase 会切成 …-auth-token.0，别锚死结尾
+  var SEEDED=hasCloudSession();                            // true = 这台别铺示例
+  function evDropDemo(){                                   // 只对登录过的设备动手
+    if(!Array.isArray(events))return 0;
+    if(!SEEDED&&!hasCloudSession())return 0;   // 全新设备是「先铺示例、后登录」，所以要当场再问一次
+    var n0=events.length;events=events.filter(function(e){return !evIsDemo(e);});
+    var got=n0-events.length;if(got)save("tt_events",events);return got;}
+
+  if(events===null&&!SEEDED){
     var mon=startOfWeek(new Date());
-    function E(off,s,e,title,cat,sub){return{id:uid(),date:fmt(addDays(mon,off)),start:s,end:e,title:title,cat:cat,sub:sub||null,done:false};}
+    function E(off,s,e,title,cat,sub){return{id:uid(),date:fmt(addDays(mon,off)),start:s,end:e,title:title,cat:cat,sub:sub||null,done:false,demo:1};}
     events=[
       E(0,"09:00","10:00","团队会议","meeting",null),
       E(0,"10:30","12:00","专注 · 写方案","focus",null),
@@ -4900,17 +4926,23 @@ margin-left: -22px;
     ];
     save("tt_events",events);
   }
-  if(todos===null){todos=[
+  if(events===null)events=[];   // 登录过的设备：先空着，等云端拉
+  if(todos===null&&!SEEDED){todos=[
     {id:uid(),title:"完成项目方案初稿",prio:"high",due:fmt(new Date()),done:false},
     {id:uid(),title:"回复客户邮件",prio:"mid",due:fmt(addDays(new Date(),1)),done:false},
     {id:uid(),title:"整理本周会议纪要",prio:"low",due:"",done:true}
   ];save("tt_todos",todos);}
-  if(memos===null){memos=[{id:uid(),text:"和导师同步：带上一页纸的研究动机 + 两个设计方案。"}];save("tt_memos",memos);}
+  if(todos===null)todos=[];
+  if(memos===null&&!SEEDED){memos=[{id:uid(),text:"和导师同步：带上一页纸的研究动机 + 两个设计方案。"}];save("tt_memos",memos);}
+  if(memos===null)memos=[];
   var goals=load("tt_goals",null);
-  if(goals===null){goals=[
+  if(goals===null&&!SEEDED){goals=[
     {id:uid(),title:"背单词",type:"time",target:5,period:"week",cat:"study",sub:"s-eng",keyword:null},
     {id:uid(),title:"游泳",type:"count",target:10,period:"month",cat:"sport",sub:null,keyword:"游泳"}
   ];save("tt_goals",goals);}
+  if(goals===null)goals=[];
+  // 这台设备之前已经被铺过、还从云端互相传染过的：开页面就清掉，不等同步
+  try{evDropDemo();}catch(e){}
 
   // ---------- theme ----------
   var root=document.documentElement,themeBtn=document.getElementById("theme-btn");
@@ -8536,6 +8568,7 @@ margin-left: -22px;
     // 云端明明拉下来了，记账/术语表/文件夹树还是空的，非得刷新一次页面才看得见。
     // 更要命的是内存里那份空的一旦被写回去（在记账页随手点个「月/年」就会），
     // 会把云端的真数据顶掉。所以这里跟着一起重读。
+    var _dd=evDropDemo();if(_dd)try{pLog("清掉云端带下来的示例事件",{n:_dd});}catch(e){}
     mnTxns=load("tt_txns",[])||[];mnRules=load("tt_mnrules",null)||{};
     var _mn=load("tt_mncfg",null);if(_mn&&typeof _mn==="object")mnCfg=_mn;
     try{mnCatIdx();}catch(e){}
