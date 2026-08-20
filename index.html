@@ -8455,6 +8455,9 @@ margin-left: -22px;
 
   // ---------- 云同步 (Supabase · 多设备) ----------
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
+  // 这台设备这次打开还没跟云端对过账之前，一律不许往上推：
+  // 刚打开时内存/本机是空的，闷头 upsert 会把云端别的设备的数据整盘顶掉。
+  var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
   var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
@@ -8471,7 +8474,7 @@ margin-left: -22px;
     if(as){if(!ready)as.textContent="（云同步还没配置，先去「☁️ 云同步」页填一下网址+key）";
       else if(sbUser)as.innerHTML="已登录：<b>"+esc(sbUser.email||sbUser.id)+"</b><br>✓ 多设备云同步"+(gToken?" ・ ✓ 已连 Google 日历":"")+"<br><span style=\"color:var(--muted)\">这台设备下次打开免登录。</span>";
       else as.textContent="还没登录。点上面按钮用 Google 登录 —— 云同步和 Google 日历一次搞定。";}}
-  function schedulePush(key){if(SOLO||applyingCloud||!SB||!sbUser)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
+  function schedulePush(key){if(SOLO||applyingCloud||!SB||!sbUser||!pulledOnce)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   // updated_at 是推送那台设备的电脑时钟写的，两台设备差几分钟很正常 —— 宁可多留，不可错删
   var PULL_SKEW=600000;
@@ -8529,15 +8532,32 @@ margin-left: -22px;
     gluRecs=load("tt_glu",[])||[];var _gc=load("tt_glucfg",null);if(_gc&&typeof _gc==="object")gluCfg=_gc;
     bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
     if(state.tab==="body")try{renderBody();gluRenderCard();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    // 下面这些以前只写进了 localStorage，没回到内存里的变量 —— 换台设备登录，
+    // 云端明明拉下来了，记账/术语表/文件夹树还是空的，非得刷新一次页面才看得见。
+    // 更要命的是内存里那份空的一旦被写回去（在记账页随手点个「月/年」就会），
+    // 会把云端的真数据顶掉。所以这里跟着一起重读。
+    mnTxns=load("tt_txns",[])||[];mnRules=load("tt_mnrules",null)||{};
+    var _mn=load("tt_mncfg",null);if(_mn&&typeof _mn==="object")mnCfg=_mn;
+    try{mnCatIdx();}catch(e){}
+    if(state.tab==="money")try{mnRender();}catch(e){}
+    if(state.tab==="tax")try{renderTax();}catch(e){}
+    terms=load("tt_terms",[])||[];
+    var _fd=load("tt_folders",null);if(_fd&&_fd.length){folders=_fd;fxReady=Promise.resolve(folders);}
+    var _ac=load("tt_anncolors",null);if(_ac&&_ac.length)ANNC=_ac;
+    var _pc=load("tt_popcfg",null);if(_pc&&typeof _pc==="object")popCfg=_pc;
+    gcalCount=load("tt_gcalcount",gcalCount);
+    apiModel=load("tt_aimodel","")||apiModel;aiProvider=load("tt_aiprovider","")||aiProvider;
+    ollamaUrl=load("tt_ollamaurl","")||ollamaUrl;ollamaModel=load("tt_ollamamodel","")||ollamaModel;
     try{renderCatSettings();refreshCatSelects();}catch(e){}
     applyTheme(settings.theme||curTheme());renderCal();renderTodos();renderDashboard();if(state.tab==="stats")renderStatsView();if(state.tab==="dict"){updateWbCount();renderWordbook();refreshLookup();}}
   function pullCloud(){if(!SB||!sbUser||pulling)return;pulling=true;sbStatus("同步中…");
     SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){pulling=false;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
       if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data,r.data.updated_at);reloadAllFromStorage();applyingCloud=false;
+        pulledOnce=true;
         schedulePush();                     // 拉取时捡回过本机事件的话，得推一次让云端也补上；没捡回就是白推一次，不亏
         reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
-      else{pushCloud();}
+      else{pulledOnce=true;pushCloud();}   // 云端还没有这一行：这台就是第一台，推上去
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
     if(SB||!window.supabase||!sbUrl||!sbKey)return;
