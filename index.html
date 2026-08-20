@@ -5888,9 +5888,15 @@ margin-left: -22px;
   //   · return_timestamps 用 true（句级）而不是 "word"：句级正好对上我们一行一句的稿子，
   //     词级在 WebGPU 上还不稳（#820）。
   var WMODELS=[
-    {id:"onnx-community/whisper-tiny_timestamped",name:"tiny · 最快",mb:42},
-    {id:"onnx-community/whisper-base_timestamped",name:"base · 推荐",mb:77},
-    {id:"onnx-community/whisper-small_timestamped",name:"small · 最准",mb:240}];
+    {id:"onnx-community/whisper-tiny_timestamped",name:"tiny · 最快",mb:42,rt:0.25},
+    {id:"onnx-community/whisper-base_timestamped",name:"base · 推荐",mb:77,rt:0.5},
+    {id:"onnx-community/whisper-small_timestamped",name:"small · 最准",mb:240,rt:1.5}];
+  function wModelRT(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].rt||0.5;return 0.5;}
+  function wModelName(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].name;return "";}
+  // 估个时间给你看 —— 干等着不知道要多久最难受。CPU 大约「音频时长 x 模型倍率」，显卡快 4 倍左右。
+  function wETA(durSec,dev,model){
+    var f=wModelRT(model||wModel())*((dev||wDevice())==="webgpu"?0.25:1);
+    return Math.max(1,Math.round(durSec*f/60));}
   var TJS="https://cdn.jsdelivr.net/npm/@huggingface/transformers@3";
   var wkr=null,wkrBusy=false;
   function wDevice(){
@@ -5981,13 +5987,16 @@ margin-left: -22px;
     var d=buf.duration;buf=null;                         // 16k 单声道只有原来的 1/12，大头可以放了
     return {pcm:done.getChannelData(0),dur:d};}
 
+  // 两个页面都会起转写（录音转写 / 精听），两条进度条一起写 ——
+  // 以前只写录音页那条，在精听页转的时候下载百分比和预估时间全落在看不见的地方。
   function wProg(txt,pct){
-    var box=document.getElementById("rec-wp"),bar=document.getElementById("rec-wpbar"),t=document.getElementById("rec-wpt");
-    if(!box)return;
-    if(txt===null){box.hidden=true;return;}
-    box.hidden=false;t.textContent=txt;
-    bar.style.width=(pct==null?0:Math.max(0,Math.min(100,pct)))+"%";
-    bar.style.opacity=(pct==null)?".35":"1";}
+    [["rec-wp","rec-wpbar","rec-wpt"],["lt-wp","lt-wpbar","lt-wpt"]].forEach(function(k){
+      var box=document.getElementById(k[0]),bar=document.getElementById(k[1]),t=document.getElementById(k[2]);
+      if(!box||!bar||!t)return;
+      if(txt===null){box.hidden=true;return;}
+      box.hidden=false;t.textContent=txt;
+      bar.style.width=(pct==null?0:Math.max(0,Math.min(100,pct)))+"%";
+      bar.style.opacity=(pct==null)?".35":"1";});}
 
   // 一次转写。blob 可以是录音，也可以是你导进来的文件。
   // navigator.gpu 在、真去要适配器却失败，是很常见的一种情况（驱动被浏览器拉黑、
@@ -6031,8 +6040,9 @@ margin-left: -22px;
             return;}
           if(d.type==="run"){bark(30*60*1000,"转写超过 30 分钟还没结束，先停了。试试选 tiny 模型，或把音频切短一点。");
             // 粗估：GPU 大约音频时长的 1/8，CPU 大约 1/2。给个数总比让你干等强。
-            var eta=Math.max(1,Math.round(a.dur*(dev==="webgpu"?0.12:0.5)/60));
-            wProg((dev==="webgpu"?"GPU":"CPU")+" 转写中 · "+tsLabel(a.dur)+" 的音频 · 大概 "+eta+" 分钟…",null);return;}
+            var eta=wETA(a.dur,dev,model);
+            wProg((dev==="webgpu"?"显卡":"CPU")+" 转写中 · "+wModelName(model)+" · "+
+              tsLabel(a.dur)+" 的音频 · 大概 "+eta+" 分钟…",null);return;}
           if(d.type==="err"){off();wkrBusy=false;wProg(null);rej(new Error(d.msg));return;}
           if(d.type==="done"){
             off();wkrBusy=false;wProg(null);
@@ -6040,7 +6050,7 @@ margin-left: -22px;
         function onerr(ev){off();wkrBusy=false;wProg(null);
           rej(new Error("转写线程起不来："+((ev&&ev.message)||"多半是网络拿不到 transformers.js")));}
         w.addEventListener("message",onmsg);w.addEventListener("error",onerr);
-        wProg("准备中…",null);
+        wProg("准备中 · 正在取转写引擎（第一次要从 CDN 下，之后有缓存）…",null);
         bark(20000,"转写线程 20 秒没有任何反应 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。");
         w.postMessage({audio:a.pcm,model:model,lang:lang||undefined,device:dev});});
     }).catch(function(err){wkrBusy=false;wProg(null);throw err;});}
@@ -6202,13 +6212,7 @@ margin-left: -22px;
     var a=document.getElementById("lt-hint"),b=document.getElementById("lt-hint2");
     if(a)a.textContent=m||"";if(b)b.textContent=m||"";}
   function ltMeta(m){var el=document.getElementById("lt-meta");if(el)el.textContent=m||"";}
-  function ltProg(txt,pct){
-    var w=document.getElementById("lt-wp"),t=document.getElementById("lt-wpt"),b=document.getElementById("lt-wpbar");
-    if(!w)return;
-    if(txt==null){w.hidden=true;return;}
-    w.hidden=false;t.textContent=txt;
-    b.style.width=(pct==null?100:Math.max(0,Math.min(100,pct)))+"%";
-    b.style.opacity=(pct==null?".45":"1");}
+  function ltProg(txt,pct){try{wProg(txt==null?null:txt,pct);}catch(e){}}
   function ltDirty(){if(ltSaveT)clearTimeout(ltSaveT);ltSaveT=setTimeout(function(){ltSaveT=null;saveRecs();},600);}
 
   // ================= 文本归一化 =================
@@ -6498,6 +6502,19 @@ margin-left: -22px;
     try{var r=await SB.storage.from(LT_BUCKET).createSignedUrl(p,60*60*6);
       if(r.error)return null;
       return (r.data&&r.data.signedUrl)||null;}catch(e){return null;}}
+  // 手机第一次从云端听某条时，后台把音频抓回来存进本机 IndexedDB。
+  // 之后 recGet 就能直接命中 —— 秒开、能离线、也不用反复拉云端流量。
+  var ltCaching={};
+  async function ltCacheCloud(id,path){
+    if(!id||!path||ltCaching[id])return;
+    ltCaching[id]=1;
+    try{
+      var u=await ltCloudURL(path);if(!u)return;
+      var resp=await fetch(u);if(!resp.ok)return;
+      var b=await resp.blob();
+      if(b&&b.size&&b.size<60*1024*1024)await recPut(id,b);
+    }catch(e){}
+    finally{delete ltCaching[id];}}
   async function ltDropCloud(p){
     if(!SB||!sbUser||!p)return;
     try{await SB.storage.from(LT_BUCKET).remove([p]);}catch(e){}}
@@ -6779,8 +6796,17 @@ margin-left: -22px;
         ttAlert("翻译失败："+String((err&&err.message)||err)+"\n\n在精听设置里可以换引擎（我的 AI / Google / 本地）。");});}
 
   // ================= 导入 =================
+  function ltSmall(){
+    return (window.innerWidth||1280)<760||
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||"");}
   async function ltNewFromAudio(file,text){
     if(!file)return;
+    if(ltSmall()&&!await ttConfirm(
+      "手机上跑转写很慢，音频长一点还可能因为内存不够直接失败。\n\n"+
+      "推荐做法：在电脑上导入转写，然后在设置里把音频设成「云端」——\n"+
+      "手机同步下来就能直接练，文字和音频都有。\n\n"+
+      "还是要在这台设备上转吗？",
+      {okText:"还是在这转"}))return;
     var id="r"+uid(),okLocal=true;
     var name=String(file.name||"素材").replace(/\.[^.]+$/,"");
     ltProg("准备中…",null);
@@ -6871,7 +6897,8 @@ margin-left: -22px;
     var blob=null;try{blob=await recGet(id);}catch(e){}
     if(blob){ltURL=URL.createObjectURL(blob);ltRevoke=true;}
     else if(r.cloud){ltProg("取云端音频…",null);ltURL=await ltCloudURL(r.cloud);ltProg(null);}
-    if(ltURL){au.src=ltURL;miss.hidden=true;try{au.load();}catch(e){}}
+    if(ltURL){au.src=ltURL;miss.hidden=true;try{au.load();}catch(e){}
+      if(!blob&&r.cloud)ltCacheCloud(r.id,r.cloud);}   // 先能听，再后台存一份
     else{
       au.removeAttribute("src");miss.hidden=false;
       miss.textContent=r.cloud
