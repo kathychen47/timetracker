@@ -1472,6 +1472,8 @@
   .lt-f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
   .lt-f select,.lt-f input{padding:6px 8px;border:1px solid var(--border);border-radius:8px;
     background:var(--bg);color:var(--text);font-size:13.5px;font-family:var(--font)}
+  #lt-home.lt-drop{outline:2.5px dashed var(--primary);outline-offset:8px;border-radius:var(--radius);
+    background:color-mix(in srgb,var(--primary) 6%,transparent)}
   .lt-new{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:16px 18px}
   .lt-new textarea{width:100%;box-sizing:border-box;min-height:130px;padding:10px 12px;font-size:14px;
     line-height:1.6;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
@@ -3906,6 +3908,7 @@ margin-left: -22px;
           <button class="btn" id="lt-ft" title="已经有别人整理好的文字稿？把音频和文本一起给我，我来对齐">📝 音频 + 已有文本</button>
           <span class="lt-sp"></span>
           <button class="btn" id="lt-setbtn">⚙️ 设置</button>
+          <span class="wt-note" style="margin:0">或者把文件直接拖进这一页 —— 音频、字幕（srt / vtt）、txt 都行，一起拖就自动对齐</span>
           <span class="wt-note" id="lt-hint" style="margin:0"></span>
         </div>
         <div class="lt-new" id="lt-newtext" hidden>
@@ -5894,6 +5897,7 @@ margin-left: -22px;
     var pref=load("tt_wdev","auto");
     if(pref==="wasm")return "wasm";
     if(pref==="webgpu")return "webgpu";
+    if(load("tt_wgpubad",false))return "wasm";        // 这台机器试过，要不到显卡适配器
     return (typeof navigator!=="undefined"&&navigator.gpu)?"webgpu":"wasm";}
   function wModel(){var m=load("tt_wmodel","");
     for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===m)return m;
@@ -5986,10 +5990,24 @@ margin-left: -22px;
     bar.style.opacity=(pct==null)?".35":"1";}
 
   // 一次转写。blob 可以是录音，也可以是你导进来的文件。
+  // navigator.gpu 在、真去要适配器却失败，是很常见的一种情况（驱动被浏览器拉黑、
+  // 远程桌面、核显有问题都会这样）。以前这种情况直接报错收场 —— 其实该自动退回 CPU。
+  // 退回成功就把这台机器记下来，之后直接走 CPU，不用每次都白试一遍显卡。
   function whisperRun(blob,lang){
     if(wkrBusy)return Promise.reject(new Error("上一段还在转，等它转完"));
+    var dev=wDevice();
+    return whisperTry(blob,lang,dev).catch(function(err){
+      var m=String((err&&err.message)||err||"");
+      if(dev!=="webgpu"||!/webgpu|gpu adapter|no available backend/i.test(m))throw err;
+      save("tt_wgpubad",true);
+      try{if(wkr){wkr.terminate();wkr=null;}}catch(e){}
+      try{wDevNote();}catch(e){}
+      wProg("显卡用不了，自动改用 CPU 重新转…",null);
+      return whisperTry(blob,lang,"wasm");});}
+  function whisperTry(blob,lang,dev){
+    if(wkrBusy)return Promise.reject(new Error("上一段还在转，等它转完"));
     wkrBusy=true;
-    var model=wModel(),dev=wDevice();
+    var model=wModel();
     return toPCM16k(blob).then(function(a){
       return new Promise(function(res,rej){
         var w=wkrGet(),seen={},t0=Date.now(),wd=null;
@@ -6155,7 +6173,8 @@ margin-left: -22px;
     var el=document.getElementById("rec-devnote");if(!el)return;
     var d=wDevice();
     el.textContent=(d==="webgpu")?"用显卡跑（快 5–10 倍）":
-      (navigator.gpu?"用 CPU 跑（慢，但最稳）":"这台机器没有 WebGPU，只能用 CPU");}
+      (load("tt_wgpubad",false)?"这台机器要不到显卡适配器，已自动改用 CPU（想再试显卡：上面手动选「显卡」）":
+      (navigator.gpu?"用 CPU 跑（慢，但最稳）":"这台机器没有 WebGPU，只能用 CPU"));}
   // ---------- 🎧 精听 ----------
   // 素材和「录音转写」共用一份库（tt_recs）：那边负责转写和校对，这边负责练。
   // 文字（原文 / 译文 / 我的听写 / 判分结果）全挂在 lines 上，跟着 tt_recs 上云；
@@ -6688,6 +6707,15 @@ margin-left: -22px;
         (typeof TRENG!=="undefined"?TRENG.map(function(x){
           return '<option value="'+x.v+'"'+(trEngine===x.v?" selected":"")+'>'+esc(x.n)+'</option>';}).join(""):"")+
       '</select></label>'+
+      '<label class="lt-f">转写模型<select data-ltc="wmodel">'+
+        WMODELS.map(function(m){return '<option value="'+m.id+'"'+(wModel()===m.id?" selected":"")+
+          '>'+esc(m.name)+' · '+m.mb+'MB</option>';}).join("")+
+      '</select></label>'+
+      '<label class="lt-f">转写用什么算<select data-ltc="wdev">'+
+        [["auto","自动"],["webgpu","显卡（快）"],["wasm","CPU（稳，慢一些）"]].map(function(a){
+          return '<option value="'+a[0]+'"'+(load("tt_wdev","auto")===a[0]?" selected":"")+
+          '>'+a[1]+'</option>';}).join("")+
+      '</select></label>'+
       '<label class="lt-f">句子前后留白（秒）<input type="number" min="0" max="2" step="0.05" value="'+
         (+ltCfg.pad||0)+'" data-ltc="pad" title="太小会吃掉第一个音节"></label>'+
       '<label class="lt-f">新素材的音频存哪<select data-ltc="store">'+
@@ -6878,6 +6906,67 @@ margin-left: -22px;
     try{applyRdFs();}catch(e){}
     return true;}
 
+  // ================= 拖文件进来 =================
+  // 必须自己拦 dragover：不 preventDefault 的话浏览器会把文件当网址打开，整页被顶掉。
+  // （书架那边也有一套，但它是在「看书」页第一次打开时才装的，不能指望。）
+  var LT_TEXTRE=/\.(txt|srt|vtt|md|text|ass|ssa)$/i;
+  function ltIsFiles(e){
+    var t=e.dataTransfer&&e.dataTransfer.types;
+    return !!t&&Array.prototype.indexOf.call(t,"Files")>=0;}
+  // 字幕文件：序号和时间轴扔掉，只留台词
+  function ltFromSub(t){
+    var s=String(t||"").replace(/\r/g,"");
+    if(!/-->/.test(s))return s.trim();
+    var out=[];
+    s.split("\n").forEach(function(ln){
+      var x=ln.trim();
+      if(!x||/^\d+$/.test(x)||/-->/.test(x)||/^WEBVTT/i.test(x)||/^(NOTE|STYLE)\b/.test(x))return;
+      out.push(x.replace(/<[^>]+>/g,""));});
+    return out.join(" ").replace(/\s+/g," ").trim();}
+  function ltTakeFiles(fs){
+    if(!fs||!fs.length)return;
+    var audio=null,text=null;
+    fs.forEach(function(f){
+      if(LT_TEXTRE.test(f.name||"")||/^text\//.test(f.type||"")){if(!text)text=f;}
+      else if(!audio)audio=f;});
+    var panel=document.getElementById("lt-newtext");
+    var nm=document.getElementById("lt-fa2n"),ta=document.getElementById("lt-txin");
+    if(text){                                            // 带文本：走「音频 + 已有文本」那条路
+      var rd=new FileReader();
+      rd.onload=function(){
+        if(ta)ta.value=ltFromSub(String(rd.result||""));
+        if(panel)panel.hidden=false;
+        if(audio){ltPendFile=audio;if(nm)nm.textContent="已选："+audio.name;
+          ltNote("音频和文本都收到了 —— 点「③ 开始对齐」。");}
+        else ltNote("文本收到了。再拖个音频进来（或点①选），然后点③。");};
+      rd.onerror=function(){ltNote("这个文本文件读不出来。");};
+      rd.readAsText(text);
+      return;}
+    if(!audio)return;
+    if(panel&&!panel.hidden){                            // 面板开着：当成第①步的音频
+      ltPendFile=audio;if(nm)nm.textContent="已选："+audio.name;
+      ltNote("音频收到了。把文本贴进②，再点③。");return;}
+    ltNewFromAudio(audio,"");}
+  function ltDropInit(){
+    var z=document.getElementById("lt-home");if(!z)return;
+    document.addEventListener("dragover",function(e){
+      if(state.tab!=="listen"||!ltIsFiles(e))return;
+      e.preventDefault();                                // 整页都拦，掉在哪都不会被浏览器打开
+      try{e.dataTransfer.dropEffect="copy";}catch(err){}});
+    document.addEventListener("drop",function(e){
+      if(state.tab==="listen"&&ltIsFiles(e))e.preventDefault();});
+    z.addEventListener("dragenter",function(e){
+      if(ltIsFiles(e)){e.preventDefault();z.classList.add("lt-drop");}});
+    z.addEventListener("dragover",function(e){
+      if(ltIsFiles(e)){e.preventDefault();z.classList.add("lt-drop");}});
+    z.addEventListener("dragleave",function(e){
+      if(!e.relatedTarget||!z.contains(e.relatedTarget))z.classList.remove("lt-drop");});
+    z.addEventListener("drop",function(e){
+      if(!ltIsFiles(e))return;
+      e.preventDefault();e.stopPropagation();
+      z.classList.remove("lt-drop");
+      ltTakeFiles([].slice.call((e.dataTransfer&&e.dataTransfer.files)||[]));});}
+
   // ================= 绑定 =================
   function bindListen(){
     var doc=document.getElementById("view-listen");if(!doc)return;
@@ -6918,6 +7007,7 @@ margin-left: -22px;
         p.hidden=!p.hidden;if(!p.hidden)p.innerHTML=ltSetHTML();});});
     var bk=document.getElementById("lt-back");
     if(bk)bk.addEventListener("click",ltBack);
+    ltDropInit();
 
     doc.addEventListener("click",function(e){
       var t=e.target;
@@ -6974,6 +7064,11 @@ margin-left: -22px;
       else if(k==="store")ltCfg.store=v;
       else if(k==="showSrc")ltCfg.showSrc=(v==="1");
       else if(k==="showTr")ltCfg.showTr=(v==="1");
+      else if(k==="wmodel"){save("tt_wmodel",v);
+        try{var ms=document.getElementById("rec-model");if(ms)ms.value=v;}catch(err){}}
+      else if(k==="wdev"){save("tt_wdev",v);
+        if(v!=="auto")save("tt_wgpubad",false);          // 手动选了就再给显卡一次机会
+        try{var ds=document.getElementById("rec-dev");if(ds)ds.value=v;wDevNote();}catch(err){}}
       else if(k==="treng"){trEngine=v;save("tt_trengine",v);
         try{var s=document.getElementById("tr-engine");if(s)s.value=v;}catch(err){}}
       ltSaveCfg();ltRenderSetPanels();
