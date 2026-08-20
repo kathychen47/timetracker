@@ -1452,6 +1452,20 @@
   .lt-row .lt-src{font-size:15px;margin:0}
   .lt-row .lt-tr{font-size:13px;margin:2px 0 0}
   .lt-row .lt-diff{margin-top:6px;font-size:14.5px;line-height:1.95}
+  .lt-row .lt-diff.done{opacity:.85;background:var(--surface)}
+  /* 左右对照：左原文、右听写，按句子一行一行对齐 */
+  .lt-all.split .lt-row,.lt-all .lt-hd{display:grid;
+    grid-template-columns:34px minmax(0,1fr) minmax(0,1fr) 48px;gap:14px;align-items:start}
+  .lt-all .lt-hd{padding:6px 10px 8px;font-size:12px;color:var(--muted);font-weight:600;
+    border-bottom:1px solid var(--border);position:sticky;top:-8px;background:var(--surface);z-index:2}
+  .lt-all.split .lt-row .c{min-width:0}
+  .lt-all.split .lt-row .cR:empty::before{content:"—";color:var(--muted);opacity:.35}
+  .lt-all.split .lt-row .st{text-align:right;font-variant-numeric:tabular-nums}
+  @media(max-width:820px){
+    .lt-all.split .lt-row,.lt-all .lt-hd{grid-template-columns:28px minmax(0,1fr) 44px}
+    .lt-all.split .lt-row .cR{grid-column:2 / span 2;border-top:1px dashed var(--border);padding-top:8px}
+    .lt-all .lt-hd .c:last-of-type{display:none}}
+  .lt-row.done-row>.n::after{content:"✓";display:block;font-size:10px;color:var(--cat-sport)}
   .lt-row .lt-in{min-height:52px;font-size:15px;margin-top:6px}
 
   /* 播放控制条 */
@@ -1474,6 +1488,39 @@
     background:var(--bg);color:var(--text);font-size:13.5px;font-family:var(--font)}
   #lt-home.lt-drop{outline:2.5px dashed var(--primary);outline-offset:8px;border-radius:var(--radius);
     background:color-mix(in srgb,var(--primary) 6%,transparent)}
+  /* 总结页 */
+  .lt-kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:18px}
+  .lt-kpi div{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+  .lt-kpi b{display:block;font-size:22px;line-height:1.25;font-variant-numeric:tabular-nums}
+  .lt-kpi span{font-size:12px;color:var(--muted)}
+  .lt-sh{font-size:13px;font-weight:700;margin:18px 0 8px;display:flex;flex-wrap:wrap;gap:8px;align-items:baseline}
+  .lt-sh span{font-size:11.5px;font-weight:400;color:var(--muted)}
+  .lt-none{font-size:12.5px;color:var(--muted);opacity:.75}
+  .lt-chips{display:flex;flex-wrap:wrap;gap:7px}
+  .lt-chip{font-size:13.5px;padding:4px 10px;border-radius:999px;border:1px solid var(--border);
+    background:var(--bg);white-space:nowrap}
+  .lt-chip b{font-weight:700;margin-left:5px;opacity:.65;font-size:11.5px}
+  .lt-chip i{font-style:normal;color:var(--muted);font-size:11.5px;margin:0 3px}
+  .lt-chip.c-wrong{color:var(--danger);border-color:var(--danger)}
+  .lt-chip.c-miss{color:var(--cat-focus);border-color:var(--cat-focus);border-style:dashed}
+  .lt-chip.c-morph{color:var(--cat-meeting);border-color:var(--cat-meeting)}
+  .lt-chip.c-spell{color:var(--cat-goal);border-color:var(--cat-goal)}
+  .lt-chip.c-func{color:var(--cat-study);border-color:var(--cat-study)}
+  .lt-chip.c-glue{color:var(--cat-habit);border-color:var(--cat-habit);cursor:pointer}
+  .lt-chip.c-glue:hover{background:var(--surface-2)}
+  .lt-worst{display:flex;flex-direction:column;gap:8px}
+  .lt-wrow{display:grid;grid-template-columns:52px 62px minmax(0,1fr);gap:10px;align-items:start;
+    padding:9px 11px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer}
+  .lt-wrow:hover{border-color:var(--primary)}
+  .lt-wrow .p{font-weight:700;font-variant-numeric:tabular-nums}
+  .lt-wrow .p.bad{color:var(--danger)}
+  .lt-wrow .p.mid{color:var(--cat-goal)}
+  .lt-wrow .i{font-size:12px;color:var(--muted);padding-top:2px}
+  .lt-wrow .d{font-size:14px;line-height:1.9;min-width:0}
+  @media(max-width:720px){
+    .lt-wrow{grid-template-columns:48px minmax(0,1fr)}
+    .lt-wrow .i{grid-row:1;grid-column:2;text-align:right}
+    .lt-wrow .d{grid-column:1 / span 2}}
   .lt-new{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:16px 18px}
   .lt-new textarea{width:100%;box-sizing:border-box;min-height:130px;padding:10px 12px;font-size:14px;
     line-height:1.6;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
@@ -3933,6 +3980,7 @@ margin-left: -22px;
             <button class="btn" id="lt-back">← 全部素材</button>
             <span class="lt-title" id="lt-t"></span>
             <span class="rec-meta" id="lt-meta"></span>
+            <button class="btn" id="lt-sumbtn" title="横着看：哪些词老听错、哪些句子塔得最厉害">📊 总结</button>
             <button class="btn" id="lt-setbtn2" title="设置">⚙️</button>
             <span class="wt-note" id="lt-hint2" style="margin:0"></span>
           </div>
@@ -3940,6 +3988,7 @@ margin-left: -22px;
           <div class="lt-set" id="lt-setpanel2" hidden></div>
           <audio id="lt-audio" preload="metadata" style="display:none"></audio>
           <div class="rec-nomedia" id="lt-nomedia" hidden></div>
+          <div id="lt-sum" hidden></div>
           <div id="lt-one"></div>
           <div class="lt-all" id="lt-allbox" hidden></div>
           <div class="lt-ctl" id="lt-ctl"></div>
@@ -6191,7 +6240,7 @@ margin-left: -22px;
   // 音频要么在本机 IndexedDB，要么在 Supabase 私有桶 —— 音频删了，文字照样在。
   var ltCfg=load("tt_ltcfg",null)||{};
   (function(){
-    if(ltCfg.view!=="all")ltCfg.view="one";              // one=一次一句 all=整篇显示
+    if(["one","all","split"].indexOf(ltCfg.view)<0)ltCfg.view="one";   // 单句 / 整篇 / 左右对照
     if(!(+ltCfg.speed>0))ltCfg.speed=1;
     if(!(+ltCfg.loop>0))ltCfg.loop=3;
     if(!ltCfg.gap)ltCfg.gap="smart";                     // smart|r1|r15|r2|fixed
@@ -6205,7 +6254,7 @@ margin-left: -22px;
   function ltSaveCfg(){save("tt_ltcfg",ltCfg);}
   var ltCur=null,ltIdx=0,ltURL=null,ltRevoke=false;
   var ltLoopLeft=0,ltGapT=null,ltStopAt=0,ltPlaying=false,ltGapEnd=0,ltTick=null;
-  var ltPendFile=null,ltSaveT=null;
+  var ltPendFile=null,ltSaveT=null,ltSumOn=false;
 
   function ltAu(){return document.getElementById("lt-audio");}
   function ltNote(m){                                     // 首页和练习页各有一个位置，都写
@@ -6608,30 +6657,39 @@ margin-left: -22px;
   function ltSrcHTML(l){
     // 原文里每个词都能点：出释义、收藏进生词本 —— 跟看书那边同一套
     return ltTok(l.s).map(function(w){return '<span class="lw">'+esc(w)+'</span>';}).join(" ");}
-  function ltCellHTML(l,i){
-    var srcOn=!!ltCfg.showSrc,trOn=!!ltCfg.showTr,h="";
-    h+='<div class="lt-lab">原文 <button data-lttog="src">'+(srcOn?"隐藏":"显示")+'</button>'+
-       '<span style="opacity:.7">'+tsLabel(l.t)+' – '+tsLabel(l.e)+' · 听了 '+(+l.n||0)+' 遍</span></div>'+
-       '<div class="lt-src'+(srcOn?"":" lt-hidden")+'" data-ltrev="src">'+
-         (srcOn?ltSrcHTML(l):esc(l.s))+'</div>'+
-       '<div class="lt-lab">译文 <button data-lttog="tr">'+(trOn?"隐藏":"显示")+'</button>'+
-       '<button data-lttr="'+i+'">'+(l.tr?"重新翻译":"翻译这句")+'</button></div>'+
-       '<div class="lt-tr'+(trOn?"":" lt-hidden")+'" data-ltrev="tr">'+
-         (l.tr?esc(l.tr):"（这句还没翻译）")+'</div>'+
-       '<textarea class="lt-in" id="lt-in-'+i+'" data-ltin="'+i+'" rows="3" '+
-         'autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" '+
-         'placeholder="在这里打出你听到的…">'+esc(l.my||"")+'</textarea>'+
-       '<div class="lt-btns">'+
-         '<button class="btn primary" data-ltchk="'+i+'">对答案</button>'+
-         '<button class="btn" data-ltreplay="1">🔁 重放</button>'+
-         '<button class="btn" data-ltprev="1">← 上一句</button>'+
-         '<button class="btn" data-ltnext="1">下一句 →</button>'+
-         '<button class="btn" data-ltclear="'+i+'" title="清掉这一句的听写和判分">清空</button></div>';
-    if(l.ck&&l.my&&l.my.trim()){
+  // 拆成两半：左边是原文/译文，右边是听写和判分。
+  // 单句和整篇两种版式把两半上下拼，左右对照那种左右拼。
+  function ltHeadHTML(l,i){
+    var srcOn=!!ltCfg.showSrc,trOn=!!ltCfg.showTr;
+    return '<div class="lt-lab">原文 <button data-lttog="src">'+(srcOn?"隐藏":"显示")+'</button>'+
+      '<span style="opacity:.7">'+tsLabel(l.t)+' – '+tsLabel(l.e)+' · 听了 '+(+l.n||0)+' 遍</span></div>'+
+      '<div class="lt-src'+(srcOn?"":" lt-hidden")+'" data-ltrev="src">'+
+        (srcOn?ltSrcHTML(l):esc(l.s))+'</div>'+
+      '<div class="lt-lab">译文 <button data-lttog="tr">'+(trOn?"隐藏":"显示")+'</button>'+
+      '<button data-lttr="'+i+'">'+(l.tr?"重新翻译":"翻译这句")+'</button></div>'+
+      '<div class="lt-tr'+(trOn?"":" lt-hidden")+'" data-ltrev="tr">'+
+        (l.tr?esc(l.tr):"（这句还没翻译）")+'</div>';}
+  function ltAnsHTML(l,i,key){
+    var h='<textarea class="lt-in" id="lt-in-'+i+'" data-ltin="'+i+'" rows="3" '+
+      'autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" '+
+      'placeholder="在这里打出你听到的…">'+esc(l.my||"")+'</textarea>'+
+      '<div class="lt-btns">'+
+        '<button class="btn primary" data-ltchk="'+i+'">对答案</button>'+
+        '<button class="btn" data-ltreplay="1">🔁 重放</button>'+
+        '<button class="btn" data-ltprev="1">← 上一句</button>'+
+        '<button class="btn" data-ltnext="1">下一句 →</button>'+
+        '<button class="btn" data-ltclear="'+i+'" title="清掉这一句的听写和判分">清空</button></div>';
+    if(l.ck&&l.my&&String(l.my).trim()){
       var ops=ltDiffOps(l.s,l.my),sc=ltScore(ops);
-      h+='<div class="lt-diff">'+ltDiffHTML(ops)+'</div><div class="lt-sum">'+ltSumHTML(sc)+'</div>'+ltKeyHTML();}
+      h+='<div class="lt-diff">'+ltDiffHTML(ops)+'</div><div class="lt-sum">'+ltSumHTML(sc)+'</div>'+
+        (key===false?"":ltKeyHTML());}
     else if(l.ck)h+='<div class="lt-sum">这句还没写就直接看了答案。</div>';
     return h;}
+  // 做过但不是当前那句：只留判分结果，不给输入框
+  function ltDoneHTML(l,ops,sc){
+    return '<div class="lt-diff done">'+ltDiffHTML(ops)+'</div>'+
+      '<div class="lt-sum">'+ltSumHTML(sc)+'</div>';}
+  function ltCellHTML(l,i){return ltHeadHTML(l,i)+ltAnsHTML(l,i);}
   function ltRenderOne(){
     var box=document.getElementById("lt-one");if(!box||!ltCur)return;
     var l=ltLine();
@@ -6639,17 +6697,29 @@ margin-left: -22px;
       :'<div class="dict-hint">这条素材还没有句子。</div>';}
   function ltRenderAll(){
     var box=document.getElementById("lt-allbox");if(!box||!ltCur)return;
-    box.innerHTML=ltCur.lines.map(function(l,i){
-      var cur=(i===ltIdx),st="";
-      if(l.ck&&l.my&&l.my.trim())st=ltScore(ltDiffOps(l.s,l.my)).pct+"%";
-      else if(l.my&&l.my.trim())st="…";
-      var h='<div class="lt-row'+(cur?" cur":"")+'" data-ltrow="'+i+'">'+
-        '<span class="n">'+(i+1)+'</span><div class="c">';
-      if(cur)h+=ltCellHTML(l,i);
+    var split=(ltCfg.view==="split");
+    box.classList.toggle("split",split);
+    var head=split?('<div class="lt-hd"><span class="n"></span>'+
+      '<div class="c">原文</div><div class="c">我的听写</div><span class="st"></span></div>'):"";
+    box.innerHTML=head+ltCur.lines.map(function(l,i){
+      var cur=(i===ltIdx),st="",ops=null,sc=null;
+      var done=!!(l.ck&&l.my&&String(l.my).trim());
+      if(done){ops=ltDiffOps(l.s,l.my);sc=ltScore(ops);st=sc.pct+"%";}
+      else if(l.my&&String(l.my).trim())st="…";
+      function srcOnly(){
+        return '<div class="lt-src'+(ltCfg.showSrc?"":" lt-hidden")+'">'+esc(l.s)+'</div>'+
+          (l.tr?('<div class="lt-tr'+(ltCfg.showTr?"":" lt-hidden")+'">'+esc(l.tr)+'</div>'):"");}
+      var h='<div class="lt-row'+(cur?" cur":"")+(done?" done-row":"")+'" data-ltrow="'+i+'">'+
+        '<span class="n">'+(i+1)+'</span>';
+      if(split){
+        h+='<div class="c cL">'+(cur?ltHeadHTML(l,i):srcOnly())+'</div>'+
+           '<div class="c cR">'+(cur?ltAnsHTML(l,i,false):(done?ltDoneHTML(l,ops,sc):""))+'</div>';}
       else{
-        h+='<div class="lt-src'+(ltCfg.showSrc?"":" lt-hidden")+'">'+esc(l.s)+'</div>';
-        if(l.tr)h+='<div class="lt-tr'+(ltCfg.showTr?"":" lt-hidden")+'">'+esc(l.tr)+'</div>';}
-      return h+'</div><span class="st">'+esc(st)+'</span></div>';}).join("");
+        h+='<div class="c">';
+        if(cur)h+=ltCellHTML(l,i);
+        else{h+=srcOnly();if(done)h+=ltDoneHTML(l,ops,sc);}
+        h+='</div>';}
+      return h+'<span class="st">'+esc(st)+'</span></div>';}).join("");
     var el=box.querySelector(".lt-row.cur");
     if(el)try{el.scrollIntoView({block:"nearest"});}catch(e){}}
   function ltPaintStatus(){
@@ -6681,17 +6751,22 @@ margin-left: -22px;
       (ltCfg.gap==="fixed"?('<input type="number" min="1" max="60" step="1" value="'+
         (+ltCfg.gapSec||3)+'" data-ltc="gapSec" title="停几秒">'):"")+
       '<label class="lt-ck"><input type="checkbox" data-ltc="auto"'+(ltCfg.auto?" checked":"")+'> 自动下一句</label>'+
-      '<label class="lt-ck"><input type="checkbox" data-ltc="viewall"'+(ltCfg.view==="all"?" checked":"")+'> 整篇显示</label>';
+      '<label class="lt-ck">版式 <select data-ltc="view">'+
+        [["one","单句"],["all","整篇"],["split","左右对照"]].map(function(a){
+          return '<option value="'+a[0]+'"'+(ltCfg.view===a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+
+      '</select></label>';
     ltPaintStatus();}
   function ltRender(){
     if(!ltCur)return;
+    if(ltSumOn){ltRenderSum();return;}
     var tt=document.getElementById("lt-t");if(tt)tt.textContent=ltCur.title||"（没名字）";
     var done=0;ltCur.lines.forEach(function(l){if(l.ck)done++;});
     ltMeta("第 "+(ltIdx+1)+" / "+ltCur.lines.length+" 句 · 做过 "+done+" 句");
     var pb=document.getElementById("lt-pgbar");
     if(pb)pb.style.width=(ltCur.lines.length?(done/ltCur.lines.length*100):0)+"%";
     var one=document.getElementById("lt-one"),all=document.getElementById("lt-allbox");
-    if(ltCfg.view==="all"){one.hidden=true;one.innerHTML="";all.hidden=false;ltRenderAll();}
+    if(ltCfg.view==="all"||ltCfg.view==="split"){
+      one.hidden=true;one.innerHTML="";all.hidden=false;ltRenderAll();}
     else{all.hidden=true;all.innerHTML="";one.hidden=false;ltRenderOne();}
     ltPaintCtl();}
   function ltRenderList(){
@@ -6713,7 +6788,8 @@ margin-left: -22px;
     var h='<h4>精听设置</h4><div class="lt-grid">'+
       '<label class="lt-f">显示方式<select data-ltc="view">'+
         '<option value="one"'+(ltCfg.view==="one"?" selected":"")+'>一次只显示一句</option>'+
-        '<option value="all"'+(ltCfg.view==="all"?" selected":"")+'>整篇都显示，当前句高亮</option></select></label>'+
+        '<option value="all"'+(ltCfg.view==="all"?" selected":"")+'>整篇都显示，当前句高亮</option>'+
+        '<option value="split"'+(ltCfg.view==="split"?" selected":"")+'>左右对照：左原文 / 右听写</option></select></label>'+
       '<label class="lt-f">默认显示原文<select data-ltc="showSrc">'+
         '<option value="0"'+(ltCfg.showSrc?"":" selected")+'>先藏起来（推荐）</option>'+
         '<option value="1"'+(ltCfg.showSrc?" selected":"")+'>直接显示</option></select></label>'+
@@ -6887,7 +6963,7 @@ margin-left: -22px;
     var r=null;recs.forEach(function(x){if(x.id===id)r=x;});
     if(!r)return;
     ltStop();
-    ltCur=r;
+    ltCur=r;save("tt_ltopen",r.id);          // 刷新后回到这条
     ltIdx=Math.max(0,Math.min(Math.max(0,(r.lines||[]).length-1),+r.at||0));
     document.getElementById("lt-home").style.display="none";
     document.getElementById("lt-doc").style.display="";
@@ -6912,14 +6988,19 @@ margin-left: -22px;
     if(ltURL&&ltRevoke){try{URL.revokeObjectURL(ltURL);}catch(e){}}
     ltURL=null;ltRevoke=false;
     if(ltSaveT){clearTimeout(ltSaveT);ltSaveT=null;}
-    saveRecs();ltCur=null;
+    saveRecs();ltCur=null;ltSumOn=false;save("tt_ltopen","");
     document.getElementById("lt-doc").style.display="none";
     document.getElementById("lt-home").style.display="";
     ltRenderList();}
   function openListen(){
     var doc=document.getElementById("lt-doc");
-    if(ltCur&&doc&&doc.style.display!=="none")ltRender();
-    else ltRenderList();}
+    if(ltCur&&doc&&doc.style.display!=="none"){ltRender();return;}
+    // 刷新 / 切回来：回到上次那条素材的那一句（句号存在 rec.at 上，跟云同步走）
+    var last=load("tt_ltopen","");
+    if(last){
+      for(var i=0;i<recs.length;i++)if(recs[i].id===last){ltOpen(last);return;}
+      save("tt_ltopen","");}
+    ltRenderList();}
 
   // 释义卡片本来是「看书」页初始化时才认领的。没去过那一页就点不出释义，
   // 所以这里自己认领一次（幂等：已经认领过就直接返回）。
@@ -6931,7 +7012,145 @@ margin-left: -22px;
     if(el.parentNode!==document.body)document.body.appendChild(el);
     try{watchPopSize();}catch(e){}
     try{applyRdFs();}catch(e){}
+    try{bindRdPop();}catch(e){}          // ✕ 和星星那排按钮
     return true;}
+
+
+  // ================= 📊 总结 =================
+  // 一句一句练完之后，真正有用的是横着看：哪些词老是听错、哪些句子塌得最厉害、
+  // 是不是总在同一类地方栽（虚词被吞、两个词连成一个）。
+  var LT_FUNC=(function(){
+    var m={};
+    ("a an the of to in on at for and or but as by from with into onto "+
+     "is are was were be been being am do does did done have has had having "+
+     "will would shall should can could may might must "+
+     "that this these those it its he she him her his they them their "+
+     "we us our you your i my me not no nor so if than then there here "+
+     "up out off down over about after before when while what which who whose how why").split(" ")
+      .forEach(function(w){if(w)m[w]=1;});
+    return m;})();
+  function ltBump(m,k){if(k)m[k]=(m[k]||0)+1;}
+  // 你把两个词听成了一个 —— 原文相邻两词粘起来 ≈ 你写的那一个词。典型的连读没断开。
+  function ltGlue(ops,acc,li){
+    for(var k=0;k+1<ops.length;k++){
+      var a=ops[k],b=ops[k+1],joined,mine;
+      if(a.op==="m"&&b.op==="d"&&a.k!=="ok"){
+        joined=ltLow(a.a)+ltLow(b.a);mine=ltLow(a.b);
+        if(mine&&joined&&mine.length>=4&&ltEd(joined,mine)<=2){
+          acc.push({li:li,ref:a.a+" "+b.a,my:a.b});continue;}}
+      if(a.op==="d"&&b.op==="m"&&b.k!=="ok"){
+        joined=ltLow(a.a)+ltLow(b.a);mine=ltLow(b.b);
+        if(mine&&joined&&mine.length>=4&&ltEd(joined,mine)<=2)
+          acc.push({li:li,ref:a.a+" "+b.a,my:b.b});}}}
+  function ltSummary(r){
+    var lines=(r&&r.lines)||[];
+    var out={n:0,tot:lines.length,plays:0,pctSum:0,words:0,
+      wrong:{},miss:{},morph:{},spell:{},func:{},glue:[],worst:[]};
+    lines.forEach(function(l,i){
+      out.plays+=(+l.n||0);
+      if(!(l.ck&&l.my&&String(l.my).trim()))return;
+      var ops=ltDiffOps(l.s,l.my),sc=ltScore(ops);
+      out.n++;out.pctSum+=sc.pct;out.words+=sc.tot;
+      out.worst.push({i:i,pct:sc.pct,s:l.s,ops:ops,bad:sc.tot-sc.good});
+      ops.forEach(function(o){
+        var ref=ltLow(o.a||""),mine=ltLow(o.b||"");
+        if(o.op==="i")return;
+        if(o.op==="d"){
+          if(!ref)return;
+          ltBump(out.miss,ref);
+          if(LT_FUNC[ref])ltBump(out.func,ref);
+          return;}
+        if(o.k==="wrong"){
+          ltBump(out.wrong,ref+" → "+(mine||"（空）"));
+          if(LT_FUNC[ref])ltBump(out.func,ref);}
+        else if(o.k==="morph")ltBump(out.morph,ref+" ← "+mine);
+        else if(o.k==="spell")ltBump(out.spell,ref+" ← "+mine);});
+      ltGlue(ops,out.glue,i);});
+    out.avg=out.n?Math.round(out.pctSum/out.n):0;
+    out.worst.sort(function(a,b){return (a.pct-b.pct)||(b.bad-a.bad);});
+    return out;}
+  function ltTopList(m,limit){
+    var ks=Object.keys(m);
+    ks.sort(function(a,b){return (m[b]-m[a])||(a<b?-1:1);});
+    return ks.slice(0,limit||20).map(function(k){return {k:k,n:m[k]};});}
+  function ltChips(m,cls,limit){
+    var L=ltTopList(m,limit);
+    if(!L.length)return '<div class="lt-none">没有</div>';
+    return '<div class="lt-chips">'+L.map(function(x){
+      return '<span class="lt-chip '+cls+'">'+esc(x.k)+
+        (x.n>1?('<b>×'+x.n+'</b>'):"")+'</span>';}).join("")+'</div>';}
+  function ltSumHead(t,sub){
+    return '<div class="lt-sh">'+esc(t)+(sub?('<span>'+esc(sub)+'</span>'):"")+'</div>';}
+  function ltRenderSum(){
+    var box=document.getElementById("lt-sum");if(!box||!ltCur)return;
+    var S=ltSummary(ltCur);
+    if(!S.n){
+      box.innerHTML='<div class="lt-card"><div class="dict-hint">还没有对过答案的句子。'+
+        '先去练几句，回来这儿看横向的总结。</div></div>';return;}
+    var h='<div class="lt-card">';
+    h+='<div class="lt-kpi">'+
+      '<div><b>'+S.n+' / '+S.tot+'</b><span>做过的句子</span></div>'+
+      '<div><b>'+S.avg+'%</b><span>平均听对</span></div>'+
+      '<div><b>'+S.words+'</b><span>总词数</span></div>'+
+      '<div><b>'+S.plays+'</b><span>累计听了几遍</span></div></div>';
+
+    h+=ltSumHead("听错的词","原文 → 你写的");
+    h+=ltChips(S.wrong,"c-wrong",24);
+    h+=ltSumHead("漏掉没写出来的词");
+    h+=ltChips(S.miss,"c-miss",24);
+    h+=ltSumHead("词形错","复数 / 时态 —— 词听对了，形态没跟上");
+    h+=ltChips(S.morph,"c-morph",20);
+    h+=ltSumHead("拼写错","听对了，拼错了 —— 不算听力问题");
+    h+=ltChips(S.spell,"c-spell",20);
+
+    h+=ltSumHead("疑似连读 / 吞音","这些虚词最容易在连读里被吃掉");
+    h+=ltChips(S.func,"c-func",24);
+    if(S.glue.length){
+      h+='<div class="lt-chips">'+S.glue.slice(0,12).map(function(g){
+        return '<span class="lt-chip c-glue" data-ltjump="'+g.li+'" title="点一下跳到第 '+(g.li+1)+' 句">'+
+          esc(g.ref)+' <i>听成</i> '+esc(g.my)+'</span>';}).join("")+'</div>';}
+    else h+='<div class="lt-none">没有发现「两个词听成一个」的情况</div>';
+
+    h+=ltSumHead("塌得最厉害的句子","点一下跳过去重听");
+    h+='<div class="lt-worst">'+S.worst.slice(0,6).map(function(w){
+      return '<div class="lt-wrow" data-ltjump="'+w.i+'">'+
+        '<span class="p'+(w.pct<40?" bad":(w.pct<70?" mid":""))+'">'+w.pct+'%</span>'+
+        '<span class="i">第 '+(w.i+1)+' 句</span>'+
+        '<div class="d">'+ltDiffHTML(w.ops)+'</div></div>';}).join("")+'</div>';
+
+    h+='<div class="lt-btns" style="margin-top:16px">'+
+      '<button class="btn primary" data-ltwb="1">⭐ 把错词加进生词本</button>'+
+      '<button class="btn" data-ltsumx="1">← 回去接着练</button>'+
+      '<span class="wt-note" style="margin:0">虚词和太短的词不会加进去 —— 那些是连读问题，不是生词。</span></div>';
+    h+=ltKeyHTML()+'</div>';
+    box.innerHTML=h;}
+  function ltAddWords(){
+    if(!ltCur)return;
+    var S=ltSummary(ltCur),seen={},add=[];
+    [S.wrong,S.miss,S.morph,S.spell].forEach(function(m){
+      Object.keys(m).forEach(function(k){
+        var w=ltLow(String(k).split(" ")[0]);
+        if(!w||w.length<3||LT_FUNC[w]||seen[w])return;
+        if(!/^[a-z][a-z'-]*$/.test(w))return;
+        seen[w]=1;add.push(w);});});
+    var n=0;
+    add.forEach(function(w){
+      try{if(!isSaved(w)){toggleWord(w,w,"oald");n++;}}catch(e){}});
+    try{updateWbCount();}catch(e){}
+    ltNote(n?("加了 "+n+" 个词进生词本（已经有的跳过了）。去「词典 → 生词本」看。")
+            :"这些词生词本里都已经有了。");}
+  function ltShowSum(on){
+    var b=document.getElementById("lt-sum"),o=document.getElementById("lt-one"),
+        a=document.getElementById("lt-allbox"),c=document.getElementById("lt-ctl"),
+        btn=document.getElementById("lt-sumbtn");
+    if(!b)return;
+    ltSumOn=!!on;
+    if(ltSumOn){ltStop();ltRenderSum();}
+    b.hidden=!ltSumOn;
+    if(c)c.hidden=ltSumOn;
+    if(btn)btn.classList.toggle("on",ltSumOn);
+    if(ltSumOn){if(o)o.hidden=true;if(a)a.hidden=true;}
+    else ltRender();}
 
   // ================= 拖文件进来 =================
   // 必须自己拦 dragover：不 preventDefault 的话浏览器会把文件当网址打开，整页被顶掉。
@@ -7034,6 +7253,8 @@ margin-left: -22px;
         p.hidden=!p.hidden;if(!p.hidden)p.innerHTML=ltSetHTML();});});
     var bk=document.getElementById("lt-back");
     if(bk)bk.addEventListener("click",ltBack);
+    var sb=document.getElementById("lt-sumbtn");
+    if(sb)sb.addEventListener("click",function(){ltShowSum(!ltSumOn);});
     ltDropInit();
 
     doc.addEventListener("click",function(e){
@@ -7042,6 +7263,10 @@ margin-left: -22px;
       if(dl){e.stopPropagation();ltDel(dl.getAttribute("data-ltdel"));return;}
       var op=t.closest("[data-ltopen]");
       if(op){ltOpen(op.getAttribute("data-ltopen"));return;}
+      if(t.closest("[data-ltwb]")){ltAddWords();return;}
+      if(t.closest("[data-ltsumx]")){ltShowSum(false);return;}
+      var jp=t.closest("[data-ltjump]");
+      if(jp){ltShowSum(false);ltGoto(+jp.getAttribute("data-ltjump"),false);return;}
       var pl=t.closest("[data-ltplay]");
       if(pl){if(ltPlaying||ltGapEnd)ltStop();else ltPlaySentence();return;}
       var ck=t.closest("[data-ltchk]");
@@ -14546,6 +14771,66 @@ margin-left: -22px;
   var readerInit=false;
   // 一次性绑定：阅读器和笔记本的 DOM 事件、查词弹窗都在这里。
   // 笔记本已经是独立页签，直接点它进来也必须先跑这个，否则整页按钮全是死的。
+  // 释义卡片上那排按钮（✕ / 朗读 / 收藏 / 字号 / 笔记）原本绑在 readerBind() 里，
+  // 而 readerBind 只在第一次打开「看书」时才跑。精听页点词也会弹这张卡，
+  // 没去过看书页的话就变成“弹得出来、叉不掉”。抽出来单独绑，两边共用。
+  var rdPopBound=false;
+  function bindRdPop(){
+    if(rdPopBound||!rdPop)return;
+    rdPopBound=true;
+      rdPop.addEventListener("mouseenter",function(){rdPopHover=true;if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
+      rdPop.addEventListener("mouseleave",function(){rdPopHover=false;rdPopArm();});
+      document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
+      document.getElementById("rd-pop-spk").addEventListener("click",function(){
+        var s=rdPopSay||(rdPopWord&&rdPopWord.disp);if(s)pronounce(s,isCJK(s));});
+      var pcfg=document.getElementById("rd-pop-cfg"),pcp=document.getElementById("rd-pop-cfgp");
+      if(pcfg&&pcp){
+        pcfg.addEventListener("click",function(){
+          var on=pcp.hasAttribute("hidden");
+          if(on)pcp.removeAttribute("hidden");else pcp.setAttribute("hidden","");
+          pcfg.classList.toggle("on",on);
+          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 调大小的时候别倒计时关掉
+          applyPopFs();placeRdPop(null);});
+        pcp.addEventListener("click",function(e){
+          var b=e.target.closest("button");if(!b)return;
+          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
+          if(b.hasAttribute("data-fs"))popFsStep(+b.getAttribute("data-fs"));
+          else popResize(b.getAttribute("data-pz"));});}
+      document.getElementById("rd-pop-note").addEventListener("click",function(){
+        if(!rdPopWord)return;
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在写字，别把卡片倒计时关掉
+        openNote(rdPopWord.w,document.getElementById("rd-pop-bd"),rdPopWord.disp);
+        var st=document.getElementById("rd-pop-star");
+        st.classList.add("on");st.innerHTML=starSVG(true);});
+      document.getElementById("rd-pop-star").addEventListener("click",function(){
+        if(!rdPopWord)return;
+        toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
+        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";
+        wbPaintWord(rdPopWord.w);});
+      document.getElementById("rd-pop-grp").addEventListener("click",function(){
+        if(!rdPopWord)return;
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在挑分组，别把卡片倒计时关掉
+        wbMenu(rdPopWord.w,this);});
+      var pbd=document.getElementById("rd-pop-bd");
+      pbd.addEventListener("input",function(e){
+        var ta=mineTyping(e);if(!ta)return;
+        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}       // 正在写释义，别倒计时关掉
+        mineSave(ta,false);});
+      pbd.addEventListener("focusin",function(e){
+        if(e.target.closest(".rd-mynote")&&rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
+      pbd.addEventListener("focusout",function(e){
+        var ta=e.target.closest(".rd-mynote");if(ta)mineSave(ta,true);});
+      pbd.addEventListener("click",function(e){
+        var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
+        var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+      document.addEventListener("mousedown",function(e){
+        if(rdPop&&rdPop.style.display!=="none"&&!rdPop.contains(e.target)&&(!rdContent||!rdContent.contains(e.target)))hideRdPop();});
+      document.addEventListener("keydown",function(e){
+        if(e.key==="Escape"){hideRdPop();if(zenOn)toggleZen(false);}
+        if(state.tab!=="reader"||document.getElementById("rd-read").style.display==="none")return;
+        if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
+        if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});
+  }
   function readerBind(){
     if(!readerInit){
       readerInit=true;
@@ -15090,58 +15375,7 @@ margin-left: -22px;
       if(rmBox)rmBox.addEventListener("click",function(e){
         var b=e.target.closest("[data-rm]");if(!b)return;
         save("tt_rdmode",b.getAttribute("data-rm"));applyRdMode();});
-      rdPop.addEventListener("mouseenter",function(){rdPopHover=true;if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
-      rdPop.addEventListener("mouseleave",function(){rdPopHover=false;rdPopArm();});
-      document.getElementById("rd-pop-x").addEventListener("click",hideRdPop);
-      document.getElementById("rd-pop-spk").addEventListener("click",function(){
-        var s=rdPopSay||(rdPopWord&&rdPopWord.disp);if(s)pronounce(s,isCJK(s));});
-      var pcfg=document.getElementById("rd-pop-cfg"),pcp=document.getElementById("rd-pop-cfgp");
-      if(pcfg&&pcp){
-        pcfg.addEventListener("click",function(){
-          var on=pcp.hasAttribute("hidden");
-          if(on)pcp.removeAttribute("hidden");else pcp.setAttribute("hidden","");
-          pcfg.classList.toggle("on",on);
-          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 调大小的时候别倒计时关掉
-          applyPopFs();placeRdPop(null);});
-        pcp.addEventListener("click",function(e){
-          var b=e.target.closest("button");if(!b)return;
-          if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}
-          if(b.hasAttribute("data-fs"))popFsStep(+b.getAttribute("data-fs"));
-          else popResize(b.getAttribute("data-pz"));});}
-      document.getElementById("rd-pop-note").addEventListener("click",function(){
-        if(!rdPopWord)return;
-        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在写字，别把卡片倒计时关掉
-        openNote(rdPopWord.w,document.getElementById("rd-pop-bd"),rdPopWord.disp);
-        var st=document.getElementById("rd-pop-star");
-        st.classList.add("on");st.innerHTML=starSVG(true);});
-      document.getElementById("rd-pop-star").addEventListener("click",function(){
-        if(!rdPopWord)return;
-        toggleWord(rdPopWord.w,rdPopWord.disp,isCJK(rdPopWord.disp)?"collins":"oald");
-        var st=this,saved=isSaved(rdPopWord.w);st.classList.toggle("on",saved);st.innerHTML=starSVG(saved);st.title=saved?"已收藏（点取消）":"加入生词本";
-        wbPaintWord(rdPopWord.w);});
-      document.getElementById("rd-pop-grp").addEventListener("click",function(){
-        if(!rdPopWord)return;
-        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}   // 正在挑分组，别把卡片倒计时关掉
-        wbMenu(rdPopWord.w,this);});
-      var pbd=document.getElementById("rd-pop-bd");
-      pbd.addEventListener("input",function(e){
-        var ta=mineTyping(e);if(!ta)return;
-        if(rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}       // 正在写释义，别倒计时关掉
-        mineSave(ta,false);});
-      pbd.addEventListener("focusin",function(e){
-        if(e.target.closest(".rd-mynote")&&rdPopTimer){clearTimeout(rdPopTimer);rdPopTimer=null;}});
-      pbd.addEventListener("focusout",function(e){
-        var ta=e.target.closest(".rd-mynote");if(ta)mineSave(ta,true);});
-      pbd.addEventListener("click",function(e){
-        var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
-        var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
-      document.addEventListener("mousedown",function(e){
-        if(rdPop&&rdPop.style.display!=="none"&&!rdPop.contains(e.target)&&!rdContent.contains(e.target))hideRdPop();});
-      document.addEventListener("keydown",function(e){
-        if(e.key==="Escape"){hideRdPop();if(zenOn)toggleZen(false);}
-        if(state.tab!=="reader"||document.getElementById("rd-read").style.display==="none")return;
-        if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
-        if(e.key==="ArrowRight")rdNext();else if(e.key==="ArrowLeft")rdPrev();});   // 写笔记时方向键是移光标，不是翻页
+      bindRdPop();   // 写笔记时方向键是移光标，不是翻页
       window.addEventListener("beforeunload",function(){if(curEpub)curEpub.urls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});});
     }
   }
