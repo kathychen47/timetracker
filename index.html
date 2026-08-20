@@ -6905,6 +6905,7 @@ margin-left: -22px;
       else{
         rec.lines=out.lines;
         var jn=ltAutoJoin(rec.lines);      // Whisper 在停顿处切断的，先接回去
+        rec.joined=1;
         if(jn)ltNote("转好了，顺手接上了 "+jn+" 处被切断的句子。");}
       rec.lines.forEach(function(l){if(l.my===undefined)l.my="";if(l.n===undefined)l.n=0;});
       try{termAll(rec.lines);}catch(e){}
@@ -6987,6 +6988,16 @@ margin-left: -22px;
       miss.textContent=r.cloud
         ?"云端音频取不回来（可能没登录，或者桶里已经没有了）。文字都在，可以只看不听。"
         :"这台设备上没有它的音频。文字都在 —— 回到存音频的那台机器，或者在设置里把存储改成「云端」再重新导入。";}
+    // 盲听的前提是不用先看文本。断句错了你听的时候根本无从判断，
+    // 所以开的时候就自己接好，不能等你发现了再去点按钮。
+    // 每条只自动修一次，之后你手动合并/拆分的结果不会被推翻。
+    if(!r.joined&&!r.aligned&&(r.lines||[]).length>1){
+      var jn=ltAutoJoin(r.lines);
+      r.joined=1;
+      if(ltIdx>=r.lines.length)ltIdx=r.lines.length-1;
+      r.at=ltIdx;saveRecs();
+      if(jn)setTimeout(function(){
+        ltNote("自动接上了 "+jn+" 处被 Whisper 切断的句子，现在 "+r.lines.length+" 句。");},0);}
     ltApplyRate(au);
     ltRender();}
   function ltBack(){
@@ -7032,6 +7043,8 @@ margin-left: -22px;
     var t=String(s||"").trim();
     if(!t)return true;
     return /[.!?。！？…]['"\u2019\u201d\u2018\u201c)\]]*$/.test(t);}
+  function ltStartsLower(s){
+    return /^[a-z]/.test(String(s||"").replace(/^[^A-Za-z0-9]+/,""));}
   function ltJoin(L,i){
     var a=L[i],b=L[i+1];
     if(!a||!b)return false;
@@ -7048,7 +7061,11 @@ margin-left: -22px;
   function ltAutoJoin(L){
     var n=0,i=0,guard=0;
     while(i<L.length-1&&guard++<4000){
-      if(!ltEnded(L[i].s)&&ltTok(L[i].s).length<55){ltJoin(L,i);n++;continue;}
+      var a=L[i],b=L[i+1];
+      var cut=!ltEnded(a.s);
+      // 句末有标点、但下一句小写开头且几乎没停顿 —— 那是 Whisper 硬点的句号
+      if(!cut&&ltStartsLower(b.s)&&((+b.t||0)-(+a.e||0))<0.5)cut=true;
+      if(cut&&ltTok(a.s).length<45){ltJoin(L,i);n++;continue;}
       i++;}
     return n;}
   function ltMergeAt(i){
