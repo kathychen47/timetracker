@@ -6678,7 +6678,9 @@ margin-left: -22px;
         '<button class="btn" data-ltreplay="1">🔁 重放</button>'+
         '<button class="btn" data-ltprev="1">← 上一句</button>'+
         '<button class="btn" data-ltnext="1">下一句 →</button>'+
-        '<button class="btn" data-ltclear="'+i+'" title="清掉这一句的听写和判分">清空</button></div>';
+        '<button class="btn" data-ltclear="'+i+'" title="清掉这一句的听写和判分">清空</button>'+
+        '<button class="btn" data-ltmerge="'+i+'" title="这句和下一句本来就是一句话">⤵ 并下一句</button>'+
+        '<button class="btn" data-ltsplit="'+i+'" title="这句太长，拆成两句">✂️ 拆开</button></div>';
     if(l.ck&&l.my&&String(l.my).trim()){
       var ops=ltDiffOps(l.s,l.my),sc=ltScore(ops);
       h+='<div class="lt-diff">'+ltDiffHTML(ops)+'</div><div class="lt-sum">'+ltSumHTML(sc)+'</div>'+
@@ -6815,6 +6817,8 @@ margin-left: -22px;
         '<option value="local"'+(ltCfg.store==="local"?" selected":"")+'>本机（不占云端空间）</option>'+
         '<option value="cloud"'+(ltCfg.store==="cloud"?" selected":"")+'>云端（换设备也能听）</option></select></label>'+
       '</div>'+
+      '<div class="lt-btns"><button class="btn" data-ltautojoin="1">🔗 自动接上被切断的句子</button>'+
+      '<span class="wt-note" style="margin:0">上一句结尾没有句末标点的，就是被 Whisper 在停顿处切开的</span></div>'+
       '<div class="lt-btns"><button class="btn" data-lttrall="0">🌐 整篇翻译（只翻没翻过的）</button>'+
       '<button class="btn" data-lttrall="1">重新翻译整篇</button>'+
       '<span class="wt-note" style="margin:0">译文翻一次就存下来，不会重复翻，也跟着云同步走。</span></div>';
@@ -6898,7 +6902,10 @@ margin-left: -22px;
         if(al&&al.length){rec.lines=al;rec.aligned=1;
           ltNote("对齐好了："+al.length+" 句 · 你的文本和 Whisper 那份对上了 "+(al.__hit||0)+"%");}
         else{rec.lines=out.lines;ltNote("文本没能对上，先用 Whisper 转出来的那份。");}}
-      else rec.lines=out.lines;
+      else{
+        rec.lines=out.lines;
+        var jn=ltAutoJoin(rec.lines);      // Whisper 在停顿处切断的，先接回去
+        if(jn)ltNote("转好了，顺手接上了 "+jn+" 处被切断的句子。");}
       rec.lines.forEach(function(l){if(l.my===undefined)l.my="";if(l.n===undefined)l.n=0;});
       try{termAll(rec.lines);}catch(e){}
       if(ltCfg.store==="cloud"){
@@ -7015,6 +7022,70 @@ margin-left: -22px;
     try{bindRdPop();}catch(e){}          // ✕ 和星星那排按钮
     return true;}
 
+
+
+  // ================= 断句：合并 / 拆开 =================
+  // Whisper 是按停顿断句的，一句话中间喘口气就会被劈成两半
+  // （「…a pretty」+「complicated system.」这种）。精听按句循环，断错了很难受。
+  // 判据：上一句结尾没有句末标点，那它多半是被切断的，不是真的说完了。
+  function ltEnded(s){
+    var t=String(s||"").trim();
+    if(!t)return true;
+    return /[.!?。！？…]['"\u2019\u201d\u2018\u201c)\]]*$/.test(t);}
+  function ltJoin(L,i){
+    var a=L[i],b=L[i+1];
+    if(!a||!b)return false;
+    a.s=String(a.s||"").replace(/\s+$/,"")+" "+String(b.s||"").replace(/^\s+/,"");
+    var ma=String(a.my||"").trim(),mb=String(b.my||"").trim();
+    a.my=(ma&&mb)?(ma+" "+mb):(ma||mb);
+    a.t=Math.min(+a.t||0,+b.t||0);
+    a.e=Math.max(+a.e||0,+b.e||0);
+    a.n=(+a.n||0)+(+b.n||0);
+    a.tr="";a.ck=0;a.pct=null;          // 句子变了，译文和判分都作废
+    L.splice(i+1,1);
+    return true;}
+  // 整篇扫一遍，把被切断的接回去。太长的不再往上接，免得滚成一大坨。
+  function ltAutoJoin(L){
+    var n=0,i=0,guard=0;
+    while(i<L.length-1&&guard++<4000){
+      if(!ltEnded(L[i].s)&&ltTok(L[i].s).length<55){ltJoin(L,i);n++;continue;}
+      i++;}
+    return n;}
+  function ltMergeAt(i){
+    if(!ltCur)return;
+    var L=ltCur.lines;
+    if(i<0||i>=L.length-1){ltNote("这已经是最后一句了，没得可并。");return;}
+    ltStop();
+    ltJoin(L,i);
+    if(ltIdx>i)ltIdx=Math.max(i,ltIdx-1);
+    ltCur.at=ltIdx;saveRecs();ltRender();
+    ltNote("并成一句了，现在 "+L.length+" 句。译文和判分作废了，重新对一次。");}
+  function ltSplitAt(i){
+    if(!ltCur)return;
+    var L=ltCur.lines,l=L[i];if(!l)return;
+    var w=ltTok(l.s);
+    if(w.length<4){ltNote("这句太短，拆不动。");return;}
+    var half=Math.round(w.length/2);
+    for(var k=Math.max(2,half-5);k<Math.min(w.length-2,half+6);k++){   // 尽量在逗号后面断
+      if(/[,;\uff0c\uff1b:\uff1a]$/.test(w[k])){half=k+1;break;}}
+    var t=+l.t||0,e=+l.e||0,mid=Math.round((t+(e-t)*(half/w.length))*10)/10;
+    if(!(mid>t))mid=t+0.5;
+    if(!(mid<e))mid=e-0.2;
+    ltStop();
+    L.splice(i,1,
+      {t:t,e:mid,s:w.slice(0,half).join(" "),my:"",n:+l.n||0,tr:"",ck:0},
+      {t:mid,e:e,s:w.slice(half).join(" "),my:"",n:+l.n||0,tr:"",ck:0});
+    ltCur.at=ltIdx;saveRecs();ltRender();
+    ltNote("拆成两句了，现在 "+L.length+" 句。");}
+  function ltAutoJoinNow(){
+    if(!ltCur)return;
+    ltStop();
+    var n=ltAutoJoin(ltCur.lines);
+    if(ltIdx>=ltCur.lines.length)ltIdx=ltCur.lines.length-1;
+    ltCur.at=ltIdx;
+    if(n){saveRecs();ltRender();}
+    ltNote(n?("接上了 "+n+" 处被切断的句子，现在 "+ltCur.lines.length+" 句。")
+            :"没发现被切断的句子 —— 每句都有句末标点。");}
 
   // ================= 📊 总结 =================
   // 一句一句练完之后，真正有用的是横着看：哪些词老是听错、哪些句子塌得最厉害、
@@ -7271,6 +7342,11 @@ margin-left: -22px;
       if(pl){if(ltPlaying||ltGapEnd)ltStop();else ltPlaySentence();return;}
       var ck=t.closest("[data-ltchk]");
       if(ck){ltCheck(+ck.getAttribute("data-ltchk"));return;}
+      var mg=t.closest("[data-ltmerge]");
+      if(mg){ltMergeAt(+mg.getAttribute("data-ltmerge"));return;}
+      var sp=t.closest("[data-ltsplit]");
+      if(sp){ltSplitAt(+sp.getAttribute("data-ltsplit"));return;}
+      if(t.closest("[data-ltautojoin]")){ltAutoJoinNow();return;}
       var cl=t.closest("[data-ltclear]");
       if(cl){ltClearOne(+cl.getAttribute("data-ltclear"));return;}
       if(t.closest("[data-ltreplay]")){ltPlaySentence();return;}
