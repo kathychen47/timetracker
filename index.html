@@ -1377,6 +1377,110 @@
   .rl{flex-wrap:wrap}
   .rtr{flex-basis:100%;margin-left:50px;font-size:12.5px;color:var(--muted);line-height:1.6;padding-top:1px}
   .rec-lines.nobi .rtr{display:none}
+
+  /* ---------- 🎧 精听 ---------- */
+  .lt-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+  .lt-sp{flex:1 1 auto}
+  .lt-list{display:flex;flex-direction:column;gap:8px}
+  .lt-item{display:flex;align-items:center;gap:10px;padding:11px 13px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);cursor:pointer}
+  .lt-item:hover{border-color:var(--primary)}
+  .lt-item .t{font-weight:650;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lt-item .m{color:var(--muted);font-size:12.5px;white-space:nowrap}
+  .lt-item .pg{width:76px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;flex:none}
+  .lt-item .pg i{display:block;height:100%;background:var(--primary)}
+  .lt-x{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 5px;border-radius:6px}
+  .lt-x:hover{background:var(--surface-2);color:var(--danger)}
+
+  .lt-doc{display:flex;flex-direction:column;gap:10px}
+  .lt-head{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .lt-title{font-weight:700;font-size:16px;flex:1 1 220px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lt-prog{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+  .lt-prog i{display:block;height:100%;background:var(--primary);transition:width .2s}
+
+  .lt-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+  .lt-lab{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin:0 0 4px}
+  .lt-lab button{border:0;background:none;color:var(--primary);cursor:pointer;font-size:12px;padding:1px 4px;border-radius:5px}
+  .lt-lab button:hover{background:var(--primary-soft)}
+  .lt-src{font-size:17px;line-height:1.75;margin:0 0 12px;word-break:break-word}
+  .lt-tr{font-size:14px;line-height:1.7;color:var(--muted);margin:0 0 12px;word-break:break-word}
+  .lt-hidden{filter:blur(6px);opacity:.55;user-select:none;cursor:pointer}
+  .lt-in{width:100%;box-sizing:border-box;min-height:76px;resize:vertical;padding:11px 13px;font-size:16px;
+    line-height:1.6;border:1.5px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+    color:var(--text);font-family:var(--font)}
+  .lt-in:focus{outline:none;border-color:var(--primary)}
+  .lt-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+
+  .lt-diff{margin-top:12px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);
+    border-radius:var(--radius-sm);font-size:16px;line-height:2.1;word-break:break-word}
+  .lt-sum{margin-top:8px;font-size:12.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+  .lt-sum b{color:var(--text)}
+  .lt-key{display:flex;flex-wrap:wrap;gap:9px;font-size:11.5px;color:var(--muted);margin-top:8px}
+  .lt-key span{display:inline-flex;align-items:center;gap:4px}
+  .lt-key i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  /* 各类错误 —— 颜色和样式都不同，扫一眼就知道错在哪一层 */
+  .d-ok{color:var(--text)}
+  .d-case{color:var(--text);border-bottom:1.5px dotted var(--cat-habit)}
+  .d-punct{color:var(--text);border-bottom:1.5px dotted var(--muted)}
+  .d-var{color:var(--cat-habit);border-bottom:1.5px solid var(--cat-habit)}
+  .d-num{color:var(--cat-habit);background:color-mix(in srgb,var(--cat-habit) 14%,transparent);
+    border-radius:4px;padding:1px 3px}
+  .d-morph{color:var(--cat-meeting);background:color-mix(in srgb,var(--cat-meeting) 15%,transparent);
+    border-radius:4px;padding:1px 4px;font-weight:600}
+  .d-morph u{text-decoration:none;background:var(--cat-meeting);color:var(--primary-ink);
+    border-radius:3px;padding:0 2px;margin-left:1px}
+  .d-spell{color:var(--cat-goal);border-bottom:2px dashed var(--cat-goal)}
+  .d-wrong{background:color-mix(in srgb,var(--danger) 16%,transparent);border-radius:4px;padding:1px 4px}
+  .d-wrong s{color:var(--danger);opacity:.8;margin-right:4px}
+  .d-wrong b{color:var(--danger);font-weight:700}
+  .d-miss{color:var(--cat-focus);border:1.5px dashed var(--cat-focus);border-radius:4px;padding:0 4px;font-weight:600}
+  .d-tail{color:var(--cat-study);background:color-mix(in srgb,var(--cat-study) 15%,transparent);
+    border-radius:4px;padding:1px 4px;font-style:italic}
+  .d-extra{opacity:.7}
+  .d-extra s{color:var(--cat-life);text-decoration-thickness:2px}
+
+  /* 全文模式 */
+  .lt-all{max-height:calc(100vh - 330px);overflow:auto;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);padding:8px}
+  .lt-row{display:flex;gap:10px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;align-items:flex-start}
+  .lt-row:hover{background:var(--surface-2)}
+  .lt-row.cur{background:var(--primary-soft)}
+  .lt-row .n{flex:none;width:34px;color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;padding-top:3px}
+  .lt-row .c{flex:1 1 auto;min-width:0}
+  .lt-row .st{flex:none;font-size:13px;padding-top:2px}
+  .lt-row .lt-src{font-size:15px;margin:0}
+  .lt-row .lt-tr{font-size:13px;margin:2px 0 0}
+  .lt-row .lt-diff{margin-top:6px;font-size:14.5px;line-height:1.95}
+  .lt-row .lt-in{min-height:52px;font-size:15px;margin-top:6px}
+
+  /* 播放控制条 */
+  .lt-ctl{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px 13px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+  .lt-ctl select,.lt-ctl input[type=number]{padding:5px 7px;border:1px solid var(--border);
+    border-radius:8px;background:var(--bg);color:var(--text);font-size:13px}
+  .lt-ctl input[type=number]{width:62px}
+  .lt-play{width:42px;height:42px;border-radius:50%;border:0;background:var(--primary);
+    color:var(--primary-ink);font-size:16px;cursor:pointer;flex:none}
+  .lt-play:hover{filter:brightness(1.08)}
+  .lt-st{font-size:12.5px;color:var(--muted);min-width:120px}
+  .lt-ck{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--muted);cursor:pointer}
+
+  .lt-set{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+  .lt-set h4{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:600}
+  .lt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:11px}
+  .lt-f{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted)}
+  .lt-f select,.lt-f input{padding:6px 8px;border:1px solid var(--border);border-radius:8px;
+    background:var(--bg);color:var(--text);font-size:13.5px;font-family:var(--font)}
+  .lt-new{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:16px 18px}
+  .lt-new textarea{width:100%;box-sizing:border-box;min-height:130px;padding:10px 12px;font-size:14px;
+    line-height:1.6;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);
+    color:var(--text);font-family:var(--font);resize:vertical}
+  @media(max-width:720px){
+    .lt-src{font-size:16px}
+    .lt-in{font-size:16px}
+    .lt-all{max-height:calc(100vh - 380px)}
+  }
   .tm-panel{margin:10px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
   .st-row{display:flex;gap:10px;padding:6px 0;font-size:13px;align-items:baseline;flex-wrap:wrap}
   .st-row b{min-width:96px;color:var(--muted);font-weight:600}
@@ -3446,6 +3550,7 @@ margin-left: -22px;
     <button data-tab="money" aria-label="记账" title="记账 · 银行流水"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"></rect><path d="M2.5 10.5h19"></path><path d="M6 15h3"></path></svg><span class="rl">记账</span></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg><span class="rl">菜谱</span></button>
     <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
+    <button data-tab="listen" aria-label="精听" title="精听 · 逐句听写对答案"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"></path><rect x="2.5" y="13.5" width="4.5" height="7" rx="2"></rect><rect x="17" y="13.5" width="4.5" height="7" rx="2"></rect><path d="M20 20.5a3 3 0 0 1-3 3h-2"></path></svg><span class="rl">精听</span></button>
     <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-1.4-1-8.2-5.6-8.2-11A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 8.2 2.2c0 5.4-6.8 10-8.2 11z"></path><path d="M6.6 11.4h2.6l1.5-2.7 1.9 5 1.4-2.3h3.4"></path></svg><span class="rl">身体</span></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H6.5A2.5 2.5 0 0 0 4 20.5z"></path><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20"></path><path d="M8.5 7.5h7M8.5 11h5"></path></svg><span class="rl">笔记</span></button>
     <div class="grow"></div>
@@ -3788,6 +3893,54 @@ margin-left: -22px;
         <audio id="rec-audio" controls preload="metadata"></audio>
         <div class="rec-nomedia" id="rec-nomedia" hidden>音频只存在录它的那台设备上（太大，不进云端）。文字在这儿，播放要回那台机器。</div>
         <div class="rec-lines" id="rec-lines"></div>
+      </div>
+    </section>
+    <section class="view" id="view-listen">
+      <div class="page-h">精听 <span class="rd-sub">逐句循环 · 听写 · 自动对答案，错在哪一层看颜色</span></div>
+      <div class="rec-wp" id="lt-wp" hidden><span class="rec-wpt" id="lt-wpt"></span>
+        <span class="rec-wpb"><i id="lt-wpbar"></i></span></div>
+      <div id="lt-home">
+        <div class="lt-bar">
+          <label class="btn primary" style="cursor:pointer" title="MP3 / M4A / WAV / FLAC / OGG / Opus / WebM，以及 MP4、MOV 这类视频（只取声音）">🎧 导入音频 · 自动转写
+            <input type="file" id="lt-fa" accept="audio/*,video/*,.mp3,.m4a,.wav,.ogg,.opus,.webm,.mp4,.mov,.aac,.flac,.mkv,.3gp,.amr,.wma,.aiff,.caf" hidden></label>
+          <button class="btn" id="lt-ft" title="已经有别人整理好的文字稿？把音频和文本一起给我，我来对齐">📝 音频 + 已有文本</button>
+          <span class="lt-sp"></span>
+          <button class="btn" id="lt-setbtn">⚙️ 设置</button>
+          <span class="wt-note" id="lt-hint" style="margin:0"></span>
+        </div>
+        <div class="lt-new" id="lt-newtext" hidden>
+          <div class="lt-lab" style="font-size:13px">别人整理好的稿子没有时间戳。做法：先让 Whisper 转一遍拿到时间，
+            再把你这份文本按词对齐过去 —— 文字以<b>你这份</b>为准，时间用 Whisper 的。</div>
+          <div class="lt-bar" style="margin:10px 0">
+            <label class="btn" style="cursor:pointer">① 选音频<input type="file" id="lt-fa2" accept="audio/*,video/*" hidden></label>
+            <span class="wt-note" id="lt-fa2n" style="margin:0">还没选</span>
+          </div>
+          <textarea id="lt-txin" placeholder="② 把文本贴在这里。&#10;整篇贴进来就行 —— 我会按句号 / 问号 / 感叹号切句，太长的句子再按逗号拆短。"></textarea>
+          <div class="lt-btns">
+            <button class="btn primary" id="lt-mk">③ 开始对齐</button>
+            <button class="btn" id="lt-txcancel">取消</button>
+          </div>
+        </div>
+        <div class="lt-set" id="lt-setpanel" hidden></div>
+        <div class="lt-list" id="lt-list"></div>
+      </div>
+      <div id="lt-doc" style="display:none">
+        <div class="lt-doc">
+          <div class="lt-head">
+            <button class="btn" id="lt-back">← 全部素材</button>
+            <span class="lt-title" id="lt-t"></span>
+            <span class="rec-meta" id="lt-meta"></span>
+            <button class="btn" id="lt-setbtn2" title="设置">⚙️</button>
+            <span class="wt-note" id="lt-hint2" style="margin:0"></span>
+          </div>
+          <div class="lt-prog"><i id="lt-pgbar"></i></div>
+          <div class="lt-set" id="lt-setpanel2" hidden></div>
+          <audio id="lt-audio" preload="metadata" style="display:none"></audio>
+          <div class="rec-nomedia" id="lt-nomedia" hidden></div>
+          <div id="lt-one"></div>
+          <div class="lt-all" id="lt-allbox" hidden></div>
+          <div class="lt-ctl" id="lt-ctl"></div>
+        </div>
       </div>
     </section>
     <section class="view" id="view-body">
@@ -5057,7 +5210,7 @@ margin-left: -22px;
       x.classList.toggle("on",x.getAttribute("data-tab")===lit);});
     document.querySelectorAll("[data-mt]").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-mt")===tab);});
-    ["calendar","todo","stats","dict","reader","tax","money","food","body","notes","rec"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
+    ["calendar","todo","stats","dict","reader","tax","money","food","body","notes","rec","listen"].forEach(function(k){document.getElementById("view-"+k).classList.toggle("on",k===tab);});
     if(tab==="stats")renderStatsView();
     if(tab==="todo"){renderTodos();renderSkills();setTimeout(function(){try{fitTodoCols();}catch(e){}},0);}
     if(tab==="dict")openDict();
@@ -5068,6 +5221,7 @@ margin-left: -22px;
     if(tab==="body"){renderBody();try{gluRenderCard();}catch(e){}}
     if(tab==="notes")showNotes();
     if(tab==="rec")openRec();
+    if(tab==="listen")openListen();
   }
   document.querySelector(".rail").addEventListener("click",function(e){
     var b=e.target.closest("button[data-tab]");if(!b)return;
@@ -6002,6 +6156,843 @@ margin-left: -22px;
     var d=wDevice();
     el.textContent=(d==="webgpu")?"用显卡跑（快 5–10 倍）":
       (navigator.gpu?"用 CPU 跑（慢，但最稳）":"这台机器没有 WebGPU，只能用 CPU");}
+  // ---------- 🎧 精听 ----------
+  // 素材和「录音转写」共用一份库（tt_recs）：那边负责转写和校对，这边负责练。
+  // 文字（原文 / 译文 / 我的听写 / 判分结果）全挂在 lines 上，跟着 tt_recs 上云；
+  // 音频要么在本机 IndexedDB，要么在 Supabase 私有桶 —— 音频删了，文字照样在。
+  var ltCfg=load("tt_ltcfg",null)||{};
+  (function(){
+    if(ltCfg.view!=="all")ltCfg.view="one";              // one=一次一句 all=整篇显示
+    if(!(+ltCfg.speed>0))ltCfg.speed=1;
+    if(!(+ltCfg.loop>0))ltCfg.loop=3;
+    if(!ltCfg.gap)ltCfg.gap="smart";                     // smart|r1|r15|r2|fixed
+    if(!(+ltCfg.gapSec>0))ltCfg.gapSec=3;
+    if(typeof ltCfg.auto!=="boolean")ltCfg.auto=false;   // 自动下一句
+    if(typeof ltCfg.showSrc!=="boolean")ltCfg.showSrc=false;
+    if(typeof ltCfg.showTr!=="boolean")ltCfg.showTr=false;
+    if(!ltCfg.store)ltCfg.store="local";                 // 新素材的音频存哪
+    if(!(+ltCfg.pad>=0))ltCfg.pad=0.25;                  // 句子前后各留一点，不然第一个音节会被吃掉
+  })();
+  function ltSaveCfg(){save("tt_ltcfg",ltCfg);}
+  var ltCur=null,ltIdx=0,ltURL=null,ltRevoke=false;
+  var ltLoopLeft=0,ltGapT=null,ltStopAt=0,ltPlaying=false,ltGapEnd=0,ltTick=null;
+  var ltPendFile=null,ltSaveT=null;
+
+  function ltAu(){return document.getElementById("lt-audio");}
+  function ltNote(m){                                     // 首页和练习页各有一个位置，都写
+    var a=document.getElementById("lt-hint"),b=document.getElementById("lt-hint2");
+    if(a)a.textContent=m||"";if(b)b.textContent=m||"";}
+  function ltMeta(m){var el=document.getElementById("lt-meta");if(el)el.textContent=m||"";}
+  function ltProg(txt,pct){
+    var w=document.getElementById("lt-wp"),t=document.getElementById("lt-wpt"),b=document.getElementById("lt-wpbar");
+    if(!w)return;
+    if(txt==null){w.hidden=true;return;}
+    w.hidden=false;t.textContent=txt;
+    b.style.width=(pct==null?100:Math.max(0,Math.min(100,pct)))+"%";
+    b.style.opacity=(pct==null?".45":"1");}
+  function ltDirty(){if(ltSaveT)clearTimeout(ltSaveT);ltSaveT=setTimeout(function(){ltSaveT=null;saveRecs();},600);}
+
+  // ================= 文本归一化 =================
+  function ltTok(s){
+    return String(s||"").replace(/[‘’]/g,"'").replace(/[“”]/g,'"')
+      .replace(/[–—]/g,"-").split(/\s+/).filter(function(x){return !!x;});}
+  function ltBare(w){
+    return String(w||"").replace(/^[^0-9A-Za-z'一-鿿]+/,"").replace(/[^0-9A-Za-z'一-鿿]+$/,"");}
+  function ltLow(w){return ltBare(w).toLowerCase();}
+  // 缩写：两边都展开，it's 和 it is 就不会被判成错
+  var LT_EXP={"it's":"it is","that's":"that is","there's":"there is","here's":"here is",
+    "he's":"he is","she's":"she is","what's":"what is","who's":"who is","let's":"let us",
+    "i'm":"i am","you're":"you are","we're":"we are","they're":"they are",
+    "i've":"i have","you've":"you have","we've":"we have","they've":"they have",
+    "i'll":"i will","you'll":"you will","he'll":"he will","she'll":"she will",
+    "we'll":"we will","they'll":"they will","it'll":"it will",
+    "don't":"do not","doesn't":"does not","didn't":"did not","can't":"can not",
+    "cannot":"can not","won't":"will not","wouldn't":"would not","shouldn't":"should not",
+    "couldn't":"could not","isn't":"is not","aren't":"are not","wasn't":"was not",
+    "weren't":"were not","hasn't":"has not","haven't":"have not","hadn't":"had not",
+    "i'd":"i would","you'd":"you would","he'd":"he would","she'd":"she would",
+    "we'd":"we would","they'd":"they would","would've":"would have","could've":"could have",
+    "should've":"should have","must've":"must have","that'll":"that will"};
+  function ltExpand(toks){
+    var out=[];
+    toks.forEach(function(w){
+      var x=LT_EXP[ltLow(w)];
+      if(!x){out.push(w);return;}
+      x.split(" ").forEach(function(p){out.push(p);});});
+    return out;}
+  // 英式 / 美式拼写。只用词表，不做 -ise→-ize 的通用规则 —— 那会把 rise、promise 全弄错
+  var LT_BR={realise:"realize",realised:"realized",realising:"realizing",organise:"organize",
+    organised:"organized",organisation:"organization",organisations:"organizations",
+    recognise:"recognize",recognised:"recognized",apologise:"apologize",apologised:"apologized",
+    analyse:"analyze",analysed:"analyzed",criticise:"criticize",criticised:"criticized",
+    emphasise:"emphasize",prioritise:"prioritize",summarise:"summarize",
+    colour:"color",colours:"colors",coloured:"colored",favourite:"favorite",favourites:"favorites",
+    neighbour:"neighbor",neighbours:"neighbors",behaviour:"behavior",behaviours:"behaviors",
+    honour:"honor",humour:"humor",labour:"labor",flavour:"flavor",harbour:"harbor",rumour:"rumor",
+    centre:"center",centres:"centers",theatre:"theater",metre:"meter",metres:"meters",
+    litre:"liter",litres:"liters",fibre:"fiber",
+    defence:"defense",offence:"offense",licence:"license",practise:"practice",
+    programme:"program",programmes:"programs",travelling:"traveling",travelled:"traveled",
+    cancelled:"canceled",modelling:"modeling",labelled:"labeled",
+    grey:"gray",cheque:"check",aluminium:"aluminum",catalogue:"catalog",dialogue:"dialog",
+    enrol:"enroll",fulfil:"fulfill",skilful:"skillful",storey:"story",tyre:"tire",
+    whilst:"while",amongst:"among",learnt:"learned",spelt:"spelled",dreamt:"dreamed",
+    burnt:"burned",spoilt:"spoiled",towards:"toward"};
+  function ltUS(w){return LT_BR[w]||w;}
+  // 数字：20 和 twenty 是同一个东西
+  var LT_NUMW={zero:0,oh:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,
+    ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,
+    eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,
+    eighty:80,ninety:90,hundred:100,thousand:1000,million:1000000,billion:1000000000,
+    first:1,second:2,third:3,fourth:4,fifth:5,sixth:6,seventh:7,eighth:8,ninth:9,tenth:10};
+  function ltNumVal(w){
+    var s=String(w||"").toLowerCase().replace(/[,%$]/g,"");
+    if(/^\d+(\.\d+)?$/.test(s))return parseFloat(s);
+    if(/^\d+(st|nd|rd|th)$/.test(s))return parseInt(s,10);
+    if(LT_NUMW.hasOwnProperty(s))return LT_NUMW[s];
+    return null;}
+  function ltNumSame(a,b){var x=ltNumVal(a),y=ltNumVal(b);return x!==null&&y!==null&&x===y;}
+  // 「同一个词的不同形态」判定：必须差在真正的形态后缀上（复数 s/es、时态 ed/d/ing、比较级 er/est、所有格）
+  function ltMorphPair(a,b){
+    if(a===b||!a||!b)return false;
+    var lo=(a.length<b.length)?a:b,hi=(a.length<b.length)?b:a,suf=null;
+    if(lo.length<3||lo===hi)return false;
+    if(hi.indexOf(lo)===0)suf=hi.slice(lo.length);
+    else if(lo.charAt(lo.length-1)==="e"&&hi.indexOf(lo.slice(0,-1))===0)suf=hi.slice(lo.length-1);   // announce → announcing
+    else if(lo.charAt(lo.length-1)==="y"&&hi===lo.slice(0,-1)+"ies")suf="ies";                        // city → cities
+    if(suf===null)return false;
+    if(suf.length>1&&suf.charAt(0)===lo.charAt(lo.length-1)&&/^(ing|ed)$/.test(suf.slice(1)))
+      suf=suf.slice(1);                                                                               // run → running
+    return /^(s|es|d|ed|ing|ies|er|est|'s)$/.test(suf);}
+  function ltStem(w){
+    var s=String(w||"").toLowerCase().replace(/'s$/,"");
+    return s.replace(/ies$/,"y").replace(/(ch|sh|ss|x|z)es$/,"$1")
+            .replace(/(ing|ed|es|s|d)$/,"");}
+  function ltEd(a,b){                                    // 编辑距离，差太多就早退
+    if(a===b)return 0;
+    var m=a.length,n=b.length;
+    if(Math.abs(m-n)>3)return 99;
+    if(!m||!n)return Math.max(m,n);
+    var prev=[],cur=[],i,j;
+    for(j=0;j<=n;j++)prev[j]=j;
+    for(i=1;i<=m;i++){
+      cur[0]=i;
+      for(j=1;j<=n;j++)
+        cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a.charAt(i-1)===b.charAt(j-1)?0:1));
+      for(j=0;j<=n;j++)prev[j]=cur[j];}
+    return prev[n];}
+  // 一对词错在哪一层。顺序是从「其实没错」到「彻底听错」
+  function ltClass(a,b){
+    if(a===b)return "ok";
+    var A=ltBare(a),B=ltBare(b);
+    if(!A&&!B)return "ok";
+    if(!A||!B)return "wrong";
+    if(A===B)return "punct";                             // 只差标点
+    var la=A.toLowerCase(),lb=B.toLowerCase();
+    if(la===lb)return "case";                            // 只差大小写
+    if(ltUS(la)===ltUS(lb))return "var";                 // 英式 / 美式
+    if(ltNumSame(la,lb))return "num";                    // 20 vs twenty
+    if(ltMorphPair(la,lb))return "morph";                // 复数 s / 时态 ed / ing / 比较级 …
+    var d=ltEd(la,lb),L=Math.max(la.length,lb.length);
+    // 字母都对、顺序错（recieve / receive）：拼写
+    if(d<=2&&L>=6&&la.split("").sort().join("")===lb.split("").sort().join(""))return "spell";
+    // 长词差一两个字母 = 拼错；短词差一个字母（cat/hat、bad/bed）是真没听清，不能放过
+    if(d===1&&L>=6)return "spell";
+    if(d===2&&L>=8)return "spell";
+    return "wrong";}
+  function ltCost(k){
+    return k==="ok"?0:((k==="punct"||k==="case")?0.05:
+      ((k==="var"||k==="num")?0.15:(k==="morph"?0.35:(k==="spell"?0.6:1.35))));}
+  // Needleman-Wunsch：把「正确的词串」和「我打的词串」对齐，
+  // 缺口就是漏词/多写，配上的就按上面的层级判错在哪
+  function ltAlign(ref,mine){
+    var m=ref.length,n=mine.length,GAP=1.0,i,j;
+    if(!m&&!n)return [];
+    var D=[],P=[];
+    for(i=0;i<=m;i++){D[i]=new Array(n+1);P[i]=new Array(n+1);}
+    D[0][0]=0;P[0][0]=-1;
+    for(i=1;i<=m;i++){D[i][0]=i*GAP;P[i][0]=1;}
+    for(j=1;j<=n;j++){D[0][j]=j*GAP;P[0][j]=2;}
+    for(i=1;i<=m;i++)for(j=1;j<=n;j++){
+      var c=D[i-1][j-1]+ltCost(ltClass(ref[i-1],mine[j-1]));
+      var d=D[i-1][j]+GAP,e=D[i][j-1]+GAP;
+      if(c<=d&&c<=e){D[i][j]=c;P[i][j]=0;}
+      else if(d<=e){D[i][j]=d;P[i][j]=1;}
+      else{D[i][j]=e;P[i][j]=2;}}
+    var out=[];i=m;j=n;
+    while(i>0||j>0){
+      var p=(i>0&&j>0)?P[i][j]:(i>0?1:2);
+      if(p===0){out.push({op:"m",a:ref[i-1],b:mine[j-1],k:ltClass(ref[i-1],mine[j-1])});i--;j--;}
+      else if(p===1){out.push({op:"d",a:ref[i-1]});i--;}
+      else{out.push({op:"i",b:mine[j-1]});j--;}}
+    return out.reverse();}
+  // 连着漏掉一大截（开头没跟上 / 后面没写完）跟零星漏一个词性质不同，单独标
+  function ltMarkTail(ops){
+    var i,run;
+    for(i=ops.length-1,run=[];i>=0;i--){
+      if(ops[i].op==="d")run.push(ops[i]);
+      else if(ops[i].op==="i")continue;
+      else break;}
+    if(run.length>=3)run.forEach(function(o){o.tail=1;});
+    for(i=0,run=[];i<ops.length;i++){
+      if(ops[i].op==="d")run.push(ops[i]);
+      else if(ops[i].op==="i")continue;
+      else break;}
+    if(run.length>=3)run.forEach(function(o){o.tail=1;});
+    return ops;}
+  function ltDiffOps(refText,myText){
+    var ref=ltExpand(ltTok(refText)),mine=ltExpand(ltTok(myText));
+    return ltMarkTail(ltAlign(ref,mine));}
+  // 词形错：把正确形态显示出来，差的那几个字母单独描出来（缺的复数 s 一眼可见）
+  function ltMorphHTML(mine,ref){
+    var a=String(mine||""),b=String(ref||""),i=0;
+    while(i<a.length&&i<b.length&&a.charAt(i).toLowerCase()===b.charAt(i).toLowerCase())i++;
+    if(i>=b.length)return esc(b)+'<u>·</u>';
+    return esc(b.slice(0,i))+'<u>'+esc(b.slice(i))+'</u>';}
+  var LT_KIND={ok:"对",punct:"标点","case":"大小写","var":"英美拼写",num:"数字写法",
+    morph:"词形（复数/时态）",spell:"拼写（听对了）",wrong:"听错了",miss:"漏词",
+    tail:"整段没写出来",extra:"多写了"};
+  function ltDiffHTML(ops){
+    return ops.map(function(o){
+      if(o.op==="i")return '<span class="d-extra" title="原文没有这个词"><s>'+esc(o.b)+'</s></span>';
+      if(o.op==="d")return '<span class="'+(o.tail?"d-tail":"d-miss")+'" title="'+
+        (o.tail?"这一段你没写出来":"漏了这个词")+'">'+esc(o.a)+'</span>';
+      var k=o.k;
+      if(k==="ok")return '<span class="d-ok">'+esc(o.b)+'</span>';
+      if(k==="case")return '<span class="d-case" title="大小写 · 原文：'+esc(o.a)+'">'+esc(o.b)+'</span>';
+      if(k==="punct")return '<span class="d-punct" title="标点 · 原文：'+esc(o.a)+'">'+esc(o.b)+'</span>';
+      if(k==="var")return '<span class="d-var" title="英式/美式拼写 · 原文：'+esc(o.a)+'">'+esc(o.b)+'</span>';
+      if(k==="num")return '<span class="d-num" title="数字写法 · 原文：'+esc(o.a)+'">'+esc(o.b)+'</span>';
+      if(k==="morph")return '<span class="d-morph" title="词形不对 · 你写的：'+esc(o.b)+'">'+
+        ltMorphHTML(o.b,o.a)+'</span>';
+      if(k==="spell")return '<span class="d-spell" title="听对了，拼错了 · 正确：'+esc(o.a)+'">'+esc(o.b)+'</span>';
+      return '<span class="d-wrong" title="听错了"><s>'+esc(o.b)+'</s><b>'+esc(o.a)+'</b></span>';
+    }).join(" ");}
+  function ltScore(ops){
+    var tot=0,good=0,bad={};
+    ops.forEach(function(o){
+      if(o.op==="i"){bad.extra=(bad.extra||0)+1;return;}
+      tot++;
+      var k=(o.op==="d")?(o.tail?"tail":"miss"):o.k;
+      if(k==="ok"||k==="case"||k==="punct"||k==="var"||k==="num")good++;
+      else bad[k]=(bad[k]||0)+1;});
+    return {tot:tot,good:good,bad:bad,pct:tot?Math.round(good/tot*100):0};}
+  function ltSumHTML(sc){
+    var order=["wrong","miss","tail","morph","spell","extra"],out=[];
+    order.forEach(function(k){if(sc.bad[k])out.push(LT_KIND[k]+" "+sc.bad[k]);});
+    return '<b>'+sc.pct+'%</b> 听对（'+sc.good+' / '+sc.tot+' 词）'+
+      (out.length?('<span>· '+esc(out.join(" · "))+'</span>'):'<span>· 全对 🎉</span>');}
+  function ltKeyHTML(){
+    return '<div class="lt-key">'+
+      '<span><i style="background:var(--cat-meeting)"></i>词形（缺 s / 时态）</span>'+
+      '<span><i style="background:var(--cat-goal)"></i>拼写（听对了）</span>'+
+      '<span><i style="background:var(--danger)"></i>听错了</span>'+
+      '<span><i style="background:var(--cat-focus)"></i>漏词</span>'+
+      '<span><i style="background:var(--cat-study)"></i>整段没写</span>'+
+      '<span><i style="background:var(--cat-life)"></i>多写</span>'+
+      '<span><i style="background:var(--cat-habit)"></i>大小写 / 英美 / 数字写法（不算错）</span></div>';}
+
+  // ================= 切句 + 把已有文本对齐到音频 =================
+  function ltSplitSent(txt){
+    var t=String(txt||"").replace(/\r/g,"").trim();
+    if(!t)return [];
+    var out=[];
+    t.split(/\n+/).forEach(function(p){
+      p=p.trim();if(!p)return;
+      var parts=p.match(/[^.!?。！？…]+(?:[.!?。！？…]+["'”’)）\]]*|$)/g)||[p];
+      parts.forEach(function(s){
+        s=s.trim();if(!s)return;
+        var w=ltTok(s);
+        if(w.length<=45){out.push(s);return;}
+        // 太长的句子精听会很难受：在逗号/分号处再切，每段十几二十词
+        var buf=[],cnt=0;
+        w.forEach(function(x){
+          buf.push(x);cnt++;
+          if(cnt>=18&&/[,;，；:：]$/.test(x)){out.push(buf.join(" "));buf=[];cnt=0;}});
+        if(buf.length){
+          if(out.length&&buf.length<4)out[out.length-1]+=" "+buf.join(" ");
+          else out.push(buf.join(" "));}});});
+    return out;}
+  // 别人整理好的稿子没有时间戳。做法：先让 Whisper 转一遍拿时间，
+  // 再把「你的文本」和「Whisper 的文本」按词对齐，把时间搬过来 ——
+  // Whisper 认错词没关系，位置是对的；文字以你那份为准。
+  function ltAlignToAudio(wlines,rawText){
+    var wref=[];
+    (wlines||[]).forEach(function(l){
+      spreadWords(l.s,+l.t||0,+l.e||0,null).forEach(function(w){
+        if(w.sp||!ltBare(w.s))return;
+        wref.push({s:w.s,t:+w.t||0,e:+w.e||0});});});
+    var sents=ltSplitSent(rawText),mine=[];
+    sents.forEach(function(s,si){
+      ltTok(s).forEach(function(w){if(ltBare(w))mine.push({s:w,si:si});});});
+    if(!wref.length||!mine.length)return null;
+    var ops=ltAlign(wref.map(function(x){return x.s;}),mine.map(function(x){return x.s;}));
+    var tm=new Array(mine.length),wi=0,mi=0,hit=0;
+    ops.forEach(function(o){
+      if(o.op==="m"){tm[mi]={t:wref[wi].t,e:wref[wi].e};if(o.k!=="wrong")hit++;wi++;mi++;}
+      else if(o.op==="d"){wi++;}
+      else{mi++;}});
+    // 没配上的词：用前后配上的那些插值填进去
+    var endT=wref[wref.length-1].e;
+    for(var i=0;i<tm.length;i++){
+      if(tm[i])continue;
+      var j=i;while(j<tm.length&&!tm[j])j++;
+      var a=(i>0&&tm[i-1])?tm[i-1].e:0;
+      var b=(j<tm.length&&tm[j])?tm[j].t:endT;
+      if(!(b>a))b=a+(j-i)*0.3;
+      var n=Math.max(1,j-i);
+      for(var k=0;k<n;k++)tm[i+k]={t:a+(b-a)*k/n,e:a+(b-a)*(k+1)/n};
+      i=j-1;}
+    var out=[];
+    sents.forEach(function(s,si){
+      var t=null,e=null;
+      for(var q=0;q<mine.length;q++){
+        if(mine[q].si!==si||!tm[q])continue;
+        if(t===null||tm[q].t<t)t=tm[q].t;
+        if(e===null||tm[q].e>e)e=tm[q].e;}
+      if(t===null){t=out.length?out[out.length-1].e:0;e=t+Math.max(1,s.length*0.06);}
+      out.push({t:Math.round(t*10)/10,e:Math.round(Math.max(e,t+0.4)*10)/10,s:s,my:"",n:0,tr:""});});
+    // 时间必须一路往前，不然播放会来回跳
+    for(var z=1;z<out.length;z++){
+      if(out[z].t<out[z-1].t)out[z].t=out[z-1].t;
+      if(out[z].e<=out[z].t)out[z].e=out[z].t+0.5;}
+    out.__hit=Math.round(hit/mine.length*100);
+    return out;}
+
+  // ================= 音频存哪：本机 IndexedDB / Supabase 私有桶 =================
+  var LT_BUCKET="recaudio";
+  function ltCloudPath(id){return (sbUser?sbUser.id:"anon")+"/"+id;}
+  function ltBucketMsg(err){
+    var m=String((err&&err.message)||err||"");
+    if(/not *found|bucket|does not exist/i.test(m))
+      return "Supabase 里还没有叫「"+LT_BUCKET+"」的存储桶。去 Supabase → Storage → New bucket 建一个："+
+        "名字填 "+LT_BUCKET+"，Public 关掉（要私有），建好再传一次。原始报错："+m;
+    return m;}
+  async function ltUploadCloud(id,blob){
+    if(!SB||!sbUser)throw new Error("还没登录云同步 —— 去设置里用 Google 登录后再选「云端」。");
+    var p=ltCloudPath(id);
+    var r=await SB.storage.from(LT_BUCKET).upload(p,blob,{upsert:true,contentType:(blob&&blob.type)||"audio/mpeg"});
+    if(r.error)throw new Error(ltBucketMsg(r.error));
+    return p;}
+  async function ltCloudURL(p){
+    if(!SB||!sbUser||!p)return null;
+    try{var r=await SB.storage.from(LT_BUCKET).createSignedUrl(p,60*60*6);
+      if(r.error)return null;
+      return (r.data&&r.data.signedUrl)||null;}catch(e){return null;}}
+  async function ltDropCloud(p){
+    if(!SB||!sbUser||!p)return;
+    try{await SB.storage.from(LT_BUCKET).remove([p]);}catch(e){}}
+
+  // ================= 播放引擎 =================
+  function ltLine(){return (ltCur&&ltCur.lines&&ltCur.lines[ltIdx])||null;}
+  function ltClearTimers(){
+    if(ltGapT){clearTimeout(ltGapT);ltGapT=null;}
+    if(ltTick){clearInterval(ltTick);ltTick=null;}
+    ltGapEnd=0;}
+  function ltStop(){
+    ltClearTimers();ltPlaying=false;ltLoopLeft=0;
+    var au=ltAu();if(au){try{au.pause();}catch(e){}}
+    ltPaintStatus();}
+  function ltApplyRate(au){
+    try{au.playbackRate=+ltCfg.speed||1;}catch(e){}
+    try{au.preservesPitch=true;}catch(e){}
+    try{au.mozPreservesPitch=true;}catch(e){}
+    try{au.webkitPreservesPitch=true;}catch(e){}}
+  function ltPlayOnce(){
+    var l=ltLine(),au=ltAu();
+    if(!l||!au||!au.getAttribute("src")){ltPaintStatus();return;}
+    var pad=+ltCfg.pad||0;
+    ltStopAt=(+l.e||0)+pad;
+    ltApplyRate(au);
+    try{au.currentTime=Math.max(0,(+l.t||0)-pad);}catch(e){}
+    ltPlaying=true;
+    var pr=au.play();
+    if(pr&&pr.then)pr.then(function(){ltPaintStatus();},function(){ltPlaying=false;ltPaintStatus();});
+    ltPaintStatus();}
+  function ltPlaySentence(n){
+    ltClearTimers();
+    ltLoopLeft=(n>0?n:(+ltCfg.loop||1));
+    ltPlayOnce();}
+  function ltOnTimeUpdate(){
+    var au=ltAu();if(!au||!ltPlaying)return;
+    if(au.currentTime>=ltStopAt){
+      try{au.pause();}catch(e){}
+      ltPlaying=false;
+      var l=ltLine();if(l){l.n=(+l.n||0)+1;ltDirty();}
+      ltAfterOne();}}
+  function ltAfterOne(){
+    ltLoopLeft--;
+    if(ltLoopLeft>0){ltGapThen(ltPlayOnce);return;}
+    if(ltCfg.auto)ltGapThen(function(){ltNext();});
+    else ltPaintStatus();}
+  function ltGapMs(){
+    var l=ltLine();if(!l)return 1200;
+    var len=Math.max(0.4,((+l.e||0)-(+l.t||0)))*1000;
+    if(ltCfg.gap==="fixed")return Math.max(300,(+ltCfg.gapSec||3)*1000);
+    if(ltCfg.gap==="r1")return len;
+    if(ltCfg.gap==="r15")return len*1.5;
+    if(ltCfg.gap==="r2")return len*2;
+    // 智能：还剩很多没默出来就多留点时间，快写完了就赶紧再放一遍
+    var box=document.getElementById("lt-in-"+ltIdx);
+    var typed=box?String(box.value||"").trim().length:0;
+    var need=Math.max(1,String(l.s||"").trim().length);
+    var p=Math.max(0,Math.min(1,typed/need));
+    return Math.max(700,len*(2.2-1.7*p));}
+  function ltGapThen(fn){
+    var ms=ltGapMs();
+    ltGapEnd=Date.now()+ms;
+    if(ltTick)clearInterval(ltTick);
+    ltTick=setInterval(ltPaintStatus,120);
+    ltGapT=setTimeout(function(){
+      ltGapT=null;ltGapEnd=0;
+      if(ltTick){clearInterval(ltTick);ltTick=null;}
+      fn();},ms);
+    ltPaintStatus();}
+  function ltFocusIn(){
+    setTimeout(function(){
+      var b=document.getElementById("lt-in-"+ltIdx);
+      if(b){try{b.focus();}catch(e){}}},60);}
+  function ltGoto(i,play){
+    if(!ltCur||!ltCur.lines.length)return;
+    ltClearTimers();
+    var au=ltAu();if(au){try{au.pause();}catch(e){}}
+    ltPlaying=false;
+    ltIdx=Math.max(0,Math.min(ltCur.lines.length-1,i));
+    ltCur.at=ltIdx;ltDirty();
+    ltRender();
+    if(play!==false)ltPlaySentence();
+    ltFocusIn();}
+  function ltNext(){
+    if(!ltCur)return;
+    if(ltIdx>=ltCur.lines.length-1){ltStop();ltNote("已经是最后一句了 🎉");ltRender();return;}
+    ltGoto(ltIdx+1);}
+  function ltPrev(){if(ltCur)ltGoto(Math.max(0,ltIdx-1));}
+
+  // ================= 渲染 =================
+  function ltSrcHTML(l){
+    // 原文里每个词都能点：出释义、收藏进生词本 —— 跟看书那边同一套
+    return ltTok(l.s).map(function(w){return '<span class="lw">'+esc(w)+'</span>';}).join(" ");}
+  function ltCellHTML(l,i){
+    var srcOn=!!ltCfg.showSrc,trOn=!!ltCfg.showTr,h="";
+    h+='<div class="lt-lab">原文 <button data-lttog="src">'+(srcOn?"隐藏":"显示")+'</button>'+
+       '<span style="opacity:.7">'+tsLabel(l.t)+' – '+tsLabel(l.e)+' · 听了 '+(+l.n||0)+' 遍</span></div>'+
+       '<div class="lt-src'+(srcOn?"":" lt-hidden")+'" data-ltrev="src">'+
+         (srcOn?ltSrcHTML(l):esc(l.s))+'</div>'+
+       '<div class="lt-lab">译文 <button data-lttog="tr">'+(trOn?"隐藏":"显示")+'</button>'+
+       '<button data-lttr="'+i+'">'+(l.tr?"重新翻译":"翻译这句")+'</button></div>'+
+       '<div class="lt-tr'+(trOn?"":" lt-hidden")+'" data-ltrev="tr">'+
+         (l.tr?esc(l.tr):"（这句还没翻译）")+'</div>'+
+       '<textarea class="lt-in" id="lt-in-'+i+'" data-ltin="'+i+'" rows="3" '+
+         'autocorrect="off" autocapitalize="off" autocomplete="off" spellcheck="false" '+
+         'placeholder="在这里打出你听到的…">'+esc(l.my||"")+'</textarea>'+
+       '<div class="lt-btns">'+
+         '<button class="btn primary" data-ltchk="'+i+'">对答案</button>'+
+         '<button class="btn" data-ltreplay="1">🔁 重放</button>'+
+         '<button class="btn" data-ltprev="1">← 上一句</button>'+
+         '<button class="btn" data-ltnext="1">下一句 →</button>'+
+         '<button class="btn" data-ltclear="'+i+'" title="清掉这一句的听写和判分">清空</button></div>';
+    if(l.ck&&l.my&&l.my.trim()){
+      var ops=ltDiffOps(l.s,l.my),sc=ltScore(ops);
+      h+='<div class="lt-diff">'+ltDiffHTML(ops)+'</div><div class="lt-sum">'+ltSumHTML(sc)+'</div>'+ltKeyHTML();}
+    else if(l.ck)h+='<div class="lt-sum">这句还没写就直接看了答案。</div>';
+    return h;}
+  function ltRenderOne(){
+    var box=document.getElementById("lt-one");if(!box||!ltCur)return;
+    var l=ltLine();
+    box.innerHTML=l?('<div class="lt-card">'+ltCellHTML(l,ltIdx)+'</div>')
+      :'<div class="dict-hint">这条素材还没有句子。</div>';}
+  function ltRenderAll(){
+    var box=document.getElementById("lt-allbox");if(!box||!ltCur)return;
+    box.innerHTML=ltCur.lines.map(function(l,i){
+      var cur=(i===ltIdx),st="";
+      if(l.ck&&l.my&&l.my.trim())st=ltScore(ltDiffOps(l.s,l.my)).pct+"%";
+      else if(l.my&&l.my.trim())st="…";
+      var h='<div class="lt-row'+(cur?" cur":"")+'" data-ltrow="'+i+'">'+
+        '<span class="n">'+(i+1)+'</span><div class="c">';
+      if(cur)h+=ltCellHTML(l,i);
+      else{
+        h+='<div class="lt-src'+(ltCfg.showSrc?"":" lt-hidden")+'">'+esc(l.s)+'</div>';
+        if(l.tr)h+='<div class="lt-tr'+(ltCfg.showTr?"":" lt-hidden")+'">'+esc(l.tr)+'</div>';}
+      return h+'</div><span class="st">'+esc(st)+'</span></div>';}).join("");
+    var el=box.querySelector(".lt-row.cur");
+    if(el)try{el.scrollIntoView({block:"nearest"});}catch(e){}}
+  function ltPaintStatus(){
+    var box=document.getElementById("lt-ctl");if(!box)return;
+    var st=box.querySelector(".lt-st"),pb=box.querySelector(".lt-play"),txt;
+    if(ltGapEnd)txt="停顿中… "+(Math.max(0,ltGapEnd-Date.now())/1000).toFixed(1)+" 秒";
+    else if(ltPlaying)txt="播放中 · 还要放 "+Math.max(0,ltLoopLeft)+" 遍";
+    else txt=(ltLoopLeft>0?("还要放 "+ltLoopLeft+" 遍"):"停着");
+    if(st)st.textContent=txt;
+    if(pb)pb.textContent=(ltPlaying||ltGapEnd)?"⏸":"▶";}
+  function ltPaintCtl(){
+    var box=document.getElementById("lt-ctl");if(!box)return;
+    box.innerHTML=
+      '<button class="lt-play" data-ltplay="1" title="播放 / 停下">▶</button>'+
+      '<span class="lt-st"></span>'+
+      '<label class="lt-ck">速度 <select data-ltc="speed">'+
+        [0.5,0.6,0.75,0.85,1,1.25,1.5,2].map(function(v){
+          return '<option value="'+v+'"'+(+ltCfg.speed===v?" selected":"")+'>'+v+'×</option>';}).join("")+
+      '</select></label>'+
+      '<label class="lt-ck">单句循环 <select data-ltc="loop">'+
+        [1,2,3,4,5,6,8,10].map(function(v){
+          return '<option value="'+v+'"'+(+ltCfg.loop===v?" selected":"")+'>'+v+' 遍</option>';}).join("")+
+      '</select></label>'+
+      '<label class="lt-ck">每遍之后停 <select data-ltc="gap">'+
+        [["smart","智能 · 看你打了多少"],["r1","1 倍句长"],["r15","1.5 倍句长"],
+         ["r2","2 倍句长"],["fixed","固定秒数"]].map(function(a){
+          return '<option value="'+a[0]+'"'+(ltCfg.gap===a[0]?" selected":"")+'>'+a[1]+'</option>';}).join("")+
+      '</select></label>'+
+      (ltCfg.gap==="fixed"?('<input type="number" min="1" max="60" step="1" value="'+
+        (+ltCfg.gapSec||3)+'" data-ltc="gapSec" title="停几秒">'):"")+
+      '<label class="lt-ck"><input type="checkbox" data-ltc="auto"'+(ltCfg.auto?" checked":"")+'> 自动下一句</label>'+
+      '<label class="lt-ck"><input type="checkbox" data-ltc="viewall"'+(ltCfg.view==="all"?" checked":"")+'> 整篇显示</label>';
+    ltPaintStatus();}
+  function ltRender(){
+    if(!ltCur)return;
+    var tt=document.getElementById("lt-t");if(tt)tt.textContent=ltCur.title||"（没名字）";
+    var done=0;ltCur.lines.forEach(function(l){if(l.ck)done++;});
+    ltMeta("第 "+(ltIdx+1)+" / "+ltCur.lines.length+" 句 · 做过 "+done+" 句");
+    var pb=document.getElementById("lt-pgbar");
+    if(pb)pb.style.width=(ltCur.lines.length?(done/ltCur.lines.length*100):0)+"%";
+    var one=document.getElementById("lt-one"),all=document.getElementById("lt-allbox");
+    if(ltCfg.view==="all"){one.hidden=true;one.innerHTML="";all.hidden=false;ltRenderAll();}
+    else{all.hidden=true;all.innerHTML="";one.hidden=false;ltRenderOne();}
+    ltPaintCtl();}
+  function ltRenderList(){
+    var box=document.getElementById("lt-list");if(!box)return;
+    if(!recs.length){box.innerHTML='<div class="dict-hint">还没有素材。上面导入一段音频就行 —— '+
+      '已经有现成文本（别人整理好的稿子）就走「音频 + 已有文本」，我会把文本对齐到音频上。</div>';return;}
+    box.innerHTML=recs.map(function(r){
+      var n=(r.lines||[]).length,done=0;
+      (r.lines||[]).forEach(function(l){if(l.ck)done++;});
+      var d=new Date(r.ts);
+      return '<div class="lt-item" data-ltopen="'+r.id+'">'+
+        '<span class="t">'+esc(r.title||"（没名字）")+'</span>'+
+        '<span class="pg" title="做过 '+done+' / '+n+' 句"><i style="width:'+(n?(done/n*100):0)+'%"></i></span>'+
+        '<span class="m">'+done+' / '+n+' 句 · '+tsLabel(r.dur)+' · '+fmt(d)+
+          (r.aligned?' · 📝 已对齐':'')+(r.cloud?' · ☁️ 云端':'')+
+          (r.noAudio&&!r.cloud?' · 只有文字':'')+'</span>'+
+        '<button class="lt-x" data-ltdel="'+r.id+'" title="删掉这条素材">✕</button></div>';}).join("");}
+  function ltSetHTML(){
+    var h='<h4>精听设置</h4><div class="lt-grid">'+
+      '<label class="lt-f">显示方式<select data-ltc="view">'+
+        '<option value="one"'+(ltCfg.view==="one"?" selected":"")+'>一次只显示一句</option>'+
+        '<option value="all"'+(ltCfg.view==="all"?" selected":"")+'>整篇都显示，当前句高亮</option></select></label>'+
+      '<label class="lt-f">默认显示原文<select data-ltc="showSrc">'+
+        '<option value="0"'+(ltCfg.showSrc?"":" selected")+'>先藏起来（推荐）</option>'+
+        '<option value="1"'+(ltCfg.showSrc?" selected":"")+'>直接显示</option></select></label>'+
+      '<label class="lt-f">默认显示译文<select data-ltc="showTr">'+
+        '<option value="0"'+(ltCfg.showTr?"":" selected")+'>先藏起来</option>'+
+        '<option value="1"'+(ltCfg.showTr?" selected":"")+'>直接显示</option></select></label>'+
+      '<label class="lt-f">翻译引擎<select data-ltc="treng">'+
+        (typeof TRENG!=="undefined"?TRENG.map(function(x){
+          return '<option value="'+x.v+'"'+(trEngine===x.v?" selected":"")+'>'+esc(x.n)+'</option>';}).join(""):"")+
+      '</select></label>'+
+      '<label class="lt-f">句子前后留白（秒）<input type="number" min="0" max="2" step="0.05" value="'+
+        (+ltCfg.pad||0)+'" data-ltc="pad" title="太小会吃掉第一个音节"></label>'+
+      '<label class="lt-f">新素材的音频存哪<select data-ltc="store">'+
+        '<option value="local"'+(ltCfg.store==="local"?" selected":"")+'>本机（不占云端空间）</option>'+
+        '<option value="cloud"'+(ltCfg.store==="cloud"?" selected":"")+'>云端（换设备也能听）</option></select></label>'+
+      '</div>'+
+      '<div class="lt-btns"><button class="btn" data-lttrall="0">🌐 整篇翻译（只翻没翻过的）</button>'+
+      '<button class="btn" data-lttrall="1">重新翻译整篇</button>'+
+      '<span class="wt-note" style="margin:0">译文翻一次就存下来，不会重复翻，也跟着云同步走。</span></div>';
+    if(ltCur){
+      h+='<div class="lt-btns" style="border-top:1px solid var(--border);margin-top:12px;padding-top:12px">'+
+        '<b style="font-size:12px;color:var(--muted)">这条素材的音频：</b>'+
+        (ltCur.cloud?'<button class="btn" data-ltmove="local">⬇️ 收回本机</button>'
+                    :'<button class="btn" data-ltmove="cloud">☁️ 传到云端</button>')+
+        '<button class="btn" data-ltdropau="1">🗑️ 只删音频（文字全留着）</button>'+
+        '<span class="wt-note" style="margin:0">原文、译文、你的听写和判分一律在云端，删音频不影响它们。</span></div>';}
+    return h;}
+  function ltRenderSetPanels(){
+    ["lt-setpanel","lt-setpanel2"].forEach(function(k){
+      var p=document.getElementById(k);
+      if(p&&!p.hidden)p.innerHTML=ltSetHTML();});}
+
+  // ================= 对答案 / 翻译 =================
+  function ltCheck(i){
+    if(!ltCur)return;
+    var l=ltCur.lines[i];if(!l)return;
+    var box=document.getElementById("lt-in-"+i);
+    if(box)l.my=String(box.value||"");
+    l.ck=1;
+    if(l.my&&l.my.trim())l.pct=ltScore(ltDiffOps(l.s,l.my)).pct;
+    saveRecs();ltRender();}
+  function ltClearOne(i){
+    if(!ltCur)return;
+    var l=ltCur.lines[i];if(!l)return;
+    l.my="";l.ck=0;l.pct=null;saveRecs();ltRender();ltFocusIn();}
+  var ltTrBusy=false;
+  function ltTrOne(i,force){
+    if(!ltCur||ltTrBusy)return;
+    var l=ltCur.lines[i];if(!l||!l.s)return;
+    ltTrBusy=true;ltProg("翻这一句 · "+trEngName(trEngine)+"…",null);
+    translateBlocks([l.s],null).then(function(out){
+      ltTrBusy=false;ltProg(null);
+      if(out&&out[0]){l.tr=String(out[0]).trim();saveRecs();ltCfg.showTr=true;ltSaveCfg();ltRender();}
+      else ltNote("没翻出来 —— 换个引擎再试（设置里可以选）。");},
+      function(err){ltTrBusy=false;ltProg(null);
+        ltNote("翻译失败："+String((err&&err.message)||err));});}
+  function ltTrAll(force){
+    if(!ltCur||ltTrBusy)return;
+    var idx=[],txt=[];
+    ltCur.lines.forEach(function(l,i){
+      if((force||!l.tr)&&l.s&&l.s.trim()){idx.push(i);txt.push(l.s);}});
+    if(!idx.length){ltNote("每句都翻过了。要重翻点「重新翻译整篇」。");return;}
+    ltTrBusy=true;
+    translateBlocks(txt,function(done,total,msg){
+      ltProg(msg||("翻译中 "+done+" / "+total+" 句 · "+trEngName(trEngine)),total?(done/total*100):null);})
+    .then(function(out){
+      ltTrBusy=false;ltProg(null);
+      var n=0;idx.forEach(function(li,k){if(out[k]){ltCur.lines[li].tr=String(out[k]).trim();n++;}});
+      saveRecs();ltRender();ltNote("翻好 "+n+" 句。");},
+      function(err){ltTrBusy=false;ltProg(null);
+        ttAlert("翻译失败："+String((err&&err.message)||err)+"\n\n在精听设置里可以换引擎（我的 AI / Google / 本地）。");});}
+
+  // ================= 导入 =================
+  async function ltNewFromAudio(file,text){
+    if(!file)return;
+    var id="r"+uid(),okLocal=true;
+    var name=String(file.name||"素材").replace(/\.[^.]+$/,"");
+    ltProg("准备中…",null);
+    try{await recPut(id,file);}catch(e){okLocal=false;}
+    var rec={id:id,title:name,ts:Date.now(),dur:0,
+      lang:(document.getElementById("rec-lang")||{}).value||"en-NZ",
+      lines:[],size:file.size,noAudio:!okLocal,src:"listen",by:"whisper",at:0};
+    try{
+      var out=await whisperRun(file,wLang());
+      rec.dur=Math.round(out.dur||0);
+      if(text&&text.trim()){
+        var al=ltAlignToAudio(out.lines,text);
+        if(al&&al.length){rec.lines=al;rec.aligned=1;
+          ltNote("对齐好了："+al.length+" 句 · 你的文本和 Whisper 那份对上了 "+(al.__hit||0)+"%");}
+        else{rec.lines=out.lines;ltNote("文本没能对上，先用 Whisper 转出来的那份。");}}
+      else rec.lines=out.lines;
+      rec.lines.forEach(function(l){if(l.my===undefined)l.my="";if(l.n===undefined)l.n=0;});
+      try{termAll(rec.lines);}catch(e){}
+      if(ltCfg.store==="cloud"){
+        ltProg("上传音频到云端…",null);
+        try{rec.cloud=await ltUploadCloud(id,file);}
+        catch(e){await ttAlert("音频没能传上云端，先留在这台设备上。\n\n"+String((e&&e.message)||e));}}
+      recs.unshift(rec);saveRecs();
+      ltProg(null);ltRenderList();try{recRenderList();}catch(e){}
+      ltOpen(id);
+    }catch(err){
+      ltProg(null);
+      try{await recDrop(id);}catch(e){}
+      ttAlert("转写失败："+String((err&&err.message)||err));}}
+
+  // ================= 音频搬家 / 删除 =================
+  async function ltMoveAudio(to){
+    if(!ltCur)return;
+    var id=ltCur.id;
+    if(to==="cloud"){
+      var b=null;try{b=await recGet(id);}catch(e){}
+      if(!b){ltNote("这台设备上没有音频，传不上去。");return;}
+      ltProg("上传中…",null);
+      try{ltCur.cloud=await ltUploadCloud(id,b);ltCur.noAudio=false;saveRecs();
+        ltProg(null);ltNote("传上去了 —— 换设备也能听。");}
+      catch(e){ltProg(null);await ttAlert(String((e&&e.message)||e));}
+    }else{
+      if(!ltCur.cloud){ltNote("本来就在本机。");return;}
+      ltProg("从云端收回…",null);
+      try{
+        var u=await ltCloudURL(ltCur.cloud);
+        if(!u)throw new Error("拿不到下载地址");
+        var blob=await (await fetch(u)).blob();
+        await recPut(id,blob);
+        await ltDropCloud(ltCur.cloud);
+        ltCur.cloud=null;ltCur.noAudio=false;saveRecs();
+        ltProg(null);ltNote("收回本机了，云端那份已经删掉。");}
+      catch(e){ltProg(null);await ttAlert("收回失败："+String((e&&e.message)||e));}}
+    ltRenderSetPanels();ltRenderList();}
+  async function ltDropAudio(){
+    if(!ltCur)return;
+    if(!await ttConfirm("只删音频 —— 原文、译文、你的听写和判分全都留着，也还在云端。\n确定删掉音频吗？",
+      {danger:true,okText:"删音频"}))return;
+    try{await recDrop(ltCur.id);}catch(e){}
+    if(ltCur.cloud){await ltDropCloud(ltCur.cloud);ltCur.cloud=null;}
+    ltCur.noAudio=true;saveRecs();ltStop();
+    var au=ltAu();if(au)au.removeAttribute("src");
+    var miss=document.getElementById("lt-nomedia");
+    if(miss){miss.hidden=false;miss.textContent="音频已经删了。文字都在，可以只看不听。";}
+    ltRenderSetPanels();ltRenderList();}
+  async function ltDel(id){
+    var r=null;recs.forEach(function(x){if(x.id===id)r=x;});
+    if(!r)return;
+    if(!await ttConfirm("删掉「"+(r.title||"这条")+"」？\n听写记录、译文、音频会一起没。",
+      {danger:true,okText:"删掉"}))return;
+    if(r.cloud)await ltDropCloud(r.cloud);
+    try{await recDrop(id);}catch(e){}
+    var k=recs.indexOf(r);if(k>=0)recs.splice(k,1);
+    saveRecs();ltRenderList();try{recRenderList();}catch(e){}}
+
+  // ================= 打开 / 返回 =================
+  async function ltOpen(id){
+    var r=null;recs.forEach(function(x){if(x.id===id)r=x;});
+    if(!r)return;
+    ltStop();
+    ltCur=r;
+    ltIdx=Math.max(0,Math.min(Math.max(0,(r.lines||[]).length-1),+r.at||0));
+    document.getElementById("lt-home").style.display="none";
+    document.getElementById("lt-doc").style.display="";
+    var au=ltAu(),miss=document.getElementById("lt-nomedia");
+    if(ltURL&&ltRevoke){try{URL.revokeObjectURL(ltURL);}catch(e){}}
+    ltURL=null;ltRevoke=false;
+    var blob=null;try{blob=await recGet(id);}catch(e){}
+    if(blob){ltURL=URL.createObjectURL(blob);ltRevoke=true;}
+    else if(r.cloud){ltProg("取云端音频…",null);ltURL=await ltCloudURL(r.cloud);ltProg(null);}
+    if(ltURL){au.src=ltURL;miss.hidden=true;try{au.load();}catch(e){}}
+    else{
+      au.removeAttribute("src");miss.hidden=false;
+      miss.textContent=r.cloud
+        ?"云端音频取不回来（可能没登录，或者桶里已经没有了）。文字都在，可以只看不听。"
+        :"这台设备上没有它的音频。文字都在 —— 回到存音频的那台机器，或者在设置里把存储改成「云端」再重新导入。";}
+    ltApplyRate(au);
+    ltRender();}
+  function ltBack(){
+    ltStop();
+    var au=ltAu();if(au)au.removeAttribute("src");
+    if(ltURL&&ltRevoke){try{URL.revokeObjectURL(ltURL);}catch(e){}}
+    ltURL=null;ltRevoke=false;
+    if(ltSaveT){clearTimeout(ltSaveT);ltSaveT=null;}
+    saveRecs();ltCur=null;
+    document.getElementById("lt-doc").style.display="none";
+    document.getElementById("lt-home").style.display="";
+    ltRenderList();}
+  function openListen(){
+    var doc=document.getElementById("lt-doc");
+    if(ltCur&&doc&&doc.style.display!=="none")ltRender();
+    else ltRenderList();}
+
+  // 释义卡片本来是「看书」页初始化时才认领的。没去过那一页就点不出释义，
+  // 所以这里自己认领一次（幂等：已经认领过就直接返回）。
+  function ltEnsurePop(){
+    if(rdPop)return true;
+    var el=document.getElementById("rd-pop");
+    if(!el)return false;
+    rdPop=el;
+    if(el.parentNode!==document.body)document.body.appendChild(el);
+    try{watchPopSize();}catch(e){}
+    try{applyRdFs();}catch(e){}
+    return true;}
+
+  // ================= 绑定 =================
+  function bindListen(){
+    var doc=document.getElementById("view-listen");if(!doc)return;
+    var au=ltAu();
+    if(au){
+      au.addEventListener("timeupdate",ltOnTimeUpdate);
+      au.addEventListener("ended",function(){if(ltPlaying){ltPlaying=false;ltAfterOne();}});}
+    var fa=document.getElementById("lt-fa");
+    if(fa)fa.addEventListener("change",function(e){
+      var f=e.target.files&&e.target.files[0];e.target.value="";
+      if(f)ltNewFromAudio(f,"");});
+    var fa2=document.getElementById("lt-fa2");
+    if(fa2)fa2.addEventListener("change",function(e){
+      var f=e.target.files&&e.target.files[0];e.target.value="";
+      ltPendFile=f||null;
+      var n=document.getElementById("lt-fa2n");
+      if(n)n.textContent=f?("已选："+f.name):"还没选";});
+    var ft=document.getElementById("lt-ft");
+    if(ft)ft.addEventListener("click",function(){
+      var p=document.getElementById("lt-newtext");if(p)p.hidden=!p.hidden;});
+    var cc=document.getElementById("lt-txcancel");
+    if(cc)cc.addEventListener("click",function(){
+      var p=document.getElementById("lt-newtext");if(p)p.hidden=true;});
+    var mk=document.getElementById("lt-mk");
+    if(mk)mk.addEventListener("click",function(){
+      var ta=document.getElementById("lt-txin"),tx=ta?ta.value:"";
+      if(!ltPendFile){ltNote("先选音频（第①步）。");return;}
+      if(!tx||!tx.trim()){ltNote("把文本贴进第②步那个框里。");return;}
+      var f=ltPendFile;ltPendFile=null;
+      document.getElementById("lt-newtext").hidden=true;
+      if(ta)ta.value="";
+      var n=document.getElementById("lt-fa2n");if(n)n.textContent="还没选";
+      ltNewFromAudio(f,tx);});
+    [["lt-setbtn","lt-setpanel"],["lt-setbtn2","lt-setpanel2"]].forEach(function(a){
+      var b=document.getElementById(a[0]);
+      if(b)b.addEventListener("click",function(){
+        var p=document.getElementById(a[1]);if(!p)return;
+        p.hidden=!p.hidden;if(!p.hidden)p.innerHTML=ltSetHTML();});});
+    var bk=document.getElementById("lt-back");
+    if(bk)bk.addEventListener("click",ltBack);
+
+    doc.addEventListener("click",function(e){
+      var t=e.target;
+      var dl=t.closest("[data-ltdel]");
+      if(dl){e.stopPropagation();ltDel(dl.getAttribute("data-ltdel"));return;}
+      var op=t.closest("[data-ltopen]");
+      if(op){ltOpen(op.getAttribute("data-ltopen"));return;}
+      var pl=t.closest("[data-ltplay]");
+      if(pl){if(ltPlaying||ltGapEnd)ltStop();else ltPlaySentence();return;}
+      var ck=t.closest("[data-ltchk]");
+      if(ck){ltCheck(+ck.getAttribute("data-ltchk"));return;}
+      var cl=t.closest("[data-ltclear]");
+      if(cl){ltClearOne(+cl.getAttribute("data-ltclear"));return;}
+      if(t.closest("[data-ltreplay]")){ltPlaySentence();return;}
+      if(t.closest("[data-ltnext]")){ltNext();return;}
+      if(t.closest("[data-ltprev]")){ltPrev();return;}
+      var tg=t.closest("[data-lttog]");
+      if(tg){var k=tg.getAttribute("data-lttog");
+        if(k==="src")ltCfg.showSrc=!ltCfg.showSrc;else ltCfg.showTr=!ltCfg.showTr;
+        ltSaveCfg();ltRender();return;}
+      var tr1=t.closest("[data-lttr]");
+      if(tr1){ltTrOne(+tr1.getAttribute("data-lttr"),true);return;}
+      var tra=t.closest("[data-lttrall]");
+      if(tra){ltTrAll(tra.getAttribute("data-lttrall")==="1");return;}
+      var mv=t.closest("[data-ltmove]");
+      if(mv){ltMoveAudio(mv.getAttribute("data-ltmove"));return;}
+      if(t.closest("[data-ltdropau]")){ltDropAudio();return;}
+      // 被模糊挡住的原文/译文：点一下就揭开
+      var rv=t.closest("[data-ltrev]");
+      if(rv&&rv.classList.contains("lt-hidden")){
+        if(rv.getAttribute("data-ltrev")==="src")ltCfg.showSrc=true;else ltCfg.showTr=true;
+        ltSaveCfg();ltRender();return;}
+      var lw=t.closest(".lw");
+      if(lw){
+        var w=ltBare(lw.textContent||"");
+        if(w&&/[A-Za-z]/.test(w)&&ltEnsurePop()){
+          try{showRdPop(w,lw.getBoundingClientRect());}catch(err){}}
+        return;}
+      var row=t.closest("[data-ltrow]");
+      if(row){var ri=+row.getAttribute("data-ltrow");
+        if(ri!==ltIdx)ltGoto(ri,false);return;}});
+
+    doc.addEventListener("change",function(e){
+      var c=e.target.closest("[data-ltc]");if(!c)return;
+      var k=c.getAttribute("data-ltc"),v=(c.type==="checkbox")?c.checked:c.value;
+      if(k==="viewall")ltCfg.view=v?"all":"one";
+      else if(k==="view")ltCfg.view=v;
+      else if(k==="speed"){ltCfg.speed=parseFloat(v)||1;var a=ltAu();if(a)ltApplyRate(a);}
+      else if(k==="loop")ltCfg.loop=parseInt(v,10)||1;
+      else if(k==="gap")ltCfg.gap=v;
+      else if(k==="gapSec")ltCfg.gapSec=Math.max(1,parseInt(v,10)||3);
+      else if(k==="auto")ltCfg.auto=!!v;
+      else if(k==="pad")ltCfg.pad=Math.max(0,Math.min(2,parseFloat(v)||0));
+      else if(k==="store")ltCfg.store=v;
+      else if(k==="showSrc")ltCfg.showSrc=(v==="1");
+      else if(k==="showTr")ltCfg.showTr=(v==="1");
+      else if(k==="treng"){trEngine=v;save("tt_trengine",v);
+        try{var s=document.getElementById("tr-engine");if(s)s.value=v;}catch(err){}}
+      ltSaveCfg();ltRenderSetPanels();
+      if(ltCur)ltRender();else ltPaintCtl();});
+
+    doc.addEventListener("input",function(e){
+      var b=e.target.closest("[data-ltin]");if(!b||!ltCur)return;
+      var l=ltCur.lines[+b.getAttribute("data-ltin")];
+      if(l){l.my=String(b.value||"");ltDirty();}});
+
+    doc.addEventListener("keydown",function(e){
+      if(!ltCur)return;
+      if(!(e.ctrlKey||e.metaKey))return;
+      if(e.key==="Enter"){e.preventDefault();ltCheck(ltIdx);return;}
+      if(e.key==="ArrowRight"){e.preventDefault();ltNext();return;}
+      if(e.key==="ArrowLeft"){e.preventDefault();ltPrev();return;}
+      if(e.key===" "||e.code==="Space"){e.preventDefault();
+        if(ltPlaying||ltGapEnd)ltStop();else ltPlaySentence();return;}});}
+
   // ---------- 技能 / 学习计划 ----------
   // 技能 = 一件要学会的事，拆成有顺序的若干步。它挂在「大类 · 小类」下面，
   // 于是步骤计出来的时间照样进那个分类的统计 —— 不需要第三级分类。
@@ -8499,7 +9490,7 @@ margin-left: -22px;
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -10260,6 +11251,7 @@ margin-left: -22px;
     stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   // 这两个以前是 catch(e){} 全吞。绑定挂了的话，按钮就是死的，而且一点线索都没有。
+  try{bindListen();}catch(e){console.error("精听页绑定失败",e);}
   try{bindRec();}catch(e){console.error("录音页绑定失败",e);}
   try{bindWhisper();}catch(e){console.error("Whisper 绑定失败",e);
     try{var _rw=document.getElementById("rec-whisper");
