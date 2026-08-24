@@ -16837,6 +16837,8 @@ margin-left: -22px;
   function mnIsAll(){return String(mnCur).indexOf("__all")===0;}
   function mnAllBase(){var i=String(mnCur).indexOf(":");
     return i>0?String(mnCur).slice(i+1):mnFxBase();}
+  // 页面这会儿到底按哪个币种在显示（选了「合计」就是折算成的那个）
+  function mnViewCur(){return mnIsAll()?mnAllBase():(mnCur||"NZD");}
   // ---- 日汇率缓存 ----
   // mnCfg.fxd = {base:"NZD", c:["CNY","USD","AUD"], from, to, at,
   //              r:{"2021-06-03":[4.5123,0.7201,0.9312], …}}
@@ -17520,19 +17522,26 @@ margin-left: -22px;
   // 不然只能按比例摊，而她的税其实全是 Pingping 那边的（我的工资是 NET PAY，早扣过了）。
   // 税务页上手动加的记录没有 taxFrom，认不出来源，进 free 那一桶，渲染时按收入占比摊。
   function mnTaxDue(sp){
-    if(mnCur!=="NZD"&&!(mnIsAll()&&mnAllBase()==="NZD"))return null;
+    // 税是按新西兰规则、拿 NZD 算出来的。页面折算成别的币种时，把税额一起折过去就行。
+    // 以前这里遇到非 NZD 直接 return null —— 于是 CNY 视图里收入和结余显示的全是
+    // 税前原数，跟 NZD 视图正好差一个税额，看上去像汇率算错了，其实汇率是对的。
+    var to=mnViewCur();
     var rows;
     try{rows=txCompute();}catch(e){return null;}
     sp=sp||mnSpanOf();
-    var o={tax:0,acc:0,gst:0,gross:0,n:0,bySrc:{},free:0};
+    var o={tax:0,acc:0,gst:0,gross:0,n:0,bySrc:{},free:0,cur:to},bad=false;
     var byId={};mnTxns.forEach(function(t){byId[String(t.id)]=t;});
     rows.forEach(function(r){
       var d=String(r.date||"");
       if(!(d>=sp[0]&&d<=sp[1]))return;
-      o.tax+=r.mTax;o.acc+=r.mAcc;o.gst+=r.gstAmt;o.gross+=r.gross;o.n++;
-      var due=r.mTax+r.mAcc+r.gstAmt,src=byId[String(r.taxFrom)];
+      // 按那一天的汇率折，跟流水本身走的是同一套，不然税和收入对不齐
+      var k=(to==="NZD")?1:mnConv(1,"NZD",to,d);
+      if(!(k>0)){bad=true;return;}
+      o.tax+=r.mTax*k;o.acc+=r.mAcc*k;o.gst+=r.gstAmt*k;o.gross+=r.gross*k;o.n++;
+      var due=(r.mTax+r.mAcc+r.gstAmt)*k,src=byId[String(r.taxFrom)];
       if(src){var nm=mnPayer(src);o.bySrc[nm]=(o.bySrc[nm]||0)+due;}
       else o.free+=due;});
+    if(bad)return null;              // 有一笔折不过去就整个不显示，别给个偏小的税额
     return o.n?o:null;}
   // 每一栏后面挂个小标：这栏里几笔申报过。没申报的那些显示的是税前原数，
   // 不标出来的话，整张表顶着「扣税」两个字，看的人会以为每一笔都扣干净了。
