@@ -17534,11 +17534,19 @@ margin-left: -22px;
     rows.forEach(function(r){
       var d=String(r.date||"");
       if(!(d>=sp[0]&&d<=sp[1]))return;
+      // 税只能从「当前视图里真看得见的那笔收入」上扣。
+      // 以前这里只按日期过滤，不看币种也不看账户 —— 筛掉某个账户、
+      // 或者切到别的币种，税照扣不误，收入能被扣成负数。
+      var src=byId[String(r.taxFrom)];
+      if(src){if(!mnBase(src))return;}
+      // 税务页手加的记录没有来源流水，按 NZD 看待：
+      // 筛了账户就认不出它属于谁，切到别的币种也不该扣
+      else if(mnAcct||(!mnIsAll()&&mnCur!=="NZD"))return;
       // 按那一天的汇率折，跟流水本身走的是同一套，不然税和收入对不齐
       var k=(to==="NZD")?1:mnConv(1,"NZD",to,d);
       if(!(k>0)){bad=true;return;}
       o.tax+=r.mTax*k;o.acc+=r.mAcc*k;o.gst+=r.gstAmt*k;o.gross+=r.gross*k;o.n++;
-      var due=(r.mTax+r.mAcc+r.gstAmt)*k,src=byId[String(r.taxFrom)];
+      var due=(r.mTax+r.mAcc+r.gstAmt)*k;
       if(src){var nm=mnPayer(src);o.bySrc[nm]=(o.bySrc[nm]||0)+due;}
       else o.free+=due;});
     if(bad)return null;              // 有一笔折不过去就整个不显示，别给个偏小的税额
@@ -17673,8 +17681,11 @@ margin-left: -22px;
     // 税负（只算已经「记入税务」的那部分收入）
     var TX=mnTaxDue(),due=TX?(TX.tax+TX.acc+TX.gst):0;
     var afterTax=!!mnCfg.afterTax&&due>0;
-    var incShow=afterTax?(A.inc-due):A.inc;
-    var netShow=afterTax?(net-due):net;
+    // 扣的税不能超过这个视图里的收入 —— 收入可以是 0，但不该是负的。
+    // 结余用同一个 cut，两个数才对得上（结余本身可以为负，那是真的花超了）。
+    var cut=afterTax?Math.min(due,Math.max(0,A.inc)):0;
+    var incShow=A.inc-cut;
+    var netShow=net-cut;
 
     var h=mnBalHtml()+'<div class="mn-kpis">'+
       '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
@@ -17719,7 +17730,7 @@ margin-left: -22px;
     if(isIn&&afterTax){
       mnAfterTaxSrc(sum,TX,tot);
       mnAfterTaxSrc(prev,mnTaxDue(psp),P.inc);
-      tot=Math.max(0,tot-due);}
+      tot=Math.max(0,tot-cut);}
     var ranked=Object.keys(sum).sort(function(a,b){return sum[b]-sum[a];});
     // 收入按摘要自动归并时，一次性的小额转账会各自成一类
     // （MR A、GRICE S、PERRON F…），十几行几十块的把真正的大头淹掉。
@@ -17756,9 +17767,9 @@ margin-left: -22px;
     }else{
       var acc=0,stops=[];
       ranked.forEach(function(k,i){
-        var c=meta(k,i),a0=acc/tot*100;acc+=sum[k];
-        stops.push(c.c+" "+a0.toFixed(2)+"% "+(acc/tot*100).toFixed(2)+"%");});
-      if(tail)stops.push("#c2c7d2 "+(acc/tot*100).toFixed(2)+"% 100%");
+        var c=meta(k,i),a0=tot>0?(acc/tot*100):0;acc+=sum[k];   // tot 被扣成 0 时别除零，conic-gradient 拿到 NaN% 整个环画不出来
+        stops.push(c.c+" "+a0.toFixed(2)+"% "+(tot>0?(acc/tot*100):0).toFixed(2)+"%");});
+      if(tail)stops.push("#c2c7d2 "+(tot>0?(acc/tot*100):0).toFixed(2)+"% 100%");
       h+='<div class="mn-donut-wrap">'+
         '<div class="mn-donut" style="background:conic-gradient('+stops.join(",")+');'+
           '-webkit-mask:radial-gradient(circle,transparent 58%,#000 59%);mask:radial-gradient(circle,transparent 58%,#000 59%)">'+
