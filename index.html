@@ -4770,10 +4770,35 @@ margin-left: -22px;
   // 生在对方写盘之后 → 是新记录，捡回来；生在之前 → 是对方删掉的，尊重删除，不还魂。
   function evBorn(e){try{var t=parseInt(String((e&&e.id)||"").slice(0,-5),36);
     return (t>15e11&&t<Date.now()+864e5)?t:0;}catch(err){return 0;}}
+  // ---- 删掉的事件得留个墓碑 ----
+  // 上面那套"看出生时间"分不清两件事：「对方刚记的」和「我刚删的」——刚建完就删的那条，
+  // 出生时间同样很新。于是推送前的"捡回"把它从云端又捞回来，写回本机、再推上云，
+  // 删了跟没删一样，刷新就还在（多台设备时更明显：另一台没拉过新数据，一推就把它还了魂）。
+  // 所以删除单独记一笔 {事件id: 删除时刻}，跟着云同步一起走，所有合并路径先问它一句。
+  var evTomb=load("tt_evdel",{})||{};
+  var TOMB_KEEP=180*864e5;                       // 半年前删的就别留了：那么久没上线的设备本来也对不上账
+  function evTombPrune(){
+    var cut=Date.now()-TOMB_KEEP;
+    Object.keys(evTomb).forEach(function(k){var t=+evTomb[k]||0;if(!t||t<cut)delete evTomb[k];});
+    var ks=Object.keys(evTomb);
+    if(ks.length>3000){                          // 封顶，只留最近删的 2000 条
+      ks.sort(function(x,y){return (+evTomb[y]||0)-(+evTomb[x]||0);});
+      var keep={};ks.slice(0,2000).forEach(function(k){keep[k]=evTomb[k];});evTomb=keep;}}
+  function evTombHas(id){return !!(id&&evTomb[id]);}
+  function evTombAdd(id){                        // 注意：要在 save("tt_events") 之前调用，写盘合并才看得见
+    if(!id)return;evTomb[id]=Date.now();evTombPrune();save("tt_evdel",evTomb);}
+  function evTombMerge(other){                   // 两份墓碑取并集，删得晚的时刻为准
+    if(!other||typeof other!=="object")return;
+    Object.keys(other).forEach(function(k){var t=+other[k]||0;
+      if(t&&(!evTomb[k]||evTomb[k]<t))evTomb[k]=t;});
+    evTombPrune();}
+  function evTombDrop(list){                     // 从一份事件表里剔掉已经删过的
+    if(!Array.isArray(list))return list;
+    return list.filter(function(e){return !(e&&e.id&&evTomb[e.id]);});}
   function evMergeInto(base,extra,cutMs){        // 把 extra 里「base 没有、又生在 cutMs 之后」的捡进 base，返回捡了几条
     if(!Array.isArray(base)||!Array.isArray(extra)||!isFinite(cutMs))return 0;
     var has={},got=0;base.forEach(function(e){if(e&&e.id)has[e.id]=1;});
-    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&!evIsDemo(e)&&evBorn(e)>cutMs){base.push(e);got++;}});
+    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&!evIsDemo(e)&&!evTombHas(e.id)&&evBorn(e)>cutMs){base.push(e);got++;}});
     return got;}
   // 同一台机器开着两个网页：A 刚记完番茄钟，B 拿着旧内存随手一存（勾个待办、挪个事件）
   // 就把那条顶掉了。写盘前把盘上「比我上次对账更新」的事件捡回来，新增永远不丢。
@@ -5077,6 +5102,9 @@ margin-left: -22px;
 
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
+  // 开页面第一件事：把墓碑上有名字的清干净（上次退出前没来得及落地的那种）
+  if(Array.isArray(events)){var _t0=events.length;events=evTombDrop(events);
+    if(events.length<_t0)save("tt_events",events);}
   var settings=load("tt_settings",{theme:null,focus:25,brk:5}),pstats=load("tt_pstats",{});
   var state={view:"week",cursor:new Date(),tab:"calendar",catFilter:null};
   var miniCursor=new Date();
@@ -8415,7 +8443,7 @@ margin-left: -22px;
   document.getElementById("gd-events").addEventListener("click",function(e){
     var b=e.target.closest("[data-gdel]");if(!b)return;var id=b.getAttribute("data-gdel");
     if(!window.confirm("删除这条记录？（会从日历里移除该事件）"))return;
-    events=events.filter(function(x){return x.id!==id;});save("tt_events",events);
+    events=events.filter(function(x){return x.id!==id;});evTombAdd(id);save("tt_events",events);
     if(currentDetailGoal)renderGoalDetail(currentDetailGoal);renderCal();
   });
 
@@ -8679,7 +8707,7 @@ margin-left: -22px;
     }
     var old=events.filter(function(e){return e.id===editingId;})[0];
     if(old&&old.gid&&!await ttConfirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。",{danger:true,anchor:delBtn}))return;
-    events=events.filter(function(e){return e.id!==editingId;});save("tt_events",events);
+    events=events.filter(function(e){return e.id!==editingId;});evTombAdd(editingId);save("tt_events",events);
     if(gToken&&old&&old.gid)gcalDeleteById(old.gid);
     closeModal();renderCal();});
 
@@ -9985,7 +10013,7 @@ margin-left: -22px;
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel 是删掉的事件的墓碑
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -10008,6 +10036,19 @@ margin-left: -22px;
     // 云端有、本机没有、又生在「我上次和云端对账」之后的，捡进这次要推的包里一起上去。
     SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){
       var blob=collectBlob();
+      // 先并墓碑、再按墓碑清一遍：这样下面的"捡回"不会把刚删掉的从云端捞回来，
+      // 别的设备删掉的那些也在这一步从本机消失。
+      try{
+        evTombMerge(r&&r.data&&r.data.data&&r.data.data.tt_evdel);
+        try{LS.setItem("tt_evdel",JSON.stringify(evTomb));}catch(e){}
+        blob.tt_evdel=evTomb;
+        if(Array.isArray(blob.tt_events)){
+          var n0=blob.tt_events.length;blob.tt_events=evTombDrop(blob.tt_events);
+          if(blob.tt_events.length<n0){
+            try{LS.setItem("tt_events",JSON.stringify(blob.tt_events));}catch(e){}
+            try{pLog("按墓碑清掉别的设备删过的事件",{n:n0-blob.tt_events.length});}catch(e){}
+            try{events=load("tt_events",events)||events;renderCal();}catch(e){}}}
+      }catch(e){}
       try{
         var cev=r&&r.data&&r.data.data&&r.data.data.tt_events;
         var got=evMergeInto(blob.tt_events,cev,(+load("tt_pullat",0)||0)-PULL_SKEW);
@@ -10032,10 +10073,15 @@ margin-left: -22px;
     // 「番茄钟结束时日历上明明有，后来没了」就是这条路。
     // 合并规则：同一条以云端为准（别的设备改过的要生效）；
     // 本机独有、且生在云端那份写盘之后的，是还没来得及上云的新记录，捡回来。
+    // 墓碑两边取并集，再拿它把云端那份里已经删过的剔掉 ——
+    // 否则本机刚删的一条，会被云端的旧数据整盘盖回来（刷新就又出现了）。
+    try{evTombMerge(obj.tt_evdel);obj.tt_evdel=evTomb;}catch(e){}
     try{
       if(Array.isArray(obj.tt_events)){
         var ct=cloudAt?new Date(cloudAt).getTime():NaN;
         if(!isFinite(ct))ct=Date.now()-7*864e5;      // 没拿到 updated_at 就退一步：最近一周的本机新增都留下
+        var n1=obj.tt_events.length;obj.tt_events=evTombDrop(obj.tt_events);
+        if(obj.tt_events.length<n1)try{pLog("拉取时按墓碑剔掉删过的事件",{n:n1-obj.tt_events.length});}catch(e){}
         var local=JSON.parse(LS.getItem("tt_events")||"[]");
         var got=evMergeInto(obj.tt_events,local,ct-PULL_SKEW);
         if(got)try{pLog("拉取时捡回本机的事件",{n:got});}catch(e){}
@@ -10046,7 +10092,10 @@ margin-left: -22px;
     try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}
     if(bad.length)try{lsWarn(bad[0]);}catch(e){}}
   function reloadAllFromStorage(){
+    evTomb=load("tt_evdel",{})||{};                        // 先把墓碑读回来，再决定哪些事件不该还在
     events=load("tt_events",[])||[];evSyncAt=Date.now();   // 内存刚跟盘对齐，写盘合并的「上次对账」从现在起算
+    (function(){var n0=events.length;events=evTombDrop(events);
+      if(events.length<n0)save("tt_events",events);})();
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
