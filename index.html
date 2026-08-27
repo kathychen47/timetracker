@@ -235,6 +235,10 @@
   /* 中间暂停过：块从头画到尾，洞那一段是空的。描一圈边，让它读起来还是"一条"而不是两条 */
   .ev.gapped{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 34%,transparent)}
   .ev.gcal{border:1px dashed color-mix(in srgb,var(--c) 55%,var(--border))}
+  /* 从 Google 存下来的历史记录。虚线在这儿已经被 .gcal 占用为"还没进你的记录"，语义正好相反，
+     所以用左边一道竖条：它已经是你的记录了，只是来源是日历。竖条是 border-left，
+     .ev.mini 把角标全隐藏了也还看得见，短会议同样认得出来。 */
+  .ev.arch{border-left:2.5px solid color-mix(in srgb,var(--c) 62%,transparent)}
   /* 正计时进行中：日历上先占着位置，跟着秒数往下长 */
   .ev.live{border:1.5px dashed color-mix(in srgb,var(--c) 65%,transparent);transition:height .5s linear;
     animation:evlive 2.6s ease-in-out infinite}
@@ -4261,6 +4265,9 @@ margin-left: -22px;
       <label class="pomo-log" style="justify-content:flex-start"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
       <div class="ev-gcal-hint" id="ev-gcal-hint" style="display:none"></div>
     </div>
+    <!-- 这行说明必须放在 ev-gcal-row 外面：那一行在「从没连过 Google 的设备」上整块隐藏，
+         而那恰恰是归档功能最该说话的场景（换台设备、授权掉了，历史还在） -->
+    <div class="ev-gcal-hint" id="ev-arch-hint" style="display:none;margin:6px 0 0 0"></div>
     <div class="modal-actions">
       <button class="link-danger" id="ev-delete" style="display:none">删除</button>
       <div class="grow"></div>
@@ -4435,7 +4442,20 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">Google 事件计入统计（自动打勾）</div><div class="set-desc">开启后，从 Google 日历同步过来的事件会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。</div></div>
+          <div class="set-row-txt"><div class="set-row-t">把过去的 Google 事件存进我的记录</div>
+          <div class="set-desc">自动把<b>今天之前</b>的 Google 事件存成你自己的记录 —— 断开 Google、换台设备、授权过期，它们都还在（跟着云同步走）。
+            自动存的范围是<b>最近一个月</b>；更早的用下面那颗按钮一次性捞回来。</div>
+          <div class="set-desc" style="margin-top:6px">存下来的默认<b>不计入统计</b>，跟现在的行为一致。想让某一条算进去，在日历上给它打个勾就行（打了勾就归你管，以后 Google 那边再改也不动它）。</div>
+          <div class="set-desc" id="gcal-arch-info" style="margin-top:6px"></div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" id="gcal-backfill" type="button">把更早的也存下来</button>
+            <button class="btn" id="gcal-archclear" type="button">清掉存下来的</button></div></div>
+          <label class="switch"><input type="checkbox" id="set-gcal-arch"><span class="sw-track"></span></label>
+        </div>
+      </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">Google 事件计入统计（自动打勾）</div><div class="set-desc">开启后，从 Google 日历同步过来的事件（包括上面存下来的那些）会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。</div></div>
           <label class="switch"><input type="checkbox" id="set-gcal-count"><span class="sw-track"></span></label>
         </div>
       </div>
@@ -4742,7 +4762,7 @@ margin-left: -22px;
   // 刷新之后才发现刚做的事全没了。更糟的是 collectBlob() 是从 localStorage 读的，
   // 云端跟着存回旧值，等于本地和云端一起丢。
   // 所以：存不下就必须喊出来，而且不再往云端推（推上去也是旧值）。
-  var lsFull=false;
+  var lsFull=false,lsFullKey=null;      // 记住是哪个键存不下：只要它后来存进去了，警报就该解除
   function lsBytes(){                       // localStorage 按 UTF-16 存，一个字符两字节
     var n=0;try{for(var i=0;i<LS.length;i++){var k=LS.key(i);n+=k.length+(LS.getItem(k)||"").length;}}catch(e){}
     return n*2;}
@@ -4752,7 +4772,7 @@ margin-left: -22px;
     return a.sort(function(x,y){return y[1]-x[1];}).slice(0,n||5);}
   function kb(b){return b>=1048576?((b/1048576).toFixed(2)+" MB"):(Math.round(b/1024)+" KB");}
   function lsWarn(k){
-    lsFull=true;
+    lsFull=true;lsFullKey=k;
     var el=document.getElementById("ls-full");
     if(!el){el=document.createElement("div");el.id="ls-full";document.body.appendChild(el);}
     el.innerHTML='<b>⚠️ 浏览器存不下了，刚才那条没能存住</b>'+
@@ -4761,7 +4781,9 @@ margin-left: -22px;
       '现在做的任何改动<b>都存不进去</b>，刷新就没了 —— 先去 💰 记账 → ⚙️ 设置 → 账本数据 '+
       '导出 JSON 备份，再清掉一部分。</div>'+
       '<button type="button">知道了</button>';
-    el.querySelector("button").onclick=function(){el.remove();};}
+    // 点「知道了」＝ 你已经知道本机存不下了。解除上云的封锁 ——
+    // 否则这一整场会话什么都不再同步，而且一声不响（那个失败的键可能再也不会被写第二次）。
+    el.querySelector("button").onclick=function(){lsFull=false;lsFullKey=null;el.remove();};}
   // ---- tt_events 不整盘覆盖，按条合并 ----
   // 它是整个数组一把写的：两个网页、或者两台设备，谁后写谁说了算。
   // 番茄钟刚记的那条要是只在先写的那份里，就这么没了 —— 黑匣子显示「落库:成功」，
@@ -4792,14 +4814,75 @@ margin-left: -22px;
     Object.keys(other).forEach(function(k){var t=+other[k]||0;
       if(t&&(!evTomb[k]||evTomb[k]<t))evTomb[k]=t;});
     evTombPrune();}
-  function evTombDrop(list){                     // 从一份事件表里剔掉已经删过的
+  // ---- 第二张墓碑：按 Google 事件 id 记 ----
+  // 为什么不能跟 tt_evdel 合成一张：从 Google 归档下来的事件，每归档一次就换一个新的本地 id，
+  // 按本地 id 记的墓碑天然追不上它 —— 删掉、下次再扫到、又长出来一条新的，删几次回来几次。
+  // 而且 tt_evdel 半年就裁掉，Google 服务器可不会忘：只要窗口再扫到它，它就还在。
+  // 所以这张只按条数封顶，丢的时候丢「事件日期最老」的那些（值存日期，正好拿来排序，也比时间戳省字节）。
+  var gTomb=load("tt_gdel",{})||{};
+  function gdelPrune(){
+    var ks=Object.keys(gTomb);
+    if(ks.length<=1200)return;
+    ks.sort(function(x,y){return String(gTomb[y]||"").localeCompare(String(gTomb[x]||""));});   // 日期新的排前面
+    var keep={};ks.slice(0,1000).forEach(function(k){keep[k]=gTomb[k];});gTomb=keep;}
+  function gdelHas(g){return !!(g&&gTomb[g]);}
+  function gdelAdd(g,date){if(!g)return;gTomb[g]=date||fmt(new Date());gdelPrune();save("tt_gdel",gTomb);}
+  function gdelMerge(o){                         // 两份取并集；同一个 gid 谁先记的都一样，保留已有的日期
+    if(!o||typeof o!=="object")return;
+    Object.keys(o).forEach(function(k){if(!gTomb[k])gTomb[k]=o[k]||"";});
+    gdelPrune();}
+  function evTombDrop(list){                     // 从一份事件表里剔掉已经删过的（两张墓碑都查）
+    // gid 那张只对 arch（自动归档件）判死刑 —— 它们每次归档换一个新 id，按 id 记的墓碑追不上。
+    // 而她自己建的、推上过 Google 的事件绝不能按 gid 杀：取消一次「同时加到 Google」就写下了那个 gid，
+    // 拿它去杀，别的设备上那条还活着的记录会被连坐删掉。
     if(!Array.isArray(list))return list;
-    return list.filter(function(e){return !(e&&e.id&&evTomb[e.id]);});}
+    return list.filter(function(e){return !(e&&((e.id&&evTomb[e.id])||(e.arch&&e.gid&&gTomb[e.gid])));});}
   function evMergeInto(base,extra,cutMs){        // 把 extra 里「base 没有、又生在 cutMs 之后」的捡进 base，返回捡了几条
     if(!Array.isArray(base)||!Array.isArray(extra)||!isFinite(cutMs))return 0;
     var has={},got=0;base.forEach(function(e){if(e&&e.id)has[e.id]=1;});
-    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&!evIsDemo(e)&&!evTombHas(e.id)&&evBorn(e)>cutMs){base.push(e);got++;}});
+    // arch（从 Google 归档下来的）不受「出生在 cutMs 之后」这一条限制：
+    // 它们的价值就是"断了 Google 也还在"，一次不巧的拉取就整批抹掉的话，等于白存。
+    // 真删除已经有两张墓碑挡着，重复有 evDedupeArch 收敛，放它们进来是安全的。
+    // arch 走开关、别的走出生时间 —— 不能写成 or：写成 or 的话，「清掉存下来的」之后紧接着的一次推送，
+    // 会把 10 分钟内刚归档的那批按出生时间又捡回来，等于白清。
+    extra.forEach(function(e){if(e&&e.id&&!has[e.id]&&!evIsDemo(e)&&!evTombHas(e.id)&&!(e.arch&&e.gid&&gTomb[e.gid])
+      &&(e.arch?gcalArchOn:evBorn(e)>cutMs)){base.push(e);got++;}});
     return got;}
+  // ---- 两台设备各自归档同一个 Google 事件，会得到 gid 相同、id 不同的两条 ----
+  // 收敛规则必须是纯函数：只看两边都看得见、又不会变的东西。
+  // 要是按「谁被用户动过留谁」，A 看到的和 B 看到的可能不是同一个状态 → 各留各的、拿墓碑互删 → 最后一条不剩。
+  // 所以：id 字典序小的那条永远赢（uid 前缀就是时间，等于"先归档的赢"）；
+  // 输的那条把身上的东西并过去再消失。幂等、收敛、一条墓碑都不消耗。
+  // iCalUID 是整个系列共用的，单独拿来当键会把一门课的几十次实例认成同一条。
+  // 必须配上「这次实例的原始开始时刻」才是实例级唯一。
+  function archUid(e){var t=e&&(e.gots||e.gts);return (e&&e.guid&&t)?(e.guid+"|"+t):null;}
+  function archKey(e){
+    if(!e)return null;
+    if(e.gid)return "g:"+e.gid;
+    var u=archUid(e);                            // Google 重建系列时 gid 会变，这个还认得出来
+    return u?("u:"+u):null;}
+  var ARCH_ABSORB=["note","goalId","noGoal","done","segs","par"];
+  // 输的那条要是被她认领过（编辑保存过 / 打过勾），而赢的那条还是自动件 ——
+  // 内容一律以她改过的为准。不然会出现：她在手机上把标题、分类、时间都改好了，
+  // 一同步就被另一台设备上那条「Google 猜出来的」原样还原，而且她根本不知道自己改过的东西去哪了。
+  // 谁的 id 活下来无所谓，内容不能丢。
+  var ARCH_CLAIM=["title","cat","sub","date","start","end","note","goalId","noGoal","done","segs","par"];
+  function evDedupeArch(list){
+    if(!Array.isArray(list)||list.length<2)return list;
+    var by={},ord=[],kill={};
+    list.forEach(function(e){var k=archKey(e);if(!k)return;
+      if(!by[k]){by[k]=[];ord.push(k);}by[k].push(e);});
+    ord.forEach(function(k){var g=by[k];if(g.length<2)return;
+      g.sort(function(a,b){return String(a.id)<String(b.id)?-1:(String(a.id)>String(b.id)?1:0);});
+      var win=g[0];
+      g.slice(1).forEach(function(lo){
+        if(!lo.arch&&win.arch)ARCH_CLAIM.forEach(function(f){
+          if(lo[f]!==undefined&&lo[f]!==null&&lo[f]!=="")win[f]=lo[f];});
+        ARCH_ABSORB.forEach(function(f){        // 其余情况：赢家这一格是空的才吸收，不覆盖赢家已有的
+          if((win[f]===undefined||win[f]===null||win[f]==="")&&lo[f]!==undefined&&lo[f]!==null&&lo[f]!=="")win[f]=lo[f];});
+        if(!lo.arch){delete win.arch;if(lo.gro)win.gro=1;}   // 输的那条被认领过 → 赢家也算认领过
+        kill[lo.id]=1;});});
+    return Object.keys(kill).length?list.filter(function(e){return !(e&&kill[e.id]);}):list;}
   // 同一台机器开着两个网页：A 刚记完番茄钟，B 拿着旧内存随手一存（勾个待办、挪个事件）
   // 就把那条顶掉了。写盘前把盘上「比我上次对账更新」的事件捡回来，新增永远不丢。
   var evSyncAt=Date.now();
@@ -4812,11 +4895,13 @@ margin-left: -22px;
     }catch(e){}
     evSyncAt=Date.now();
     return v;}
+  var evStamp=0;                          // tt_events 每落一次盘就 +1，日历那边的索引拿它判失效
   function save(k,v){
     if(SOLO&&SOLO_SKIP[k])return true;
-    if(k==="tt_events")try{mergeEventsFromDisk(v);}catch(e){}
+    if(k==="tt_events"){evStamp++;try{mergeEventsFromDisk(v);}catch(e){}}
     try{LS.setItem(k,JSON.stringify(v));}
     catch(e){try{lsWarn(k);}catch(_e){}return false;}
+    if(lsFull&&k===lsFullKey){lsFull=false;lsFullKey=null;}   // 刚才存不下的那个键现在存进去了 → 解除，恢复上云
     schedulePush(k);return true;}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
   // 这个标签页的身份证。同一个人可能开着好几个网页（分屏副屏、划词小窗、手滑开的第二个），
@@ -4842,6 +4927,13 @@ margin-left: -22px;
   // 默认打开，界线默认凌晨 2 点，设置里能改（1–6 点）。
   function dayCutOn(){return !settings||settings.dayCut!==false;}
   function dayCutH(){var h=+(settings&&settings.dayCutH);return (h>=1&&h<=6)?h:2;}
+  // 一条记录算不算进「我的时间」。
+  // 从 Google 自动存下来的那些（arch）在你认领之前只是 Google 的影子：
+  // 除非设置里明说「Google 事件计入统计」，否则它不进任何数字 —— 统计、图例、目标进度、AI 摘要都一样。
+  // 打过勾或者编辑保存过一次，arch 标记就没了，从此按你自己的记录算。
+  // 这条谓词必须是唯一入口：以前 gcalCount 只管到 statPool，目标进度那一块压根没看它，
+  // 归档一上线就会从后门涌进目标，把她最在意的那几个数字凭空改写。
+  function evCounts(e){return !(e&&e.arch&&!gcalCount);}
   // 一条记录在统计里算哪一天
   function statDay(e){
     if(!dayCutOn())return e&&e.date;
@@ -5110,6 +5202,7 @@ margin-left: -22px;
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
   var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false),gcalCount=load("tt_gcalcount",false);
+  var gcalArchOn=load("tt_gcalarch",true);   // 把「今天之前」的 Google 事件固化成自己的记录（默认开）
   // 除了手动新建，还有几个地方会自动生成事件（番茄钟、目标打卡），各自能不能自动同步到 Google 单独控制
   var gcalAuto=load("tt_gcalauto",null);
   if(!gcalAuto||typeof gcalAuto!=="object")gcalAuto={pomo:!!gcalDefault,goal:!!gcalDefault};   // 老设置沿用「新建事件」那一项
@@ -7865,12 +7958,30 @@ margin-left: -22px;
     n.style.height=liveH(e).toFixed(1)+"px";              // 只动这一块的高度，不重画整张日历
     if(e.segs){var g=segGrad(e);if(g)n.style.background=g;}   // 暂停时洞在长：渐变的比例也得跟着改
     var h=n.querySelector(".h");if(h)h.textContent=liveLabel(e);}
+  // eventsOn 每次渲染要被叫几十次（小日历固定 42 格、月视图再来 42 格），
+  // 原来每一次都把整个 events 全表扫一遍 —— 这是 O(格子数 × 事件数)。
+  // 事件少的时候看不出来，归档会把条数乘上好几倍，所以先建一份「日期 → 当天那几条」的索引。
+  // 失效判据：数组换了引用 / 长度变了 / tt_events 落过盘（evStamp 在 save 里自增）。
+  // 三条里任意一条动了就重建，宁可多建一次，也别拿旧索引画出旧日历。
+  var evIdx=null,evIdxRef=null,evIdxLen=-1,evIdxStamp=-1;
+  var gIdx=null,gIdxRef=null;
+  function evIndex(){
+    if(evIdx&&evIdxRef===events&&evIdxLen===events.length&&evIdxStamp===evStamp)return evIdx;
+    evIdx={};events.forEach(function(e){if(!e||!e.date)return;(evIdx[e.date]||(evIdx[e.date]=[])).push(e);});
+    evIdxRef=events;evIdxLen=events.length;evIdxStamp=evStamp;
+    return evIdx;}
+  function gIndex(){                              // gcalEvents 只会被整个换掉，从不原地改，比一下引用就够
+    if(gIdx&&gIdxRef===gcalEvents)return gIdx;
+    gIdx={};gcalEvents.forEach(function(e){if(!e||!e.date)return;(gIdx[e.date]||(gIdx[e.date]=[])).push(e);});
+    gIdxRef=gcalEvents;
+    return gIdx;}
   function eventsOn(ds){
-    var local=events.filter(function(e){return e.date===ds;});
-    var lv=liveEv();if(lv&&lv.date===ds)local=local.concat([lv]);
+    var local=(evIndex()[ds]||[]).slice();
+    var lv=liveEv();if(lv&&lv.date===ds)local.push(lv);
+    var gs=gIndex()[ds];
+    if(!gs||!gs.length)return local;
     var gids={},sig={};local.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.start]=1;});
-    var g=gcalEvents.filter(function(e){return e.date===ds&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.start];});
-    return local.concat(g);
+    return local.concat(gs.filter(function(e){return !gids[e.id.slice(2)]&&!sig[e.title+"|"+e.start];}));
   }
   function toMin(s){var p=s.split(":");return(+p[0])*60+(+p[1]);}
   function evMinutes(e){var s=toMin(e.start),en=toMin(e.end);return en>s?en-s:0;}   // 墙上时间：块画多高看它
@@ -7976,7 +8087,9 @@ margin-left: -22px;
     if(!e.gcal&&!e.live){
       if(e.gwant===true)gm='<span class="stag wait" title="还没传上去 —— Google 授权过期了（每次只管 1 小时），续上会自动补传">G</span>';
       else if(e.gwant===false)gm='<span class="stag wait" title="还没从 Google 删掉 —— 授权续上后会自动处理">G</span>';
-      else if(e.gid)gm='<span class="stag ok" title="已经在 Google 日历里了">G</span>';}
+      // arch 件不挂这个绿角标：它的意思是"你记的这条我已经帮你推上 Google 了"，
+      // 套在从 Google 存下来的记录上，方向正好反了。它靠左边那道竖条表明来源。
+      else if(e.gid&&!e.arch)gm='<span class="stag ok" title="已经在 Google 日历里了">G</span>';}
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
@@ -7986,7 +8099,7 @@ margin-left: -22px;
     // 中间停过的那种用净时长（不含洞），跟统计口径一致。精确的起止时间移到悬停里。
     var dmin=evNetMin(e),htxt=(dmin>0?fmtDur(dmin):e.start);
     var tip=e.start+"–"+e.end+(e.note?" · "+e.note:"");
-    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+multi+par+faded+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+(e.arch?" arch":"")+multi+par+faded+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):htxt)+'</div>'+lbl+fish+corner+gm+'</div>';}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
@@ -8095,6 +8208,7 @@ margin-left: -22px;
     var r=viewRange(),by={};
     events.forEach(function(e){
       if(e.date<r.a||e.date>r.b)return;
+      if(!evCounts(e))return;                 // 图例和统计页必须一个口径，否则底下写"会议 18h"、切过去写 0h
       evMix(e).forEach(function(x){if(x.min)by[x.cat]=(by[x.cat]||0)+x.min;});});
     return by;}
   var legendMore=load("tt_legendmore",false);
@@ -8131,7 +8245,11 @@ margin-left: -22px;
     if(e.target.closest("[data-todoband]")){todoBandCollapsed=!todoBandCollapsed;save("tt_todoband",todoBandCollapsed);renderCal();return;}
     var chk=e.target.closest("[data-chk]");
     if(chk){var evc=chk.closest(".ev");if(evc){var id=evc.getAttribute("data-id");
-      events=events.map(function(x){return x.id===id?Object.assign({},x,{done:!x.done}):x;});save("tt_events",events);renderCal();}return;}
+      // 打上勾 = 你认领了这条。Object.assign 会原样保留 arch，所以必须显式删掉它 ——
+      // 否则界面上勾是打了，统计里还是不算，看起来就像功能坏了。
+      events=events.map(function(x){if(x.id!==id)return x;
+        var y=Object.assign({},x,{done:!x.done});delete y.arch;return y;});
+      save("tt_events",events);renderCal();}return;}
     var tchk=e.target.closest("[data-todocheck]");
     if(tchk){var tc=tchk.closest("[data-todo]");if(tc){var tid=tc.getAttribute("data-todo");todos=todos.map(function(x){return x.id===tid?Object.assign({},x,{done:!x.done}):x;});save("tt_todos",todos);renderCal();renderTodos();}return;}
     var tchip=e.target.closest("[data-todo]");
@@ -8259,6 +8377,7 @@ margin-left: -22px;
   function periodName(p){return p==="month"?"每月":p==="year"?"每年":p==="custom"?"区间":"每周";}
   function periodWord(p){return p==="month"?"月":p==="year"?"年":p==="custom"?"区间":"周";}
   function matchesGoal(e,g){
+    if(!evCounts(e))return false;                 // 还没认领的 Google 归档件不进目标（进度条/热力图/相关记录都走这里）
     if(e.noGoal)return false;                     // 手动排除：不计入任何目标
     if(e.goalId)return e.goalId===g.id;          // 手动指定了目标：只算进那个目标
     if((g.cat||g.sub)&&!evHasCat(e,g.cat||"__all",g.sub||"__all"))return false;  // 分段事件：有一段属于这个分类就算
@@ -8442,8 +8561,11 @@ margin-left: -22px;
   document.getElementById("gd-delete").addEventListener("click",function(){if(!currentDetailGoal)return;if(!window.confirm("删除目标「"+currentDetailGoal.title+"」？（不会删除已记录的事件）"))return;goals=goals.filter(function(x){return x.id!==currentDetailGoal.id;});save("tt_goals",goals);closeGD();renderGoals();});
   document.getElementById("gd-events").addEventListener("click",function(e){
     var b=e.target.closest("[data-gdel]");if(!b)return;var id=b.getAttribute("data-gdel");
-    if(!window.confirm("删除这条记录？（会从日历里移除该事件）"))return;
-    events=events.filter(function(x){return x.id!==id;});evTombAdd(id);save("tt_events",events);
+    var gobj=events.filter(function(x){return x.id===id;})[0];
+    if(!window.confirm(gobj&&gobj.arch
+      ?"删掉这条从 Google 存下来的记录？你的 Google 日历不受影响，以后也不会再自动存回来。"
+      :"删除这条记录？（会从日历里移除该事件）"))return;
+    evDelete(gobj||{id:id},{fromGoogle:false});
     if(currentDetailGoal)renderGoalDetail(currentDetailGoal);renderCal();
   });
 
@@ -8565,16 +8687,40 @@ margin-left: -22px;
 
   // 连过一次 Google 就一直把这一行显示出来 —— token 只活 1 小时，
   // 过期就把选项藏掉的话，你会以为功能没了（而不是授权掉了）。
+  // 删一条事件，三个入口全都收敛到这里。两张墓碑缺一不可：
+  //   tt_evdel 挡「云同步把它从云端又捞回来」；tt_gdel 挡「下次扫 Google 时又把它归档一遍」。
+  //   归档每次都造一个新的本地 id，按 id 记的那张天然追不上它 —— 必须有 gid 这一张。
+  var gPendDel=load("tt_gpend",{})||{};          // 授权过期时欠 Google 的删除，续上再补
+  function evDelete(e,opt){
+    opt=opt||{};
+    if(!e)return;
+    if(e.id){evTombAdd(e.id);                    // 必须赶在 save 之前：写盘合并要去查墓碑
+      events=events.filter(function(x){return x.id!==e.id;});}
+    if(e.gid){
+      gdelAdd(e.gid,e.date);                     // 认领没认领都记上 —— 只要它连着 Google 那一条
+      gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+e.gid;});   // 立刻从内存摘掉，别等下次拉取原地复活
+      if(opt.fromGoogle){
+        if(gToken)gcalDeleteById(e.gid);
+        else{gPendDel[e.gid]=1;save("tt_gpend",gPendDel);}}
+    }
+    save("tt_events",events);}
   function gcalEver(){return !!load("tt_gcal","");}
   function gcalPend(){var n=0;events.forEach(function(e){if(typeof e.gwant!=="undefined")n++;});return n;}
   function gcalWanted(o){return (o&&typeof o.gwant!=="undefined")?!!o.gwant:!!(o&&o.gid);}
   function gcalApply(o,want){                     // 有 token 直接同步；没有就先记着，等续上了补
+    // gro = 这条是从 Google 那边读下来的，只读。绝不往回写。
+    // 不加这道闸的话：打开一条归档件点「保存」→ 因为它有 gid，走 PATCH →
+    // 把她真实日历上那个会议的说明栏改写成我们截断到 120 字的纯文本残片；
+    // 顺手取消那个勾 → 走 DELETE → 把别人组织的会议从她日历上真删了。
+    if(o&&o.gro)return;
     if(gToken){delete o.gwant;gcalSync(o,want);return;}
     if(!gcalEver())return;
     o.gwant=!!want;save("tt_events",events);
     try{refreshGcalPend();}catch(e){}}
   function gcalFlush(){                           // 重新授权成功后，把欠的一次性补上
     if(!gToken)return;
+    var pd=Object.keys(gPendDel);                 // 授权过期那会儿没删成的，现在补删
+    if(pd.length){pd.forEach(function(g){gcalDeleteById(g);delete gPendDel[g];});save("tt_gpend",gPendDel);}
     var todo=events.filter(function(e){return typeof e.gwant!=="undefined";});
     if(!todo.length){try{refreshGcalPend();}catch(e){}return;}
     todo.forEach(function(e){var w=!!e.gwant;delete e.gwant;gcalSync(e,w);});
@@ -8592,6 +8738,9 @@ margin-left: -22px;
     try{refreshGcalPend();}catch(e){}
     var row=document.getElementById("ev-gcal-row"),hint=document.getElementById("ev-gcal-hint");
     if(!row||!hint)return;
+    // 从 Google 存下来的那些是只读的，这一行对它们既没意义又危险 —— 任何时候都别显示出来
+    var cur=editingId?events.filter(function(e){return e.id===editingId;})[0]:null;
+    if(cur&&cur.gro){row.style.display="none";return;}
     if(!gToken&&!gcalEver()){row.style.display="none";return;}
     row.style.display="";
     if(gToken){hint.style.display="none";hint.innerHTML="";return;}
@@ -8625,6 +8774,19 @@ margin-left: -22px;
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
     refreshGcalRow();
+    (function(){
+      var ah=document.getElementById("ev-arch-hint"),row=document.getElementById("ev-gcal-row");
+      var isRO=!!(obj&&obj.gro);
+      // 只读的那些：把「同时加到我的 Google 日历」整行藏掉。
+      // 它对这种事件既没意义（本来就在 Google 里），又危险（勾着保存 = 拿我们截断过的备注去覆盖真会议）。
+      if(row&&isRO)row.style.display="none";
+      if(!ah)return;
+      ah.style.display=isRO?"":"none";
+      if(isRO)ah.innerHTML=obj.arch
+        ?("📅 这条是从 Google 日历自动存下来的 —— 断开 Google 也不会丢。默认<b>不计入统计</b>；"+
+          "保存一次、或者在日历上给它打个勾，它就归你管了（之后 Google 那边再改也不会覆盖它）。"+
+          "你在这儿怎么改都<b>不会动到你真正的 Google 日历</b>。")
+        :"📅 这条来自 Google 日历，现在归你管：计入统计，Google 那边再改也不覆盖它。你在这儿的修改<b>不会写回 Google</b>。";})();
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
   var editSegs=null;
@@ -8692,6 +8854,10 @@ margin-left: -22px;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
       obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
+      // 这几个跟着走：不带上的话，Google 那边重建系列之后认不出来，会再长出一条重复的归档件。
+      // 故意不带 arch —— 保存过一次就是「认领」，从此归她管，不再被 Google 刷新。
+      if(old.guid)obj.guid=old.guid;if(old.gots)obj.gots=old.gots;if(old.gts)obj.gts=old.gts;
+      if(old.gup)obj.gup=old.gup;if(old.gtzo!==undefined)obj.gtzo=old.gtzo;if(old.gro)obj.gro=1;
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
     else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
@@ -8702,13 +8868,18 @@ margin-left: -22px;
   delBtn.addEventListener("click",async function(){
     if(adoptGid){                                // 删除的是纯 Google 事件（本地还没有副本）
       if(!await ttConfirm("从 Google 日历删除「"+(fTitle.value.trim()||"该事件")+"」？会同步删除你 Google 账号里的这个事件。",{danger:true,anchor:delBtn}))return;
-      var gid=adoptGid;gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+gid;});
-      closeModal();renderCal();if(gToken)gcalDeleteById(gid);return;
+      var gid=adoptGid;
+      closeModal();evDelete({gid:gid,date:fDate.value},{fromGoogle:true});renderCal();return;
     }
     var old=events.filter(function(e){return e.id===editingId;})[0];
-    if(old&&old.gid&&!await ttConfirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。",{danger:true,anchor:delBtn}))return;
-    events=events.filter(function(e){return e.id!==editingId;});evTombAdd(editingId);save("tt_events",events);
-    if(gToken&&old&&old.gid)gcalDeleteById(old.gid);
+    // 还带 arch 的是「从 Google 自动存下来、她一次都没认领过」的那种：删它不该动 Google，
+    // 那条本来就不是她在这儿建的，顺手替她删掉别人日历上的会议是越权。
+    var alsoG=!!(old&&old.gid&&!old.arch);
+    if(old&&old.arch){
+      if(!await ttConfirm("删掉「"+(old.title||"该事件")+"」？这条是从 Google 日历存下来的 —— 删掉不影响你的 Google 日历，以后也不会再自动存回来。",{danger:true,anchor:delBtn}))return;
+    }else if(alsoG){
+      if(!await ttConfirm("删除「"+(old.title||"该事件")+"」？会同步删除你 Google 日历里的这个事件。",{danger:true,anchor:delBtn}))return;}
+    evDelete(old||{id:editingId},{fromGoogle:alsoG});
     closeModal();renderCal();});
 
   // ---------- pomodoro ----------
@@ -9500,10 +9671,13 @@ margin-left: -22px;
     if(m==="day")statState.cursor=addDays(c,dir);else if(m==="week")statState.cursor=addDays(c,dir*7);
     else if(m==="month")statState.cursor=addMonths(c,dir);else if(m==="year")statState.cursor=new Date(c.getFullYear()+dir,c.getMonth(),c.getDate());}
   function statPool(){   // 是否把 Google 日历的事件也算进来（去重）
-    if(!gcalCount||!gcalEvents.length)return events;
+    // 先滤再短路 —— 顺序不能反：断开 Google 之后 gcalEvents 是空的，
+    // 要是先短路 return events，已经归档下来的那批就无条件混进统计了。
+    var base=events.filter(evCounts);
+    if(!gcalCount||!gcalEvents.length)return base;
     var gids={},sig={};
-    events.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
-    return events.concat(gcalEvents.filter(function(e){
+    base.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
+    return base.concat(gcalEvents.filter(function(e){
       return !gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
   function statEvents(p){var sf=fmt(p.start),ef=fmt(p.end);
     return statPool().filter(function(e){var d=statDay(e);if(d<sf||d>ef)return false;
@@ -9743,14 +9917,20 @@ margin-left: -22px;
     // Google 日历同步来的事件默认不进统计（statPool 里那句 if(!gcalCount) return events）。
     // 排除本身是有道理的——你没在 app 里记的东西不该算成你的时间——但一声不吭地排除，
     // 表现出来就是"某个大类凭空消失"，你根本无从查起。所以数出来，明说。
-    var gcalSkip=0;
-    if(!gcalCount&&gcalEvents.length){
+    // 归档下来的那些也要数进这句提示里。不然会出现：翻到纯历史的月份，Google 事件全都已经归档，
+    // gcalEvents 里一条不剩 → 提示整块消失 → 那几十条时间就真的"凭空不见"了，正是这块提示要防的事。
+    var gcalSkip=0,archSkip=0,archMin=0;
+    if(!gcalCount){
       var _sf=fmt(p.start),_ef=fmt(p.end),_gid={},_sig={};
-      events.forEach(function(e){if(e.gid)_gid[e.gid]=1;_sig[e.title+"|"+e.date+"|"+e.start]=1;});
-      gcalSkip=gcalEvents.filter(function(e){
+      events.forEach(function(e){
+        if(e.gid)_gid[e.gid]=1;_sig[e.title+"|"+e.date+"|"+e.start]=1;
+        if(e.arch&&e.date>=_sf&&e.date<=_ef){archSkip++;archMin+=evNetMin(e);}});
+      if(gcalEvents.length)gcalSkip=gcalEvents.filter(function(e){
         return e.date>=_sf&&e.date<=_ef&&!_gid[e.id.slice(2)]&&!_sig[e.title+"|"+e.date+"|"+e.start];}).length;}
-    var gcalNote=gcalSkip?('<div class="panel stat-gnote">📅 这个区间还有 <b>'+gcalSkip+'</b> 个 Google 日历事件没算进来 —— '+
-      '统计默认只算你在 app 里记的。<button class="btn" id="stat-gon">把它们也算上</button></div>'):"";
+    var skipN=gcalSkip+archSkip;
+    var gcalNote=skipN?('<div class="panel stat-gnote">📅 这个区间有 <b>'+skipN+'</b> 条来自 Google 日历的记录'+
+      (archMin?('（共 '+fmtDur(archMin)+'）'):'')+'没算进统计 —— 统计默认只算你在 app 里记的。'+
+      '<button class="btn" id="stat-gon">把它们也算上</button></div>'):"";
     wrap.innerHTML=
       '<div class="panel stat-controls">'+
         '<div class="seg" id="stat-mode">'+modes.map(function(o){return '<button data-m="'+o[0]+'"'+(statState.mode===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join("")+'</div>'+
@@ -9778,7 +9958,15 @@ margin-left: -22px;
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
         '</div><div id="exp-report"></div></div>';
     var gon=wrap.querySelector("#stat-gon");
-    if(gon)gon.addEventListener("click",function(){
+    // 这一下不只影响眼前这个区间：它是个全局开关，会把所有存下来的 Google 事件
+    // 一次性放进统计**和目标进度**（进度条、26 周热力图、相关记录都跟着变）。
+    // 归档之后这个量级可能是几百条几百小时，先说清楚再动。
+    if(gon)gon.addEventListener("click",async function(){
+      var totalN=0,totalMin=0;
+      events.forEach(function(e){if(e&&e.arch){totalN++;totalMin+=evNetMin(e);}});
+      if(totalN&&!await ttConfirm("这会把「所有」存下来的 Google 事件都算进统计和目标进度 —— "+
+        "一共 "+totalN+" 条、"+fmtDur(totalMin)+"，不只是眼前这个区间。你的目标进度条也会跟着往上跳。要继续吗？",
+        {anchor:gon}))return;
       gcalCount=true;save("tt_gcalcount",gcalCount);
       try{document.getElementById("set-gcal-count").checked=true;}catch(e){}
       renderStatsView();});
@@ -9851,7 +10039,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
@@ -10001,19 +10189,24 @@ margin-left: -22px;
     gcalAuto={pomo:document.getElementById("set-gcal-pomo").checked,goal:document.getElementById("set-gcal-goal").checked};save("tt_gcalauto",gcalAuto);
     var newSbUrl=document.getElementById("set-sb-url").value.trim(),newSbKey=document.getElementById("set-sb-key").value.trim(),sbChanged=(newSbUrl!==sbUrl||newSbKey!==sbKey);
     sbUrl=newSbUrl;sbKey=newSbKey;save("tt_sburl",sbUrl);save("tt_sbkey",sbKey);
-    gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);fetchGcal();
+    gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);
+    gcalArchOn=document.getElementById("set-gcal-arch").checked;save("tt_gcalarch",gcalArchOn);
+    fetchGcal();
     save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_aiprovider",aiProvider);save("tt_ollamaurl",ollamaUrl);save("tt_ollamamodel",ollamaModel);save("tt_gcaldefault",gcalDefault);
     if(sbChanged&&sbUrl&&sbKey)initSupabase();
     closeSettings();});
 
   // ---------- 云同步 (Supabase · 多设备) ----------
   var SB=null,sbUser=null,pushTimer=null,pulling=false,applyingCloud=false;
+  // 云同步这一路"表过态了没有"：还没表态之前不许归档 —— 那会儿本机还看不见别的设备存过的那批，
+  // 闷头归档就是整批重复（重新登录/换设备/久没打开踩的都是这条）。
+  var sbSettled=false;
   // 这台设备这次打开还没跟云端对过账之前，一律不许往上推：
   // 刚打开时内存/本机是空的，闷头 upsert 会把云端别的设备的数据整盘顶掉。
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel 是删掉的事件的墓碑
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -10027,21 +10220,30 @@ margin-left: -22px;
     if(as){if(!ready)as.textContent="（云同步还没配置，先去「☁️ 云同步」页填一下网址+key）";
       else if(sbUser)as.innerHTML="已登录：<b>"+esc(sbUser.email||sbUser.id)+"</b><br>✓ 多设备云同步"+(gToken?" ・ ✓ 已连 Google 日历":"")+"<br><span style=\"color:var(--muted)\">这台设备下次打开免登录。</span>";
       else as.textContent="还没登录。点上面按钮用 Google 登录 —— 云同步和 Google 日历一次搞定。";}}
-  function schedulePush(key){if(SOLO||applyingCloud||!SB||!sbUser||!pulledOnce)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
+  function schedulePush(key){
+    if(lsFull)return;                  // 本机都存不下了，推上去的必然是旧值 —— 4744 行那句注释欠了很久
+    if(SOLO||applyingCloud||!SB||!sbUser||!pulledOnce)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   // updated_at 是推送那台设备的电脑时钟写的，两台设备差几分钟很正常 —— 宁可多留，不可错删
   var PULL_SKEW=600000;
-  function pushCloud(){if(!SB||!sbUser)return;sbStatus("上传中…");
+  // 手机上一次 select+upsert 超过 1.5 秒是常事，那时第二次 pushCloud 会在第一次还没落地时启动：
+  // 两条并发的「读云端→合并→写回」，后写的赢，可能把先一轮刚捡回来的整盘冲掉。
+  var pushing=false;
+  function pushCloud(){if(!SB||!sbUser)return;
+    // 上一次还在路上：不能就这么算了 —— 那样这次的改动谁也不会再推。排到它后面去。
+    if(pushing){if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);return;}
+    pushing=true;sbStatus("上传中…");
     // 先看一眼云端再写 —— 那里可能有别的设备刚推上去的新事件，闭着眼 upsert 会把它们顶掉。
     // 云端有、本机没有、又生在「我上次和云端对账」之后的，捡进这次要推的包里一起上去。
     SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){
       var blob=collectBlob();
       // 先并墓碑、再按墓碑清一遍：这样下面的"捡回"不会把刚删掉的从云端捞回来，
       // 别的设备删掉的那些也在这一步从本机消失。
+      var cd=r&&r.data&&r.data.data;
       try{
-        evTombMerge(r&&r.data&&r.data.data&&r.data.data.tt_evdel);
+        evTombMerge(cd&&cd.tt_evdel);gdelMerge(cd&&cd.tt_gdel);
         try{LS.setItem("tt_evdel",JSON.stringify(evTomb));}catch(e){}
-        blob.tt_evdel=evTomb;
+        try{LS.setItem("tt_gdel",JSON.stringify(gTomb));}catch(e){}
         if(Array.isArray(blob.tt_events)){
           var n0=blob.tt_events.length;blob.tt_events=evTombDrop(blob.tt_events);
           if(blob.tt_events.length<n0){
@@ -10050,21 +10252,30 @@ margin-left: -22px;
             try{events=load("tt_events",events)||events;renderCal();}catch(e){}}}
       }catch(e){}
       try{
-        var cev=r&&r.data&&r.data.data&&r.data.data.tt_events;
+        var cev=cd&&cd.tt_events;
         var got=evMergeInto(blob.tt_events,cev,(+load("tt_pullat",0)||0)-PULL_SKEW);
         if(got){try{LS.setItem("tt_events",JSON.stringify(blob.tt_events));}catch(e){}
-          try{pLog("推送前捡回云端的事件",{n:got});}catch(e){}
-          try{events=load("tt_events",events)||events;renderCal();}catch(e){}}
+          try{pLog("推送前捡回云端的事件",{n:got});}catch(e){}}
+        // 捡回之后才去重：两台设备各归档过同一条的话，这一步把它们并成一条。必须排在捡回之后，
+        // 排在前面的话本机独有那条还没进来，只看得见一条、什么也做不了。
+        var ded=evDedupeArch(blob.tt_events),merged=(ded!==blob.tt_events);
+        if(merged){blob.tt_events=ded;
+          try{LS.setItem("tt_events",JSON.stringify(blob.tt_events));}catch(e){}}
+        if(got||merged)try{events=load("tt_events",events)||events;renderCal();}catch(e){}
       }catch(e){}
+      // 显式重新挂一次：evTombPrune/gdelPrune 超限时会整个换掉那两个对象，
+      // 靠上面那次引用挂载的话，裁剪之后的改动就跟着这次上传丢了。
+      blob.tt_evdel=evTomb;blob.tt_gdel=gTomb;
       return SB.from("states").upsert({user_id:sbUser.id,data:blob,updated_at:new Date().toISOString()});
     },function(){   // 云端读不到（断网那种）：按老样子直接推，别把改动闷在本机
       return SB.from("states").upsert({user_id:sbUser.id,data:collectBlob(),updated_at:new Date().toISOString()});
     }).then(function(r){
+      pushing=false;
       if(!r)return;
       if(r.error)sbStatus("上传失败："+r.error.message,true);
       else{try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}   // 推完云端==本机，对账时间从现在算
         sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");}
-    },function(err){sbStatus("上传失败："+String(err),true);});}
+    },function(err){pushing=false;sbStatus("上传失败："+String(err),true);});}
   // 拉下来写不进去也要喊 —— 原来是静默 catch，结果是「同步 ✓」显示成功，
   // 实际有几个键根本没落地，页面上却是从内存渲染的，看不出来。
   function applyCloud(obj,cloudAt){var bad=[];
@@ -10075,7 +10286,11 @@ margin-left: -22px;
     // 本机独有、且生在云端那份写盘之后的，是还没来得及上云的新记录，捡回来。
     // 墓碑两边取并集，再拿它把云端那份里已经删过的剔掉 ——
     // 否则本机刚删的一条，会被云端的旧数据整盘盖回来（刷新就又出现了）。
-    try{evTombMerge(obj.tt_evdel);obj.tt_evdel=evTomb;}catch(e){}
+    try{evTombMerge(obj.tt_evdel);gdelMerge(obj.tt_gdel);}catch(e){}
+    // 开关要在合并之前先按云端的来。别的设备刚点过「清掉存下来的」（开关随之关掉、归档件也清了），
+    // 这台要是还揣着"开着"去合并，evMergeInto 会把本机那批 arch 原样捡回来再推上云 —— 清了等于没清。
+    // 只认"关"这一个方向：清理是明确的动作，宁可多关一轮，也别把刚清掉的又放回来。
+    try{if(obj.tt_gcalarch===false)gcalArchOn=false;}catch(e){}
     try{
       if(Array.isArray(obj.tt_events)){
         var ct=cloudAt?new Date(cloudAt).getTime():NaN;
@@ -10085,17 +10300,21 @@ margin-left: -22px;
         var local=JSON.parse(LS.getItem("tt_events")||"[]");
         var got=evMergeInto(obj.tt_events,local,ct-PULL_SKEW);
         if(got)try{pLog("拉取时捡回本机的事件",{n:got});}catch(e){}
+        obj.tt_events=evDedupeArch(obj.tt_events);   // 捡回之后再去重，顺序不能反
       }
     }catch(e){}
+    obj.tt_evdel=evTomb;obj.tt_gdel=gTomb;            // 写盘的是并集，不是云端那一份
     CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){
       try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){bad.push(k);}}});
     try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}
     if(bad.length)try{lsWarn(bad[0]);}catch(e){}}
   function reloadAllFromStorage(){
-    evTomb=load("tt_evdel",{})||{};                        // 先把墓碑读回来，再决定哪些事件不该还在
+    evTomb=load("tt_evdel",{})||{};gTomb=load("tt_gdel",{})||{};   // 先把两张墓碑读回来，再决定哪些事件不该还在
+    gcalArchOn=load("tt_gcalarch",gcalArchOn);
     events=load("tt_events",[])||[];evSyncAt=Date.now();   // 内存刚跟盘对齐，写盘合并的「上次对账」从现在起算
     (function(){var n0=events.length;events=evTombDrop(events);
-      if(events.length<n0)save("tt_events",events);})();
+      var ded=evDedupeArch(events);
+      if(events.length<n0||ded!==events){events=ded;save("tt_events",events);}})();
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
@@ -10131,16 +10350,20 @@ margin-left: -22px;
       if(r.error){sbStatus("同步出错："+r.error.message,true);return;}
       if(r.data&&r.data.data){applyingCloud=true;applyCloud(r.data.data,r.data.updated_at);reloadAllFromStorage();applyingCloud=false;
         pulledOnce=true;
+        // 归档必须等到这一刻：在跟云端对完账之前动手，别的设备存过的那批本机还看不见，
+        // 会原封不动地再造一遍 —— 「重新登录会不会重复」踩的就是这条路。
+        try{gcalArchive();}catch(e){}
         schedulePush();                     // 拉取时捡回过本机事件的话，得推一次让云端也补上；没捡回就是白推一次，不亏
         reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
-      else{pulledOnce=true;pushCloud();}   // 云端还没有这一行：这台就是第一台，推上去
+      else{pulledOnce=true;try{gcalArchive();}catch(e){}pushCloud();}   // 云端还没有这一行：这台就是第一台，推上去
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
-    if(SB||!window.supabase||!sbUrl||!sbKey)return;
+    if(SB)return;
+    if(!window.supabase||!sbUrl||!sbKey){sbSettled=true;return;}   // 这台压根不连云端：归档不用再等它表态
     // 必须是 pkce：默认的 implicit flow 只把 provider_token 带回来，
     // provider_refresh_token 只有 PKCE 换码那一步才给 —— 没有它就没法自动续期。
     try{SB=window.supabase.createClient(sbUrl,sbKey,{auth:{flowType:"pkce",detectSessionInUrl:true,persistSession:true,autoRefreshToken:true}});}
-    catch(e){SB=null;sbStatus("Supabase 初始化失败，检查网址",true);return;}
+    catch(e){SB=null;sbSettled=true;sbStatus("Supabase 初始化失败，检查网址",true);return;}
     window.__SB=SB;                                   // 控制台里调试用（取 user id、手动查表）
     SB.auth.onAuthStateChange(function(ev,session){
       if(session&&session.user){sbUser=session.user;updateSbUI();
@@ -10153,7 +10376,8 @@ margin-left: -22px;
       stashRefreshToken(r.data.session);
       pullCloud();
       gcalRenew(true);                                  // 开页面时先把日历 token 续上，别等你去点
-    }else updateSbUI();});}
+    }else updateSbUI();
+      sbSettled=true;},function(){sbSettled=true;});}
   // Google 只在"第一次同意"时给 refresh token。所以还没存到的时候要带 prompt=consent 再要一次。
   function gcalHasRT(){return !!(sbUser&&load("tt_grt_"+sbUser.id,false));}
   function grtDiag(o){save("tt_grtdiag",o);try{updateGcalUI();}catch(e){}}
@@ -10252,7 +10476,7 @@ margin-left: -22px;
     try{renderPomoLog();}catch(e){}
   })();
   document.getElementById("acct-login").addEventListener("click",cloudAuthClick);
-  if(!SOLO)(function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}})(0);
+  if(!SOLO)(function waitSb(n){if(window.supabase){initSupabase();}else if(n<50){setTimeout(function(){waitSb(n+1);},150);}else sbSettled=true;})(0);
 
   // ---------- AI assistant (Gemini · 每人用自己的 key) ----------
   var aiOverlay=document.getElementById("ai-overlay"),aiInput=document.getElementById("ai-input"),aiResult=document.getElementById("ai-result");
@@ -10269,7 +10493,7 @@ margin-left: -22px;
     if(aiProvider!=="ollama"&&!apiKey){aiMsg('还没设置 Gemini API Key —— 点左边 ⚙️ 粘进去保存（或把「AI 服务」切成本地 Ollama）。',"err");return;}
     aiMsg('思考中…');
     var today=new Date(),ws=startOfWeek(today),wkMin=0;
-    events.forEach(function(e){var d=parse(e.date);if(d>=ws&&d<=today)wkMin+=evNetMin(e);});
+    events.forEach(function(e){if(!evCounts(e))return;var d=parse(e.date);if(d>=ws&&d<=today)wkMin+=evNetMin(e);});
     var pend=todos.filter(function(t){return !t.done;}).length;
     var sys="你是个人时间管理 App 的助手。今天 "+fmt(today)+"（周"+WD[(today.getDay()+6)%7]+"）。"+
       "可用大类："+cats.map(function(c){return c.name;}).join("、")+"。"+
@@ -10402,6 +10626,19 @@ margin-left: -22px;
   }
   gConnectBtn.addEventListener("click",gcalConnect);
   (function(){var b=document.getElementById("gcal-relink");if(b)b.addEventListener("click",gcalRelink);})();
+  (function(){
+    var bf=document.getElementById("gcal-backfill");
+    if(bf)bf.addEventListener("click",function(){gcalBackfill(12);});
+    var cl=document.getElementById("gcal-archclear");
+    if(cl)cl.addEventListener("click",async function(){
+      var s=archStats();
+      if(!s.n){try{ttAlert("还没有存下来的历史事件。");}catch(e){}return;}
+      if(!await ttConfirm("清掉自动存下来的 "+s.n+" 条 Google 历史记录？你的 Google 日历不受影响，"+
+        "「把过去的 Google 事件存进我的记录」也会跟着关掉（否则它们下次又会长回来）。",{danger:true,anchor:cl}))return;
+      var n=archPurge();
+      var sw=document.getElementById("set-gcal-arch");if(sw)sw.checked=false;
+      try{ttAlert("清掉了 "+n+" 条 ✓");}catch(e){}});
+  })();
   var gRetried=false,gRenewT=null,gSilentFail=0,gLastSilent=0;
   function trySilentGcal(){
     if(SOLO)return;
@@ -10427,28 +10664,200 @@ margin-left: -22px;
       var s=load("tt_gtok",null);
       if(!s||!s.t||s.exp-Date.now()<120000)gcalRenew(true);});}
   function onGcalConnected(){updateGcalUI();try{gcalFlush();}catch(e){}try{refreshGcalRow();}catch(e){}fetchGcal();}
+  // 一次拉完一个区间（Google 一页最多 2500 条，超了给 nextPageToken）。
+  // 原来只发一个请求、只读 j.items、完全不管 nextPageToken：93 天的窗口按 250 封顶，
+  // 正常上班的日历很容易超，超出去的静默丢失，状态栏还写着"已连接 ✓（本区间 250 个事件）"。
+  function gcalList(lo,hi,onPage){
+    var out=[],pages=0;
+    function go(tok){
+      var url="https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=2500"+
+        "&timeMin="+encodeURIComponent(lo.toISOString())+"&timeMax="+encodeURIComponent(hi.toISOString())+
+        (tok?("&pageToken="+encodeURIComponent(tok)):"");
+      return fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
+        if(j.error)throw j.error;
+        var items=(j.items||[]).filter(function(it){
+          return it.start&&it.start.dateTime&&it.status!=="cancelled"&&!gdelHas(it.id);});
+        out=out.concat(items);
+        if(onPage)try{onPage(items,out.length);}catch(e){}
+        pages++;
+        if(j.nextPageToken&&pages<10)return go(j.nextPageToken);
+        return out;});}
+    return go(null);}
   function fetchGcal(){
     if(!gToken)return;
     var lo=addDays(state.cursor,-31),hi=addDays(state.cursor,62);
-    var url="https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true&orderBy=startTime&maxResults=250"+
-      "&timeMin="+encodeURIComponent(lo.toISOString())+"&timeMax="+encodeURIComponent(hi.toISOString());
-    fetch(url,{headers:{Authorization:"Bearer "+gToken}}).then(function(r){return r.json();}).then(function(j){
-      if(j.error){
-        if(j.error.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();
-          if(!gRetried){gRetried=true;gStatusEl.textContent="授权过期，正在自动续…";
-            gcalRenew(false);setTimeout(function(){gRetried=false;},30000);}
-          return;}
-        gStatusEl.textContent="读取失败："+(j.error.message||"");return;}
-      gcalEvents=(j.items||[]).filter(function(it){return it.start&&it.start.dateTime;}).map(mapGEvent);
+    gcalList(lo,hi).then(function(items){
+      gcalEvents=items.map(mapGEvent);
       gStatusEl.textContent="已连接 ✓（本区间 "+gcalEvents.length+" 个事件）";
+      try{gcalArchive();}catch(e){}
       renderCal();
-    }).catch(function(e){gStatusEl.textContent="网络错误："+e;});
+    }).catch(function(err){
+      if(err&&err.code===401){gToken=null;save("tt_gtok",null);updateGcalUI();
+        if(!gRetried){gRetried=true;gStatusEl.textContent="授权过期，正在自动续…";
+          gcalRenew(false);setTimeout(function(){gRetried=false;},30000);}
+        return;}
+      if(err&&err.message){gStatusEl.textContent="读取失败："+err.message;return;}
+      gStatusEl.textContent="网络错误："+err;});
   }
   function mapGEvent(it){
     var sd=new Date(it.start.dateTime),ed=new Date(it.end.dateTime||it.start.dateTime);
     var ttl=it.summary||"(无标题)",ac=autoCat(ttl);
-    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),title:ttl,cat:ac.cat,sub:ac.sub,done:!!gcalCount,gcal:true,note:it.description||""};
+    return {id:"g_"+it.id,date:fmt(sd),start:pad(sd.getHours())+":"+pad(sd.getMinutes()),end:pad(ed.getHours())+":"+pad(ed.getMinutes()),
+      title:ttl,cat:ac.cat,sub:ac.sub,done:!!gcalCount,gcal:true,note:it.description||"",
+      // 归档要用的几个锚点：
+      // guid = iCalUID。⚠️ 它是**系列级**的：一门每周的课，几十次实例共用同一个 iCalUID，
+      //   只有 id 各不相同。所以它绝对不能单独当唯一键 —— 那会把整个系列压成一条
+      //   （她的日历正好以每周的课和例会为主，那样等于几乎什么都没存下来）。
+      //   要用就必须配上 gots 一起用，见 archUid()。
+      // gots = 这次实例在系列里的原始开始时刻（她单独挪过某一次也不会变），实例级唯一。
+      // gts  = 实际开始时刻，时区无关。gup = Google 那边最后改动的时刻，用来判断要不要刷新。
+      guid:String(it.iCalUID||"").replace(/@google\.com$/,""),
+      gots:Date.parse((it.originalStartTime&&it.originalStartTime.dateTime)||it.start.dateTime)||0,
+      gts:Date.parse(it.start.dateTime)||0,
+      gup:Date.parse(it.updated||"")||0};
   }
+  // ---------- 把过去的 Google 事件固化成自己的记录 ----------
+  // Google 那边的事件本来只活在内存里（gcalEvents）：一断连接、一换设备，整片历史就没了。
+  // 归档 = 给「今天之前」的每一条各建一条真正的本地事件（带 gid），于是进 localStorage、进云同步，
+  // 断开 Google 之后照样在，翻回半年前也看得见。
+  // 重新登录不会重复 —— 四道闸按从便宜到贵排：gid 墓碑 → gid → iCalUID → 同日同名/时间几乎重合。
+  var ARCH_OVERLAP=0.8,ARCH_CHUNK=50,archShort=0;
+  function archNote(d){                          // Google 的 description 是 HTML，会议邀请动辄几千字符
+    var s=String(d||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();   // 连着 Google 时完整内容随时能拿到，
+    return s?s.slice(0,120):null;}                                            // 存下来只是为了记账，不是存会议正文
+  function archOverlap(a,b){                     // 同一天的两条重叠了多少（占较短那条的比例）
+    var s1=toMin(a.start),e1=toMin(a.end),s2=toMin(b.start),e2=toMin(b.end);
+    var d1=e1-s1,d2=e2-s2;if(d1<=0||d2<=0)return 0;
+    var ov=Math.min(e1,e2)-Math.max(s1,s2);
+    return ov<=0?0:ov/Math.min(d1,d2);}
+  // 纯函数：算出「要新增哪些、要刷新哪些、跳过了几条」，一个字都不写。这样才能离线测。
+  function archPlan(gevs,disk,today,tzo){
+    var add=[],upd=[],skip={gdel:0,future:0,dup:0,busy:0,cross:0};
+    if(!Array.isArray(gevs)||!Array.isArray(disk))return {add:add,upd:upd,skip:skip};
+    var byGid={},byGuid={},byDay={};
+    disk.forEach(function(e){
+      if(!e)return;
+      if(e.gid)byGid[e.gid]=e;
+      var u=archUid(e);if(u)byGuid[u]=e;
+      (byDay[e.date]||(byDay[e.date]=[])).push(e);});
+    gevs.forEach(function(g){
+      if(!g||!g.gcal||!g.id)return;
+      var gid=g.id.slice(2);
+      if(gdelHas(gid)){skip.gdel++;return;}                    // 她删过，永远不许再回来
+      if(!(g.date<today)){skip.future++;return;}               // 只固化"今天之前"：今天和以后的还可能在 Google 里改
+      if(toMin(g.end)<=toMin(g.start)){skip.cross++;return;}   // 跨零点的，mapGEvent 现在算成 0 分钟 —— 宁可不存，也别存坏数据
+      var gu=archUid(g);
+      var hit=byGid[gid]||(gu?byGuid[gu]:null);
+      if(hit){
+        // 刷新（她在 Google 里改了时间/标题）。四个条件缺一不可，否则会变成后台自动写数据：
+        // 她认领过 → 永不再动；Google 那边没改过 → 不动；本机换了时区 → 不动
+        //（否则出差那台和家里那台会拿各自算出来的本地时间互相覆盖，每覆盖一次就是一次全量上传）。
+        if(hit.arch&&(g.gup||0)>(hit.gup||0)&&hit.gtzo===tzo){
+          var patch={};
+          // 标题变了，分类要跟着重判 —— g.cat/g.sub 已经是 mapGEvent 用新标题算过的。
+          // 不然会留下「标题是新的、颜色和统计归属还是旧标题猜出来的那个」这种对不上的记录。
+          if(hit.title!==g.title){patch.title=g.title;patch.cat=g.cat;patch.sub=g.sub;}
+          if(hit.date!==g.date)patch.date=g.date;
+          if(hit.start!==g.start)patch.start=g.start;
+          if(hit.end!==g.end)patch.end=g.end;
+          var nn=archNote(g.note);if((hit.note||null)!==nn)patch.note=nn;
+          if(hit.gid!==gid)patch.gid=gid;                      // 系列被重建 → gid 换了，靠 iCalUID 认回来
+          if(Object.keys(patch).length){patch.gup=g.gup||0;upd.push({id:hit.id,patch:patch});}}
+        return;}
+      // 「不在 Google 返回集里」永远不当成删除：拉取可能被截断、日期可能在窗口外，
+      // 拿它当依据去删她的历史，代价正是她最怕的那件事。
+      var sameDay=byDay[g.date]||[],clash=false;
+      for(var i=0;i<sameDay.length;i++){
+        var o=sameDay[i];
+        // 同一天、同名、还同一个开始时间 —— 那就是同一件事（Google 那边重建系列会让 gid 和 iCalUID 一起变，
+        // 只有开始时间还认得出来）。注意必须带上 start：她一天里可能有两场同名的监考，
+        // 光比标题会把第二场吃掉。
+        if(o.title===g.title&&o.start===g.start){clash=true;skip.dup++;break;}
+        // 时间几乎重合 —— 多半是"Google 里有个会，我自己又用番茄钟记了一遍"，标题不一样，上面那条拦不住。
+        // 只跟「不是从 Google 来的」那些比：两条都来自 Google 的重叠是真事（长会里套着一个小会），
+        // 拿这条去挡会把里面那个小会整个丢掉。
+        if(!o.gid&&archOverlap(o,g)>=ARCH_OVERLAP){clash=true;skip.busy++;break;}}
+      if(clash)return;                                          // 只跳过、不挂 gid —— 挂了会让她那条从此"连着 Google"
+      var ne={id:uid(),date:g.date,start:g.start,end:g.end,title:g.title,cat:g.cat,sub:g.sub,
+        note:archNote(g.note),gid:gid,guid:g.guid||null,gots:g.gots||g.gts||0,gts:g.gts||0,gup:g.gup||0,gtzo:tzo,
+        arch:1,gro:1};   // gro 认领之后也留着：它来自 Google，我们永远只读不写
+      // 故意不写 done：写了就等于把"计入统计"那个全局开关的瞬时值烙进历史记录，
+      // 而且她第一次点勾会变成"取消勾选"，本意是否认，系统却理解成认领。
+      add.push(ne);
+      (byDay[g.date]||(byDay[g.date]=[])).push(ne);byGid[gid]=ne;if(gu)byGuid[gu]=ne;});
+    return {add:add,upd:upd,skip:skip};}
+  function gcalArchive(opt){
+    opt=opt||{};
+    if(SOLO)return 0;                                  // 副屏只是个阅读窗口，没理由让它写历史
+    if(!gcalArchOn&&!opt.force)return 0;
+    // 还没跟云端对过账就归档，必然整批重复（换设备/重新登录那一路）。
+    // 光看 sbUser 不够：页面刚打开时 session 还在异步恢复，那一小段里 sbUser 是 null，
+    // 而 Google 那边的网络请求完全可能先回来。所以要等云同步明确表过态。
+    if(!pulledOnce&&(sbUser||!sbSettled))return -1;     // -1 = 被闸住了（不是"没有可存的"），按钮那边要照实说
+    var list=opt.list||gcalEvents;
+    if(!list.length)return 0;
+    var disk=[];try{disk=JSON.parse(LS.getItem("tt_events")||"[]");}catch(e){}
+    if(!Array.isArray(disk))disk=[];                   // 索引从磁盘现建：另一个标签页刚归档的那批只在盘上
+    var plan=archPlan(list,disk,fmt(new Date()),-(new Date()).getTimezoneOffset());
+    if(!plan.add.length&&!plan.upd.length)return 0;    // 没变化就一个字都不写，否则每次拉取都触发一次全量上传
+    if(plan.upd.length){
+      var idx={};events.forEach(function(e,i){if(e&&e.id)idx[e.id]=i;});
+      plan.upd.forEach(function(u){var i=idx[u.id];if(i===undefined)return;
+        events[i]=Object.assign({},events[i],u.patch);});
+      save("tt_events",events);}
+    var added=0;
+    for(var k=0;k<plan.add.length;k+=ARCH_CHUNK){      // 分批落盘：存不下的时候别让一百条只留在内存里
+      var batch=plan.add.slice(k,k+ARCH_CHUNK);
+      batch.forEach(function(e){events.push(e);});
+      if(!save("tt_events",events)){
+        events=load("tt_events",[])||[];               // 回滚到磁盘那一份，下次还能接着归档
+        try{renderCal();}catch(_e){}
+        break;}
+      added+=batch.length;}
+    archShort=plan.add.length-added;                   // 没存进去几条（配额满了），按钮那边要照实说
+    var ded=evDedupeArch(events);                      // 必须在 save 之后：别的标签页那批是在 save 里头才被合并进来的
+    if(ded!==events){events=ded;save("tt_events",events);}
+    try{pLog("归档 Google 事件",{add:added,upd:plan.upd.length,short:archShort});}catch(e){}
+    try{refreshArchInfo();}catch(e){}
+    if(added||plan.upd.length)try{renderCal();}catch(e){}   // 刚存下的那批当场就换成归档的样子，别等下一次渲染
+    return added;}
+  // 自动归档只覆盖 fetchGcal 那个滚动窗口（今天往前 31 天）。
+  // 更早的、或者 Google 掉线那阵子的，用这个按钮一次性往回捞。
+  function gcalBackfill(months){
+    if(!gToken){try{ttAlert("Google 授权过期了 —— 先在上面点一次「重新授权」。");}catch(e){}return;}
+    var btn=document.getElementById("gcal-backfill");
+    var hi=addDays(new Date(),1),lo=addMonths(new Date(),-(months||12));
+    if(btn){btn.disabled=true;btn.textContent="正在往回找…";}
+    function done(){if(btn){btn.disabled=false;btn.textContent="把更早的也存下来";}}
+    archShort=0;
+    gcalList(lo,hi).then(function(items){
+      var n=gcalArchive({force:true,list:items.map(mapGEvent)});
+      done();renderCal();
+      var msg;
+      if(n<0)msg="云同步还没连上 —— 等状态变成「已同步 ✓」再点一次。（没对完账就存会存重）";
+      else if(archShort)msg="存下了 "+n+" 条，还有 "+archShort+" 条没存进去 —— 浏览器存储满了。"+
+        "先去设置里清一些数据，再点一次。";
+      else if(n)msg="存下了 "+n+" 条历史事件 ✓ —— 断开 Google 也不会丢了。";
+      else msg="没有新的可存 —— 这段时间该存的都已经在了。";
+      try{ttAlert(msg);}catch(e){}
+    }).catch(function(err){done();
+      try{ttAlert("没能读取："+((err&&err.message)||err));}catch(e){}});}
+  function archStats(){var n=0,b=0;
+    events.forEach(function(e){if(e&&e.arch){n++;try{b+=JSON.stringify(e).length*2;}catch(_e){}}});
+    return {n:n,b:b};}
+  function refreshArchInfo(){
+    var el=document.getElementById("gcal-arch-info");if(!el)return;
+    var s=archStats();
+    el.innerHTML=s.n?("已经存下 <b>"+s.n+"</b> 条（约 "+kb(s.b)+"）—— 断开 Google 也不会丢。")
+                    :"还没存下任何历史事件。";}
+  function archPurge(){                                // 后悔药：把自动存下来的全部清掉，并把开关关上
+    var n=0;events=events.filter(function(e){if(e&&e.arch){n++;return false;}return true;});
+    if(!n)return 0;
+    // 故意不打墓碑：几百条会把 tt_evdel 挤爆，把她真正手动删掉的那些顶出去。
+    // 靠"开关关掉"来防止它们再长回来（开关也进云同步，别的设备跟着关）。
+    gcalArchOn=false;save("tt_gcalarch",false);
+    save("tt_events",events);renderCal();refreshArchInfo();
+    return n;}
   var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
   function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
     return {summary:o.title,description:o.note||"",start:{dateTime:o.date+"T"+o.start+":00",timeZone:tz},end:{dateTime:o.date+"T"+o.end+":00",timeZone:tz}};}
@@ -10458,6 +10867,8 @@ margin-left: -22px;
       if(obj.gid){fetch(GEV+"/"+encodeURIComponent(obj.gid),{method:"PATCH",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(){fetchGcal();}).catch(function(){});}
       else{fetch(GEV,{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(r){return r.json();}).then(function(j){if(j&&j.id){obj.gid=j.id;save("tt_events",events);}fetchGcal();}).catch(function(){});}
     }else if(obj.gid){var gid=obj.gid;obj.gid=null;save("tt_events",events);gcalDeleteById(gid);}
+      // 这里刻意不写 gid 墓碑：本地那条还活着，写了它就会在别的设备上被连坐删掉。
+      // 防重复归档由 archPlan 的「同日同名同起点」那道闸兜着 —— 她那条记录还在，拦得住。
   }
   function gcalDeleteById(gid){if(!gToken||!gid)return;
     fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}}).then(function(){fetchGcal();}).catch(function(){});}

@@ -12,3 +12,6 @@ extension/oald.css
 
 # 私人数据（收入等），只在本地，勿公开
 private/
+
+# 从 index.html 抽出来的测试用副本，跑 tools/extract-arch-pure.sh 现生成
+tools/arch-pure.js
