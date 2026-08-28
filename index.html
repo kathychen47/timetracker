@@ -17191,7 +17191,7 @@ margin-left: -22px;
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）
-  var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="";
+  var mnMonth="",mnAcct="",mnPick="",mnView="list",mnInit=false,mnBusy=false,mnCur="",mnRunN=0;
   var mnScope="month",mnYear=0,mnSide="out",mnSrc="",mnFrom="",mnTo="";
   // 存之前把空字段抹掉。导入的记录没有商户名 / NZFCC 类目 / 账号这些，
   // 每一笔却照样存五个空字符串，占了整本账 16% 的体积。
@@ -17430,6 +17430,41 @@ margin-left: -22px;
   function mnBusyUI(on){
     var b=document.getElementById("mn-sync");if(!b)return;
     b.disabled=on;b.textContent=on?"⏳ 同步中…":"🔄 同步";}
+  // ---- 自动刷新 ----
+  // 原来只有「切进记账页那一下」才判断一次，页面挂着不动就永远停在上次同步的样子。
+  // 现在三个触发点都汇到这里：切进页面、窗口回到前台、以及开着记账页时每 10 分钟看一眼。
+  // 闸门仍然是 1 小时 —— Akahu 的 Personal App 本来就是每天才向银行取一次，
+  // 捶得再勤也不会更新，只是白白多打几次 Edge Function。
+  var MN_AUTO_GAP=3600000,mnAutoTimer=null,mnAutoTry=0;
+  function mnAutoSync(why){
+    if(SOLO||mnBusy)return false;
+    if(!SB||!sbUser)return false;
+    if(!mnCfg.since||!mnCfg.lastSync)return false;        // 起始日期没定过 / 从没同步过：那一步得先问你，不能替你默认
+    // mnCfg.lastSync 记的是「上次**成功**」—— 只拿它当闸门的话，失败反而变成唯一让闸门永远开着的状态：
+    // Akahu 授权被撤、函数没部署这种能挂好几天的错，会变成每 10 分钟白打一次接口、状态栏每 10 分钟刷一次红字，
+    // 顺带把黑匣子那 60 条日志冲干净。所以另记一个「上次尝试」，成败都记 —— 自动同步一小时就是一小时。
+    // 手动点 🔄 不受它管：你想立刻重试，随时能重试。
+    if(Date.now()-mnCfg.lastSync<=MN_AUTO_GAP)return false;
+    if(Date.now()-mnAutoTry<=MN_AUTO_GAP)return false;
+    if(document.hidden)return false;                      // 后台标签页别偷偷发请求
+    // 有弹窗开着就先别动：同步完会重画整张明细，正在改一笔的时候被抽走很难受。
+    // #tt-pop 那种小气泡也要算 —— 它是钉在某个按钮上的，底下一重画就飘在半空了。
+    if(document.querySelector(".overlay.on"))return false;
+    var pop=document.getElementById("tt-pop");
+    if(pop&&pop.classList.contains("on"))return false;
+    mnAutoTry=Date.now();
+    try{pLog("记账自动同步",{why:why});}catch(e){}
+    mnSync();return true;}
+  function mnAutoWatch(on){                               // 心跳只在记账页开着时走
+    if(mnAutoTimer){clearInterval(mnAutoTimer);mnAutoTimer=null;}
+    if(!on||SOLO)return;
+    mnAutoTimer=setInterval(function(){
+      if(state.tab!=="money"){mnAutoWatch(false);return;}  // 离开记账页就自己停掉
+      mnAutoSync("tick");},600000);}
+  if(!SOLO)document.addEventListener("visibilitychange",function(){
+    // 从别的窗口/别的 app 切回来：立刻看一眼，不用等下一个 10 分钟
+    if(document.hidden||state.tab!=="money")return;
+    try{mnAutoSync("visible");}catch(e){}});
   // 起始日期定了就直接从那天要，不用先拉一大堆再在本地扔掉
   function mnSync(){
     if(mnBusy){mnStatus("上一次同步还没回来，等一下…");return Promise.resolve();}
@@ -17437,10 +17472,15 @@ margin-left: -22px;
       mnStatus("要先登录才能同步 —— 设置 → 👤 账号 → 用 Google 登录",true);
       return Promise.resolve();}
     mnBusy=true;mnBusyUI(true);mnStatus("同步中…");
+    // 给这一发编个号。30 秒 guard 会提前把 mnBusy 放掉（好让你能重试），可那一发的 fetch 还在飞：
+    // 它迟到落地时会无条件去清 mnBusy、改按钮、写状态栏 —— 把后一发正在进行的状态整个抹掉，
+    // 甚至用一句红色的「连不上 Edge Function」盖掉后一发刚写的「同步完成：新增 3 笔」。
+    // 认了号之后，迟到的那一发只负责悄悄退场。
+    var myRun=++mnRunN;
     // 卡死保护：网络挂在半路时 promise 可能永远不落地，
     // mnBusy 就永远是 true，之后每次点同步都被静默挡掉 —— 正是「点了没反应」。
     var guard=setTimeout(function(){
-      if(!mnBusy)return;
+      if(!mnBusy||myRun!==mnRunN)return;
       mnBusy=false;mnBusyUI(false);
       mnStatus("同步超时了（30 秒没回应）—— 再点一次试试",true);},30000);
     return SB.auth.getSession().then(function(r){
@@ -17452,7 +17492,9 @@ margin-left: -22px;
       }).then(function(res){return res.json().then(function(j){return{ok:res.ok,j:j};},
         function(){return {ok:false,j:{error:"bad_response"}};});});
     }).then(function(o){
-      clearTimeout(guard);mnBusy=false;mnBusyUI(false);
+      clearTimeout(guard);
+      if(myRun!==mnRunN)return;                // 迟到的那一发：位置早让出去了，别再抢界面
+      mnBusy=false;mnBusyUI(false);
       if(!o.ok){
         mnStatus((MN_ERR[o.j&&o.j.error]||("同步失败："+((o.j&&o.j.error)||"未知错误")))+
           (o.j&&o.j.detail?(" <span style='opacity:.7'>("+esc(String(o.j.detail).slice(0,120))+")</span>"):""),true);
@@ -17477,13 +17519,24 @@ margin-left: -22px;
       var autoN=mnAutoTax(fresh);              // 设过「以后都自动记税」的付款人，进账当场记进税务
       mnSave();save("tt_mncfg",mnCfg);
       if(autoN)try{renderTax();}catch(e2){}
+      // 一笔没新增、而且最新的一笔还停在前天以前 —— 这时候只写「新增 0 笔」等于没说话，
+      // 你会以为同步坏了。把「银行那边最新到哪天」摆出来，顺带说明为什么当天的看不到。
+      // 只看银行来的那些。mnTxns 里还混着手记、CSV 导入、周期记账 ——
+      // 文案说的是「银行那边最新到哪天」，判据就必须只问银行那部分。
+      // 不然你手记一笔今天的现金（那正是「银行还没入账」时该做的事），这句解释就永远不出现了。
+      var newest="";mnTxns.forEach(function(t){if(t.src==="akahu"&&t.d&&t.d>newest)newest=t.d;});
+      var stale=(add===0&&newest&&newest<mnYmd(addDays(new Date(),-1)));
       mnStatus("同步完成：新增 <b>"+add+"</b> 笔"+
         (autoN?("，其中 <b>"+autoN+"</b> 笔按规则记进了税务"):"")+
         (early?("，跳过 "+early+" 笔 "+mnCfg.since+" 之前的"):"")+
         (o.j.truncated?"（历史太长没拉完，分段再拉一次）":"")+
-        " · 上次 "+mnAgo(mnCfg.lastSync));
+        " · 上次 "+mnAgo(mnCfg.lastSync)+
+        (stale?("<br><span style='opacity:.75'>银行那边最新的一笔还停在 <b>"+esc(newest)+"</b>。"+
+          "Akahu 每天才向银行取一次，刷卡当天银行通常也还没结算 —— 不是同步坏了。</span>"):""));
       mnRender();
-    },function(err){clearTimeout(guard);mnBusy=false;mnBusyUI(false);
+    },function(err){clearTimeout(guard);
+      if(myRun!==mnRunN)return;
+      mnBusy=false;mnBusyUI(false);
       mnStatus("连不上 Edge Function —— 函数没部署、名字不是 akahu-sync，或 Verify JWT 没关"+
         (err&&err.message?(" <span style='opacity:.7'>("+esc(String(err.message).slice(0,80))+")</span>"):""),true);});}
 
@@ -19259,10 +19312,8 @@ margin-left: -22px;
     if(!mnCfg.lastSync)mnStatus("还没同步过 —— 点 🔄 同步（要先照 <code>supabase/AKAHU.md</code> 配好 Edge Function）");
     else mnStatus("上次同步 "+mnAgo(mnCfg.lastSync)+
       (mnCfg.since?(" · 只收 <b>"+esc(mnCfg.since)+"</b> 起的流水"):""));
-    // 进页面顺手同步一下。离上次不到 1 小时就不发请求了 ——
-    // Akahu 的 Personal App 本来就是每天刷新一次，捶得再勤也不会更新。
-    // 起始日期没定过就不自动同步：那一步得先问你，不能替你默认。
-    if(SB&&sbUser&&mnCfg.since&&mnCfg.lastSync&&Date.now()-mnCfg.lastSync>3600000)mnSync();}
+    mnAutoSync("open");        // 进页面顺手同步一下（闸门和条件都在 mnAutoSync 里）
+    mnAutoWatch(true);}        // 页面开着别不动 —— 每 10 分钟看一眼够不够 1 小时了
 
   // 手动记一笔。现金、别人代付、银行还没入账的，靠这个进来 ——
   // 这类记录 src 是 "manual"，同步和导入都不会碰它。
