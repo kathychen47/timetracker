@@ -1,0 +1,58 @@
+330	placeholder	一行一条：&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;只写术语 → 按发音去找；写成「错的 =&gt; 对的」→ 原样替换，更准。
+378	title	MP3 / M4A / WAV / FLAC / OGG / Opus / WebM，以及 MP4、MOV 这类视频（只取声音）
+877	文本	开启后，从 Google 日历同步过来的事件（包括上面存下来的那些）会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。
+908	文本	登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去
+942	文本	笔记正文渲染出来长什么样。这些是从 Typora 主题转过来的（MIT License · evgo），只作用在笔记预览区，不影响 app 其他地方。
+998	文本	（改名不影响已有事件，它们跟的是内部 ID）。小类颜色跟着大类自动做深浅。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。
+998	文本	「关键词」：新建事件或番茄钟的标题里出现这些词，就自动归到这个分类（小类的关键词优先）。小类的关键词点它旁边的 🏷 改。
+1011	文本	牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。
+1026	文本	开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算；词典没收录的（专业术语、人名）也会收，先拿翻译垫着，你可以自己改成真正的解释。
+1083	文本	「中⇄英 自动」按这段话本身是什么语言定方向：中文多就翻成英文，英文多就翻成中文 —— 不会再出现「输入中文、译文还是那段中文」。
+1126	文本	手机上没有书签栏，可用「复制代码」新建一个书签把网址替换成它。少数网站（如 GitHub）有安全限制会挡住书签脚本，属正常。
+1160	文本	试试：「明天下午3点开会1小时」「加个待办 周五交报告」「记一笔收入 4600 含GST」「把 serendipity 加进生词本」「这周专注了多久」
+5449	文本	~/Library/Application Support/Firefox/Profiles/<你的配置>/storage/default/
+5823	文本	<div class="dict-hint">还没有录音。点「开始录音」，说话就会出字；录完点开可以边听边看，点一句跳到那一刻。</div>
+6137	文本	稳的：MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM。 视频（MP4 / MOV / WebM）多数也行 —— 会自动只取声音那一轨。 不行的多半是 WMA、AMR，还有某些相机/录音笔的私有格式。
+6215	文本	等了 45 秒也没能加载转写引擎 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。换个网络再试。
+7712	文本	<div class="sk-empty">还没有技能。点上面「+ 新技能」，比如「学 SQL」，<br>再把它拆成一步步，每步填个预计时间。<br>之后点某步的「▶」，花的时间会自动记到那一步。</div>
+8101	文本	<span class="stag wait" title="还没传上去 —— Google 授权过期了（每次只管 1 小时），续上会自动补传">G</span>
+8102	文本	<span class="stag wait" title="还没从 Google 删掉 —— 授权续上后会自动处理">G</span>
+8242	文本	<button class="li lg-more" data-lgmore="0" title="收起没用到的">收起</button>
+8802	文本	📅 这条来自 Google 日历，现在归你管：计入统计，Google 那边再改也不覆盖它。你在这儿的修改<b>不会写回 Google</b>。
+9660	文本	<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>
+10624	文本	⚠️ 上次登录 Google 没有回传 refresh token（多半是没出现「允许访问日历」那一步）。点右边再来一次，看到同意页要点「继续」。
+11091	文本	<label class="btn primary" style="cursor:pointer">📁 导入文件<input type="file" id="dict-file" accept=".gz" multiple hidden></label> <button class="btn" id="dict-dl">☁️ 从云端下载</button>
+11092	文本	<button class="btn" id="dict-up">⬆️ 上传到云端</button> <button class="btn" id="dict-sqlbtn">① 配置云端(SQL)</button>
+11096	文本	<div style="margin-top:6px;color:var(--muted);font-size:12px">想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。</div>
+11259	文本	<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>
+11396	文本	<div class="wb-book add" id="wb-newbook"><div class="cover"><div class="plus">＋</div></div><div class="nm">新建词书</div></div>
+12172	文本	<button class="gb g2" id="flash-reveal" style="grid-column:1/-1">显示释义 <small>空格</small></button>
+12415	文本	<a href="#" id="ext-edit">还没填过路径，点这里填一次</a>（就是你电脑上 Timetracker 项目里的 extension 文件夹）
+12612	文本	<div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div>
+12988	文本	<div class="nb-fd" data-fxnew="1" style="color:var(--primary);margin-top:6px;padding-left:9px">＋ 新建文件夹</div>
+13128	文本	<div class="rd-empty">这个文件夹是空的。<br>把书或笔记拖到左边的文件夹上就能归类，也可以在这儿直接「📝 新建笔记」。</div>
+13129	文本	<div class="rd-empty">还是空的。点上面「📁 导入书」加入 PDF / EPUB / Word(.docx) / TXT / Markdown，<br>或者「📝 新建笔记」直接写一篇。</div>
+13239	文本	<span class="wt-note" style="margin:0">主题文件没读到（本地直接打开文件时会这样，部署到网站上就正常）。</span>
+13706	文本	<button class="toc-add" id="toc-scan-btn">🔎 从正文自动识别标题</button><div class="toc-scan" id="toc-scan"></div>
+13712	文本	<div class="rn-empty">这本书没有内置目录<br>点上面「🔎 自动识别标题」试试，<br>或自己加书签</div>
+13966	文本	<div class="nb-fd" data-fdnew="1" style="color:var(--primary);margin-top:6px">＋ 新文件夹</div>
+14077	文本	<div class="rn-empty">本子还是空的。<br>看书时选中文字 → 点色块高亮、或点 📝 写笔记，<br>都会自动收进这里。<br><br>也可以点上面「＋ 写一条」记点跟书无关的想法。</div>
+14654	文本	<div class="tr-empty">这一页没找到可翻译的文字。<br>要是扫描件，先点上面「🔍 OCR」识别，再点 ⟳ 重译。</div>
+14886	文本	<span class="wt-note" style="margin:0;align-self:center">当前是你自己拖出来的大小</span>
+15100	文本	<div class="rn-top"><span class="rn-title">📝 笔记 · 标注</span><button class="rn-x" id="rn-close" title="隐藏">✕</button></div><div class="rn-empty">还没有笔记。<br>选中文字 → 点 📝 加笔记，<br>点色块高亮。</div>
+15590	文本	<button type="button" data-to="__new" style="color:var(--primary)">＋ 新建一个文件夹…</button>
+16096	文本	<div class="tx-empty">还没有菜谱。<br>点右上角「+ 新菜谱」记一道你觉得好吃的，<br>也可以整段粘贴进去让 AI 帮你拆成食材和步骤。</div>
+16105	文本	<span class="rc-tag" style="background:var(--primary-soft);color:var(--primary)">🌐 已公开</span>
+16111	文本	<div class="tx-empty">还没点单。<br>点右上角「🧾 点一单」，或在菜谱详情里点「🧾 点这道」。<br>点了之后，白名单里的人也能看到你想吃什么。</div>
+16325	文本	\d+(?:\.\d+)?(?:\s*/\s*\d+)?\s*(?:g|kg|ml|l|克|千克|毫升|升|分钟|小时|秒|下|次|个|片|段|颗|瓣|勺|杯|成|℃|度)?
+16771	文本	<div class="tx-empty">还没有收入记录。<br>点右上角「+ 记一笔」开始，或用「⬇️ 导出」备份。</div>
+16777	文本	<span class="tx-gst" style="color:#B4720B;background:#FFF1DC">GST 待定</span>
+18513	文本	<div style="font-size:13px;color:var(--muted);margin-bottom:8px">还没加过。</div>
+18596	文本	<div style="font-size:13px;color:var(--muted)">还没记出过 —— 到了日子会自己出现在明细里。</div>
+18629	文本	<div style="font-size:13px;color:var(--muted);margin-bottom:10px">还没设过。下面加一条。</div>
+18696	文本	<div style="font-size:13px;color:var(--muted);margin-bottom:8px">还没设过。</div>
+18754	文本	<div style="font-size:13px;color:var(--muted)">账本里只有一种货币，暂时用不上折算。</div>
+18876	文本	<span style="font-size:13px;color:var(--muted)">还没有任何记录</span>
+19328	文本	还没同步过 —— 点 🔄 同步（要先照 <code>supabase/AKAHU.md</code> 配好 Edge Function）
+19356	文本	<button class="btn" id="mn-f-del" style="margin-left:8px">删掉这笔</button>
+19568	文本	<div class="stat-empty">这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标</div>

@@ -19,3 +19,13 @@ tools/arch-pure.js
 # npm i acorn --no-save 装的，扫描工具用
 node_modules/
 package-lock.json
+
+# i18n 的中间产物，跑 tools/i18n-scan*.js 现生成
+tools/i18n-chunk-*.txt
+tools/i18n-pat-[0-9].txt
+tools/i18n-pat-list.txt
+tools/i18n-missing*.txt
+tools/i18n-frag.txt
+tools/i18n-split.txt
+tools/i18n-long*.json
+tools/i18n-glossary.txt

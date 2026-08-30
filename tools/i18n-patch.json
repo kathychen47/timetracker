@@ -1,0 +1,43 @@
+{
+"一行一条：&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;只写术语 → 按发音去找；写成「错的 =&gt; 对的」→ 原样替换，更准。":
+"One per line:&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;Just the term → matched by how it sounds; write it as \"wrong =&gt; right\" → replaced verbatim, which is more accurate.",
+
+"MP3 / M4A / WAV / FLAC / OGG / Opus / WebM，以及 MP4、MOV 这类视频（只取声音）":
+"MP3 / M4A / WAV / FLAC / OGG / Opus / WebM, plus video like MP4 and MOV (audio only)",
+
+"开启后，从 Google 日历同步过来的事件（包括上面存下来的那些）会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。":
+"When this is on, events synced from Google Calendar (including the ones archived above) are marked done automatically and counted in stats, charts and goal progress (duplicates of local events with the same name are removed).",
+
+"登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去":
+"Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
+
+"笔记正文渲染出来长什么样。这些是从 Typora 主题转过来的（MIT License · evgo），只作用在笔记预览区，不影响 app 其他地方。":
+"How the body of a note is rendered. These are converted from Typora themes (MIT License · evgo) and apply only to the note preview — nothing else in the app changes.",
+
+"（改名不影响已有事件，它们跟的是内部 ID）。小类颜色跟着大类自动做深浅。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。":
+"(Renaming doesn't affect existing events — they follow an internal ID.) Sub-category colors are shaded automatically from their category. Deleting a category doesn't delete the events that used it; they just fall back to the default color. Keep at least one category.",
+
+"牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。":
+"Two dictionaries: Oxford (EN→ZH) and Collins (ZH→EN). Once loaded they live on this device and work offline; to use them on your phone too, sign in to cloud sync and tap \"⬆️ Upload to cloud\".",
+
+"开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算；词典没收录的（专业术语、人名）也会收，先拿翻译垫着，你可以自己改成真正的解释。":
+"When this is on, every word you successfully look up is added to your word list, ready to review. Lookups on the dictionary page, in books and in notes all count. Words the dictionary doesn't have (jargon, names) get added too, with a translation standing in until you replace it with a real definition.",
+
+"「中⇄英 自动」按这段话本身是什么语言定方向：中文多就翻成英文，英文多就翻成中文 —— 不会再出现「输入中文、译文还是那段中文」。":
+"\"ZH⇄EN auto\" picks the direction from the text itself: mostly Chinese → translate into English, mostly English → translate into Chinese. No more \"typed Chinese, got the same Chinese back\".",
+
+"手机上没有书签栏，可用「复制代码」新建一个书签把网址替换成它。少数网站（如 GitHub）有安全限制会挡住书签脚本，属正常。":
+"Phones have no bookmarks bar — use \"Copy code\", create a bookmark, and replace its URL with that. A few sites (GitHub, for one) block bookmarklets for security reasons; that's normal.",
+
+"试试：「明天下午3点开会1小时」「加个待办 周五交报告」「记一笔收入 4600 含GST」「把 serendipity 加进生词本」「这周专注了多久」":
+"Try: \"meeting tomorrow at 3pm for an hour\" · \"add a to-do: send the report Friday\" · \"log income 4600 incl GST\" · \"add serendipity to my word list\" · \"how long did I focus this week\"",
+
+"稳的：MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM。 视频（MP4 / MOV / WebM）多数也行 —— 会自动只取声音那一轨。 不行的多半是 WMA、AMR，还有某些相机/录音笔的私有格式。":
+"Reliable: MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM. Video (MP4 / MOV / WebM) usually works too — only the audio track is taken. What won't work is mostly WMA, AMR, and some proprietary camera/recorder formats.",
+
+"等了 45 秒也没能加载转写引擎 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。换个网络再试。":
+"45 seconds and the transcription engine still hasn't loaded — most likely transformers.js can't be reached (no network, or the CDN is blocked). Try a different network.",
+
+"⚠️ 上次登录 Google 没有回传 refresh token（多半是没出现「允许访问日历」那一步）。点右边再来一次，看到同意页要点「继续」。":
+"⚠️ Your last Google sign-in didn't return a refresh token — most likely the \"allow calendar access\" step never appeared. Tap on the right to try again, and press \"Continue\" on the consent screen."
+}
