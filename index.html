@@ -4673,7 +4673,10 @@ margin-left: -22px;
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">翻译成</div>
             <div class="set-desc">「中⇄英 自动」按这段话本身是什么语言定方向：中文多就翻成英文，英文多就翻成中文 —— 不会再出现「输入中文、译文还是那段中文」。</div></div>
-          <select id="tr-lang">
+          <!-- 这里的 id 原来也叫 tr-lang，跟阅读器译文栏那个（4113 行）重名。
+               getElementById 只认文档里的第一个，于是这个下拉框一直是死的：
+               打开设置时显示的永远是第一项，改了也不会保存。改名分开。 -->
+          <select id="set-tr-lang">
             <option value="auto">中⇄英 自动（推荐）</option>
             <option value="zh-CN">简体中文</option><option value="zh-TW">繁體中文</option>
             <option value="en">English</option><option value="ja">日本語</option>
@@ -11071,7 +11074,7 @@ margin-left: -22px;
     var hk=document.getElementById("dict-hotkey");if(hk)hk.value=dictPrefs.hotkey||"alt";
     var hs=document.getElementById("dict-hlstyle");if(hs)hs.value=dictPrefs.hlStyle||"pop";
     var te=document.getElementById("tr-engine");if(te)te.value=trEngine;
-    var tg=document.getElementById("tr-lang");if(tg)tg.value=trLang;
+    var tg=document.getElementById("set-tr-lang");if(tg)tg.value=trLang;
     var at=document.getElementById("ann-tr");if(at)at.checked=!!dictPrefs.annTranslate;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
     var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);
@@ -11306,7 +11309,8 @@ margin-left: -22px;
   function starSVG(filled){return '<svg class="star-ico'+(filled?" on":"")+'" viewBox="0 0 24 24" aria-hidden="true">'+
     '<path d="M12 2.9c.42 0 .8.24.99.62l2.19 4.44 4.9.71c.86.13 1.2 1.18.58 1.79l-3.55 3.46.84 4.88c.14.86-.76 1.51-1.53 1.1L12 17.6l-4.38 2.3c-.77.41-1.67-.24-1.53-1.1l.84-4.88-3.55-3.46c-.62-.61-.28-1.66.58-1.79l4.9-.71 2.19-4.44c.19-.38.53-.62.95-.62z"/></svg>';}
   function isSaved(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return true;return false;}
-  function wordOf(w){for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
+  // wordOf 定义在下面（11500 行附近，带 toLowerCase 的那版）。这里原来还有一份不转小写的同名声明，
+  // 两个函数声明同作用域 → 后面那个本来就赢，前面这份从来没生效过。删掉，免得下次有人照着它推理。
   function noteOf(w){var x=wordOf(w);return (x&&x.note)?x.note:"";}
   // 收藏状态或分组变了 → 把页面上跟这个词有关的按钮就地刷一遍。
   // 不整页重画：查词结果很长，重画会把你滚到的位置弹回顶上。
@@ -12279,8 +12283,10 @@ margin-left: -22px;
     if(hs)hs.addEventListener("change",function(){dictPrefs.hlStyle=hs.value;saveDictPrefs();});
     var te=document.getElementById("tr-engine");
     if(te)te.addEventListener("change",function(){trEngine=te.value;save("tt_trengine",trEngine);});
-    var tg=document.getElementById("tr-lang");
-    if(tg)tg.addEventListener("change",function(){trLang=tg.value;save("tt_trlang",trLang);});
+    var tg=document.getElementById("set-tr-lang");
+    if(tg)tg.addEventListener("change",function(){trLang=tg.value;save("tt_trlang",trLang);
+      // 阅读器译文栏那个下拉是另一个元素，同步一下，免得两处显示不一致
+      var rd=document.getElementById("tr-lang");if(rd&&rd.value!==trLang)rd.value=trLang;});
     var at=document.getElementById("ann-tr");
     if(at)at.addEventListener("change",function(){dictPrefs.annTranslate=at.checked;saveDictPrefs();});
     var sn=document.getElementById("srs-new");
@@ -19840,7 +19846,13 @@ margin-left: -22px;
       downloadFile("身体数据_"+fmt(new Date())+".csv","﻿"+lines.join("\r\n"),"text/csv;charset=utf-8");});
   }
   // 通用「只要一个 JSON」的 AI 调用，两个供应商都走这里（AI 助手那边有自己的一套，不动它）
-  function aiJSON(sys,text){
+  // 改过名：原来它也叫 aiJSON，跟 7751 行那个「把模型返回的文本解析成对象」的同名。
+  // 两个都是函数声明、又在同一个 IIFE 作用域里 —— 后定义的这个把前面那个整个盖掉了，
+  // 于是「待办 · AI 拆解」和「技能 · AI 拆解」两处调的其实是这个网络版：
+  // 传进去的一坨模型输出被当成 prompt 又发了一次请求，拿回来的是个 Promise，
+  // 取 .todos / .steps 全是 undefined → 报「AI 没给出待办 / 没给出步骤」。
+  // 错怪了模型好几个月。用 tools/scan-scope.js 可以扫出这类重名。
+  function aiAskJSON(sys,text){
     if(aiProvider==="ollama"){
       var url=(ollamaUrl||"http://localhost:11434").replace(/\/+$/,"")+"/api/generate";
       return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
@@ -19904,7 +19916,7 @@ margin-left: -22px;
       "用户没说日期就用今天；note 放用户提到的主观描述（如「今天有点浮肿」），没有就空字符串。只输出 JSON。";
     var vals=null,date=null,note="",via="AI";
     try{
-      var o=await aiJSON(sys,text);
+      var o=await aiAskJSON(sys,text);
       vals=o&&o.values;date=o&&o.date;note=(o&&o.note)||"";
     }catch(err){
       vals=bodyLocalParse(text);via="本地识别";

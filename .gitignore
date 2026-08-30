@@ -15,3 +15,7 @@ private/
 
 # 从 index.html 抽出来的测试用副本，跑 tools/extract-arch-pure.sh 现生成
 tools/arch-pure.js
+
+# npm i acorn --no-save 装的，扫描工具用
+node_modules/
+package-lock.json
