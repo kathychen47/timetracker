@@ -4958,7 +4958,13 @@ margin-left: -22px;
     var n=new Date();
     return fmt((dayCutOn()&&n.getHours()<dayCutH())?addDays(n,-1):n);}
   function addMonths(d,n){var x=new Date(d);x.setMonth(x.getMonth()+n);return x;}
-  function startOfWeek(d){var x=new Date(d);var day=(x.getDay()+6)%7;return addDays(x,-day);}
+  // 必须归零到 00:00：它是「一周的起点」这个**边界**，不是「本周的某一刻」。
+  // 原来它把当前时分秒带着走，而事件日期是 parse() 出来的午夜 ——
+  // 「周一 00:00 >= 周一 14:32」永远为假，于是周一那天整天被挡在外面。
+  // 一个根因，四处出错：每周目标的进度、待办的「本周」筛选、明细/导出的「本周」、
+  // AI 助手回答「这周专注了多久」。每周都在少算 1/7，而且是固定的那一天。
+  function startOfWeek(d){var x=new Date(d);var day=(x.getDay()+6)%7;x=addDays(x,-day);
+    return new Date(x.getFullYear(),x.getMonth(),x.getDate());}
   function sameDay(a,b){return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();}
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
 
@@ -11330,7 +11336,10 @@ margin-left: -22px;
       gsel.innerHTML='<option value="">（自动 · 按分类/关键词判断）</option><option value="__none">不计入任何目标</option>'+goals.map(function(g){return '<option value="'+g.id+'">计入：'+esc(g.title)+'</option>';}).join("");
       gsel.value=(obj&&obj.noGoal)?"__none":((obj&&obj.goalId)?obj.goalId:"");
     }else{gf.style.display="none";}
-    editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.slice():null;   // 编辑时保住分段；除非你手动改了分类
+    // 必须**逐个**拷贝，不能只 slice：slice 只换了外面那个数组，里头的段对象还是原事件那几个。
+    // 面板里改一下分类（s.cat=…）或者删一段（host.sec+=…）改的就是原事件本身 ——
+    // 点「取消」根本退不回去，删段那一路还会让分段秒数之和超过事件时长。
+    editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.map(function(s){return Object.assign({},s);}):null;
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
@@ -12898,6 +12907,7 @@ margin-left: -22px;
     if(state.tab==="money")try{mnRender();}catch(e){}
     if(state.tab==="tax")try{renderTax();}catch(e){}
     terms=load("tt_terms",[])||[];
+    notes=load("tt_notes",[])||[];   // 漏了很久：云端拉完 / 别的网页写过之后，笔记本还停在旧的那份
     var _fd=load("tt_folders",null);if(_fd&&_fd.length){folders=_fd;fxReady=Promise.resolve(folders);}
     var _ac=load("tt_anncolors",null);if(_ac&&_ac.length)ANNC=_ac;
     var _pc=load("tt_popcfg",null);if(_pc&&typeof _pc==="object")popCfg=_pc;
@@ -16361,6 +16371,11 @@ margin-left: -22px;
       t:a.t||"nt",c:a.c||"",x:a.x||"",note:a.note||"",tags:(a.tags||[]).slice(),ts:a.ts||Date.now()};}
   function noteMirror(b){
     if(!b||!b.id)return;
+    // 先跟盘对齐再重建。内存里这份可能是这个网页打开那一刻的旧快照：
+    // 副屏（?solo=1）压根没注册 storage 监听（见 22509 的 if(!SOLO)），
+    // reloadAllFromStorage 也不重读 notes —— 所以主窗口这期间写的随手记，
+    // 在副屏里划一下书就会被整个盖掉，而且跟着云同步传出去，找不回来。
+    notes=load("tt_notes",[])||[];
     notes=notes.filter(function(r){return r.bid!==b.id;})
       .concat((b.ann||[]).map(function(a){return noteRow(a,b);}));
     saveNotes();}
