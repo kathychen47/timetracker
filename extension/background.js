@@ -86,6 +86,30 @@ async function lookup(text) {
   return { hits };
 }
 
+// 「中⇄英 自动」：按这段文字自己定方向 —— 中文多就翻成英文，英文多就翻成中文。
+// 不加这个的话，目标语言写死成 zh-CN，在小红书这种中文页面上选一段中文点「译」，
+// 就是中文翻中文：白跑一趟网络请求，译文跟原文一模一样。
+//
+// 比的是「中文字数 vs 英文单词数」，不是字符数 —— 一个汉字≈一个英文词，
+// 按字符比的话，夹着几个长英文单词（品牌名、论文引用）的中文段落会被判成英文。
+// 规则跟网站里那套（index.html 的 trTL）保持一致，两边行为才对得上。
+function autoTL(text) {
+  const s = String(text || "");
+  const cjk = (s.match(/[㐀-鿿豈-﫿]/g) || []).length;
+  const en = (s.match(/[A-Za-z]+/g) || []).length;
+  return cjk > en ? "en" : "zh-CN";
+}
+
+// 老装的这份存的是 zh-CN —— 那是以前唯一的默认值，多半不是特意选的，
+// 而它恰恰让「选中中文点译」变成空转。只迁一次，之后你自己再选回简体中文就一直是它。
+async function migrateLang() {
+  const { ttTargetLang, ttLangV2 } = await chrome.storage.local.get(["ttTargetLang", "ttLangV2"]);
+  if (ttLangV2) return;
+  await chrome.storage.local.set({ ttLangV2: true });
+  if (ttTargetLang === undefined || ttTargetLang === "zh-CN")
+    await chrome.storage.local.set({ ttTargetLang: "auto" });
+}
+
 async function translate(text, tl) {
   const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
     encodeURIComponent(tl || "zh-CN") + "&dt=t&q=" + encodeURIComponent(text);
@@ -125,12 +149,13 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
     try {
       if (msg.type === "lookup") send(await lookup(msg.text));
       else if (msg.type === "translate") {
-        const { ttTargetLang = "zh-CN" } = await chrome.storage.local.get("ttTargetLang");
-        send(await translate(msg.text, msg.tl || ttTargetLang));
+        const { ttTargetLang = "auto" } = await chrome.storage.local.get("ttTargetLang");
+        const want = msg.tl || ttTargetLang;
+        send(await translate(msg.text, want === "auto" ? autoTL(msg.text) : want));
       }
       else if (msg.type === "save") { const n = await queueWord(msg.item); poke(); send({ n }); }
       else if (msg.type === "counts") send({ oald: await idbCount("oald"), collins: await idbCount("collins") });
-      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page", ttAutoAdd: false }));
+      else if (msg.type === "settings") send(await chrome.storage.local.get({ ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false }));
       else send({});
     } catch (e) { send({ error: String(e && e.message || e) }); }
   })();
@@ -174,6 +199,7 @@ chrome.action.onClicked.addListener(async () => {
   paintAction();
 });
 chrome.runtime.onStartup.addListener(paintAction);
+migrateLang();
 chrome.storage.onChanged.addListener((ch, area) => {
   if (area === "local" && ch.ttEnabled) paintAction();   // 设置页里改的也要反映到图标上
 });

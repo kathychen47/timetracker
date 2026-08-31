@@ -3,7 +3,7 @@
   if (window.__ttDictLoaded) return;
   window.__ttDictLoaded = true;
 
-  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
+  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
 
   // 重新加载扩展之后，早就开着的标签页里还跑着旧的这份脚本，
   // 它手上那条通往后台的通道已经作废 —— 再调 chrome.runtime.* 就抛

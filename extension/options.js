@@ -76,7 +76,7 @@ document.getElementById("file").addEventListener("change", async e => {
 });
 
 // 设置项
-const S = { ttMode: "auto", ttTargetLang: "zh-CN", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
+const S = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
 chrome.storage.local.get(S, v => {
   document.getElementById("mode").value = v.ttMode;
   document.getElementById("lang").value = v.ttTargetLang;
