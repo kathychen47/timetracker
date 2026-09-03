@@ -4915,6 +4915,7 @@ margin-left: -22px;
     try{LS.setItem(k,JSON.stringify(v));}
     catch(e){try{lsWarn(k);}catch(_e){}return false;}
     if(lsFull&&k===lsFullKey){lsFull=false;lsFullKey=null;}   // 刚才存不下的那个键现在存进去了 → 解除，恢复上云
+    try{markLocal(k);}catch(e){}      // 记一笔「这个键是本机改的」——拉取时靠它别被云端的旧值盖回去
     schedulePush(k);return true;}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
   // 这个标签页的身份证。同一个人可能开着好几个网页（分屏副屏、划词小窗、手滑开的第二个），
@@ -12790,9 +12791,61 @@ margin-left: -22px;
     if(as){if(!ready)as.textContent="（云同步还没配置，先去「☁️ 云同步」页填一下网址+key）";
       else if(sbUser)as.innerHTML="已登录：<b>"+esc(sbUser.email||sbUser.id)+"</b><br>✓ 多设备云同步"+(gToken?" ・ ✓ 已连 Google 日历":"")+"<br><span style=\"color:var(--muted)\">这台设备下次打开免登录。</span>";
       else as.textContent="还没登录。点上面按钮用 Google 登录 —— 云同步和 Google 日历一次搞定。";}}
+  // ---- 本机改动的时间戳账本 ----
+  // 云端那行 states 是「整盘快照」，applyCloud 除了 tt_events 一律照抄覆盖。
+  // 于是「本机刚改、还没推上去」的东西会被下一次拉取原样抹掉。最狠的是页面刚打开的那几秒：
+  // 那会儿 pulledOnce 还是 false，schedulePush 二话不说 return，连「欠着待会儿补推」都没有；
+  // 等 pullCloud 一落地，这几秒里存的身体数据、指标勾选就没了 —— 「明明保存了怎么没了」走的就是这条路。
+  // 现在给每个键记下最后一次本机改动的时刻（推成功就一笔勾销），拉取时拿它跟云端 updated_at 比大小。
+  var ttTouch=null;
+  var TOUCH_TTL=30*864e5;              // 30 天都没推上去的痕迹就别留了，免得这个键永远走合并那条路
+  function touchLoad(){
+    if(ttTouch)return ttTouch;
+    ttTouch=load("tt_touch",{})||{};
+    var now=Date.now(),ch=false;
+    Object.keys(ttTouch).forEach(function(k){
+      var t=+ttTouch[k]||0;
+      if(!t||now-t>TOUCH_TTL){delete ttTouch[k];ch=true;}});
+    if(ch)touchSave();
+    return ttTouch;}
+  function touchSave(){try{LS.setItem("tt_touch",JSON.stringify(ttTouch||{}));}catch(e){}}
+  function markLocal(k){
+    if(applyingCloud||SOLO)return;                    // 云端刚写进来的那一批不算「本机改的」
+    if(!CLOUD_KEYS||CLOUD_KEYS.indexOf(k)<0)return;   // 页面刚起步时 CLOUD_KEYS 还没赋值，跳过
+    touchLoad()[k]=Date.now();touchSave();}
+  function touchClear(before){                        // 推成功了：这一刻之前的痕迹全部作废
+    var t=touchLoad(),ch=false;
+    Object.keys(t).forEach(function(k){if((+t[k]||0)<=before){delete t[k];ch=true;}});
+    if(ch)touchSave();}
+  function touchedAfter(k,ms){var t=touchLoad();return !!t[k]&&(+t[k])>ms;}
+  // 两边都是「每条带 id」的数组，才认得出是哪一条；认不出就只能整块二选一
+  function idKeyed(a){
+    if(!Array.isArray(a))return false;
+    for(var i=0;i<a.length;i++){var x=a[i];
+      if(!x||typeof x!=="object"||x.id===undefined||x.id===null||x.id==="")return false;}
+    return true;}
+  // 本机改过的那个键该怎么跟云端那份合：
+  // 认得出条的按 id 并起来（同一条以本机为准，本机独有的补进去，云端独有的留着）；
+  // 认不出条的（各种设置对象）整块留本机的 —— 她刚改完的那份才是她要的。
+  function cloudKeepLocal(k,cloudVal){
+    var raw=LS.getItem(k);if(raw==null)return undefined;    // 本机压根没有这个键 → 用云端的
+    var loc;try{loc=JSON.parse(raw);}catch(e){return undefined;}
+    if(idKeyed(loc)&&idKeyed(cloudVal)){
+      var at={},out=[];
+      cloudVal.forEach(function(x){var id=String(x.id);
+        if(at[id]===undefined){at[id]=out.length;out.push(x);}});
+      loc.forEach(function(x){var id=String(x.id);
+        if(at[id]!==undefined)out[at[id]]=x;else{at[id]=out.length;out.push(x);}});
+      return out;}
+    return loc;}
   function schedulePush(key){
     if(lsFull)return;                  // 本机都存不下了，推上去的必然是旧值 —— 4744 行那句注释欠了很久
-    if(SOLO||applyingCloud||!SB||!sbUser||!pulledOnce)return;if(key&&CLOUD_KEYS.indexOf(key)<0)return;if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
+    if(SOLO||applyingCloud)return;
+    if(key&&(!CLOUD_KEYS||CLOUD_KEYS.indexOf(key)<0))return;
+    // 还没跟云端对过账（页面刚打开、或者还没登录）：这次推送先欠着，不是丢掉。
+    // 痕迹已经记在盘上，applyCloud 会保住这笔改动，pullCloud 末尾那句 schedulePush() 负责把它补推上去。
+    if(!SB||!sbUser||!pulledOnce)return;
+    if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
   function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   // updated_at 是推送那台设备的电脑时钟写的，两台设备差几分钟很正常 —— 宁可多留，不可错删
   var PULL_SKEW=600000;
@@ -12802,7 +12855,7 @@ margin-left: -22px;
   function pushCloud(){if(!SB||!sbUser)return;
     // 上一次还在路上：不能就这么算了 —— 那样这次的改动谁也不会再推。排到它后面去。
     if(pushing){if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);return;}
-    pushing=true;sbStatus("上传中…");
+    pushing=true;var pushT0=Date.now();sbStatus("上传中…");
     // 先看一眼云端再写 —— 那里可能有别的设备刚推上去的新事件，闭着眼 upsert 会把它们顶掉。
     // 云端有、本机没有、又生在「我上次和云端对账」之后的，捡进这次要推的包里一起上去。
     SB.from("states").select("data,updated_at").eq("user_id",sbUser.id).maybeSingle().then(function(r){
@@ -12844,6 +12897,7 @@ margin-left: -22px;
       if(!r)return;
       if(r.error)sbStatus("上传失败："+r.error.message,true);
       else{try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}   // 推完云端==本机，对账时间从现在算
+        try{touchClear(pushT0);}catch(e){}                                       // 这一刻之前的本机改动都已经在云上了
         sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");}
     },function(err){pushing=false;sbStatus("上传失败："+String(err),true);});}
   // 拉下来写不进去也要喊 —— 原来是静默 catch，结果是「同步 ✓」显示成功，
@@ -12874,8 +12928,18 @@ margin-left: -22px;
       }
     }catch(e){}
     obj.tt_evdel=evTomb;obj.tt_gdel=gTomb;            // 写盘的是并集，不是云端那一份
+    // 本机改过、又还没推上去的键：不能照抄云端 —— 那正是「保存了怎么又没了」。
+    // updated_at 是推送那台设备的电脑时钟写的，所以往「多留一手」那边偏 PULL_SKEW：
+    // 宁可多合一次（合了也是本机的赢），也别把刚记下的抹掉。
+    var ctA=cloudAt?new Date(cloudAt).getTime():NaN;if(!isFinite(ctA))ctA=0;
+    var kept=[];
     CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){
-      try{LS.setItem(k,JSON.stringify(obj[k]));}catch(e){bad.push(k);}}});
+      var val=obj[k];
+      if(k!=="tt_events"&&touchedAfter(k,ctA-PULL_SKEW)){   // 事件有自己那套（两张墓碑＋evMergeInto），别插手
+        var m=cloudKeepLocal(k,val);
+        if(m!==undefined){val=m;kept.push(k);}}
+      try{LS.setItem(k,JSON.stringify(val));}catch(e){bad.push(k);}}});
+    if(kept.length)try{pLog("拉取时保住本机刚改还没上云的",{keys:kept.join(",")});}catch(e){}
     try{LS.setItem("tt_pullat",JSON.stringify(Date.now()));}catch(e){}
     if(bad.length)try{lsWarn(bad[0]);}catch(e){}}
   function reloadAllFromStorage(){
@@ -22079,11 +22143,15 @@ margin-left: -22px;
   var bodyRecs=load("tt_body",[])||[],bodyCfg=load("tt_bodycfg",null)||{};
   bodyRecs.forEach(function(r){if(!r.id)r.id=uid();if(r.time===undefined)r.time="";});   // 老记录补 id/时间
   if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];
-  var bodyRange="all",bodyPick=false;
+  var bodyRange=load("tt_bodyrange","all")||"all",bodyPick=false;   // 时间范围也记住，刷新不重置
   function bodyAll(){return BODY_M.concat(bodyCfg.custom||[]);}
   function bodyChartable(){return bodyAll().filter(function(m){return !m.noChart;});}
   function bodyShown(){                                   // 图上显示哪几条线
-    if(!bodyCfg.show)bodyCfg.show=bodyCfg.on.filter(function(k){var m=bodyDef(k);return m&&!m.noChart;});
+    // 第一次要落盘：只在内存里现算的话，这份「默认全亮」并不算她的选择，
+    // 下次谁动了 on 它又跟着变一次 —— 看着就像「我明明取消过，怎么又全亮了」。
+    if(!bodyCfg.show){
+      bodyCfg.show=bodyCfg.on.filter(function(k){var m=bodyDef(k);return m&&!m.noChart;});
+      try{saveBodyCfg();}catch(e){}}
     return bodyCfg.show.filter(function(k){var m=bodyDef(k);return m&&!m.noChart;});}
   function bodyDef(k){var a=bodyAll();for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return null;}
   function saveBody(){save("tt_body",bodyRecs);}
@@ -22307,7 +22375,10 @@ margin-left: -22px;
     var toGo=(wLast&&tg!==null&&tg!==undefined)?Math.round((wLast.v-tg)*10)/10:null;
     var ranges=[["30","30天"],["90","3个月"],["365","1年"],["all","全部"]];
     var today=fmt(new Date()),nowT=nowHM();
-    var cur=null;                       // 新记一笔默认是空表；点表格里某条才会载入那条
+    // 表单里显示的，永远是「这个日期+这个时刻」已经存着的那条（没有就是空表）。
+    // 不能保存完就一律清空：清空之后日期/时刻还指着刚存的那条，
+    // 再补填一项，别的项就会被当成「她故意清掉了」而删掉。
+    var cur=bodyRecs.filter(function(r){return r.date===today&&(r.time||"")===nowT;})[0]||null;
     // 录入表：只显示你选中的指标
     var form=bodyCfg.on.map(function(k){var m=bodyDef(k);if(!m)return "";
       var raw=bodyNum(cur&&cur.v&&cur.v[k]),v=(raw===null)?"":toIn(m,raw);
@@ -22349,7 +22420,7 @@ margin-left: -22px;
     // ---- 事件 ----
     bindBodyMetricToggles(wrap);
     wrap.querySelectorAll("[data-br]").forEach(function(b){b.addEventListener("click",function(){
-      bodyRange=this.getAttribute("data-br");
+      bodyRange=this.getAttribute("data-br");save("tt_bodyrange",bodyRange);
       wrap.querySelectorAll("[data-br]").forEach(function(x){x.classList.toggle("on",x===b);});
       var ch=document.getElementById("bd-chart");if(ch)ch.innerHTML=bodyChart(bodyShown());
       renderBodyDeltas();});});
@@ -22376,15 +22447,22 @@ margin-left: -22px;
       else{var tv=bodyNum(v.trim());bodyCfg.target=(tv===null)?undefined:Math.round(fromIn(WM,tv)*100)/100;}
       saveBodyCfg();renderBody();});
     wrap.querySelector("#bd-save").addEventListener("click",function(){
-      var date=wrap.querySelector("#bd-date").value||today,tm=wrap.querySelector("#bd-time").value||nowHM(),v={},any=false;
-      wrap.querySelectorAll("[data-bk]").forEach(function(inp){var n=bodyNum(inp.value);
-        if(n!==null){var kk=inp.getAttribute("data-bk");v[kk]=Math.round(fromIn(bodyDef(kk),n)*100)/100;any=true;}});  // 一律换算成 kg 再存
+      var date=wrap.querySelector("#bd-date").value||today,tm=wrap.querySelector("#bd-time").value||nowHM(),v={},any=false,blank=[];
+      wrap.querySelectorAll("[data-bk]").forEach(function(inp){var n=bodyNum(inp.value),kk=inp.getAttribute("data-bk");
+        if(n!==null){v[kk]=Math.round(fromIn(bodyDef(kk),n)*100)/100;any=true;}
+        else blank.push(kk);});   // 存进去的一律换算成 kg；框在表上你却留空了 = 这一项要删掉（Object.assign 只会盖，清不掉）
       var note=(wrap.querySelector("#bd-note").value||"").trim();
       if(!any&&!note){wrap.querySelector("#bd-tip").textContent="至少填一项";return;}
       var old=bodyRecs.filter(function(r){return r.date===date&&(r.time||"")===tm;})[0];
-      if(old){old.v=Object.assign({},old.v||{},v);old.note=note;}      // 同一天同一时刻＝改那条；换个时间就是新的一条
+      if(old){var nv=Object.assign({},old.v||{},v);
+        blank.forEach(function(kk){delete nv[kk];});                  // 你清空的那几项跟着清掉；没显示在表上的指标原样留着
+        old.v=nv;old.note=note;}                                      // 同一天同一时刻＝改那条；换个时间就是新的一条
       else bodyRecs.push({id:uid(),date:date,time:tm,v:v,note:note});
       saveBody();renderBody();
+      // 重画之后把日期/时刻拨回刚存的那条，并按它重填表单 —— 存进去什么，眼前就还是什么
+      var di2=wrap.querySelector("#bd-date"),ti2=wrap.querySelector("#bd-time");
+      if(di2)di2.value=date;if(ti2)ti2.value=tm;
+      try{renderBodyForm(date,tm);}catch(e){}
       var t=document.getElementById("bd-tip");if(t){t.textContent="已保存 ✓";setTimeout(function(){if(t)t.textContent="";},2000);}});
     wrap.querySelectorAll("[data-bdel]").forEach(function(b){b.addEventListener("click",async function(e){
       e.stopPropagation();var rid=this.getAttribute("data-bdel"),rr=bodyRecs.filter(function(r){return r.id===rid;})[0];
