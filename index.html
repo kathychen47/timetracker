@@ -2045,6 +2045,8 @@
   .bd-pick .li i{width:9px;height:9px;border-radius:50%;background:var(--c)}
   .bd-pick .li.on{border-color:var(--c);background:color-mix(in srgb,var(--c) 15%,var(--bg));color:var(--text);font-weight:600}
   .bd-addm{color:var(--primary);border-style:dashed}
+  .bd-pick .li .bd-edm{margin-left:4px;margin-right:-4px;padding:2px 5px;border-radius:5px;font-size:11px;line-height:1;opacity:.5}
+  .bd-pick .li .bd-edm:hover{opacity:1;color:var(--primary);background:var(--surface-2)}
   .bd-range{margin:10px 0 4px;align-self:flex-start;display:inline-flex}
   .bd-chart{width:100%;overflow:hidden}
   .bg-svg{width:100%;height:250px;display:block}
@@ -5351,6 +5353,7 @@ margin-left: -22px;
     "中→英":"ZH→EN",
     "中⇄英 自动":"ZH⇄EN auto",
     "中⇄英 自动（推荐）":"ZH⇄EN auto (recommended)",
+    "中性，不判好坏":"Neutral, no judgement",
     "中文":"Chinese",
     "中文（普通话）":"Chinese (Mandarin)",
     "中文（粤语）":"Chinese (Cantonese)",
@@ -5516,6 +5519,7 @@ margin-left: -22px;
     "其他收入":"Other income",
     "内容":"Task",
     "内容多大框就多大":"The box fits the content",
+    "内置指标的名字和单位改不了。不想看见它，点一下取消勾选就行。":"Built-in metrics can't be renamed or given a new unit. To hide one, just untick it.",
     "再导一批":"Import another batch",
     "再把它拆成一步步，每步填个预计时间。":"then break it into steps and give each one a time estimate.",
     "再来一轮":"One more round",
@@ -5566,6 +5570,7 @@ margin-left: -22px;
     "删掉这一步":"Delete this step",
     "删掉这一段，时间并给相邻的段":"Delete this segment and give its time to the neighboring ones",
     "删掉这个技能":"Delete this skill",
+    "删掉这个指标":"Delete this metric",
     "删掉这个暂停，时间并回相邻的段（会算成专注）":"Delete this pause and give the time back to the neighboring segments (it'll count as focus)",
     "删掉这个目标":"Delete this goal",
     "删掉这条":"Delete this",
@@ -5626,6 +5631,7 @@ margin-left: -22px;
     "午餐":"lunch",
     "午餐后":"After lunch",
     "半透明色块":"translucent highlight",
+    "单位（如 cm / kg / % / 次，留空＝没有单位）：":"Unit (e.g. cm / kg / % / times — leave blank for none):",
     "单位（如 cm / kg / %）：":"Unit (e.g. cm / kg / %):",
     "单句":"Single",
     "单句循环":"Loop",
@@ -5677,6 +5683,7 @@ margin-left: -22px;
     "名字":"Name",
     "名字和关键词都要填":"Fill in both the name and the keywords",
     "名字，比如「人情」「宠物」":"Name, e.g. \"Gifts\" or \"Pets\"",
+    "名称不能空着。":"The name can't be empty.",
     "名称，如：学英语":"Name, e.g. Learning English",
     "否":"No",
     "含 GST":"GST included",
@@ -5780,6 +5787,9 @@ margin-left: -22px;
     "套用到全部录音":"Apply to all recordings",
     "奶茶":"bubble tea",
     "好吃的记下来 · 想吃的点一单":"Save what tastes good · order what you're craving",
+    "好转方向：中性，不判好坏":"Progress direction: neutral, no judgement",
+    "好转方向：数字变大算进步":"Progress direction: higher is better",
+    "好转方向：数字变小算进步":"Progress direction: lower is better",
     "娱乐":"entertainment",
     "娱乐订阅":"Entertainment",
     "字号":"Text size",
@@ -6006,6 +6016,7 @@ margin-left: -22px;
     "拿不到下载地址":"Couldn't get a download link",
     "持平":"Flat",
     "指到单词时的效果":"Effect when pointing at a word",
+    "指标名称：":"Metric name:",
     "按":"Scale by",
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
     "按住快捷键":"Hold a hotkey",
@@ -6022,6 +6033,7 @@ margin-left: -22px;
     "挡着，再点一下那一类取消":"— click that category again to clear it",
     "挡着，切回「全部账户」就看得到":"is hiding it — switch back to \"All accounts\" and you'll see it",
     "换个分组":"Change group",
+    "换个颜色":"Change color",
     "换单位":"Switch unit",
     "授权过期，正在自动续…":"Access expired, renewing…",
     "排版方式":"Layout",
@@ -6080,6 +6092,8 @@ margin-left: -22px;
     "数一下…":"Counting…",
     "数值":"Value",
     "数字写法":"Number format",
+    "数字变大算进步":"Higher is better",
+    "数字变小算进步":"Lower is better",
     "数据库正在升级，被这个网站的其它标签页挡住了。 把其它标签页关掉，刷新一下再点。":"The database is upgrading and other tabs of this site are blocking it. Close the other tabs, refresh, then try again.",
     "整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。":"Scales everything up or down. If it looks too small on another device, adjust here — it applies right away and this device remembers it (other devices aren't affected).",
     "整句翻译":"Sentence translation",
@@ -6308,6 +6322,7 @@ margin-left: -22px;
     "没有内容":"Nothing to import",
     "没有匹配的句子。":"No matching lines.",
     "没有匹配的笔记，换个筛选或搜索词试试。":"No notes match — try a different filter or search term.",
+    "没有单位":"no unit",
     "没有发现「两个词听成一个」的情况":"No cases of \"two words heard as one\" found",
     "没有可加的词（可能都已在生词本里）":"No words to add (they may all be in your word list already)",
     "没有字母":"No letters",
@@ -6926,6 +6941,8 @@ margin-left: -22px;
     "预计 / 实际 —— 点一下改预计":"Estimate / actual — click to change the estimate",
     "预计(分)":"Est. (min)",
     "预计要花多少分钟？（留空＝不估）":"How many minutes will it take? (blank = no estimate)",
+    "颜色要写成 #RRGGBB 这样，比如 #5f9bd8。":"Colors look like #RRGGBB, e.g. #5f9bd8.",
+    "颜色：填 #RRGGBB，留空就自动换一个没人用的":"Color: enter #RRGGBB, or leave it blank to pick an unused one",
     "食堂":"canteen",
     "食材（一行一个）":"Ingredients (one per line)",
     "餐":"meal",
@@ -7588,8 +7605,20 @@ margin-left: -22px;
     ["，顺带改了已有的","^，顺带改了已有的 (.+?) 笔$",", and updated \u00011 existing entries"],
     ["目标","^目标 (.+?)(.+?)$","Goal \u00011\u00012"],
     ["次平均","^（(.+?) 次平均 (.+?)~(.+?)）$","(avg of \u00011 readings, \u00012~\u00013)"],
+    ["改名字（现在叫「","^改名字（现在叫「(.+?)」）$","Rename (now “\u00011”)"],
+    ["改单位（现在是","^改单位（现在是 (.+?)）$","Change unit (now \u00011)"],
+    ["删掉这个指标（连同已记的","^删掉这个指标（连同已记的 (.+?) 个数值）$","Delete this metric (and the \u00011 values recorded)"],
+    ["已经有一个指标叫「","^已经有一个指标叫「(.+?)」了，换一个吧。$","There is already a metric called “\u00011”. Pick another name."],
+    ["个数值不会自动换算，只是改成按新单位显示。确定把单位改成「","^已经记着的 (.+?) 个数值不会自动换算，只是改成按新单位显示。确定把单位改成「(.+?)」吗？$","The \u00011 values already recorded will not be converted, they are just shown in the new unit. Change the unit to “\u00012”?"],
+    ["个数值不会自动换算。确定改成没有单位吗？","^已经记着的 (.+?) 个数值不会自动换算。确定改成没有单位吗？$","The \u00011 values already recorded will not be converted. Remove the unit anyway?"],
+    ["」？它还没记过数值。","^删掉「(.+?)」？它还没记过数值。$","Delete “\u00011”? Nothing has been recorded for it yet."],
+    ["条记录会整条消失。撤不回来。","^删掉「(.+?)」？已经记下的 (.+?) 个数值会一起清掉，其中 (.+?) 条记录会整条消失。撤不回来。$","Delete “\u00011”? The \u00012 values already recorded get cleared too, and \u00013 entries disappear entirely. This cannot be undone."],
+    ["个数值会一起清掉，撤不回来。","^删掉「(.+?)」？已经记下的 (.+?) 个数值会一起清掉，撤不回来。$","Delete “\u00011”? The \u00012 values already recorded get cleared too. This cannot be undone."],
+    ["」，清掉了","^已删掉「(.+?)」，清掉了 (.+?) 个数值$","Deleted “\u00011” and cleared \u00012 values"],
+    ["」改好了","^「(.+?)」改好了$","“\u00011” updated"],
     ["单位","^单位 (.+?)→(.+?)$","Units \u00011→\u00012"],
     ["各项变化（","^各项变化（(.+?)）$","Changes by metric (\u00011)"],
+    ["」，想改名字或删掉就点它右边那枚 ✎","^加好了「(.+?)」，想改名字或删掉就点它右边那枚 ✎$","Added “\u00011” — tap the ✎ beside it to rename or delete"],
     ["，留空取消）：","^目标体重（(.+?)，留空取消）：$","Goal weight (\u00011, leave blank to clear):"],
     ["这条记录？","^删除 (.+?) 这条记录？$","Delete the \u00011 record?"],
     ["身体数据_","^身体数据_(.+?)\\.csv$","Body-stats_\u00011.csv"],
@@ -10192,8 +10221,8 @@ margin-left: -22px;
     (sk.steps||[]).forEach(function(st){est+=+st.est||0;act+=stepMin(st);if(st.done)done++;});
     return {est:est,act:act,done:done,total:(sk.steps||[]).length};}
   function skCatOpts(sel){return '<option value="">（不归类）</option>'+
-    cats.map(function(c){return '<option value="'+c.key+'"'+(sel===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
-  function skSubOpts(cat,sel){var subs=cat?subsOf(cat):[];
+    catsByUse().map(function(c){return '<option value="'+c.key+'"'+(sel===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
+  function skSubOpts(cat,sel){var subs=cat?subsByUse(cat):[];
     return '<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(sel===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");}
   // 和侧栏那套描线图标同一家族：只用 currentColor，缩小也不糊
@@ -10772,6 +10801,44 @@ margin-left: -22px;
     if(state.view==="day")return{a:fmt(c),b:fmt(c)};
     if(state.view==="month"){var s=new Date(c.getFullYear(),c.getMonth(),1),e=new Date(c.getFullYear(),c.getMonth()+1,0);return{a:fmt(s),b:fmt(e)};}
     var w=startOfWeek(c);return{a:fmt(w),b:fmt(addDays(w,6))};}
+  // ---------- 常用的排前面 ----------
+  // 分类一多，每次记一笔都要在一排胶囊里翻找那两三个天天用的。这里按「最近常用」排：
+  // 用过一次记一分，这一分随时间衰减 —— 45 天前用过一次，只当现在的半次。
+  // 于是「以前天天用、这半年没碰」的会自己沉到后面，不用手动整理。
+  // 论的是**次数**不是时长：天天记的 5 分钟「会前准备」比一年一次的 8 小时更该排前面。
+  // 只管挑分类的那几个地方；设置里的分类管理、统计图例、筛选条各有各的排法，都不动。
+  var CAT_HALF=45;                          // 半衰期（天）
+  // 技能列表是「每个技能一对分类下拉」，一屏 30 个技能就要打 60 次分。
+  // 所以记一份：tt_events 每落一次盘 evStamp 就 +1，条数和日期再兜一道
+  // （云端拉下来不一定经过 save）。过期了最多是顺序旧一屏，下次渲染就对了。
+  var catUseMemo=null,catUseKey="";
+  function catUseScore(){
+    var key=evStamp+"|"+events.length+"|"+fmt(new Date());
+    if(catUseMemo&&catUseKey===key)return catUseMemo;
+    var now=Date.now(),by={};
+    events.forEach(function(e){
+      if(!e||!evCounts(e))return;
+      var t;try{t=parse(e.date).getTime();}catch(_e){return;}
+      if(!isFinite(t))return;
+      var days=(now-t)/864e5;
+      if(days<0)days=0;                     // 排在未来的按「今天」算，别让还没发生的压过真用过的
+      var w=Math.pow(0.5,days/CAT_HALF);
+      // 走 evMix：分段记录里那几个小类也得算上，否则「一条事件切三段」的用法永远排不上来
+      evMix(e).forEach(function(x){
+        if(!x||!x.cat)return;
+        by[x.cat]=(by[x.cat]||0)+w;
+        if(x.sub)by[x.cat+"/"+x.sub]=(by[x.cat+"/"+x.sub]||0)+w;});});
+    catUseMemo=by;catUseKey=key;
+    return by;}
+  // 排序必须稳定：分数一样的保持原来的先后。不然并列的那几个每次打开都在换位置。
+  function catSortByUse(list,keyOf){
+    var sc=catUseScore();
+    return (list||[]).map(function(x,i){return {x:x,i:i,v:sc[keyOf(x)]||0};})
+      .sort(function(a,b){return (b.v-a.v)||(a.i-b.i);})
+      .map(function(o){return o.x;});}
+  function catsByUse(){return catSortByUse(cats,function(c){return c.key;});}
+  // 注意返回的是新数组，subsOf 那份原样不动 —— 有地方是拿着它 push 新小类的
+  function subsByUse(ck){return catSortByUse(subsOf(ck),function(s){return ck+"/"+s.key;});}
   function catUseMin(){                     // 这一屏里每个大类各用了多少分钟
     var r=viewRange(),by={};
     events.forEach(function(e){
@@ -11144,12 +11211,12 @@ margin-left: -22px;
     catsBox=document.getElementById("ev-cats"),subsBox=document.getElementById("ev-subs"),delBtn=document.getElementById("ev-delete");
   var editingId=null,adoptGid=null,selCat="focus",selSub=null,catManual=false,addMode="parent",selAddColor=PALETTE[0];
   function renderParents(){
-    catsBox.innerHTML=cats.map(function(c){return '<div class="cat-chip" data-cat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+
+    catsBox.innerHTML=catsByUse().map(function(c){return '<div class="cat-chip" data-cat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+
       '<div class="cat-chip add-chip" data-add="parent" style="border-style:dashed">+ 新建大类</div>';
     catsBox.querySelectorAll(".cat-chip").forEach(function(ch){ch.classList.toggle("on",ch.getAttribute("data-cat")===selCat);});
   }
   function renderSubs(){
-    var subs=subsOf(selCat),pc=catColor(selCat);
+    var subs=subsByUse(selCat),pc=catColor(selCat);
     subsBox.innerHTML=subs.map(function(s){return '<div class="cat-chip sub-chip" data-sub="'+s.key+'" style="--c:'+pc+'"><i></i>'+esc(s.name)+'</div>';}).join("")+
       '<div class="cat-chip sub-chip add-chip" data-add="sub" style="border-style:dashed">+ 新建小类</div>';
     subsBox.querySelectorAll(".cat-chip").forEach(function(ch){ch.classList.toggle("on",ch.getAttribute("data-sub")===selSub);});
@@ -11458,9 +11525,9 @@ margin-left: -22px;
     setFocus=document.getElementById("set-focus"),setBreak=document.getElementById("set-break"),startBtn=document.getElementById("pomo-start");
   setFocus.value=settings.focus;setBreak.value=settings.brk;
   var pomoTask=document.getElementById("pomo-task"),pomoCat=document.getElementById("pomo-cat"),pomoSub=document.getElementById("pomo-sub"),pomoToCal=document.getElementById("pomo-tocal");
-  function pomoCatOptions(){return cats.map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("")+'<option value="__new">＋ 新建大类…</option>';}
+  function pomoCatOptions(){return catsByUse().map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("")+'<option value="__new">＋ 新建大类…</option>';}
   pomoCat.innerHTML=pomoCatOptions();pomoCat.value="focus";
-  function fillPomoSubs(){var subs=subsOf(pomoCat.value),p=parentObj(pomoCat.value);
+  function fillPomoSubs(){var subs=subsByUse(pomoCat.value),p=parentObj(pomoCat.value);
     pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+
       subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("")+
       (p?'<option value="__new">＋ 新建小类…</option>':'');
@@ -12086,10 +12153,10 @@ margin-left: -22px;
   // ---------- todos ----------
   var prioColor={high:"var(--cat-focus)",mid:"var(--cat-goal)",low:"var(--cat-life)"},prioName={high:"高",mid:"中",low:"低"};
   var todoList=document.getElementById("todo-list");
-  function fillTodoCatSelect(sel,val){sel.innerHTML='<option value="">无类别</option>'+cats.map(function(c){return '<option value="'+c.key+'"'+(val===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
+  function fillTodoCatSelect(sel,val){sel.innerHTML='<option value="">无类别</option>'+catsByUse().map(function(c){return '<option value="'+c.key+'"'+(val===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("");}
   function fillTodoSubSelect(sel,cat,val){
     if(!sel)return;
-    var subs=cat?subsOf(cat):[];
+    var subs=cat?subsByUse(cat):[];
     sel.innerHTML='<option value="">（无小类）</option>'+
       subs.map(function(s){return '<option value="'+s.key+'"'+(val===s.key?" selected":"")+'>'+esc(s.name)+'</option>';}).join("");
     sel.disabled=!subs.length;}
@@ -22262,6 +22329,100 @@ margin-left: -22px;
     if(b!==null){var mapOut=null;opts.forEach(function(o){if(o[0]===b.trim()||WUNIT[o[0]].n===b.trim())mapOut=o[0];});
       if(mapOut)bodyCfg.wOut=mapOut;}
     saveBodyCfg();renderBody();}
+  // ---- 自定义指标：改名字 / 单位 / 好转方向 / 颜色 / 删除 ----
+  // 原来加完就再也动不了：名字打错、单位选错、或者像「%体脂率」这样跟内置的重了，
+  // 都只能一直看着 —— 取消勾选也只是不显示，它还在指标表里。
+  function bodyCustomDef(k){var a=bodyCfg.custom||[];for(var i=0;i<a.length;i++)if(a[i].k===k)return a[i];return null;}
+  function bodyIsCustom(k){return !!bodyCustomDef(k);}
+  function bodyNameTaken(nm,exceptK){                 // 重名会让「识别填入」和 CSV 表头分不清是哪一个
+    nm=String(nm||"").trim();
+    return bodyAll().some(function(m){return m.k!==exceptK&&String(m.n||"").trim()===nm;});}
+  function bodyFreeColor(){                           // 挑一个还没人用的配色，别一新建就跟别的撞色
+    var used={};bodyAll().forEach(function(m){used[String(m.c||"").toLowerCase()]=1;});
+    for(var i=0;i<PALETTE.length;i++)if(!used[PALETTE[i].toLowerCase()])return PALETTE[i];
+    return PALETTE[(bodyAll().length*5+3)%PALETTE.length];}
+  var BODY_GOOD={down:"数字变小算进步",up:"数字变大算进步","":"中性，不判好坏"};
+  // 菜单上那行整句写死。写成「"好转方向："+BODY_GOOD[...]」的话，英文界面只会翻外面那半截，
+  // 里面这半截还是中文 —— 词表是按整段文本节点匹配的。
+  var BODY_GOODL={down:"好转方向：数字变小算进步",up:"好转方向：数字变大算进步","":"好转方向：中性，不判好坏"};
+  function bodyUsedCount(k){return bodyRecs.filter(function(r){return bodyNum(r.v&&r.v[k])!==null;}).length;}
+  function bodyTipNow(t){var el=document.getElementById("bd-tip");
+    if(el){el.textContent=t;setTimeout(function(){if(el&&el.textContent===t)el.textContent="";},4000);}}
+  async function bodyEditMetric(k,anchor){
+    var m=bodyCustomDef(k);
+    if(!m){await ttAlert("内置指标的名字和单位改不了。不想看见它，点一下取消勾选就行。",{anchor:anchor});return;}
+    var used=bodyUsedCount(k);
+    var v=await ttMenu([
+      {v:"name", label:"改名字（现在叫「"+m.n+"」）"},
+      {v:"unit", label:"改单位（现在是 "+(m.u||"—")+"）"},
+      {v:"good", label:BODY_GOODL[m.good||""]||BODY_GOODL[""]},
+      {v:"color",label:"换个颜色"},
+      {sep:true},
+      {v:"del",  label:(used?("删掉这个指标（连同已记的 "+used+" 个数值）"):"删掉这个指标"),danger:true}
+    ],{anchor:anchor});
+    if(!v)return;
+    if(v==="name"){
+      var nm=await ttPrompt("指标名称：",m.n,{anchor:anchor});
+      if(nm===null)return;nm=nm.trim();
+      if(!nm){await ttAlert("名称不能空着。",{anchor:anchor});return;}
+      if(bodyNameTaken(nm,k)){await ttAlert("已经有一个指标叫「"+nm+"」了，换一个吧。",{anchor:anchor});return;}
+      m.n=nm;}
+    else if(v==="unit"){
+      var un=await ttPrompt("单位（如 cm / kg / % / 次，留空＝没有单位）：",m.u||"",{anchor:anchor});
+      if(un===null)return;un=un.trim();
+      // kg 是个特殊单位：它会跟着「输入用 kg、显示用斤」那一套换算走。
+      // 从 kg 改成别的（或者反过来），已经记下的数字不会自动跟着变，得先说清楚再改。
+      if((un==="kg")!==(m.u==="kg")&&used){
+        var q=un?("已经记着的 "+used+" 个数值不会自动换算，只是改成按新单位显示。确定把单位改成「"+un+"」吗？")
+               :("已经记着的 "+used+" 个数值不会自动换算。确定改成没有单位吗？");
+        if(!await ttConfirm(q,{anchor:anchor}))return;}
+      m.u=un;}
+    else if(v==="good"){                              // 决定「各项变化」里涨了算好还是算坏
+      var g=await ttMenu([
+        {v:"down",label:BODY_GOOD.down,check:(m.good||"")==="down"},
+        {v:"up",  label:BODY_GOOD.up,  check:(m.good||"")==="up"},
+        {v:"flat",label:BODY_GOOD[""], check:(m.good||"")===""}
+      ],{anchor:anchor});
+      if(!g)return;
+      m.good=(g==="flat")?"":g;}
+    else if(v==="color"){
+      var c=await ttPrompt("颜色：填 #RRGGBB，留空就自动换一个没人用的",m.c||"",{anchor:anchor});
+      if(c===null)return;c=c.trim();
+      if(!c)c=bodyFreeColor();
+      if(!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(c)){await ttAlert("颜色要写成 #RRGGBB 这样，比如 #5f9bd8。",{anchor:anchor});return;}
+      m.c=c;}
+    else if(v==="del"){
+      // 先把代价算清楚再问：清掉多少个数值、有多少条记录会因此整条空掉
+      var emptyN=bodyRecs.filter(function(r){
+        if(bodyNum(r.v&&r.v[k])===null)return false;
+        if((r.note||"").trim())return false;
+        var vv=r.v||{};for(var kk in vv)if(kk!==k&&bodyNum(vv[kk])!==null)return false;
+        return true;}).length;
+      var msg=!used?("删掉「"+m.n+"」？它还没记过数值。")
+        :(emptyN?("删掉「"+m.n+"」？已经记下的 "+used+" 个数值会一起清掉，其中 "+emptyN+" 条记录会整条消失。撤不回来。")
+                :("删掉「"+m.n+"」？已经记下的 "+used+" 个数值会一起清掉，撤不回来。"));
+      if(!await ttConfirm(msg,{danger:true,okText:"删掉",anchor:anchor}))return;
+      var nm2=m.n;
+      bodyCfg.custom=(bodyCfg.custom||[]).filter(function(x){return x.k!==k;});
+      bodyCfg.on=(bodyCfg.on||[]).filter(function(x){return x!==k;});
+      if(bodyCfg.show)bodyCfg.show=bodyCfg.show.filter(function(x){return x!==k;});
+      if(!bodyCfg.on.length)bodyCfg.on=["w"];         // 一个都不剩的话录入表是空的，保存只会一直说「至少填一项」
+      if(bodyCfg.show&&!bodyCfg.show.length)bodyCfg.show=bodyCfg.on.slice();
+      var nv=0;bodyRecs.forEach(function(r){
+        if(r.v&&r.v[k]!==undefined){delete r.v[k];nv++;}});
+      // 清完之后整条空了（一个数值没有、备注也没写）＝ 这条记录本来就只为它而存在，跟着一起收走
+      var before=bodyRecs.length;
+      bodyRecs=bodyRecs.filter(function(r){
+        if((r.note||"").trim())return true;
+        var vv=r.v||{};for(var kk in vv)if(bodyNum(vv[kk])!==null)return true;
+        return false;});
+      var nr=before-bodyRecs.length;
+      if(nv||nr)saveBody();
+      saveBodyCfg();renderBody();
+      bodyTipNow(nv?("已删掉「"+nm2+"」，清掉了 "+nv+" 个数值"):("已删掉「"+nm2+"」"));
+      return;}
+    saveBodyCfg();renderBody();
+    bodyTipNow("「"+m.n+"」改好了");}
   function bodyDeltasHTML(shown){
     return bodyAll().map(function(m){var dd=bodyDelta(m.k);if(!dd)return "";
       var last=toOut(m,dd.last),diff=isKgM(m)?Math.round(dd.diff*wOutU().f*10)/10:dd.diff;
@@ -22384,7 +22545,10 @@ margin-left: -22px;
       var raw=bodyNum(cur&&cur.v&&cur.v[k]),v=(raw===null)?"":toIn(m,raw);
       return '<label class="bd-f"><span><i style="background:'+m.c+'"></i>'+esc(m.n)+'<em>'+mUnitIn(m)+'</em></span>'+
         '<input type="number" step="0.1" inputmode="decimal" data-bk="'+k+'" value="'+v+'" placeholder="—"></label>';}).join("");
-    var picker=bodyPick?('<div class="bd-pick">'+all.map(function(m){return '<button class="li'+(bodyCfg.on.indexOf(m.k)>=0?" on":"")+'" data-bon="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+
+    var picker=bodyPick?('<div class="bd-pick">'+all.map(function(m){
+      // 自定义的那几个挂一枚 ✎：点它进编辑（改名字/单位/方向/颜色/删除），点胶囊本身还是勾选/取消
+      var ed=bodyIsCustom(m.k)?('<span class="bd-edm" data-bedit="'+esc(m.k)+'" title="改名字 / 单位 / 颜色 / 删除">✎</span>'):"";
+      return '<button class="li'+(bodyCfg.on.indexOf(m.k)>=0?" on":"")+'" data-bon="'+esc(m.k)+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+ed+'</button>';}).join("")+
       '<button class="li bd-addm" data-baddm="1">＋ 自定义指标</button></div>'):"";
     var deltas=bodyDeltasHTML(shown);
     var rows=bodySorted().reverse().map(function(r){
@@ -22428,6 +22592,9 @@ margin-left: -22px;
     wrap.querySelector("#bd-pick-btn").addEventListener("click",function(){bodyPick=!bodyPick;renderBody();});
     wrap.querySelector("#bd-ai-go").addEventListener("click",bodyAIParse);
     wrap.querySelector("#bd-ai").addEventListener("keydown",function(e){if(e.key==="Enter")bodyAIParse();});
+    wrap.querySelectorAll("[data-bedit]").forEach(function(b){b.addEventListener("click",function(e){
+      e.preventDefault();e.stopPropagation();        // ✎ 在胶囊里面，不拦住的话会顺手把这枚指标勾掉
+      bodyEditMetric(this.getAttribute("data-bedit"),this);});});
     wrap.querySelectorAll("[data-bon]").forEach(function(b){b.addEventListener("click",function(){
       var k=this.getAttribute("data-bon"),i=bodyCfg.on.indexOf(k);
       if(i>=0){if(bodyCfg.on.length>1)bodyCfg.on.splice(i,1);}else bodyCfg.on.push(k);
@@ -22435,11 +22602,15 @@ margin-left: -22px;
     var addm=wrap.querySelector("[data-baddm]");
     if(addm)addm.addEventListener("click",async function(){
       var nm=await ttPrompt("新指标名称（如：肩宽）：","",{anchor:addm});if(!nm||!nm.trim())return;
-      var un=await ttPrompt("单位（如 cm / kg / %）：","cm");if(un===null)return;
+      nm=nm.trim();
+      if(bodyNameTaken(nm,null)){await ttAlert("已经有一个指标叫「"+nm+"」了，换一个吧。",{anchor:addm});return;}
+      var un=await ttPrompt("单位（如 cm / kg / %）：","cm",{anchor:addm});if(un===null)return;
       bodyCfg.custom=bodyCfg.custom||[];
       var kk="x"+uid();
-      bodyCfg.custom.push({k:kk,n:nm.trim(),u:(un||"").trim()||"cm",c:PALETTE[(bodyCfg.custom.length*5+3)%PALETTE.length],good:"down"});
-      bodyCfg.on.push(kk);saveBodyCfg();renderBody();});
+      // 颜色挑一个还没人用的：原来按 custom.length 取模，删过一个之后新建的必定跟别人撞色
+      bodyCfg.custom.push({k:kk,n:nm,u:(un||"").trim()||"cm",c:bodyFreeColor(),good:"down"});
+      bodyCfg.on.push(kk);saveBodyCfg();renderBody();
+      bodyTipNow("加好了「"+nm+"」，想改名字或删掉就点它右边那枚 ✎");});
     wrap.querySelector("#bd-target").addEventListener("click",async function(){
       var v=await ttPrompt("目标体重（"+wInU().n+"，留空取消）：",(tg!==null&&tg!==undefined)?String(toIn(WM,tg)):"",{anchor:this});
       if(v===null)return;
