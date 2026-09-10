@@ -1678,6 +1678,10 @@
   .fp-bar i{display:block;height:100%;background:var(--primary);border-radius:99px;transition:width .25s}
   .flash-prog{font-size:.8em;color:var(--muted);text-align:center;margin-bottom:14px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
   .flash-prog b{color:var(--text);font-weight:600}
+  /* 判定「人不在了」时挂出来的牌子。得显眼到你一回来就看见时钟为什么不动了， */
+  /* 又不能晃到正在背词的时候 —— 所以是静态的浅底小标签，不闪不动。 */
+  .flash-prog .fl-idle{padding:1px 8px;border-radius:6px;background:var(--surface-2);
+    color:var(--muted);font-size:.95em;white-space:nowrap}
   .flash-prog .tagn{color:var(--primary)}
   .flash-prog .tagr{color:var(--cat-sport)}
   .flash-word{font-size:2.13em;font-weight:700;text-align:center;margin-bottom:4px;word-break:break-word}
@@ -4717,6 +4721,10 @@ margin-left: -22px;
           <div class="set-row-txt"><div class="set-row-t">每天复习上限</div><div class="set-desc">到期需要复习的词，每天最多做多少。</div></div>
           <select id="srs-rev"><option>50</option><option>100</option><option>150</option><option>200</option><option>300</option><option>999</option></select>
         </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">多久没动作就当你离开了</div><div class="set-desc">背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一动就继续。停掉的那段不算进「今天背了多久」，写进日历的那条会把它记成中间的空档。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。</div></div>
+          <select id="srs-idle"><option value="0">不停</option><option value="15">15 秒</option><option value="30">30 秒</option><option value="60">1 分钟</option><option value="120">2 分钟</option></select>
+        </div>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="srs-logcal"> 背完自动记入日历（记为「背单词」）</label>
         <div class="set-desc" style="margin-top:4px">每次背完自动在日历上添一条，时间就是你实际背的那段（不足 1 分钟不记）。</div>
         <label class="do-name" style="cursor:pointer;margin-top:8px"><input type="checkbox" id="srs-loggcal"> 同时加到 Google 日历</label>
@@ -5116,11 +5124,15 @@ margin-left: -22px;
     "+ 添加待办":"+ Add to-do",
     "+ 记一笔":"+ Add entry",
     "1 倍句长":"1× sentence length",
+    "1 分钟":"1 min",
     "1 次":"1 time",
     "1.5 倍句长":"1.5× sentence length",
+    "15 秒":"15s",
     "1年":"1y",
     "2 倍句长":"2× sentence length",
+    "2 分钟":"2 min",
     "28 个预设不够就点最后那个彩虹格 · 小类会自动跟着这个颜色做深浅":"If the 28 presets aren't enough, click the rainbow swatch at the end · sub-categories get lighter and darker shades of this color",
+    "30 秒":"30s",
     "30天":"30d",
     "3个月":"3mo",
     "40 分钟":"40 min",
@@ -5243,6 +5255,7 @@ margin-left: -22px;
     "⏱ 上次那":"⏱ Last time's",
     "⏱ 时间线":"⏱ Timeline",
     "⏳ 同步中…":"⏳ Syncing…",
+    "⏸ 已暂停":"⏸ Paused",
     "① 去 Supabase → SQL Editor 跑下面这段（建分享表 + 白名单）；":"① In Supabase → SQL Editor, run the block below (creates the share table + allow-list);",
     "① 选音频":"① Pick audio",
     "① 配置云端(SQL)":"① Set up cloud (SQL)",
@@ -5342,6 +5355,7 @@ margin-left: -22px;
     "不会写回 Google":"isn't written back to Google",
     "不会动到你真正的 Google 日历":"won't touch your real Google Calendar",
     "不会自动命中任何交易":"won't match any transactions on its own",
+    "不停":"Never pause",
     "不像单词，已剔除":"Not word-like, dropped",
     "不到 1 分钟，没记进日历":"Under 1 minute — not logged to the calendar",
     "不含 GST":"No GST",
@@ -5781,6 +5795,7 @@ margin-left: -22px;
     "外卖":"takeaway",
     "外快":"Side income",
     "多":"More",
+    "多久没动作就当你离开了":"How long with no activity counts as you having left",
     "多写":"Extra",
     "多写了":"Extra",
     "多半是拿不到 transformers.js":"transformers.js probably isn't reachable",
@@ -6599,6 +6614,7 @@ margin-left: -22px;
     "肌肉量":"Muscle",
     "肥胖":"Obese",
     "背单词":"Vocabulary",
+    "背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一动就继续。停掉的那段不算进「今天背了多久」，写进日历的那条会把它记成中间的空档。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。":"If nothing happens on the flashcard for longer than this, the timer pauses (the card shows “Paused”) and picks up again the moment you do anything. The paused stretch is left out of how long you studied today, and the calendar entry records it as a hole in the middle. Pauses shorter than the threshold still count — staring at a hard word for a bit is real studying.",
     "背单词计划（遗忘曲线）":"Vocabulary plan (forgetting curve)",
     "背完自动记入日历（记为「背单词」）":"Log to calendar when done (as \"Vocabulary\")",
     "胸围":"Chest",
@@ -6846,6 +6862,7 @@ margin-left: -22px;
     "这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标":"No data in this range — add an entry above, or switch the range / tick more metrics",
     "这个范围还没有安排事件":"Nothing scheduled in this range",
     "这个账户":"this account",
+    "这么久没有任何动作，先把计时停下了。动一下鼠标、按个键、点一下卡片就继续。":"Nothing has happened for a while, so the timer stopped. Move the mouse, press a key, or tap the card to carry on.",
     "这些书存在哪、占了多少、会不会丢":"Where these books are stored, how much space they take, and whether they can be lost",
     "这些分钟被算了不止一遍，因为同一时间安排了多件事":"These minutes are counted more than once because several things were scheduled at the same time",
     "这些我也要":"Add these anyway",
@@ -7411,6 +7428,7 @@ margin-left: -22px;
     ["✓ 已标记","^✓ 已标记 (.+?) 个$","✓ Marked \u00011"],
     ["背单词","^背单词(.+?)$","Vocabulary\u00011"],
     ["词）","^（(.+?) 词）$","(\u00011 words)"],
+    ["个单词 · 中途离开","^复习 (.+?) 个单词 · 中途离开 (.+?) 分钟不计$","Reviewed \u00011 words · \u00012 min away, not counted"],
     ["个单词","^复习 (.+?) 个单词$","Reviewed \u00011 words"],
     ["· 已完成","^(.+?)(.+?) · 已完成$","\u00011\u00012 · Done"],
     ["复习","^复习 (.+?)$","Review \u00011"],
@@ -13893,6 +13911,8 @@ margin-left: -22px;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
     var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);
     var sh=document.getElementById("srs-hide");if(sh)sh.checked=!!dictPrefs.hideMastered;
+    var si=document.getElementById("srs-idle");
+    if(si)si.value=String((dictPrefs.idleSec===undefined||dictPrefs.idleSec===null)?30:dictPrefs.idleSec);
     var lc=document.getElementById("srs-logcal");if(lc)lc.checked=dictPrefs.logCal!==false;
     var lg=document.getElementById("srs-loggcal");if(lg)lg.checked=!!dictPrefs.logGcal;}
   function openDictSettings(){ensureDictInit().then(function(){return refreshDictCounts();}).then(syncDictPane,syncDictPane);}
@@ -14888,19 +14908,80 @@ margin-left: -22px;
   // 没有它的话，慢的那一趟回来会把上一个词的内容糊到当前这张卡上（查不到的词要把每个词形
   // 变体 × 每本词典都问一遍 IndexedDB，几乎必然比查得到的那次晚回来）。
   var flashDone=0,flashRevealed=false,flashStart=0,flashSeq=0;
+  // ---- 人走开了就别再计时 ----
+  // 她的原话：「如果长期停留在某一个单词说明人可能离开了，所以不应该还继续计时，
+  // 直到用户重新开始行动才可以」。
+  // 原来这里是纯墙上时间（Date.now()-flashStart）。中途去泡杯茶，那十分钟不但算进
+  // 「今天背了多久」，还会**自动写成一条十分钟的日历事件** —— 跟着进统计、进目标进度。
+  // 是自动写的，所以你未必会发现数字虚了。
+  //
+  // 记法沿用正计时那套「分段」：超过阈值的那部分记成 {gap:true} 的洞。
+  // 日历上跨度照旧（块还是从头画到尾、中间描一圈边），但 evNetMin / evMix 只算非洞的部分。
+  // **阈值以内的停顿仍然算数** —— 盯着一个难词想二十秒是真在背，不能罚。
+  var flSegs=[],flActFrom=0,flAwayFrom=0,flLastAct=0,flAway=false;
+  function flIdleMs(){var v=dictPrefs.idleSec;v=(v===undefined||v===null)?30:+v;return (v>0)?v*1000:0;}
+  function flReset(t){flSegs=[];flActFrom=t;flLastAct=t;flAwayFrom=0;flAway=false;}
+  function flCheckIdle(){                      // 时钟每秒来问一次：这会儿人还在吗
+    var gap=flIdleMs();
+    if(!gap||flAway||!flashStart)return false;
+    var cut=flLastAct+gap;                     // 想的那一段（到阈值为止）留下，之后才算洞
+    if(Date.now()<=cut)return false;
+    flSegs.push({w:1,sec:Math.max(0,Math.round((cut-flActFrom)/1000))});
+    flAway=true;flAwayFrom=cut;
+    return true;}
+  function flBeat(){                           // 有一点动静 = 人还在
+    if(!flashStart)return;
+    var now=Date.now();
+    if(flAway){
+      flSegs.push({gap:1,sec:Math.max(0,Math.round((now-flAwayFrom)/1000))});
+      flActFrom=now;flAway=false;
+      try{flashProgress();}catch(_e){}}        // 立刻把「已暂停」撤掉，别等下一秒才反应
+    flLastAct=now;}
+  function flNetMs(){                          // 到这一刻，真正在背的时长
+    if(!flashStart)return 0;
+    var t=0;flSegs.forEach(function(s){if(!s.gap)t+=(s.sec||0)*1000;});
+    if(!flAway){
+      var now=Date.now(),gap=flIdleMs(),cur=now-flActFrom;
+      // 已经超了阈值、但这一秒的检查还没跑到：超出的部分先别算，免得时钟多跳一下又缩回去
+      if(gap){var over=now-flLastAct-gap;if(over>0)cur-=over;}
+      t+=Math.max(0,cur);}
+    return t;}
+  function flFinish(){                         // 收尾：把当前这一段封上
+    var now=Date.now(),gap=flIdleMs();
+    if(flAway){flSegs.push({gap:1,sec:Math.max(0,Math.round((now-flAwayFrom)/1000))});return;}
+    var end=(gap&&now-flLastAct>gap)?(flLastAct+gap):now;   // 最后一段同样不把走神算进去
+    flSegs.push({w:1,sec:Math.max(0,Math.round((end-flActFrom)/1000))});
+    if(end<now)flSegs.push({gap:1,sec:Math.max(0,Math.round((now-end)/1000))});}
+  function flGapSec(){var g=0;flSegs.forEach(function(s){if(s.gap)g+=(s.sec||0);});return g;}
+  (function(){
+    // 绑在 document 上、走捕获阶段：翻卡片、评分、快捷键、滚动、动一下鼠标 —— 都算动静。
+    // 有的按钮会 stopPropagation，走捕获才拦得住。卡片没开着时 flBeat 自己第一行就 return。
+    ["pointerdown","keydown","wheel","touchstart","mousemove"].forEach(function(t){
+      document.addEventListener(t,flBeat,true);});
+  })();
   function hhmm(t){var d=new Date(t);return pad(d.getHours())+":"+pad(d.getMinutes());}
   function endStudySession(){                       // 结束一轮：记时长，按设置写入日历
     if(!flashStart)return;
-    var st=flashStart,en=Date.now(),mins=Math.round((en-st)/60000);
+    var st=flashStart,en=Date.now();
+    flFinish();
+    // 时长一律用「真在背的那部分」，不是墙上时间
+    var netMs=0;flSegs.forEach(function(s){if(!s.gap)netMs+=(s.sec||0)*1000;});
+    var mins=Math.round(netMs/60000),gapSec=flGapSec();
     flashStart=0;
     if(mins<1)return;
     var k=todayKey(),h=load("tt_srshist",{})||{};
     if(!h[k])h[k]={n:0,r:0};h[k].m=(h[k].m||0)+mins;save("tt_srshist",h);
     if(dictPrefs.logCal===false)return;
     var ac=autoCat("背单词");
+    var gapMin=Math.round(gapSec/60);
     var ev={id:uid(),date:fmt(new Date(st)),start:hhmm(st),end:hhmm(en),
       title:"背单词"+(flashDone?("（"+flashDone+" 词）"):""),cat:ac.cat,sub:ac.sub,done:true,
-      note:"复习 "+flashDone+" 个单词"};
+      note:gapMin>0?("复习 "+flashDone+" 个单词 · 中途离开 "+gapMin+" 分钟不计")
+                   :("复习 "+flashDone+" 个单词")};
+    // 中途走开过：把洞记进分段。日历上块的跨度还是真实的那一段（中间描边），
+    // 但 evNetMin / evMix 只认非洞的部分，所以统计和目标进度拿到的是真背的时长。
+    if(gapSec>0&&flSegs.length>1)
+      ev.segs=flSegs.map(function(x){return x.gap?{gap:true,sec:x.sec}:{cat:ac.cat,sub:ac.sub,sec:x.sec};});
     events.push(ev);save("tt_events",events);
     if(state.tab==="calendar")renderCal();
     if(dictPrefs.logGcal)gcalApply(ev,true);}
@@ -14947,7 +15028,7 @@ margin-left: -22px;
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;flashStart=Date.now();startClock();
+    flashIdx=0;flashDone=0;flashStart=Date.now();flReset(flashStart);startClock();
     document.getElementById("flash-overlay").classList.add("on");
     bindFlashCfg();applyFlash();showFlash();}
   function flashProgress(){
@@ -14957,15 +15038,19 @@ margin-left: -22px;
     for(var i=flashIdx;i<flashArr.length;i++){if(flashArr[i].reps)rr++;else nn++;}
     document.getElementById("flash-prog").innerHTML=
       '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
-      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flashStart?Date.now()-flashStart:0)+'</span>';}
+      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flNetMs())+'</span>'+
+      (flAway?'<span class="fl-idle" title="这么久没有任何动作，先把计时停下了。动一下鼠标、按个键、点一下卡片就继续。">⏸ 已暂停</span>':'');}
   function fmtClock(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}   // 背单词计时用，别和统计的 fmtDur(分钟) 重名
   var flashTick=null;
   function startClock(){
     if(flashTick)clearInterval(flashTick);
     flashTick=setInterval(function(){
+      if(!flashStart)return;
+      // 刚判定人不在了：整条进度行重画一次，把「已暂停」挂出来（里头也会顺带更新时钟）
+      if(flCheckIdle()){try{flashProgress();}catch(_e){}return;}
       var el=document.getElementById("flash-clock");
-      if(!el||!flashStart){return;}
-      el.textContent=fmtClock(Date.now()-flashStart);},1000);}
+      if(!el)return;
+      el.textContent=fmtClock(flNetMs());},1000);}
   function stopClock(){if(flashTick){clearInterval(flashTick);flashTick=null;}}
   async function showFlash(){
     if(flashIdx>=flashArr.length){closeFlash();renderWordbook();
@@ -15109,6 +15194,8 @@ margin-left: -22px;
     if(sr)sr.addEventListener("change",function(){dictPrefs.dailyRev=+sr.value||100;saveDictPrefs();renderWordbook();});
     var sh=document.getElementById("srs-hide");
     if(sh)sh.addEventListener("change",function(){dictPrefs.hideMastered=sh.checked;saveDictPrefs();renderWordbook();});
+    var si=document.getElementById("srs-idle");
+    if(si)si.addEventListener("change",function(){dictPrefs.idleSec=+si.value||0;saveDictPrefs();});
     var lc=document.getElementById("srs-logcal");
     if(lc)lc.addEventListener("change",function(){dictPrefs.logCal=lc.checked;saveDictPrefs();});
     var lg=document.getElementById("srs-loggcal");

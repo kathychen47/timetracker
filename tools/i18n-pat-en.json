@@ -231,6 +231,7 @@
 "填好之后，上面的币种下拉会多一个「合计（折算成 {1}）」。": "Once these are filled in, the currency dropdown above gains a \"Total (converted to {1})\" option.",
 "复习 {1}": "Review {1}",
 "复习 {1} 个单词": "Reviewed {1} words",
+"复习 {1} 个单词 · 中途离开 {2} 分钟不计": "Reviewed {1} words · {2} min away, not counted",
 "失败：{1}": "Failed: {1}",
 "存下了 {1} 条历史事件 ✓ —— 断开 Google 也不会丢了。": "Saved {1} past events ✓ — they won't be lost if you disconnect Google.",
 "存下了 {1} 条，还有 {2} 条没存进去 —— 浏览器存储满了。先去设置里清一些数据，再点一次。": "Saved {1}, but {2} didn't make it in — browser storage is full. Clear some data in Settings first, then tap again.",
