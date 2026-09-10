@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>体重秤蓝牙探测</title>
+<style>
+:root{--bg:#f7f7fb;--card:#fff;--fg:#1f2233;--sub:#6b7183;--ind:#6366F1;--ok:#2f9e6e;--warn:#c9821f;--bad:#c4553f;--line:#e6e7ee}
+@media(prefers-color-scheme:dark){:root{--bg:#15161d;--card:#1e2029;--fg:#e8e9f0;--sub:#9aa1b0;--line:#2e3140}}
+*{box-sizing:border-box}
+body{margin:0;padding:18px;background:var(--bg);color:var(--fg);font:15px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+h1{font-size:19px;margin:0 0 4px}
+.sub{color:var(--sub);font-size:13px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+button{background:var(--ind);color:#fff;border:0;border-radius:9px;padding:11px 18px;font-size:15px;cursor:pointer;margin-right:8px;margin-bottom:8px}
+button.ghost{background:transparent;color:var(--ind);border:1px solid var(--ind)}
+button:disabled{opacity:.45;cursor:default}
+pre{white-space:pre-wrap;word-break:break-all;font:12px/1.55 ui-monospace,Consolas,monospace;margin:0;max-height:60vh;overflow:auto}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.sub2{color:var(--sub)}
+.big{font-size:30px;font-weight:600;letter-spacing:.5px}
+</style></head><body>
+
+<h1>体重秤蓝牙探测</h1>
+<div class="sub">看看这台秤能不能被网页直接读到，以及它把数据放在哪里。</div>
+
+<div class="card" id="env"></div>
+
+<div class="card">
+  <button id="btn-conn">① 连接秤，列出它有什么</button>
+  <button id="btn-scan" class="ghost">② 只听广播（不连接）</button>
+  <button id="btn-clear" class="ghost">清屏</button>
+  <div class="sub2" style="font-size:13px;margin-top:6px">
+    点①之后：在弹出的列表里选你的秤（先踩一下秤把它唤醒，它才会出现）。<br>
+    连上以后<b>站上去称一次</b>，下面会实时打出它发的字节。
+  </div>
+</div>
+
+<div class="card"><div class="big" id="live">—</div><div class="sub2" id="livesub">还没读到重量</div></div>
+
+<div class="card"><pre id="log">准备好了。
+</pre></div>
+
+<script>
+// ---------- 已知的服务 UUID：认得出来的直接给结论 ----------
+var KNOWN={
+ "0000181d":["标准体重秤服务 Weight Scale 0x181D","ok","最好的情况：有标准协议，网页能直接读，不用逆向"],
+ "0000181b":["标准体成分服务 Body Composition 0x181B","ok","很好：体重+体脂等，标准格式"],
+ "0000180f":["电池 0x180F","sub2",""],
+ "0000180a":["设备信息 0x180A","sub2",""],
+ "00001805":["当前时间 0x1805","sub2",""],
+ "00001809":["体温 0x1809","sub2",""],
+ "0000fff0":["厂商私有 0xFFF0（Chipsea/Renpho 一类很常见）","warn","能连上，但字节格式要逆向"],
+ "0000ffe0":["厂商私有 0xFFE0（Yunmai/云康宝一类常见）","warn","能连上，但字节格式要逆向"],
+ "0000ffb0":["厂商私有 0xFFB0","warn","能连上，但字节格式要逆向"],
+ "0000ffe5":["厂商私有 0xFFE5","warn","能连上，但字节格式要逆向"],
+ "0000fee7":["小米/微信 0xFEE7","warn","小米系，通常要逆向"],
+ "0000fe95":["小米 MiBeacon 0xFE95","warn","小米系，数据多半在广播里"],
+ "0000fff1":["厂商私有 0xFFF1","warn",""],
+ "0000ffa0":["厂商私有 0xFFA0","warn",""],
+ "0000ff00":["厂商私有 0xFF00","warn",""],
+ "0000fe59":["固件升级 DFU","sub2",""]
+};
+// 要请求权限的服务清单：没在这里列出来的服务，getPrimaryServices() 是看不到的
+var SERVICES=[0x181d,0x181b,0x180f,0x180a,0x1805,0x1808,0x1809,0x181c,
+  0xfff0,0xfff1,0xffe0,0xffe1,0xffb0,0xffc0,0xffe5,0xffa0,0xff00,0xff10,
+  0xfee7,0xfee0,0xfe95,0xfd50,0xfe59,0x1910,0x1a10,
+  "00001523-1212-efde-1523-785feabcd123"];
+
+var logEl=document.getElementById("log");
+function log(s,cls){var d=document.createElement("span");if(cls)d.className=cls;
+  d.textContent=s+"\n";logEl.appendChild(d);logEl.scrollTop=logEl.scrollHeight;}
+function hex(dv){var a=[];for(var i=0;i<dv.byteLength;i++){var h=dv.getUint8(i).toString(16);a.push(h.length<2?"0"+h:h);}return a.join(" ");}
+function short(u){u=String(u).toLowerCase();return u.length>8?u.slice(0,8):u;}
+function nameOf(u){var k=short(u);return KNOWN[k]||null;}
+
+// ---------- 环境自检 ----------
+(function(){
+  var e=document.getElementById("env"),out=[];
+  var hasBT=!!(navigator.bluetooth&&navigator.bluetooth.requestDevice);
+  var hasScan=!!(navigator.bluetooth&&navigator.bluetooth.requestLEScan);
+  out.push(window.isSecureContext?"<span class='ok'>&#10004;</span> 安全上下文 OK":"<span class='bad'>&#10008;</span> 不是 HTTPS/file，Web Bluetooth 用不了");
+  out.push(hasBT?"<span class='ok'>&#10004;</span> 支持 Web Bluetooth（可以连接读取）":"<span class='bad'>&#10008;</span> 这个浏览器不支持 Web Bluetooth<br><span class='sub2'>iPhone 上的 Safari / Chrome 都不支持，这条路在 iOS 走不通。Android Chrome、电脑 Chrome/Edge 可以。</span>");
+  out.push(hasScan?"<span class='ok'>&#10004;</span> 支持广播扫描 requestLEScan（实验特性已开）":"<span class='warn'>&mdash;</span> 不支持广播扫描 requestLEScan<br><span class='sub2'>只广播、不接受连接的秤读不到。要去 chrome://flags 开 enable-experimental-web-platform-features 才有。</span>");
+  out.push("<span class='sub2'>"+navigator.userAgent+"</span>");
+  e.innerHTML=out.join("<br>");
+  document.getElementById("btn-conn").disabled=!hasBT;
+  document.getElementById("btn-scan").disabled=!hasScan;
+})();
+
+// ---------- 标准协议解码 ----------
+function decodeWeight(dv){                       // 0x2A9D Weight Measurement
+  if(dv.byteLength<3)return null;
+  var f=dv.getUint8(0),raw=dv.getUint16(1,true);
+  var imperial=!!(f&1);
+  return {kg: imperial ? raw*0.01/2.20462 : raw*0.005, flags:f};}
+function decodeBody(dv){                         // 0x2A9C Body Composition Measurement
+  if(dv.byteLength<4)return null;
+  var f=dv.getUint16(0,true),fat=dv.getUint16(2,true);
+  return {fat: fat*0.1, flags:f};}
+function showLive(txt,sub){
+  document.getElementById("live").textContent=txt;
+  document.getElementById("livesub").textContent=sub||"";}
+
+// ---------- ① 连接 ----------
+document.getElementById("btn-conn").addEventListener("click",async function(){
+  try{
+    log("");
+    log("=== 打开设备选择器（先踩一下秤唤醒它）===");
+    var dev=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:SERVICES});
+    log("选中：「"+(dev.name||"(无名字)")+"」  id="+dev.id);
+    dev.addEventListener("gattserverdisconnected",function(){log("[!] 秤断开了（很多秤称完就自己断，正常）","warn");});
+    log("正在连 GATT …");
+    var server=await dev.gatt.connect();
+    log("已连上。列出服务：","ok");
+
+    var svcs=await server.getPrimaryServices();
+    if(!svcs.length)log("一个服务都没列出来 —— 说明它的服务 UUID 不在我预设的清单里，或者它根本不通过连接给数据。","warn");
+    var verdict=[];
+    for(var i=0;i<svcs.length;i++){
+      var s=svcs[i],k=nameOf(s.uuid);
+      log("");
+      log("> 服务 "+s.uuid+(k?"   <- "+k[0]:""),k?k[1]:"");
+      if(k&&k[2])log("   "+k[2],k[1]);
+      if(k&&(k[1]==="ok"||k[1]==="warn"))verdict.push(k);
+      var chs=[];
+      try{chs=await s.getCharacteristics();}catch(e){log("   （读不到特征："+e.message+"）","sub2");continue;}
+      for(var j=0;j<chs.length;j++){
+        var c=chs[j],p=c.properties,tags=[];
+        if(p.read)tags.push("read");
+        if(p.write)tags.push("write");
+        if(p.writeWithoutResponse)tags.push("write-nr");
+        if(p.notify)tags.push("NOTIFY");
+        if(p.indicate)tags.push("INDICATE");
+        log("   . "+c.uuid+"  ["+tags.join(",")+"]");
+        if(p.read){
+          try{var v=await c.readValue();log("       读到: "+hex(v),"sub2");}catch(e){}
+        }
+        if(p.notify||p.indicate){
+          try{
+            await c.startNotifications();
+            c.addEventListener("characteristicvaluechanged",onNotify);
+            log("       [OK] 已订阅，站上秤会打出来","ok");
+          }catch(e){log("       订阅失败: "+e.message,"warn");}
+        }
+      }
+    }
+    log("");
+    log("=== 服务列完了。现在站上秤称一次 ===","ok");
+    if(verdict.length){
+      var best=null;
+      for(var q=0;q<verdict.length;q++)if(verdict[q][1]==="ok"){best=verdict[q];break;}
+      if(!best)best=verdict[0];
+      if(best[2])log("初步结论："+best[2],best[1]);
+    }
+  }catch(e){
+    if(e.name==="NotFoundError")log("你取消了选择，或者列表里没有秤（秤要先踩一下才广播）。","warn");
+    else log("出错："+e.name+" — "+e.message,"bad");
+  }
+});
+
+function onNotify(ev){
+  var c=ev.target,dv=c.value,u=short(c.uuid);
+  log("[数据] "+c.uuid+"  ->  "+hex(dv)+"   ("+dv.byteLength+" 字节)");
+  if(u==="00002a9d"){
+    var w=decodeWeight(dv);
+    if(w){showLive(w.kg.toFixed(2)+" kg","标准协议 0x2A9D 解出来的");
+          log("   -> 体重 "+w.kg.toFixed(2)+" kg（标准协议）","ok");}
+    return;
+  }
+  if(u==="00002a9c"){
+    var b=decodeBody(dv);
+    if(b)log("   -> 体脂 "+b.fat.toFixed(1)+" %（标准协议）","ok");
+    return;
+  }
+  // 私有协议兜底：在字节里找像人体重的 16 位数
+  var guess=[],scales=[0.01,0.005,0.1,0.05];
+  for(var i=0;i+1<dv.byteLength;i++){
+    for(var e2=0;e2<2;e2++){
+      var le=(e2===0),raw=dv.getUint16(i,le);
+      for(var si=0;si<scales.length;si++){
+        var kg=raw*scales[si];
+        if(kg>=30&&kg<=150)guess.push("偏移"+i+(le?" LE":" BE")+" x"+scales[si]+" = "+kg.toFixed(2)+" kg");}}}
+  if(guess.length)log("   猜测（找 30~150kg 的组合）：\n     "+guess.slice(0,8).join("\n     "),"sub2");
+}
+
+// ---------- ② 广播扫描 ----------
+function onAdv(ev){
+  var bits=[];
+  ev.serviceData.forEach(function(v,k){bits.push("svcData["+k+"]="+hex(v));});
+  ev.manufacturerData.forEach(function(v,k){bits.push("mfrData[0x"+k.toString(16)+"]="+hex(v));});
+  if(!bits.length)return;
+  log("[广播] "+(ev.device.name||"(无名)")+" rssi="+ev.rssi+"\n     "+bits.join("\n     "));
+}
+document.getElementById("btn-scan").addEventListener("click",async function(){
+  try{
+    log("");
+    log("=== 开始听广播（20 秒）===");
+    var scan=await navigator.bluetooth.requestLEScan({acceptAllAdvertisements:true,keepRepeatedDevices:true});
+    navigator.bluetooth.addEventListener("advertisementreceived",onAdv);
+    setTimeout(function(){
+      scan.stop();
+      navigator.bluetooth.removeEventListener("advertisementreceived",onAdv);
+      log("=== 广播扫描结束 ===");},20000);
+  }catch(e){log("扫描失败："+e.name+" — "+e.message,"bad");}
+});
+
+document.getElementById("btn-clear").addEventListener("click",function(){logEl.textContent="";});
+</script>
+</body></html>

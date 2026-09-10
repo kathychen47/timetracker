@@ -378,6 +378,9 @@
   #gcal-pend button:hover{background:#95600a}
   .legend .li em{font-style:normal;font-size:10.5px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
   .legend .lg-more{color:var(--muted);border-style:dashed}
+  /* 还没到的日子：先淡着摆在那儿，到了当天自动变回正常 ——
+     一眼就能分出「已经发生的」和「只是排着的」，不用去看日期 */
+  .ev.future{opacity:.45}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
 
@@ -4273,6 +4276,7 @@ margin-left: -22px;
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
+    <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="就是日历块右下角那个小方块。块太小的时候那个方块会被藏起来、点不到 —— 在这儿勾是一样的"><input type="checkbox" id="ev-done"> ✓ 已完成</label>
     <div id="ev-gcal-row" style="display:none;margin-top:4px">
       <label class="pomo-log" style="justify-content:flex-start"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
       <div class="ev-gcal-hint" id="ev-gcal-hint" style="display:none"></div>
@@ -4487,6 +4491,15 @@ margin-left: -22px;
           <label class="switch"><input type="checkbox" id="set-gcal-goal"><span class="sw-track"></span></label>
         </div>
       </div>
+      <div class="set-item">
+        <div class="set-sec-h" style="font-size:14px">补传 · 把漏掉的一次性加进去</div>
+        <div class="set-desc" style="margin-bottom:8px">当时没勾「同时加到我的 Google 日历」的那些，在这儿一次性补上去。已经在 Google 里的、以及从 Google 存下来的，都会跳过，不会传重。中途可以停，下次接着来。</div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">还没进 Google 的事件</div><div class="set-desc" id="gbf-info">先在上面连上 Google 日历</div></div>
+          <button class="btn" id="gbf-go" type="button" disabled>补传</button>
+        </div>
+        <div class="set-desc" id="gbf-log" style="display:none;margin-top:8px"></div>
+      </div>
     </div>
 
     <div class="set-pane" data-pane="cloud">
@@ -4563,6 +4576,12 @@ margin-left: -22px;
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">语言 / Language</div><div class="set-desc">切换界面中文 / English（切换后会刷新一次）。</div></div>
           <select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select>
+        </div>
+      </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">新记的事件默认就是「已完成」</div><div class="set-desc">日历块右下角那个小方块默认打上勾。块太小的时候那个方块会整个藏起来、点不到，开着这个就不会漏。要单独改哪一条，在事件弹窗里勾或取消。</div></div>
+          <label class="switch"><input type="checkbox" id="set-done-default"><span class="sw-track"></span></label>
         </div>
       </div>
       <div class="set-sec-h" style="margin-top:22px">📊 统计</div>
@@ -5142,6 +5161,7 @@ margin-left: -22px;
     "Google 免费接口偶尔会限流，等几秒点 ⟳ 重试，":"Google's free endpoint rate-limits now and then — wait a few seconds and tap ⟳ to retry,",
     "Google 库未加载（预览页不支持，请到你的网站上用）":"Google library not loaded (not supported on the preview page — open your own site)",
     "Google 授权过期了 —— 先在上面点一次「重新授权」。":"Google access expired — tap \"Re-authorise\" above first.",
+    "Google 授权过期了（每次只管 1 小时）。重新授权之后再点一次「补传」，会从没传的那条接着来。":"Google's authorization expired (it only lasts an hour). Re-authorize, then tap Backfill again — it picks up from the first one that didn't go.",
     "Google 授权过期了，正在尝试自动续…":"Google access expired, trying to renew…",
     "Google 授权过期了，点右边「重新授权」一次即可（每次约管 1 小时）":"Google access expired — just tap \"Re-authorise\" on the right (each time lasts about 1 hour)",
     "Google 授权过期了，点右边「重新授权」一次即可（约管 1 小时）":"Google access expired — just tap \"Re-authorise\" on the right (lasts about 1 hour)",
@@ -5258,6 +5278,7 @@ margin-left: -22px;
     "✓ 加载完成，可以查词了":"✓ Loaded — ready to look up words",
     "✓ 已上传到云端。现在手机/其他设备登录后，点「☁️ 从云端下载」就能用了。":"✓ Uploaded to the cloud. Sign in on your phone or another device and tap \"☁️ Download from cloud\" to use it.",
     "✓ 已存":"✓ Saved",
+    "✓ 已完成":"✓ Done",
     "✓ 已掌握":"✓ Mastered",
     "✓ 认识":"✓ Known",
     "✕ 不再关联这个文件夹":"✕ Unlink this folder",
@@ -5442,6 +5463,7 @@ margin-left: -22px;
     "你手动定的":"You set this manually",
     "你是不是想查：":"Did you mean:",
     "你最近改过的设置会排在这里，点一下直接跳过去。":"Settings you've changed recently show up here — click one to jump straight to it.",
+    "你点了停下，剩下的下次再来。":"You stopped it — the rest can go next time.",
     "你的-user-id（登录后再生成就会自动填）":"your-user-id (sign in, then generate again and it fills in itself)",
     "你的UID":"YOUR-UID",
     "你的菜谱库里已经有同名的了":"You already have a recipe with that name",
@@ -5469,6 +5491,7 @@ margin-left: -22px;
     "做好了":"Mark as cooked",
     "做过的句子":"Sentences done",
     "停":"Stop",
+    "停下":"Stop",
     "停住即出":"Hover to look up",
     "停几秒":"How many seconds",
     "停多久才算说完一句 —— 说话慢或爱停顿就往「整段」调":"How long a pause ends a sentence — for slow or pause-heavy speech, move toward \"Paragraph\"",
@@ -5482,6 +5505,7 @@ margin-left: -22px;
     "先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）":"Add a Gemini API Key in ⚙️ Settings first (or switch \"AI service\" to local Ollama)",
     "先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录":"Go to \"☁️ Cloud sync\", enter your Supabase URL and anon key, save, then sign in",
     "先在 ⚙️设置 → 📖词典 里加载牛津词典":"Load the Oxford dictionary first in ⚙️ Settings → 📖 Dictionary",
+    "先在上面连上 Google 日历":"Connect Google Calendar above first",
     "先填 Supabase 网址和 anon key，保存后再登录":"Enter your Supabase URL and anon key, save, then sign in",
     "先填上面的 API Key 再检测":"Enter the API Key above first",
     "先把 Token 粘进来":"Paste the Token in first",
@@ -5491,6 +5515,7 @@ margin-left: -22px;
     "先给新分类起个名字":"Give the new category a name first",
     "先自动导一份 JSON 到下载文件夹":"automatically save a JSON copy to your Downloads folder first",
     "先记下，GST 待定":"Log it now, decide GST later",
+    "先连上 Google 日历再补传。":"Connect Google Calendar before backfilling.",
     "先选个文件，或者把 JSON 粘进来":"Pick a file first, or paste the JSON in",
     "先选至少一个等级":"Pick at least one level",
     "先选音频（第①步）。":"Pick an audio file first (step ①).",
@@ -5843,6 +5868,7 @@ margin-left: -22px;
     "就建在当前这个文件夹里":"Created right in the current folder",
     "就当例句收进「📖 我在哪儿遇到它」，":", it's saved as an example in \"📖 Where I met it\"; if it",
     "就当释义收进「📝 我的笔记」。":", it's saved as a definition in \"📝 My note\".",
+    "就是日历块右下角那个小方块。块太小的时候那个方块会被藏起来、点不到 —— 在这儿勾是一样的":"This is the little box at the bottom-right of a calendar block. On very short blocks it is hidden and cannot be tapped — ticking it here does the same thing",
     "就这么填：开始日期选那一天 → 每":": set the start date to that day → every",
     "展开":"Expand",
     "展开 / 收起":"Expand / collapse",
@@ -5925,6 +5951,7 @@ margin-left: -22px;
     "当前是你自己拖出来的大小":"Right now it's the size you dragged it to",
     "当前筛选下没有笔记可导出":"No notes to export under this filter",
     "当时多少秒":"Seconds at the time",
+    "当时没勾「同时加到我的 Google 日历」的那些，在这儿一次性补上去。已经在 Google 里的、以及从 Google 存下来的，都会跳过，不会传重。中途可以停，下次接着来。":"The ones where you never ticked “Also add to my Google Calendar” get sent up in one go. Anything already in Google, and anything saved down from Google, is skipped — nothing gets sent twice. You can stop partway and pick up next time.",
     "录音":"Record",
     "录音存在本机哪里、占了多少、会不会被浏览器清掉":"Where recordings sit on this device, how much space they take, and whether the browser might clear them",
     "录音转写":"Record & transcribe",
@@ -6139,6 +6166,7 @@ margin-left: -22px;
     "新菜谱":"New recipe",
     "新西兰 · 收入 / PAYE / ACC / GST":"New Zealand · Income / PAYE / ACC / GST",
     "新西兰 · 银行流水自动进账本":"New Zealand · bank transactions booked automatically",
+    "新记的事件默认就是「已完成」":"New events start out marked Done",
     "新词":"New",
     "新词书名称，如：雅思核心 / 牛津 B2":"New word book name, e.g. IELTS Core / Oxford B2",
     "方框选中":"Box outline",
@@ -6149,6 +6177,7 @@ margin-left: -22px;
     "无类别":"No category",
     "无限量 · 断网可用 · 首次下 ~110MB":"Unlimited · works offline · ~110MB first time",
     "日":"Day",
+    "日历块右下角那个小方块默认打上勾。块太小的时候那个方块会整个藏起来、点不到，开着这个就不会漏。要单独改哪一条，在事件弹窗里勾或取消。":"The little box at the bottom-right of a calendar block starts out ticked. On very short blocks that box is hidden and you cannot tap it, so with this on you never miss one. To change a single event, tick or untick it in the event dialog.",
     "日历用的是你在「👤 账号」里登录的那个 Google 账号，":"Calendar uses the same Google account you signed in with under \"👤 Account\",",
     "日均支出":"Daily avg spend",
     "日均词量":"Words per day",
@@ -6266,6 +6295,7 @@ margin-left: -22px;
     "横着看：哪些词老听错、哪些句子塔得最厉害":"A view across everything: which words you keep mishearing, which sentences trip you up most",
     "次":"times",
     "次数要填个大于 0 的数":"The count has to be greater than 0",
+    "正在停下…":"Stopping…",
     "正在往回找…":"Searching back…",
     "正在打开 Google 登录…":"Opening Google sign-in…",
     "正在查词，请稍等…":"Looking it up…",
@@ -6328,6 +6358,7 @@ margin-left: -22px;
     "没有字母":"No letters",
     "没有新的可存 —— 这段时间该存的都已经在了。":"Nothing new to archive — everything in this range is already saved.",
     "没有新的（可能已经在表里了）。":"Nothing new (they may already be in the list).",
+    "没有要补的 —— 你记的都已经在 Google 日历里了。":"Nothing to backfill — everything you logged is already in Google Calendar.",
     "没有译文":"No translation returned",
     "没有需要改的。":"Nothing to fix.",
     "没有需要补记的 —— 该记的都记过了":"Nothing to catch up on — it's all been logged",
@@ -6608,6 +6639,8 @@ margin-left: -22px;
     "虚词和太短的词不会加进去 —— 那些是连读问题，不是生词。":"Function words and very short words are left out — those are linking problems, not new vocabulary.",
     "血糖":"Blood sugar",
     "衣服":"clothes",
+    "补传":"Backfill",
+    "补传 · 把漏掉的一次性加进去":"Backfill · add the missed ones in one go",
     "补记":"Log it now",
     "表还是空的。":"The list is still empty.",
     "装修":"renovation",
@@ -6777,6 +6810,7 @@ margin-left: -22px;
     "还没设置 Gemini API Key —— 点左边 ⚙️ 粘进去保存（或把「AI 服务」切成本地 Ollama）。":"No Gemini API key yet — open ⚙️ on the left, paste it in and save (or switch \"AI service\" to local Ollama).",
     "还没设过。":"Nothing set up yet.",
     "还没设过。下面加一条。":"Nothing set up yet. Add one below.",
+    "还没进 Google 的事件":"Events not in Google yet",
     "还没选":"None selected",
     "还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。":"No folder chosen yet, or the permission expired — click \"🗂 Local folder\" and pick it again.",
     "这一格看哪本书":"Which book goes in this pane",
@@ -6892,6 +6926,7 @@ margin-left: -22px;
     "邮寄":"postage",
     "都不要":"None",
     "都会自动收进这里。":"and it all gets collected here.",
+    "都在 Google 里了 ✓":"All of them are in Google ✓",
     "都存不进去":"can't be saved",
     "都导进来":"Import all",
     "配好 Edge Function）":"to set up the Edge Function)",
@@ -7231,6 +7266,11 @@ margin-left: -22px;
     ["」下还没有小类","^「(.+?)」下还没有小类$","No sub-categories under \"\u00011\" yet"],
     ["」？用了它的事件不会被删除，只会显示为默认颜色。","^删除大类「(.+?)」？用了它的事件不会被删除，只会显示为默认颜色。$","Delete the category \"\u00011\"? Events using it won't be deleted — they'll just show in the default color."],
     ["删除小类「","^删除小类「(.+?)」？$","Delete the sub-category \"\u00011\"?"],
+    ["条还没加进去","^(.+?) 条还没加进去$","\u00011 not in Google yet"],
+    ["条还没进 Google 日历的事件传上去？最早的一条是","^把 (.+?) 条还没进 Google 日历的事件传上去？最早的一条是 (.+?)。已经在里面的不会传重。中途可以点「停下」，下次接着来。$","Send up the \u00011 events that are not in Google Calendar yet? The oldest is \u00012. Anything already there is not sent twice. You can tap Stop partway and pick up next time."],
+    ["传第","^传第 (.+?) / (.+?) 条…$","Sending \u00011 / \u00012…"],
+    ["条，没传成","^传上去 (.+?) 条，没传成 (.+?) 条。$","Sent \u00011; \u00012 did not go through."],
+    ["传上去","^传上去 (.+?) 条。$","Sent \u00011."],
     ["和 Google 日历对齐了","^和 Google 日历对齐了 (.+?) 条 ✓$","\u00011 entries synced with Google Calendar ✓"],
     ["条还没同步到 Google","^⇡ (.+?) 条还没同步到 Google$","⇡ \u00011 not yet synced to Google"],
     ["之后会自动补传。","^之后会自动补传。(.+?)$","and they'll upload automatically after that.\u00011"],
@@ -7799,6 +7839,9 @@ margin-left: -22px;
   var miniCursor=new Date();
   var GCAL_CLIENT_ID="707528813420-9pme43aec9r8bn66a5tbk9i4kb2tepg3.apps.googleusercontent.com";
   var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false),gcalCount=load("tt_gcalcount",false);
+  // 新事件默认打不打勾。默认开着 —— 短事件的块画得太矮，右下角那个方块整块被藏起来（.ev.mini），
+  // 想勾也点不到，于是「漏掉没打勾」的永远是最短的那几条。
+  var doneDefault=load("tt_donedef",true);
   var gcalArchOn=load("tt_gcalarch",true);   // 把「今天之前」的 Google 事件固化成自己的记录（默认开）
   // 除了手动新建，还有几个地方会自动生成事件（番茄钟、目标打卡），各自能不能自动同步到 Google 单独控制
   var gcalAuto=load("tt_gcalauto",null);
@@ -10536,7 +10579,7 @@ margin-left: -22px;
       start:pad(start.getHours())+":"+pad(start.getMinutes()),
       end:pad(end.getHours())+":"+pad(end.getMinutes()),
       title:catLabelOf(pc,ps),note:(pomoTask.value||"").trim()||null,
-      cat:pc,sub:ps,done:false,live:true,sec:sec,wsec:wsec,par:!!(pf&&pf.checked)};
+      cat:pc,sub:ps,done:doneDefault,live:true,sec:sec,wsec:wsec,par:!!(pf&&pf.checked)};
     if(ss&&ss.length>1)e.segs=ss;                          // 换过任务 / 中间停过：色块跟着一起长
     return e;}
   function liveLabel(e){                                   // 块上那行小字：走了多久，其中停了多久
@@ -10688,6 +10731,7 @@ margin-left: -22px;
       // 套在从 Google 存下来的记录上，方向正好反了。它靠左边那道竖条表明来源。
       else if(e.gid&&!e.arch)gm='<span class="stag ok" title="已经在 Google 日历里了">G</span>';}
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
+    var fut=(e.date&&e.date>calToday())?" future":"";      // 还没到的那天：先淡着
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
@@ -10696,8 +10740,15 @@ margin-left: -22px;
     // 中间停过的那种用净时长（不含洞），跟统计口径一致。精确的起止时间移到悬停里。
     var dmin=evNetMin(e),htxt=(dmin>0?fmtDur(dmin):e.start);
     var tip=e.start+"–"+e.end+(e.note?" · "+e.note:"");
-    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+(e.arch?" arch":"")+multi+par+faded+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
+    return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+(e.arch?" arch":"")+multi+par+faded+fut+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):htxt)+'</div>'+lbl+fish+corner+gm+'</div>';}
+  // 一屏上百个块都要判「是不是还没到」，没必要每块都 new 一次 Date。
+  // 存日期字符串：跨过零点它自然就不相等了，下次重画自己换过来。
+  var calTodayS="",calTodayAt=0;
+  function calToday(){
+    var now=Date.now();
+    if(!calTodayS||now-calTodayAt>30000){calTodayS=fmt(new Date());calTodayAt=now;}
+    return calTodayS;}
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -11352,6 +11403,77 @@ margin-left: -22px;
     if(!gcalEver())return;
     o.gwant=!!want;save("tt_events",events);
     try{refreshGcalPend();}catch(e){}}
+  // ---------- 补传：把还没进 Google 的一次性推上去 ----------
+  // 她的原话：「有些之前一键加入 google 了，但是后面又没有了，有没有办法强制把之前所有没加入的全部加进去」。
+  // 当时那个框没勾上的，事后完全没有补救入口 —— 只能一条条打开、重勾、保存。
+  function gcalPushable(e){
+    if(!e||e.gid||e.arch||e.gcal||e.live)return false;   // 推过的 / 从 Google 存下来的 / Google 那边的镜像 / 还在计时
+    if(typeof e.gwant!=="undefined")return false;        // 已经在排队了，归 gcalFlush 管，别抢
+    if(!e.date||!e.start||!e.end)return false;
+    if(e.end<=e.start)return false;                      // 跨夜那种 gBody 拼出来是「结束早于开始」，Google 会 400
+    try{if(evIsDemo(e))return false;}catch(_e){}         // 首次打开铺的那 12 条示例，别推上去
+    return true;}
+  function gcalMissing(){return events.filter(gcalPushable);}
+  var gbfRun=false,gbfStop=false;
+  function gbfWait(ms){return new Promise(function(r){setTimeout(r,ms);});}
+  function gbfSay(t){var el=document.getElementById("gbf-info");if(el)el.textContent=t;}
+  // 结果一行、补充说明一行 —— 分成两个文本节点，各自都能整段翻译。
+  // 拼成一句的话，词表按整段匹配就对不上，英文界面只翻得动其中半截。
+  function gbfLog(t,extra){var el=document.getElementById("gbf-log");if(!el)return;
+    el.style.display=(t||extra)?"":"none";
+    el.innerHTML=(t?('<div>'+esc(t)+'</div>'):"")+(extra?('<div>'+esc(extra)+'</div>'):"");}
+  function refreshGbf(){
+    var btn=document.getElementById("gbf-go");if(!btn||gbfRun)return;   // 正在传的时候别抢文案
+    btn.textContent="补传";
+    if(!gToken){btn.disabled=true;gbfSay("先在上面连上 Google 日历");return;}
+    var n=gcalMissing().length;
+    btn.disabled=!n;
+    gbfSay(n?(n+" 条还没加进去"):"都在 Google 里了 ✓");}
+  // 名字别跟 gcalBackfill 撞 —— 那个是「从 Google 拉 12 个月存下来」，方向正好相反。
+  // scan-scope.js 当场逮住了这次重名（后声明的会静默盖掉先声明的）。
+  async function gcalPushMissing(){
+    var btn=document.getElementById("gbf-go");
+    if(gbfRun){gbfStop=true;gbfSay("正在停下…");return;}
+    if(!gToken){await ttAlert("先连上 Google 日历再补传。",{anchor:btn});return;}
+    var list=gcalMissing();
+    if(!list.length){await ttAlert("没有要补的 —— 你记的都已经在 Google 日历里了。",{anchor:btn});return;}
+    var oldest=list.reduce(function(a,e){return (!a||e.date<a)?e.date:a;},null);
+    if(!await ttConfirm("把 "+list.length+" 条还没进 Google 日历的事件传上去？最早的一条是 "+oldest+"。已经在里面的不会传重。中途可以点「停下」，下次接着来。",
+      {okText:"开始传",anchor:btn}))return;
+    gbfRun=true;gbfStop=false;gbfLog("","");
+    if(btn){btn.disabled=false;btn.textContent="停下";}
+    var okN=0,badN=0,note="";
+    for(var i=0;i<list.length;i++){
+      if(gbfStop){note="你点了停下，剩下的下次再来。";break;}
+      // 序号先算出来再拼：写成 "传第 "+(i+1)+... 的话，抽模板那步会把 i 和 1
+      // 当成两个变量位，模板变成「传第 {1}{2} / {3} 条…」，英文界面就对不上了。
+      var nth=i+1;
+      gbfSay("传第 "+nth+" / "+list.length+" 条…");
+      var e=list[i],tries=0,landed=false;
+      while(tries<3&&!landed&&!gbfStop){
+        tries++;
+        try{
+          var r=await fetch(GEV,{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(e))});
+          if(r.status===401){note="Google 授权过期了（每次只管 1 小时）。重新授权之后再点一次「补传」，会从没传的那条接着来。";gbfStop=true;break;}
+          if(r.status===403||r.status===429){await gbfWait(3000*tries);continue;}   // 撞配额了：退一步，这一条再来
+          var j=await r.json();
+          if(j&&j.id){e.gid=j.id;landed=true;okN++;
+            if(okN%20===0)save("tt_events",events);}   // 每 20 条落一次盘：中途关了页面也不白传
+          else{badN++;landed=true;}
+        }catch(_e){await gbfWait(1000*tries);}
+      }
+      if(!landed&&!gbfStop)badN++;
+      if(gbfStop)break;
+      await gbfWait(130);                              // 别一口气把 Google 的配额打满
+    }
+    save("tt_events",events);
+    gbfRun=false;gbfStop=false;
+    if(btn)btn.textContent="补传";
+    try{renderCal();}catch(_e){}
+    refreshGbf();
+    gbfLog(badN?("传上去 "+okN+" 条，没传成 "+badN+" 条。"):("传上去 "+okN+" 条。"),note);
+    try{fetchGcal();}catch(_e){}}
+  (function(){var b=document.getElementById("gbf-go");if(b)b.addEventListener("click",gcalPushMissing);})();
   function gcalFlush(){                           // 重新授权成功后，把欠的一次性补上
     if(!gToken)return;
     var pd=Object.keys(gPendDel);                 // 授权过期那会儿没删成的，现在补删
@@ -11410,6 +11532,7 @@ margin-left: -22px;
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.map(function(s){return Object.assign({},s);}):null;
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
+    document.getElementById("ev-done").checked=obj?!!obj.done:doneDefault;
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
     refreshGcalRow();
     (function(){
@@ -11482,23 +11605,24 @@ margin-left: -22px;
     var want=!!document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     var isPar=!!document.getElementById("ev-par").checked;
+    var isDone=!!document.getElementById("ev-done").checked;
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
-      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       gcalApply(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
-      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:old.done||false,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
       // 这几个跟着走：不带上的话，Google 那边重建系列之后认不出来，会再长出一条重复的归档件。
       // 故意不带 arch —— 保存过一次就是「认领」，从此归她管，不再被 Google 刷新。
       if(old.guid)obj.guid=old.guid;if(old.gots)obj.gots=old.gots;if(old.gts)obj.gts=old.gts;
       if(old.gup)obj.gup=old.gup;if(old.gtzo!==undefined)obj.gtzo=old.gtzo;if(old.gro)obj.gro=1;
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
-    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:false,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
     save("tt_events",events);
     gcalApply(obj,want);
     closeModal();renderCal();
@@ -12677,7 +12801,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-done-default").checked=!!doneDefault;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
@@ -12829,6 +12953,7 @@ margin-left: -22px;
     sbUrl=newSbUrl;sbKey=newSbKey;save("tt_sburl",sbUrl);save("tt_sbkey",sbKey);
     gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);
     gcalArchOn=document.getElementById("set-gcal-arch").checked;save("tt_gcalarch",gcalArchOn);
+    doneDefault=document.getElementById("set-done-default").checked;save("tt_donedef",doneDefault);
     fetchGcal();
     save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_aiprovider",aiProvider);save("tt_ollamaurl",ollamaUrl);save("tt_ollamamodel",ollamaModel);save("tt_gcaldefault",gcalDefault);
     if(sbChanged&&sbUrl&&sbKey)initSupabase();
@@ -12844,7 +12969,7 @@ margin-left: -22px;
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -13017,7 +13142,7 @@ margin-left: -22px;
       var ded=evDedupeArch(events);
       if(events.length<n0||ded!==events){events=ded;save("tt_events",events);}})();
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
-    cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
+    cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);doneDefault=load("tt_donedef",true);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
@@ -13365,7 +13490,7 @@ margin-left: -22px;
       if(document.hidden||SOLO||!load("tt_gcal",""))return;
       var s=load("tt_gtok",null);
       if(!s||!s.t||s.exp-Date.now()<120000)gcalRenew(true);});}
-  function onGcalConnected(){updateGcalUI();try{gcalFlush();}catch(e){}try{refreshGcalRow();}catch(e){}fetchGcal();}
+  function onGcalConnected(){updateGcalUI();try{gcalFlush();}catch(e){}try{refreshGcalRow();}catch(e){}try{refreshGbf();}catch(e){}fetchGcal();}
   // 一次拉完一个区间（Google 一页最多 2500 条，超了给 nextPageToken）。
   // 原来只发一个请求、只读 j.items、完全不管 nextPageToken：93 天的窗口按 250 封顶，
   // 正常上班的日历很容易超，超出去的静默丢失，状态栏还写着"已连接 ✓（本区间 250 个事件）"。
