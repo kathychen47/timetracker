@@ -4976,7 +4976,30 @@ margin-left: -22px;
   // 打过勾或者编辑保存过一次，arch 标记就没了，从此按你自己的记录算。
   // 这条谓词必须是唯一入口：以前 gcalCount 只管到 statPool，目标进度那一块压根没看它，
   // 归档一上线就会从后门涌进目标，把她最在意的那几个数字凭空改写。
-  function evCounts(e){return !(e&&e.arch&&!gcalCount);}
+  // 一屏上百个块、统计里上千条记录都要问「今天是几号」，没必要每次都 new 一个 Date。
+  // 存日期字符串：跨过零点它自然就不相等了，下次再问自己换过来。
+  var calTodayS="",calTodayAt=0;
+  function calToday(){
+    var now=Date.now();
+    if(!calTodayS||now-calTodayAt>30000){calTodayS=fmt(new Date());calTodayAt=now;}
+    return calTodayS;}
+  // ---- 还没发生的事不算数 ----
+  // 她的原话：「这些透明的不应该出现在统计里，应该等事件到了才计入，即使显示已完成」。
+  // 日历上排着的、Google 同步过来的将来的会议，都只是**计划**，不是花掉的时间。
+  // 「已完成」那个勾尤其不能当成发生过 —— 现在它默认就是打上的，
+  // 于是每一条未来的事天生带着勾，全都会被算进本周时长和目标进度里。
+  // 判据是「开始时间到了没」，不是「打没打勾」，也不是「结没结束」：
+  // 一件正在进行的事本来就该算，一件还没开始的一分钟都不该算。
+  function evStarted(e){
+    if(!e||!e.date)return true;                   // 连日期都没有的，别拦它
+    var d=calToday();
+    if(e.date<d)return true;                      // 昨天以前：一定发生过了
+    if(e.date>d)return false;                     // 明天以后：一定还没
+    var m=toMin(e.start||"");                     // 就是今天：看开始的点到了没
+    if(!isFinite(m))return true;
+    var n=new Date();
+    return m<=n.getHours()*60+n.getMinutes();}
+  function evCounts(e){return !(e&&e.arch&&!gcalCount)&&evStarted(e);}
   // 一条记录在统计里算哪一天
   function statDay(e){
     if(!dayCutOn())return e&&e.date;
@@ -10749,7 +10772,7 @@ margin-left: -22px;
       // 套在从 Google 存下来的记录上，方向正好反了。它靠左边那道竖条表明来源。
       else if(e.gid&&!e.arch)gm='<span class="stag ok" title="已经在 Google 日历里了">G</span>';}
     var faded=state.catFilter&&!evHasCat(e,state.catFilter)?" faded":"";
-    var fut=(e.date&&e.date>calToday())?" future":"";      // 还没到的那天：先淡着
+    var fut=evStarted(e)?"":" future";     // 淡的 = 还没发生 = 不进统计，一条规则管到底
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
@@ -10760,13 +10783,17 @@ margin-left: -22px;
     var tip=e.start+"–"+e.end+(e.note?" · "+e.note:"");
     return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+(e.arch?" arch":"")+multi+par+faded+fut+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):htxt)+'</div>'+lbl+fish+corner+gm+'</div>';}
-  // 一屏上百个块都要判「是不是还没到」，没必要每块都 new 一次 Date。
-  // 存日期字符串：跨过零点它自然就不相等了，下次重画自己换过来。
-  var calTodayS="",calTodayAt=0;
-  function calToday(){
-    var now=Date.now();
-    if(!calTodayS||now-calTodayAt>30000){calTodayS=fmt(new Date());calTodayAt=now;}
-    return calTodayS;}
+  // 时间走到某条事件的开始点时，把它的淡色撤掉（它这时候也开始计进统计了）。
+  // 只改 class，不整页重画：重画会打断正在拖的那一下，也会把滚动位置弄乱。
+  function refreshFutureFade(){
+    var box=document.getElementById("cal-body");if(!box)return;
+    var by={};events.forEach(function(e){if(e&&e.id)by[e.id]=e;});
+    box.querySelectorAll(".ev[data-id]").forEach(function(el){
+      var e=by[el.getAttribute("data-id")];
+      if(e)el.classList.toggle("future",!evStarted(e));});}
+  if(!SOLO)setInterval(function(){
+    if(state.tab!=="calendar"||document.hidden)return;
+    try{refreshFutureFade();}catch(_e){}},30000);
   function hoursGutter(){var g="";for(var h=HS;h<=HE;h++)g+='<span style="top:'+((h-HS)*PH)+'px">'+pad(h)+':00</span>';return g;}
   function nowTop(){var n=new Date();var mins=n.getHours()*60+n.getMinutes();return(mins-HS*60)/60*PH;}
   function nowVisible(){var t=nowTop();return t>=0&&t<=GH;}
@@ -12458,7 +12485,7 @@ margin-left: -22px;
     var gids={},sig={};
     base.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
     return base.concat(gcalEvents.filter(function(e){
-      return !gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
+      return evStarted(e)&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
   function statEvents(p){var sf=fmt(p.start),ef=fmt(p.end);
     return statPool().filter(function(e){var d=statDay(e);if(d<sf||d>ef)return false;
       return evHasCat(e,statState.cat,statState.sub);});}   // 分段事件：任一段命中就算，时长只算命中那部分
