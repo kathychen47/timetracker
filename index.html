@@ -1649,7 +1649,7 @@
   /* 窗口能拖大：resize 要生效，overflow 不能是 visible。--fz 是这张卡自己的字号倍数，
      卡里的字号全用 em 跟着它走，所以调一个数就整卡一起变。 */
   /* 大小固定，不跟着释义长短变 —— 以前整张卡 overflow:auto，遇到牛津那种长词条，
-     「忘记 / 模糊 / 认识 / 简单」被顶到屏幕外面，得先滚到底才能评分。
+     「认识 / 模糊 / 不认识」被顶到屏幕外面，得先滚到底才能评分。
      现在是竖着的 flex：上面词头、下面按钮都钉住，只有中间释义那段自己滚。
      尺寸对齐设置弹窗（880px / 92vh 那一档）。 */
   .flash-card{position:relative;background:var(--surface);border-radius:18px;
@@ -1694,14 +1694,15 @@
   /* 盖住答案时不再限高 180px：卡片高度已经固定，让它把中间填满，
      揭开答案时按钮不会往下跳一格 */
   .flash-def.blurred{filter:blur(8px);cursor:pointer;user-select:none;overflow:hidden}
-  .flash-btns{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:16px}
+  .flash-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
   .flash-btns .gb{border:1px solid var(--border);background:var(--surface-2);color:var(--text);border-radius:11px;
     padding:10px 6px;cursor:pointer;font-family:inherit;font-size:.9em;font-weight:600;line-height:1.35;text-align:center}
   .flash-btns .gb small{display:block;font-weight:400;font-size:.78em;color:var(--muted);margin-top:2px}
   .flash-btns .gb:hover{border-color:currentColor}
   .flash-btns .g0{color:#e0605e}.flash-btns .g1{color:#e09a3e}
   .flash-btns .g2{color:#3fae87}.flash-btns .g3{color:#5a8fd8}
-  .flash-extra{display:flex;gap:8px;justify-content:center;margin-top:12px}
+  /* 挪到词的上面了，所以留的是下边距 */
+  .flash-extra{display:flex;gap:8px;justify-content:center;margin:2px 0 14px}
   .flash-extra .btn{font-size:.83em;padding:6px 12px}
   .wb-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:9px;margin-bottom:14px}
   .wb-st{background:var(--surface);border:1px solid var(--border);border-radius:11px;padding:9px 11px;text-align:center}
@@ -4241,15 +4242,17 @@ margin-left: -22px;
       </div>
       <div class="fp-bar"><i id="fp-fill"></i></div>
       <div class="flash-prog" id="flash-prog"></div>
-      <div class="flash-word" id="flash-word"></div>
-      <div class="flash-tip" id="flash-tip">点一下 / 按空格 显示释义</div>
-      <div class="flash-def" id="flash-def"></div>
-      <div class="flash-btns" id="flash-btns"></div>
+      <!-- 这三个挪到词的上面：它们是「这词不用再背了」的出口，跟下面那排「这次记得怎么样」
+           不是一类。混在一排里每次都要先分辨一下，手停一拍。 -->
       <div class="flash-extra">
         <button class="btn" id="flash-master" title="留在生词本里，但不再排复习">✓ 已掌握</button>
         <button class="btn" id="flash-known" title="本来就认识：淡化收起来，不再排进复习（生词本里还能找到）">🙂 本来就认识</button>
         <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
       </div>
+      <div class="flash-word" id="flash-word"></div>
+      <div class="flash-tip" id="flash-tip">点一下 / 按空格 显示释义</div>
+      <div class="flash-def" id="flash-def"></div>
+      <div class="flash-btns" id="flash-btns"></div>
     </div>
   </div>
 </div>
@@ -4712,7 +4715,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">背单词计划（遗忘曲线）</div>
-        <div class="set-desc" style="margin-bottom:8px">按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。</div>
+        <div class="set-desc" style="margin-bottom:8px">按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。</div>
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">每天新词上限</div><div class="set-desc">每天最多学多少个没见过的新词。</div></div>
           <select id="srs-new"><option>10</option><option>15</option><option>20</option><option>30</option><option>50</option><option>80</option><option>100</option></select>
@@ -4729,7 +4732,7 @@ margin-left: -22px;
         <div class="set-desc" style="margin-top:4px">每次背完自动在日历上添一条，时间就是你实际背的那段（不足 1 分钟不记）。</div>
         <label class="do-name" style="cursor:pointer;margin-top:8px"><input type="checkbox" id="srs-loggcal"> 同时加到 Google 日历</label>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="srs-hide"> 生词本里隐藏「已掌握」的词</label>
-        <div class="set-desc" style="margin-top:4px">太简单/已掌握的词默认仍列在生词本里（只是不再排复习）。勾上就从列表里藏起来，眼不见为净。</div>
+        <div class="set-desc" style="margin-top:4px">标成「已掌握」「本来就认识」的词默认仍列在生词本里（只是不再排复习）。勾上就从列表里藏起来，眼不见为净。</div>
         <div style="margin-top:10px"><button class="btn" id="srs-reset" type="button">重置全部记忆进度</button></div>
       </div>
       <div class="set-item">
@@ -5395,6 +5398,7 @@ margin-left: -22px;
     "不用背了":"Skipped",
     "不计入任何目标":"Doesn't count toward any goal",
     "不计入统计":"don't count in stats",
+    "不认识":"Don't know",
     "不设目标值，只把日历里对得上的记录累计起来":"No target value — just adds up the matching records from your calendar",
     "不进云同步、不进仓库":"never uploaded to cloud sync, never in the repo",
     "不量血糖就选「不显示」，那一页会清爽很多。显示的时候点它标题那行可以收起来，收没收起会记住，下次打开还是你离开时的样子。":"If you don't track blood sugar, pick \"Hide\" and that page gets much cleaner. When shown, click its title row to collapse it — that's remembered, so next time it opens just as you left it.",
@@ -6084,6 +6088,7 @@ margin-left: -22px;
     "指标名称：":"Metric name:",
     "按":"Scale by",
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
+    "按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。":"Reviews are scheduled on the SM-2 forgetting curve: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3) and the interval stretches or shrinks to match.",
     "按住快捷键":"Hold a hotkey",
     "按关键词归并":"By keyword",
     "按原书位置摆放译文":"Put the translation where it sits in the book",
@@ -6317,6 +6322,7 @@ margin-left: -22px;
     "查词后自动发音":"Auto-speak after look-up",
     "柯林斯 · 中英/近义词":"Collins · ZH–EN / synonyms",
     "标了认识":"Marked known",
+    "标成「已掌握」「本来就认识」的词默认仍列在生词本里（只是不再排复习）。勾上就从列表里藏起来，眼不见为净。":"Words marked Mastered or Already knew it stay in the list by default (they are just never scheduled again). Tick this to hide them from the list instead.",
     "标注":"Annotation",
     "标点":"Punctuation",
     "标签":"Tags",
@@ -15122,10 +15128,15 @@ margin-left: -22px;
     var x=flashArr[flashIdx];
     document.getElementById("flash-def").className="flash-def";
     document.getElementById("flash-tip").style.display="none";
-    var L=[["忘记","g0"],["模糊","g1"],["认识","g2"],["太简单","g3"]];
-    document.getElementById("flash-btns").innerHTML=L.map(function(it,g){
-      var d=(g===0)?"<10分钟":fmtIv(srsPreview(x,g));
-      return '<button class="gb '+it[1]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(g+1)+'</small></button>';}).join("");}
+    // 从易到难排：认识 → 模糊 → 不认识。
+    // 小字里那个数字是键盘快捷键，**跟着位置走（1/2/3）**，不跟着 SM-2 的评分值走 ——
+    // 跟着评分值的话界面上会是 3/2/1，从左到右反着数。
+    // 颜色仍然绑在评分值上（g2 绿 / g1 橙 / g0 红），换了顺序也还是那个意思。
+    // 原来还有个「太简单」(g3)：它和上面那两个「不用再背了」的出口重着，删掉了。
+    var L=[["认识",2,"g2"],["模糊",1,"g1"],["不认识",0,"g0"]];
+    document.getElementById("flash-btns").innerHTML=L.map(function(it,i){
+      var g=it[1],d=(g===0)?"<10分钟":fmtIv(srsPreview(x,g));
+      return '<button class="gb '+it[2]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(i+1)+'</small></button>';}).join("");}
   function fmtIv(d){if(d<1)return "今天";if(d<30)return d+" 天";
     if(d<365)return (d/30).toFixed(d<60?1:0)+" 个月";return (d/365).toFixed(1)+" 年";}
   function gradeFlash(g){
@@ -15280,7 +15291,10 @@ margin-left: -22px;
       if(e.key===" "||e.key==="Enter"){e.preventDefault();if(!flashRevealed)revealFlash();return;}
       if(e.key==="Escape"){closeFlash();return;}
       if(e.key==="s"||e.key==="S"){var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
-      if(/^[1-4]$/.test(e.key)&&flashRevealed){e.preventDefault();gradeFlash(+e.key-1);}});
+      // 1/2/3 = 认识 / 模糊 / 不认识，跟按钮从左到右一一对应。
+      // 按的是位置不是评分值，所以这里要转一道。
+      if(/^[1-3]$/.test(e.key)&&flashRevealed){e.preventDefault();
+        gradeFlash([2,1,0][+e.key-1]);}});
     var wbe=document.getElementById("wb-export");if(wbe)wbe.addEventListener("click",exportWb);
     var wbi=document.getElementById("wb-import");if(wbi)wbi.addEventListener("click",openImport);
     var wbb=document.getElementById("wb-build");if(wbb)wbb.addEventListener("click",function(){openBuild(null);});

@@ -258,5 +258,48 @@ T("开一轮时要把上一轮的分段清干净", function () {
   ok(count("flReset(flashStart)") === 1, "不清的话上一轮的洞会算到这一轮头上");
 });
 
-console.log((fail ? "x" : "√") + " 背单词走神不计时：" + pass + " 过 / " + fail + " 败");
+// ---------- 评分按钮的排布 ----------
+// 她要的：「下面只放认识 模糊和不认识，按顺序来，可以在上面加一个已认识啥的」。
+// 原来下面是四个（忘记/模糊/认识/太简单）+ 另一排三个，两排混在一起。
+T("下面只剩三个，从易到难排", function () {
+  var line = src[ln('var L=[["认识",2,"g2"]')];
+  var L = eval(line.slice(line.indexOf("[")));            // 直接取真代码里那张表
+  ok(L.length === 3, "只能有三个，实得 " + L.length);
+  ok(L.map(function (x) { return x[0]; }).join("/") === "认识/模糊/不认识",
+    "顺序该是 认识/模糊/不认识，实得 " + L.map(function (x) { return x[0]; }).join("/"));
+  ok(L.map(function (x) { return x[1]; }).join(",") === "2,1,0",
+    "对应的 SM-2 评分该是 2,1,0，实得 " + L.map(function (x) { return x[1]; }).join(","));
+  ok(L.map(function (x) { return x[2]; }).join(",") === "g2,g1,g0",
+    "颜色类要绑在评分值上，换了顺序也还是绿/橙/红");
+});
+
+T("快捷键跟着位置走，不跟着评分值走", function () {
+  // 跟着评分值的话，界面上从左到右会是 3/2/1，反着数
+  ok(count("+' · '+(i+1)+") === 1, "小字里的数字要用位置 i+1");
+  ok(count("gradeFlash([2,1,0][+e.key-1])") === 1, "键盘按位置→评分值要转一道");
+  ok(count("/^[1-3]$/.test(e.key)") === 1, "只认 1-3");
+  ok(whole.indexOf("/^[1-4]$/") < 0, "旧的 1-4 必须没了 —— 4 已经没有对应按钮");
+  var map = [2, 1, 0];
+  ok(map[0] === 2 && map[1] === 1 && map[2] === 0, "1→认识 2→模糊 3→不认识");
+});
+
+T("「太简单」去掉了，但三个出口一个没少", function () {
+  ok(whole.indexOf('["太简单"') < 0, "评分按钮里不该还有太简单");
+  ok(count('id="flash-master"') === 1, "已掌握还在");
+  ok(count('id="flash-known"') === 1, "本来就认识还在");
+  ok(count('id="flash-skip"') === 1, "下一个还在");
+  ok(count(".flash-btns{display:grid;grid-template-columns:repeat(3,1fr)") === 1,
+    "网格要改成三栏，不然会空出一格");
+});
+
+T("那一排挪到词的上面了", function () {
+  var extra = whole.indexOf('<div class="flash-extra">');
+  var word = whole.indexOf('<div class="flash-word" id="flash-word">');
+  var btns = whole.indexOf('<div class="flash-btns" id="flash-btns">');
+  ok(extra > 0 && word > 0 && extra < word, "flash-extra 要排在 flash-word 前面");
+  ok(btns > word, "评分按钮仍在词的下面");
+  ok(count('<div class="flash-extra">') === 1, "只能有一排，别挪出两份来");
+});
+
+console.log((fail ? "x" : "√") + " 背单词卡片（走神不计时 + 评分按钮）：" + pass + " 过 / " + fail + " 败");
 process.exit(fail ? 1 : 0);
