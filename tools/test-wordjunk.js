@@ -140,7 +140,11 @@ T("扩展版本号要跟着涨，不然她那台不会重新加载", function ()
 T("生词本里那个「清一清」接上了", function () {
   ok(cnt("index.html", 'id="wb-clean"') === 1, "按钮要在");
   ok(has("index.html", 'document.getElementById("wb-clean")'), "要接 listener");
-  ok(has("index.html", "if(x.known||x.mastered)return;"), "她自己标过的词不该被清掉");
+  // 「认识」的也要扫：Morning / seem / three / like 这些是被当「眼不见为净」用的虚词，
+  // 而且现在「认识」半年后会回来抽查 —— 不清掉的话它们会原样冒回来。
+  // 真遮着释义背出来过的（mastered）才不碰。详见 tools/test-known.js。
+  ok(has("index.html", "if(x.mastered)return;"), "背出来过的词不该被清掉");
+  ok(!has("index.html", "if(x.known||x.mastered)return;"), "但「认识」的要一起扫");
   ok(has("index.html", "trashAdd(b.x.w)"), "清掉的要进回收站，免得自动收词又把它捡回来");
 });
 

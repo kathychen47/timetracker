@@ -4251,7 +4251,7 @@ margin-left: -22px;
         <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
       </div>
       <div class="flash-word" id="flash-word"></div>
-      <div class="flash-tip" id="flash-tip">想看释义就点一下 / 按空格 · 认识的话直接评分也行</div>
+      <div class="flash-tip" id="flash-tip">空格看释义 · ← 认识 ↓ 模糊 → 不认识 · ↑ 发音</div>
       <div class="flash-def" id="flash-def"></div>
       <div class="flash-btns" id="flash-btns"></div>
     </div>
@@ -6021,7 +6021,6 @@ margin-left: -22px;
     "恢复默认":"Restore defaults",
     "想吃什么？（菜谱库里没有的也能点）":"What do you feel like? (it doesn't have to be in your recipes)",
     "想学什么？或者直接把你已经写好的计划整段粘进来。 两种都行：给个主题我来拆，给了计划我就照着整理，步骤和时间原样保留。":"What do you want to learn? Or just paste in a plan you've already written. Either works: give me a topic and I'll break it down; give me a plan and I'll tidy it up, keeping your steps and times exactly as they are.",
-    "想看释义就点一下 / 按空格 · 认识的话直接评分也行":"Tap or press space to see the meaning · or just rate it straight away if you know it",
     "想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。":"Want it on your phone too? Sign in with Google under ⚙️ Settings → Cloud sync first, and \"Upload to cloud\" will show up here.",
     "我本来就认识：淡化、沉到最后、不再排复习（可以再点回来）":"I already know this: dimmed, moved to the end, no more reviews (click again to undo)",
     "我的 AI":"My AI",
@@ -6287,6 +6286,7 @@ margin-left: -22px;
     "服务费":"Service fee",
     "服饰":"apparel",
     "朗读":"Read aloud",
+    "朗读（快捷键 ↑）":"Say it (shortcut ↑)",
     "期":"due",
     "木材":"timber",
     "未估":"No estimate",
@@ -6576,6 +6576,7 @@ margin-left: -22px;
     "税额":"Tax",
     "稳的：MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM。 视频（MP4 / MOV / WebM）多数也行 —— 会自动只取声音那一轨。 不行的多半是 WMA、AMR，还有某些相机/录音笔的私有格式。":"Reliable: MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM. Video (MP4 / MOV / WebM) usually works too — only the audio track is taken. What won't work is mostly WMA, AMR, and some proprietary camera/recorder formats.",
     "空格":"Space",
+    "空格看释义 · ← 认识 ↓ 模糊 → 不认识 · ↑ 发音":"Space to reveal · ← Know ↓ Unsure → Don't know · ↑ Say it",
     "空的":"Empty",
     "空腹":"Fasting",
     "空行":"Blank line",
@@ -6757,6 +6758,7 @@ margin-left: -22px;
     "试试：「明天下午3点开会1小时」「加个待办 周五交报告」「记一笔收入 4600 含GST」「把 serendipity 加进生词本」「这周专注了多久」":"Try: \"meeting tomorrow at 3pm for an hour\" · \"add a to-do: send the report Friday\" · \"log income 4600 incl GST\" · \"add serendipity to my word list\" · \"how long did I focus this week\"",
     "话费":"phone bill",
     "该事件":"this event",
+    "该抽查了":"due for a spot check",
     "该范围内没有记录":"No records in this range",
     "说一句想学什么，AI 拆成一步步":"Say what you want to learn and AI turns it into steps",
     "说一句要干的事，AI 拆成几条待办":"Say what you need to do and AI turns it into to-dos",
@@ -7422,11 +7424,12 @@ margin-left: -22px;
     ["翻译 ·","^翻译 · (.+?)$","Translation · \u00011"],
     ["词典没收录 “","^词典没收录 “(.+?)”。(.+?)$","“\u00011” isn't in the dictionary. \u00012"],
     ["」里 · 点一下换个分组","^在「(.+?)」里 · 点一下换个分组$","In \"\u00011\" · tap to change group"],
-    ["」标成认识了。 它会变淡、沉到列表最后，也不再排进复习和背诵。 再点一次「✓ 认识」就能恢复。","^「(.+?)」标成认识了。 它会变淡、沉到列表最后，也不再排进复习和背诵。 再点一次「✓ 认识」就能恢复。$","\"\u00011\" is now marked as known. It'll fade, sink to the end of the list, and stop coming up for review or drills. Tap \"✓ Known\" again to bring it back."],
+    ["」标成认识了。 它会变淡、沉到列表最后，平时不再排进复习。 不过半年后会回来抽查一次 —— 那时还认识就再推远一倍，忘了就自动回到正常复习。 再点一次「✓ 认识」可以立刻恢复。","^「(.+?)」标成认识了。 它会变淡、沉到列表最后，平时不再排进复习。 不过半年后会回来抽查一次 —— 那时还认识就再推远一倍，忘了就自动回到正常复习。 再点一次「✓ 认识」可以立刻恢复。$","“\u00011” is marked as known. It fades out, sinks to the bottom of the list, and is no longer scheduled for review. It does come back for one spot check in six months — if you still know it then, the gap doubles; if you have forgotten it, it returns to normal review on its own. Tap “✓ Know” again to bring it back right away."],
     ["待复习","^(.+?) 待复习$","\u00011 due"],
     ["共","^共 (.+?) 词(.+?)$","\u00011 words total\u00012"],
     ["· 连续","^· 连续 (.+?) 天 🔥$","· \u00011-day streak 🔥"],
     ["· 已隐藏","^· 已隐藏 (.+?) 个已掌握$","· \u00011 mastered hidden"],
+    ["下次抽查","^下次抽查 (.+?)$","next spot check \u00011"],
     ["下次","^下次 (.+?)$","Next \u00011"],
     ["次(新词","^共学 (.+?)(.+?) 次\\(新词 (.+?) · 复习 (.+?)\\)(.+?)$","\u00011\u00012 studied (new \u00013 · review \u00014)\u00015"],
     ["分钟","^，(.+?) 分钟$",", \u00011 min"],
@@ -14284,11 +14287,12 @@ margin-left: -22px;
     var x=wordOf(w);if(!x)return;
     var disp=x.disp||x.w,was=!!x.known;
     x.known=!was;x.upd=Date.now();
-    if(x.known)trashDrop(w);                           // 已经在本子里了，不用再进"不再收录"名单
+    if(x.known){trashDrop(w);kchkSet(x,KCHK_KNOWN);}   // 已经在本子里了，不用再进"不再收录"名单
+    else{delete x.kdue;delete x.kiv;}
     saveWords();renderWordbook();
     if(!was&&!load("tt_knownhint",false)){             // 只解释一次，别每次都弹
       save("tt_knownhint",true);
-      ttAlert("「"+disp+"」标成认识了。\n它会变淡、沉到列表最后，也不再排进复习和背诵。\n再点一次「✓ 认识」就能恢复。",{anchor:anchor});}}
+      ttAlert("「"+disp+"」标成认识了。\n它会变淡、沉到列表最后，平时不再排进复习。\n不过半年后会回来抽查一次 —— 那时还认识就再推远一倍，忘了就自动回到正常复习。\n再点一次「✓ 认识」可以立刻恢复。",{anchor:anchor});}}
   function updateWbCount(){var el=document.getElementById("wb-count");if(el)el.textContent=words.length?("("+words.length+")"):"";}
 
   var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
@@ -14348,7 +14352,10 @@ margin-left: -22px;
       if(ad!==bd)return ad-bd;return (b.ts||0)-(a.ts||0);});
     box.innerHTML=arr.map(function(x){srsInit(x);
       var st=srsStage(x),lab=STN[st],overdue=(!x.known&&!x.mastered&&x.due<=now);
-      var when=x.known?"不用背了":(x.mastered?"已掌握":(overdue?"待复习":("下次 "+fmtWhen(x.due))));
+      var kd=kchkDue(x);
+      var when=(x.known||x.mastered)
+        ?(kd?"该抽查了":(x.kdue?("下次抽查 "+fmtWhen(x.kdue)):(x.known?"不用背了":"已掌握")))
+        :(overdue?"待复习":("下次 "+fmtWhen(x.due)));
       var meta=(x.dict==="collins"?"中→英":"英→中")+" · "+when;   // 分组由右边那颗按钮显示，别重复一遍
       return '<div class="wb-item'+(x.known?" isknown":"")+'" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
         '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+(x.known?"认识":lab[0])+'</span>'+
@@ -14664,6 +14671,11 @@ margin-left: -22px;
       x.s=Math.max(0.5,x.iv);
       x.d=srsClamp(11-9*((x.ef||2.5)-1.3)/1.9,1,10);
       x.st=null;x.rl=false;}
+    // 以前标过「认识 / 已掌握」的还没有抽查日期：从**你标记那天**往后推一个周期。
+    // 所以不会明天一下子涌回来一大把，而是按当初标的先后慢慢回流。
+    if((x.known||x.mastered)&&!x.kdue){
+      var kd=x.mastered?KCHK_MASTER:KCHK_KNOWN;
+      x.kiv=kd;x.kdue=(x.upd||x.ts||Date.now())+kd*86400000;}
     return x;}
   function srsStage(x){srsInit(x);
     if(x.mastered)return "done";
@@ -14748,9 +14760,35 @@ margin-left: -22px;
     o.s=S;o.d=D;o.st=st;o.rl=rl;o.min=min;
     o.iv=(min>=DAYMIN)?Math.round(min/DAYMIN):0;
     return o;}
-  function srsPreview(x,g){srsInit(x);return srsSched(x,g,Date.now(),0.5).min;}   // 预览取中值
+  // ---- 「我认识」是个会到期的声明，不是永久判决 ----
+  // 她说的：「我在这里点认识的和我在背单词的时候背完的应该区分开来，因为可能一年后单词又忘记了」。
+  // 原来 known / mastered 都是**永久**移出复习 —— 一年后真忘了也不会再出现。
+  // （masterFlash 里那句 due=今天+365天 还是死代码：排课时 !x.mastered 直接把它滤掉了。）
+  //
+  // 现在两种都排一次远期抽查，到点回到队列。两种的可靠性不一样，所以周期分开：
+  //   认识（扫一眼说认识，**没经过检验**）→ 半年
+  //   已掌握（遮着释义真的背出来过）      → 一年
+  // 抽查答「认识」= 声明成立，周期翻倍再推远；答「模糊 / 不认识」= 声明推翻，
+  // 撤掉标记回到正常复习。
+  var KCHK_KNOWN=180,KCHK_MASTER=365;
+  function kchkSet(x,days,rnd){
+    x.kiv=days;
+    // 借 fsrsFuzz 打散：同一天标的一批，半年后别又挤在同一天回来
+    x.kdue=Date.now()+fsrsFuzz(days,rnd===undefined?Math.random():rnd)*86400000;}
+  function kchkDue(x){return !!((x.known||x.mastered)&&x.kdue&&x.kdue<=Date.now());}
+  function kchkPass(x){kchkSet(x,Math.min(3650,(x.kiv||KCHK_KNOWN)*2));}   // 还认识 → 推远一倍
+  function kchkFail(x){x.known=false;x.mastered=false;delete x.kdue;delete x.kiv;}
+  function srsPreview(x,g){srsInit(x);
+    if(x.known||x.mastered)                       // 抽查中的词：预览也得走抽查那条路
+      return (g===2)?Math.min(3650,(x.kiv||KCHK_KNOWN)*2)*DAYMIN:srsSched(x,g,Date.now(),0.5).min;
+    return srsSched(x,g,Date.now(),0.5).min;}     // 预览取中值
   function srsGrade(x,g){
     srsInit(x);
+    // 远期抽查的词走单独一条路：问的不是「隔多久再背」，而是「那句『我认识』还成不成立」
+    if(x.known||x.mastered){
+      if(g===2){kchkPass(x);x.last=Date.now();return x.kiv*DAYMIN;}
+      kchkFail(x);                                // 忘了 → 标记撤掉，下面按正常的重新排
+    }
     var o=srsSched(x,g,Date.now());
     x.s=o.s;x.d=o.d;x.st=o.st;x.rl=o.rl;x.iv=o.iv;x.reps=o.reps;x.lapses=o.lapses;
     x.due=Date.now()+o.min*60000;x.last=Date.now();
@@ -14768,9 +14806,11 @@ margin-left: -22px;
   function newList(){return words.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});}
   function srsPlan(){ // 按分组过滤 + 每日上限
     var pool=wbFiltered(),now=Date.now();
-    pool=pool.filter(function(x){return !x.known;});   // 标了"认识"的不排复习
-    var due=pool.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});
-    var fresh=pool.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});
+    pool.forEach(srsInit);
+    var chk=pool.filter(kchkDue);                      // 到点该抽查的「认识 / 已掌握」，排在最前面
+    pool=pool.filter(function(x){return !x.known&&!x.mastered;});
+    var due=chk.concat(pool.filter(function(x){return x.reps>0&&x.due<=now;}));
+    var fresh=pool.filter(function(x){return !x.reps;});
     var st=load("tt_srsday",{d:"",n:0,r:0});
     if(st.d!==todayKey())st={d:todayKey(),n:0,r:0};
     var newLeft=Math.max(0,(dictPrefs.dailyNew||20)-st.n);
@@ -15063,7 +15103,8 @@ margin-left: -22px;
         var mk=b.querySelector("#wt-mark");
         if(mk)mk.addEventListener("click",function(){
           var set={};easy.forEach(function(l){rec.idx[l].forEach(function(w){set[w]=1;});});
-          var n=0;words.forEach(function(x){if(set[x.w]&&!x.mastered){x.mastered=true;x.due=Date.now()+365*DAY;n++;}});
+          // 批量标「已掌握」也走抽查：跟卡片上点的那个一个待遇，一年后回来验一次
+          var n=0;words.forEach(function(x){if(set[x.w]&&!x.mastered){x.mastered=true;kchkSet(x,KCHK_MASTER);n++;}});
           saveWords();renderWordbook();mk.textContent="✓ 已标记 "+n+" 个";mk.disabled=true;});
         b.querySelector("#wt-next").addEventListener("click",function(){
           var idx=LVORD.indexOf(lvl.toLowerCase());
@@ -15230,7 +15271,7 @@ margin-left: -22px;
       ttAlert("本轮完成 🎉 共 "+flashDone+" 个词。\n下次复习时间已按遗忘曲线安排好。");return;}
     var x=srsInit(flashArr[flashIdx]),word=x.disp||x.w,seq=++flashSeq;
     flashRevealed=false;flashProgress();
-    document.getElementById("flash-word").innerHTML=esc(word)+'<button class="fw-spk" id="flash-spk" title="朗读">🔊</button>';
+    document.getElementById("flash-word").innerHTML=esc(word)+'<button class="fw-spk" id="flash-spk" title="朗读（快捷键 ↑）">🔊</button>';
     document.getElementById("flash-spk").onclick=function(e){e.stopPropagation();pronounce(word,isCJK(word));};
     if(dictPrefs.autoSpeak)pronounce(word,isCJK(word));
     document.getElementById("flash-tip").style.display="";
@@ -15271,11 +15312,13 @@ margin-left: -22px;
   // 颜色仍然绑在评分值上（g2 绿 / g1 橙 / g0 红），换了顺序也还是那个意思。
   // 原来还有个「太简单」(g3)：它和上面那两个「不用再背了」的出口重着，删掉了。
   function renderGradeBtns(x){
-    var L=[["认识",2,"g2"],["模糊",1,"g1"],["不认识",0,"g0"]];
+    // 小字里写方向键（数字键 1/2/3 照旧能用，只是不占这行了）
+    var L=[["认识",2,"g2","←"],["模糊",1,"g1","↓"],["不认识",0,"g0","→"]];
     var box=document.getElementById("flash-btns");if(!box)return;
-    box.innerHTML=L.map(function(it,i){
+    box.innerHTML=L.map(function(it){
       var g=it[1],d=fmtGap(srsPreview(x,g));   // 学习步骤里是分钟，毕业之后才是天
-      return '<button class="gb '+it[2]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(i+1)+'</small></button>';}).join("");}
+      return '<button class="gb '+it[2]+'" data-g="'+g+'" title="快捷键 '+it[3]+'（数字键也行）">'+
+        it[0]+'<small>'+d+' · '+it[3]+'</small></button>';}).join("");}
   function revealFlash(){
     if(flashRevealed)return;flashRevealed=true;
     document.getElementById("flash-def").className="flash-def";
@@ -15297,7 +15340,7 @@ margin-left: -22px;
     saveWords();showFlash();}
   function masterFlash(){
     var x=flashArr[flashIdx];if(!x)return;
-    x.mastered=true;x.due=Date.now()+365*DAY;saveWords();
+    x.mastered=true;kchkSet(x,KCHK_MASTER);saveWords();   // 一年后回来抽查一次
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
   function closeFlash(){flashSeq++;   // 关掉了：还在路上的查词/翻译作废，别往已经收起来的卡片上写
     stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
@@ -15438,7 +15481,14 @@ margin-left: -22px;
       if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
       if(e.key===" "||e.key==="Enter"){e.preventDefault();if(!flashRevealed)revealFlash();return;}
       if(e.key==="Escape"){closeFlash();return;}
-      if(e.key==="s"||e.key==="S"){var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
+      if(e.key==="s"||e.key==="S"||e.key==="ArrowUp"){e.preventDefault();
+        var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
+      // 方向键：左手不用离开方向键区就能评完一个词。
+      // 左=认识 / 下=模糊 / 右=不认识 —— 跟按钮从左到右的顺序对得上。
+      // 上=发音（它不是评分，放在另一根轴上，不会手滑按错）。
+      if(e.key==="ArrowLeft"){e.preventDefault();gradeFlash(2);return;}
+      if(e.key==="ArrowDown"){e.preventDefault();gradeFlash(1);return;}
+      if(e.key==="ArrowRight"){e.preventDefault();gradeFlash(0);return;}
       // 1/2/3 = 认识 / 模糊 / 不认识，跟按钮从左到右一一对应。
       // 按的是位置不是评分值，所以这里要转一道。
       if(/^[1-3]$/.test(e.key)){e.preventDefault();
@@ -15447,7 +15497,10 @@ margin-left: -22px;
     if(wbc)wbc.addEventListener("click",async function(){
       var bad=[];
       words.forEach(function(x){
-        if(x.known||x.mastered)return;                      // 她自己标过的，是有意的，别碰
+        // known 的也扫：Morning / seem / three / like 这些明显是被当「眼不见为净」用的虚词，
+        // 不扫的话它们会在半年后的抽查里原样冒回来。
+        // mastered 是真遮着释义背出来过的，那是有意的，不碰。
+        if(x.mastered)return;
         var why=wordJunk(x.disp||x.w);if(why)bad.push({x:x,why:why});});
       if(!bad.length){await ttAlert("没找到明显不像单词的，生词本是干净的。",{anchor:wbc});return;}
       var show=bad.slice(0,15).map(function(b){return (b.x.disp||b.x.w)+"（"+b.why+"）";}).join("\n");

@@ -284,7 +284,7 @@ T("开一轮时要把上一轮的分段清干净", function () {
 // 她要的：「下面只放认识 模糊和不认识，按顺序来，可以在上面加一个已认识啥的」。
 // 原来下面是四个（忘记/模糊/认识/太简单）+ 另一排三个，两排混在一起。
 T("下面只剩三个，从易到难排", function () {
-  var line = src[ln('var L=[["认识",2,"g2"]')];
+  var line = src[ln('var L=[["认识",2,"g2"')];
   var L = eval(line.slice(line.indexOf("[")));            // 直接取真代码里那张表
   ok(L.length === 3, "只能有三个，实得 " + L.length);
   ok(L.map(function (x) { return x[0]; }).join("/") === "认识/模糊/不认识",
@@ -293,11 +293,25 @@ T("下面只剩三个，从易到难排", function () {
     "对应的 SM-2 评分该是 2,1,0，实得 " + L.map(function (x) { return x[1]; }).join(","));
   ok(L.map(function (x) { return x[2]; }).join(",") === "g2,g1,g0",
     "颜色类要绑在评分值上，换了顺序也还是绿/橙/红");
+  ok(L.map(function (x) { return x[3]; }).join("") === "←↓→",
+    "小字里写的方向键要跟按钮从左到右对得上，实得 " + L.map(function (x) { return x[3]; }).join(""));
+});
+
+T("方向键：左认识 / 下模糊 / 右不认识 / 上发音", function () {
+  // 她要的：「上下左右的左键是认识，下是模糊，不认识是右键，上是发音，空格显示释义」
+  ok(count('if(e.key==="ArrowLeft"){e.preventDefault();gradeFlash(2);return;}') === 1, "← = 认识");
+  ok(count('if(e.key==="ArrowDown"){e.preventDefault();gradeFlash(1);return;}') === 1, "↓ = 模糊");
+  ok(count('if(e.key==="ArrowRight"){e.preventDefault();gradeFlash(0);return;}') === 1, "→ = 不认识");
+  ok(count('e.key==="ArrowUp"') === 1, "↑ = 发音");
+  var i = whole.indexOf('e.key==="ArrowUp"');
+  ok(whole.slice(i, i + 200).indexOf("pronounce(") > 0, "↑ 要真的去发音，不是评分");
+  ok(count('if(e.key===" "||e.key==="Enter")') === 1, "空格照旧是显示释义");
+  ok(count("gradeFlash([2,1,0][+e.key-1])") === 1, "数字键 1/2/3 要留着，只是不写在小字里了");
 });
 
 T("快捷键跟着位置走，不跟着评分值走", function () {
   // 跟着评分值的话，界面上从左到右会是 3/2/1，反着数
-  ok(count("+' · '+(i+1)+") === 1, "小字里的数字要用位置 i+1");
+  ok(count("+' · '+it[3]+") === 1, "小字里写的是方向键");
   ok(count("gradeFlash([2,1,0][+e.key-1])") === 1, "键盘按位置→评分值要转一道");
   ok(count("/^[1-3]$/.test(e.key)") === 1, "只认 1-3");
   ok(whole.indexOf("/^[1-4]$/") < 0, "旧的 1-4 必须没了 —— 4 已经没有对应按钮");
