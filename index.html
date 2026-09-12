@@ -1783,6 +1783,7 @@
   .stat-controls{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
   .stat-nav{display:flex;align-items:center;gap:8px}
   .stat-nav b{font-size:14px;font-weight:600;min-width:118px;text-align:center}
+  .stat-now{padding:5px 11px;font-size:12.5px;border-radius:9px}
   .stat-custom{display:flex;align-items:center;gap:6px}
   .stat-custom input{padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:13px}
   .stat-custom span{color:var(--muted)}
@@ -12498,6 +12499,14 @@ margin-left: -22px;
   function statShift(dir){var c=statState.cursor,m=statState.mode;
     if(m==="day")statState.cursor=addDays(c,dir);else if(m==="week")statState.cursor=addDays(c,dir*7);
     else if(m==="month")statState.cursor=addMonths(c,dir);else if(m==="year")statState.cursor=new Date(c.getFullYear()+dir,c.getMonth(),c.getDate());}
+  // 「回到现在」：翻远了之后一键回来。
+  // 按钮上的字跟着当前这一档走（日→今天 / 周→本周 / 月→本月 / 年→今年），
+  // 不写死成「今天」—— 在「月」这一档上写「今天」会让人以为它要把视图切成日。
+  var STAT_NOWLAB={day:"今天",week:"本周",month:"本月",year:"今年"};
+  function statAtNow(){                       // 已经在现在这个周期里就别摆一个按了没反应的按钮
+    if(statState.mode==="custom")return true; // 自定义区间没有「现在」这回事，整条导航本来就是隐藏的
+    var p=statPeriod(),d=fmt(new Date());
+    return fmt(p.start)<=d&&d<=fmt(p.end);}
   function statPool(){   // 是否把 Google 日历的事件也算进来（去重）
     // 先滤再短路 —— 顺序不能反：断开 Google 之后 gcalEvents 是空的，
     // 要是先短路 return events，已经归档下来的那批就无条件混进统计了。
@@ -12762,7 +12771,8 @@ margin-left: -22px;
     wrap.innerHTML=
       '<div class="panel stat-controls">'+
         '<div class="seg" id="stat-mode">'+modes.map(function(o){return '<button data-m="'+o[0]+'"'+(statState.mode===o[0]?' class="on"':'')+'>'+o[1]+'</button>';}).join("")+'</div>'+
-        '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button></div>'+
+        '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>'+
+          (statAtNow()?"":'<button class="btn stat-now" id="stat-now">'+STAT_NOWLAB[statState.mode]+'</button>')+'</div>'+
         '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" lang="zh-CN" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" lang="zh-CN" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
         catRow+subRow+
       '</div>'+gcalNote+
@@ -12808,6 +12818,8 @@ margin-left: -22px;
     var pv=wrap.querySelector("#stat-prev"),nx=wrap.querySelector("#stat-next");
     if(pv)pv.addEventListener("click",function(){statShift(-1);renderStatsView();});
     if(nx)nx.addEventListener("click",function(){statShift(1);renderStatsView();});
+    var nw=wrap.querySelector("#stat-now");
+    if(nw)nw.addEventListener("click",function(){statState.cursor=new Date();renderStatsView();});
     var sfI=wrap.querySelector("#stat-from"),stI=wrap.querySelector("#stat-to");
     if(sfI)sfI.addEventListener("change",function(){statState.from=sfI.value;renderStatsView();});
     if(stI)stI.addEventListener("change",function(){statState.to=stI.value;renderStatsView();});
