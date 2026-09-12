@@ -4716,7 +4716,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">背单词计划（遗忘曲线）</div>
-        <div class="set-desc" style="margin-bottom:8px">按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。</div>
+        <div class="set-desc" style="margin-bottom:8px">按 FSRS 记忆模型安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3）。新词当场按 1 分钟 → 10 分钟过两遍再进入长间隔；忘掉的词进重学，但不会退回「新词」占掉你的新词额度。</div>
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">每天新词上限</div><div class="set-desc">每天最多学多少个没见过的新词。</div></div>
           <select id="srs-new"><option>10</option><option>15</option><option>20</option><option>30</option><option>50</option><option>80</option><option>100</option></select>
@@ -4724,6 +4724,10 @@ margin-left: -22px;
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">每天复习上限</div><div class="set-desc">到期需要复习的词，每天最多做多少。</div></div>
           <select id="srs-rev"><option>50</option><option>100</option><option>150</option><option>200</option><option>300</option><option>999</option></select>
+        </div>
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">目标记忆率</div><div class="set-desc">到复习那天，你希望还记得住多大比例。调高 → 间隔变短、每天复习量变大；调低 → 间隔拉长、省时间但忘得多一点。90% 是通用的甜点，拿不准就别动。</div></div>
+          <select id="srs-ret"><option value="0.8">80%</option><option value="0.85">85%</option><option value="0.9">90%</option><option value="0.95">95%</option></select>
         </div>
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">多久没动作就当你离开了</div><div class="set-desc">背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一动就继续。停掉的那段不算进「今天背了多久」，写进日历的那条会把它记成中间的空档。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。</div></div>
@@ -5665,6 +5669,7 @@ margin-left: -22px;
     "删音频":"Delete audio",
     "利息":"interest",
     "别人分享的菜谱不能改，可以先「复制到我的菜谱」":"You can't edit someone else's recipe — try \"Copy to my recipes\" first",
+    "到复习那天，你希望还记得住多大比例。调高 → 间隔变短、每天复习量变大；调低 → 间隔拉长、省时间但忘得多一点。90% 是通用的甜点，拿不准就别动。":"How much you want to still remember on the day a card comes up. Higher means shorter gaps and more reviews per day; lower means longer gaps, less time, and a bit more forgetting. 90% is the usual sweet spot — leave it alone if you are unsure.",
     "到手":"Take-home",
     "到手收入":"Take-home income",
     "到期需要复习的词，每天最多做多少。":"How many due reviews to get through in a day, at most.",
@@ -6088,6 +6093,7 @@ margin-left: -22px;
     "指到单词时的效果":"Effect when pointing at a word",
     "指标名称：":"Metric name:",
     "按":"Scale by",
+    "按 FSRS 记忆模型安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3）。新词当场按 1 分钟 → 10 分钟过两遍再进入长间隔；忘掉的词进重学，但不会退回「新词」占掉你的新词额度。":"Reviews are scheduled by the FSRS memory model: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3). A new word is shown twice on the spot, 1 minute then 10 minutes apart, before it moves to longer gaps; a word you forget goes into relearning rather than reverting to “new” and eating your daily new-word quota.",
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
     "按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。":"Reviews are scheduled on the SM-2 forgetting curve: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3) and the interval stretches or shrinks to match.",
     "按住快捷键":"Hold a hotkey",
@@ -6535,6 +6541,7 @@ margin-left: -22px;
     "目前没有别人分享给你（或对方还没打开分享）":"Nobody has shared anything with you yet (or they haven't turned sharing on)",
     "目录":"Contents",
     "目标":"Goals",
+    "目标记忆率":"Target recall rate",
     "省下":"Under",
     "看书":"Reading",
     "看书 · 边读边查词":"Reading · look up words as you read",
@@ -7435,6 +7442,9 @@ margin-left: -22px;
     ["年后","^(.+?) 年后$","in \u00011 years"],
     ["笔记：","^笔记：(.+?)$","Note: \u00011"],
     ["」写笔记（记忆法/例句/用法都行）：","^给「(.+?)」写笔记（记忆法/例句/用法都行）：$","Write a note for \"\u00011\" (mnemonic, example, usage — anything):"],
+    ["分钟","^(.+?) 分钟$","\u00011 min"],
+    ["小时","^(.+?) 小时$","\u00011 h"],
+    ["个月","^(.+?) 个月$","\u00011 months"],
     ["同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。","^同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。(.+?)$","You can import the same list again and again — words already in your word list are skipped automatically, and anything that doesn't look like a word is set aside for you to look over.\u00011"],
     ["个词你删过或标了「认识」，它们不会被自动收藏；如果导入名单里又出现，会单独问你要不要加回来。","^🗑 有 (.+?) 个词你删过或标了「认识」，它们不会被自动收藏；如果导入名单里又出现，会单独问你要不要加回来。$","🗑 \u00011 words you deleted or marked \"Known\" won't be saved automatically; if they turn up in an imported list again, you'll be asked separately whether to add them back."],
     ["导入","^导入 (.+?) 个词$","Import \u00011 words"],
@@ -7464,7 +7474,6 @@ margin-left: -22px;
     ["复习","^复习 (.+?)$","Review \u00011"],
     ["个词。 下次复习时间已按遗忘曲线安排好。","^本轮完成 🎉 共 (.+?) 个词。 下次复习时间已按遗忘曲线安排好。$","Round finished 🎉 \u00011 words in all. The next review is already scheduled on the forgetting curve."],
     ["词典没收录，翻译也失败了：","^词典没收录，翻译也失败了：(.+?)(.+?)$","Not in the dictionary, and the translation failed too: \u00011 \u00012"],
-    ["个月","^(.+?) 个月$","\u00011 months"],
     ["转写功能没能初始化：","^转写功能没能初始化：(.+?)$","Transcription failed to start: \u00011"],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的，先列前 15 个： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words — the first 15 are: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
@@ -13983,6 +13992,7 @@ margin-left: -22px;
     var sn=document.getElementById("srs-new");if(sn)sn.value=String(dictPrefs.dailyNew||20);
     var sr=document.getElementById("srs-rev");if(sr)sr.value=String(dictPrefs.dailyRev||100);
     var sh=document.getElementById("srs-hide");if(sh)sh.checked=!!dictPrefs.hideMastered;
+    var sret=document.getElementById("srs-ret");if(sret)sret.value=String(fsrsRet());
     var si=document.getElementById("srs-idle");
     if(si)si.value=String((dictPrefs.idleSec===undefined||dictPrefs.idleSec===null)?30:dictPrefs.idleSec);
     var lc=document.getElementById("srs-logcal");if(lc)lc.checked=dictPrefs.logCal!==false;
@@ -14647,31 +14657,113 @@ margin-left: -22px;
   var DAY=864e5;
   function todayKey(){var d=new Date();return fmt(d);}
   function srsInit(x){if(x.ef===undefined)x.ef=2.5;if(x.iv===undefined)x.iv=0;if(x.reps===undefined)x.reps=0;
-    if(x.lapses===undefined)x.lapses=0;if(x.due===undefined)x.due=x.ts||Date.now();return x;}
+    if(x.lapses===undefined)x.lapses=0;if(x.due===undefined)x.due=x.ts||Date.now();
+    // 从老的 SM-2 变体迁过来：**把当时的间隔当作稳定性**，ease 折算成难度。
+    // 这是 FSRS 官方推荐的冷启动做法 —— 比推倒重排准，也不会把她背了几个月的进度清掉。
+    // 只迁「已经在复习阶段」的（reps>0 且 iv>0）；没背过的留着走正常的新词流程。
+    if(x.s===undefined&&x.reps>0&&x.iv>0){
+      x.s=Math.max(0.5,x.iv);
+      x.d=srsClamp(11-9*((x.ef||2.5)-1.3)/1.9,1,10);
+      x.st=null;x.rl=false;}
+    return x;}
   function srsStage(x){srsInit(x);
     if(x.mastered)return "done";
     if(!x.reps)return "new";
     if(x.iv<21)return x.iv<1?"learn":"review";
     return "mature";}
-  // 预览下次间隔（天）
-  function srsPreview(x,g){srsInit(x);
-    var ef=x.ef,iv=x.iv;
-    if(g===0)return Math.max(1,Math.round(iv*0.2))||1;
-    if(g===1)return Math.max(1,Math.round((iv||1)*1.2));
-    if(g===2)return !x.reps?1:(x.reps===1?6:Math.max(1,Math.round(iv*ef)));
-    return !x.reps?3:Math.max(2,Math.round((iv||1)*ef*1.3));}
+  // ========================= FSRS-4.5 =========================
+  // 原来这里是自己写的 SM-2 变体，有四个确凿的毛病（tools/test-srs.js 里逐条复现）：
+  //   ① 评「不认识」会 x.reps=0 —— 把「学过」这件事抹掉，这个词重新变回**新词**，
+  //      于是它占掉每天的新词额度。几个难词就能把 20 个额度吃光，
+  //      每天见到的永远是同样那几个 —— 她说的「背几个单词就开始循环了」。
+  //   ② 「太简单」算出来的间隔比「认识」还短（reps===1 时 6 天 vs 3 天）。
+  //   ③ 连着评不认识，间隔永远是 10 分钟，而 ease 一路掉到 1.3 触底（Ease Hell）。
+  //   ④ 没有间隔随机化，同一天评的词以后永远堆在同一天。
+  //
+  // 换成 FSRS-4.5。它不用 ease factor，而是记三个量：
+  //   S 稳定性 —— 多少天之后还记得住 90%
+  //   D 难度   —— 1~10，这个词对你有多难
+  //   R 可提取性 —— 到点时你还记得住的概率，由 S 和过了多久算出来
+  // 默认参数是官方那组（两万人复习数据拟合出的中位数），没有个人历史也能直接用。
+  var FSRS_W=[0.4872,1.4003,3.7145,13.8206,5.1618,1.2298,0.8975,0.031,1.6474,0.1367,
+              1.0461,2.1072,0.0793,0.3246,1.587,0.2272,2.8755];
+  var FSRS_F=19/81,FSRS_DK=-0.5;          // 这两个常数保证 R(S,S)=0.9
+  var LEARN_STEPS=[1,10],RELEARN_STEPS=[10],DAYMIN=1440;   // 分钟；跟 Anki 默认一致
+  function srsClamp(v,a,b){return v<a?a:(v>b?b:v);}
+  function fsrsRet(){var r=+dictPrefs.retention;return (r>=0.7&&r<=0.97)?r:0.9;}
+  function fsrsS0(G){return Math.max(0.1,FSRS_W[G-1]);}
+  function fsrsD0(G){return srsClamp(FSRS_W[4]-(G-3)*FSRS_W[5],1,10);}
+  function fsrsR(t,S){return Math.pow(1+FSRS_F*t/Math.max(0.1,S),FSRS_DK);}
+  // 由稳定性反推间隔：想要 r 的记忆率，该隔多少天
+  function fsrsIv(S){return Math.max(1,S/FSRS_F*(Math.pow(fsrsRet(),1/FSRS_DK)-1));}
+  // 难度更新带「线性阻尼 + 均值回归」：越靠近 1 或 10 动得越慢，长期还会往 D0(3) 收
+  function fsrsD(D,G){
+    var d1=D-FSRS_W[6]*(G-3)*(10-D)/9;
+    return srsClamp(FSRS_W[7]*fsrsD0(3)+(1-FSRS_W[7])*d1,1,10);}
+  function fsrsSr(D,S,R,G){               // 答对之后的新稳定性（只会变大）
+    var f=(G===2?FSRS_W[15]:1)*(G===4?FSRS_W[16]:1);
+    return S*(Math.exp(FSRS_W[8])*(11-D)*Math.pow(S,-FSRS_W[9])*(Math.exp(FSRS_W[10]*(1-R))-1)*f+1);}
+  function fsrsSf(D,S,R){                 // 忘掉之后的新稳定性
+    var v=FSRS_W[11]*Math.pow(D,-FSRS_W[12])*(Math.pow(S+1,FSRS_W[13])-1)*Math.exp(FSRS_W[14]*(1-R));
+    return Math.max(0.1,Math.min(S,v));}  // 忘了不可能比之前更稳，所以封顶在 S
+  // 间隔随机化（照 Anki 的档位）。不打散的话，同一天评的一批词以后永远同一天到期，
+  // 复习量会一坨一坨堆起来。
+  function fsrsFuzz(iv,rnd){
+    if(iv<2.5)return Math.max(1,Math.round(iv));
+    var f=iv<7?iv*0.25:(iv<30?Math.max(2,iv*0.15):Math.max(4,iv*0.05));
+    f=Math.max(1,Math.round(f));
+    var lo=Math.max(2,Math.round(iv)-f),hi=Math.round(iv)+f;
+    return lo+Math.floor(srsClamp(rnd,0,0.999999)*(hi-lo+1));}
+  // ---- 纯函数：算出「这一下之后它变成什么样」，不动原对象 ----
+  // 按钮上的预览和真正评分走的是同一个函数，所以显示的和实际排的永远一致。
+  // g 是界面上的 0/1/2（不认识/模糊/认识），FSRS 里的 G = g+1。
+  function srsSched(x,g,now,rnd){
+    now=now||Date.now();rnd=(rnd===undefined)?Math.random():rnd;
+    var G=g+1;
+    var S=x.s,D=x.d,st=x.st,rl=!!x.rl;
+    var o={reps:(x.reps||0)+1,lapses:x.lapses||0};
+    var phase=!(S>0)?"new":((st===undefined||st===null)?"review":(rl?"relearn":"learn"));
+    if(phase==="new"){S=fsrsS0(G);D=fsrsD0(G);st=0;rl=false;}
+    else if(phase==="review"){
+      var el=Math.max(0,(now-(x.last||now))/86400000),R=fsrsR(el,S);
+      var nd=fsrsD(D,G);
+      if(G===1){S=fsrsSf(nd,S,R);D=nd;o.lapses++;rl=true;st=0;}   // 忘了 → 进重学
+      else{S=fsrsSr(nd,S,R,G);D=nd;}
+    }else{
+      // 还在学习 / 重学步骤里，都是同一天内的重复：难度跟着走，稳定性不动
+      // （FSRS-4.5 没有同日公式；真正的间隔在毕业那一刻才由 S 决定）
+      D=fsrsD(D,G);
+    }
+    var min;
+    if(st===undefined||st===null){min=fsrsIv(S)*DAYMIN;}          // 复习卡答对了：直接排天
+    else{
+      var steps=rl?RELEARN_STEPS:LEARN_STEPS;
+      if(G===1)st=0;                                              // 不认识 → 退回第一步
+      else if(G===2){}                                            // 模糊 → 留在这一步
+      else st=st+1;                                               // 认识 → 进下一步
+      if(st>=steps.length){st=null;rl=false;min=fsrsIv(S)*DAYMIN;} // 毕业
+      else if(G===2&&steps.length>1&&st===0)min=(steps[0]+steps[1])/2;  // 模糊：两步中间
+      else min=steps[st];
+    }
+    if(min>=DAYMIN)min=fsrsFuzz(min/DAYMIN,rnd)*DAYMIN;           // 只有按天排的才打散
+    o.s=S;o.d=D;o.st=st;o.rl=rl;o.min=min;
+    o.iv=(min>=DAYMIN)?Math.round(min/DAYMIN):0;
+    return o;}
+  function srsPreview(x,g){srsInit(x);return srsSched(x,g,Date.now(),0.5).min;}   // 预览取中值
   function srsGrade(x,g){
     srsInit(x);
-    var nd;
-    if(g===0){x.ef=Math.max(1.3,x.ef-0.2);x.lapses++;x.reps=0;x.iv=0;nd=10/1440;}
-    else{
-      if(g===1)x.ef=Math.max(1.3,x.ef-0.15);
-      else if(g===3)x.ef=Math.min(3.2,x.ef+0.15);
-      x.iv=srsPreview(x,g);x.reps++;nd=x.iv;
-    }
-    x.due=Date.now()+nd*DAY;
-    x.last=Date.now();
-    return x;}
+    var o=srsSched(x,g,Date.now());
+    x.s=o.s;x.d=o.d;x.st=o.st;x.rl=o.rl;x.iv=o.iv;x.reps=o.reps;x.lapses=o.lapses;
+    x.due=Date.now()+o.min*60000;x.last=Date.now();
+    return o.min;}                       // 返回「多少分钟后再见」，背诵那边拿它判断要不要本轮再出现
+  function fmtGap(min){
+    if(min<60)return Math.max(1,Math.round(min))+" 分钟";
+    if(min<DAYMIN)return Math.round(min/60)+" 小时";
+    var d=min/DAYMIN;
+    if(d<30)return Math.round(d)+" 天";
+    if(d<365)return (d/30).toFixed(d<60?1:0)+" 个月";
+    return (d/365).toFixed(1)+" 年";}
+
   function dueList(){var now=Date.now();
     return words.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});}
   function newList(){return words.filter(function(x){srsInit(x);return !x.mastered&&!x.reps;});}
@@ -14983,6 +15075,7 @@ margin-left: -22px;
   // 没有它的话，慢的那一趟回来会把上一个词的内容糊到当前这张卡上（查不到的词要把每个词形
   // 变体 × 每本词典都问一遍 IndexedDB，几乎必然比查得到的那次晚回来）。
   var flashDone=0,flashRevealed=false,flashStart=0,flashSeq=0;
+  var flSeen={};                          // 这一轮里已经算过「今天学了一个」的词
   // ---- 人走开了就别再计时 ----
   // 她的原话：「如果长期停留在某一个单词说明人可能离开了，所以不应该还继续计时，
   // 直到用户重新开始行动才可以」。
@@ -15103,7 +15196,7 @@ margin-left: -22px;
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;flashStart=Date.now();flReset(flashStart);startClock();
+    flashIdx=0;flashDone=0;flSeen={};flashStart=Date.now();flReset(flashStart);startClock();
     document.getElementById("flash-overlay").classList.add("on");
     bindFlashCfg();applyFlash();showFlash();}
   function flashProgress(){
@@ -15177,19 +15270,22 @@ margin-left: -22px;
     // 原来还有个「太简单」(g3)：它和上面那两个「不用再背了」的出口重着，删掉了。
     var L=[["认识",2,"g2"],["模糊",1,"g1"],["不认识",0,"g0"]];
     document.getElementById("flash-btns").innerHTML=L.map(function(it,i){
-      var g=it[1],d=(g===0)?"<10分钟":fmtIv(srsPreview(x,g));
+      var g=it[1],d=fmtGap(srsPreview(x,g));   // 学习步骤里是分钟，毕业之后才是天
       return '<button class="gb '+it[2]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(i+1)+'</small></button>';}).join("");}
-  function fmtIv(d){if(d<1)return "今天";if(d<30)return d+" 天";
-    if(d<365)return (d/30).toFixed(d<60?1:0)+" 个月";return (d/365).toFixed(1)+" 年";}
   function gradeFlash(g){
     if(!flashRevealed)return;
     var x=flashArr[flashIdx],isNew=!x.reps;
-    srsGrade(x,g);bumpDay(isNew);flashDone++;
-    if(g===0){ // 忘记 → 本轮稍后再出现
+    // 一个词在一轮里会被答好几次（1 分钟 → 10 分钟两步），
+    // 但「今天学了几个」只该算一次，否则新词额度会被自己吃掉。
+    var k=x.id||x.w;
+    if(!flSeen[k]){flSeen[k]=1;bumpDay(isNew);}
+    var min=srsGrade(x,g);
+    if(min<DAYMIN){
+      // 还在学习 / 重学步骤里：本轮稍后再出现。这才是「学习步骤」真正起作用的地方。
       var again=flashArr.splice(flashIdx,1)[0];
-      var pos=Math.min(flashArr.length,flashIdx+3);
+      var pos=Math.min(flashArr.length,flashIdx+(g===0?3:6));
       flashArr.splice(pos,0,again);
-    }else flashIdx++;
+    }else{flashDone++;flashIdx++;}                  // 排到一天以上 = 这个词今天过完了
     saveWords();showFlash();}
   function masterFlash(){
     var x=flashArr[flashIdx];if(!x)return;
@@ -15274,6 +15370,8 @@ margin-left: -22px;
     if(sr)sr.addEventListener("change",function(){dictPrefs.dailyRev=+sr.value||100;saveDictPrefs();renderWordbook();});
     var sh=document.getElementById("srs-hide");
     if(sh)sh.addEventListener("change",function(){dictPrefs.hideMastered=sh.checked;saveDictPrefs();renderWordbook();});
+    var sret=document.getElementById("srs-ret");
+    if(sret)sret.addEventListener("change",function(){dictPrefs.retention=+sret.value||0.9;saveDictPrefs();});
     var si=document.getElementById("srs-idle");
     if(si)si.addEventListener("change",function(){dictPrefs.idleSec=+si.value||0;saveDictPrefs();});
     var lc=document.getElementById("srs-logcal");
