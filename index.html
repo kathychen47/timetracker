@@ -4251,7 +4251,7 @@ margin-left: -22px;
         <button class="btn" id="flash-skip" title="跳过">下一个 →</button>
       </div>
       <div class="flash-word" id="flash-word"></div>
-      <div class="flash-tip" id="flash-tip">点一下 / 按空格 显示释义</div>
+      <div class="flash-tip" id="flash-tip">想看释义就点一下 / 按空格 · 认识的话直接评分也行</div>
       <div class="flash-def" id="flash-def"></div>
       <div class="flash-btns" id="flash-btns"></div>
     </div>
@@ -4730,7 +4730,7 @@ margin-left: -22px;
           <select id="srs-ret"><option value="0.8">80%</option><option value="0.85">85%</option><option value="0.9">90%</option><option value="0.95">95%</option></select>
         </div>
         <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">多久没动作就当你离开了</div><div class="set-desc">背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一动就继续。停掉的那段不算进「今天背了多久」，写进日历的那条会把它记成中间的空档。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。</div></div>
+          <div class="set-row-txt"><div class="set-row-t">多久没动作就当你离开了</div><div class="set-desc">背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一操作就继续。算数的操作是：点一下、按键、滚动、触屏 —— <b>光移动鼠标不算</b>。停掉的那段不算进「今天背了多久」，也不写进日历。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。要是读长释义时老被判成走神，把这里调到 1 分钟。</div></div>
           <select id="srs-idle"><option value="0">不停</option><option value="15">15 秒</option><option value="30">30 秒</option><option value="60">1 分钟</option><option value="120">2 分钟</option></select>
         </div>
         <label class="do-name" style="cursor:pointer;margin-top:10px"><input type="checkbox" id="srs-logcal"> 背完自动记入日历（记为「背单词」）</label>
@@ -6021,6 +6021,7 @@ margin-left: -22px;
     "恢复默认":"Restore defaults",
     "想吃什么？（菜谱库里没有的也能点）":"What do you feel like? (it doesn't have to be in your recipes)",
     "想学什么？或者直接把你已经写好的计划整段粘进来。 两种都行：给个主题我来拆，给了计划我就照着整理，步骤和时间原样保留。":"What do you want to learn? Or just paste in a plan you've already written. Either works: give me a topic and I'll break it down; give me a plan and I'll tidy it up, keeping your steps and times exactly as they are.",
+    "想看释义就点一下 / 按空格 · 认识的话直接评分也行":"Tap or press space to see the meaning · or just rate it straight away if you know it",
     "想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。":"Want it on your phone too? Sign in with Google under ⚙️ Settings → Cloud sync first, and \"Upload to cloud\" will show up here.",
     "我本来就认识：淡化、沉到最后、不再排复习（可以再点回来）":"I already know this: dimmed, moved to the end, no more reviews (click again to undo)",
     "我的 AI":"My AI",
@@ -6260,7 +6261,6 @@ margin-left: -22px;
     "显示成什么名字，比如「Pingping 工资」":"Display name, e.g. \"Pingping salary\"",
     "显示方式":"Display",
     "显示转账/存款":"Show transfers/savings",
-    "显示释义":"Show meaning",
     "晚餐":"dinner",
     "晚餐后":"After dinner",
     "晨会":"Standup",
@@ -6463,7 +6463,6 @@ margin-left: -22px;
     "点「检测可用」会用你的 key 拉出你账号真正能用的模型（最准）。不同账号能用的不一样，免费约 20 次/天。":"Click \"Detect\" and it uses your key to list the models your account can really use (most accurate). Accounts differ; free tier is about 20/day.",
     "点「测试连接」确认能连上、并看有哪些模型。":"Click \"Test connection\" to check it connects and see which models you have.",
     "点「用 Google 登录」开始同步（同时会连上 Google 日历，不用再单独登录）":"Tap \"Sign in with Google\" to start syncing (this also connects Google Calendar — no separate sign-in)",
-    "点一下 / 按空格 显示释义":"Click / press Space to show the meaning",
     "点一下只看这个账户":"Click to see only this account",
     "点一下就能改 · 回车换行 · 点别处保存":"Click to edit · Enter for a new line · click away to save",
     "点一下恢复：重新排进复习":"Click to restore: back into the review rotation",
@@ -6651,7 +6650,7 @@ margin-left: -22px;
     "肌肉量":"Muscle",
     "肥胖":"Obese",
     "背单词":"Vocabulary",
-    "背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一动就继续。停掉的那段不算进「今天背了多久」，写进日历的那条会把它记成中间的空档。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。":"If nothing happens on the flashcard for longer than this, the timer pauses (the card shows “Paused”) and picks up again the moment you do anything. The paused stretch is left out of how long you studied today, and the calendar entry records it as a hole in the middle. Pauses shorter than the threshold still count — staring at a hard word for a bit is real studying.",
+    "背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一操作就继续。算数的操作是：点一下、按键、滚动、触屏 —— 光移动鼠标不算。停掉的那段不算进「今天背了多久」，也不写进日历。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。要是读长释义时老被判成走神，把这里调到 1 分钟。":"If nothing happens on the flashcard for longer than this, the timer pauses (the card shows “Paused”) and picks up the moment you do something. What counts: a click, a key press, scrolling, a touch — moving the mouse on its own does not. The paused stretch is left out of how long you studied today and never reaches the calendar. Pauses shorter than the threshold still count — staring at a hard word for a bit is real studying. If reading long definitions keeps tripping it, set this to 1 minute.",
     "背单词计划（遗忘曲线）":"Vocabulary plan (forgetting curve)",
     "背完自动记入日历（记为「背单词」）":"Log to calendar when done (as \"Vocabulary\")",
     "胸围":"Chest",
@@ -6899,7 +6898,7 @@ margin-left: -22px;
     "这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标":"No data in this range — add an entry above, or switch the range / tick more metrics",
     "这个范围还没有安排事件":"Nothing scheduled in this range",
     "这个账户":"this account",
-    "这么久没有任何动作，先把计时停下了。动一下鼠标、按个键、点一下卡片就继续。":"Nothing has happened for a while, so the timer stopped. Move the mouse, press a key, or tap the card to carry on.",
+    "这么久没有任何操作，先把计时停下了。点一下、按个键、滚一下就继续 —— 光移动鼠标不算。":"Nothing has happened for a while, so the timer stopped. Click, press a key, or scroll to carry on — moving the mouse alone will not.",
     "这些书存在哪、占了多少、会不会丢":"Where these books are stored, how much space they take, and whether they can be lost",
     "这些分钟被算了不止一遍，因为同一时间安排了多件事":"These minutes are counted more than once because several things were scheduled at the same time",
     "这些我也要":"Add these anyway",
@@ -15122,15 +15121,20 @@ margin-left: -22px;
     if(end<now)flSegs.push({gap:1,sec:Math.max(0,Math.round((now-end)/1000))});}
   function flGapSec(){var g=0;flSegs.forEach(function(s){if(s.gap)g+=(s.sec||0);});return g;}
   (function(){
-    // 绑在 document 上、走捕获阶段：翻卡片、评分、快捷键、滚动、动一下鼠标 —— 都算动静。
-    // 有的按钮会 stopPropagation，走捕获才拦得住。卡片没开着时 flBeat 自己第一行就 return。
-    ["pointerdown","keydown","wheel","touchstart","mousemove"].forEach(function(t){
+    // 只认**真的操作**：点一下、按键、滚动、触屏。
+    // ⚠️ 原来还收了 mousemove，结果鼠标从卡片上扫过去就算「人还在」——
+    //    她盯着屏幕不动、手碰了一下鼠标，计时就永远停不下来。她要的是「没有任何操作就停」，
+    //    所以移动不算数。代价是：光看不点地读一段长释义也会被判成走神，
+    //    嫌太敏感就去 ⚙️设置 → 📖词典 把阈值调到 1 分钟。
+    // 走捕获阶段是因为卡片上有按钮会 stopPropagation，冒泡阶段收不到。
+    // 卡片没开着时 flBeat 第一行就 return，所以挂在 document 上不费什么。
+    ["pointerdown","keydown","wheel","touchstart","scroll"].forEach(function(t){
       document.addEventListener(t,flBeat,true);});
   })();
   function hhmm(t){var d=new Date(t);return pad(d.getHours())+":"+pad(d.getMinutes());}
   function endStudySession(){                       // 结束一轮：记时长，按设置写入日历
     if(!flashStart)return;
-    var st=flashStart,en=Date.now();
+    var st=flashStart;
     flFinish();
     // 时长一律用「真在背的那部分」，不是墙上时间
     var netMs=0;flSegs.forEach(function(s){if(!s.gap)netMs+=(s.sec||0)*1000;});
@@ -15142,14 +15146,15 @@ margin-left: -22px;
     if(dictPrefs.logCal===false)return;
     var ac=autoCat("背单词");
     var gapMin=Math.round(gapSec/60);
-    var ev={id:uid(),date:fmt(new Date(st)),start:hhmm(st),end:hhmm(en),
+    // 背单词这条**不挖空**：番茄钟那种「块照真实跨度画、中间留洞」是为了让你看出
+    // 那段时间到底怎么过的；背单词不需要那个，她要的是「汇总成一根」。
+    // 所以从开始那一刻起，画一根长度正好等于净时长的实心块。
+    // 没有 segs，evNetMin 就等于 evMinutes，统计拿到的还是这根的长度 —— 口径不变。
+    var en2=st+Math.round(netMs/60000)*60000;
+    var ev={id:uid(),date:fmt(new Date(st)),start:hhmm(st),end:hhmm(en2),
       title:"背单词"+(flashDone?("（"+flashDone+" 词）"):""),cat:ac.cat,sub:ac.sub,done:true,
       note:gapMin>0?("复习 "+flashDone+" 个单词 · 中途离开 "+gapMin+" 分钟不计")
                    :("复习 "+flashDone+" 个单词")};
-    // 中途走开过：把洞记进分段。日历上块的跨度还是真实的那一段（中间描边），
-    // 但 evNetMin / evMix 只认非洞的部分，所以统计和目标进度拿到的是真背的时长。
-    if(gapSec>0&&flSegs.length>1)
-      ev.segs=flSegs.map(function(x){return x.gap?{gap:true,sec:x.sec}:{cat:ac.cat,sub:ac.sub,sec:x.sec};});
     events.push(ev);save("tt_events",events);
     if(state.tab==="calendar")renderCal();
     if(dictPrefs.logGcal)gcalApply(ev,true);}
@@ -15207,7 +15212,7 @@ margin-left: -22px;
     document.getElementById("flash-prog").innerHTML=
       '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
       ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flNetMs())+'</span>'+
-      (flAway?'<span class="fl-idle" title="这么久没有任何动作，先把计时停下了。动一下鼠标、按个键、点一下卡片就继续。">⏸ 已暂停</span>':'');}
+      (flAway?'<span class="fl-idle" title="这么久没有任何操作，先把计时停下了。点一下、按个键、滚一下就继续 —— 光移动鼠标不算。">⏸ 已暂停</span>':'');}
   function fmtClock(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}   // 背单词计时用，别和统计的 fmtDur(分钟) 重名
   var flashTick=null;
   function startClock(){
@@ -15236,8 +15241,10 @@ margin-left: -22px;
     if(seq!==flashSeq)return;           // 等词典的工夫已经翻页了：这一趟整个作废，一个 DOM 都别碰
     def.innerHTML=defHTML;
     def.scrollTop=0;                    // 换词了，中间那段滚回顶上，别停在上一个词的半截
-    document.getElementById("flash-btns").innerHTML='<button class="gb g2" id="flash-reveal" style="grid-column:1/-1">显示释义 <small>空格</small></button>';
-    document.getElementById("flash-reveal").onclick=revealFlash;
+    // 释义还糊着的时候，下面也直接摆这三个评分按钮。
+    // 她的原话：「有些单词不看释义也知道意思，所以没必要再点一下显示释义」。
+    // 想看释义随时点一下中间那块糊着的、或者按空格。
+    renderGradeBtns(x);
     // 词典没收录（Lorentzian 这种学术词、专有名词）→ 用翻译顶上，别让卡片空着。
     // 判定要看「有没有真正的词典卡」：光判有没有内容不行 —— 你自己写的黄色笔记卡
     // 也是内容，可词典其实还是没查到。另外三处兜底也是这么判的。
@@ -15258,23 +15265,24 @@ margin-left: -22px;
         :('<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(terr&&terr.message||terr))+
           (keep?'':'（可以在生词本里展开这个词，点「✎ 自己写释义」补一条）')+'</div>');
       def.scrollTop=0;}}
-  function revealFlash(){
-    if(flashRevealed)return;flashRevealed=true;
-    var x=flashArr[flashIdx];
-    document.getElementById("flash-def").className="flash-def";
-    document.getElementById("flash-tip").style.display="none";
-    // 从易到难排：认识 → 模糊 → 不认识。
-    // 小字里那个数字是键盘快捷键，**跟着位置走（1/2/3）**，不跟着 SM-2 的评分值走 ——
-    // 跟着评分值的话界面上会是 3/2/1，从左到右反着数。
-    // 颜色仍然绑在评分值上（g2 绿 / g1 橙 / g0 红），换了顺序也还是那个意思。
-    // 原来还有个「太简单」(g3)：它和上面那两个「不用再背了」的出口重着，删掉了。
+  // 从易到难排：认识 → 模糊 → 不认识。
+  // 小字里那个数字是键盘快捷键，**跟着位置走（1/2/3）**，不跟着 SM-2 的评分值走 ——
+  // 跟着评分值的话界面上会是 3/2/1，从左到右反着数。
+  // 颜色仍然绑在评分值上（g2 绿 / g1 橙 / g0 红），换了顺序也还是那个意思。
+  // 原来还有个「太简单」(g3)：它和上面那两个「不用再背了」的出口重着，删掉了。
+  function renderGradeBtns(x){
     var L=[["认识",2,"g2"],["模糊",1,"g1"],["不认识",0,"g0"]];
-    document.getElementById("flash-btns").innerHTML=L.map(function(it,i){
+    var box=document.getElementById("flash-btns");if(!box)return;
+    box.innerHTML=L.map(function(it,i){
       var g=it[1],d=fmtGap(srsPreview(x,g));   // 学习步骤里是分钟，毕业之后才是天
       return '<button class="gb '+it[2]+'" data-g="'+g+'">'+it[0]+'<small>'+d+' · '+(i+1)+'</small></button>';}).join("");}
+  function revealFlash(){
+    if(flashRevealed)return;flashRevealed=true;
+    document.getElementById("flash-def").className="flash-def";
+    document.getElementById("flash-tip").style.display="none";}
   function gradeFlash(g){
-    if(!flashRevealed)return;
-    var x=flashArr[flashIdx],isNew=!x.reps;
+    var x=flashArr[flashIdx];if(!x)return;      // 没揭示释义也能直接评 —— 认识的词不该逼你多点一下
+    var isNew=!x.reps;
     // 一个词在一轮里会被答好几次（1 分钟 → 10 分钟两步），
     // 但「今天学了几个」只该算一次，否则新词额度会被自己吃掉。
     var k=x.id||x.w;
@@ -15433,7 +15441,7 @@ margin-left: -22px;
       if(e.key==="s"||e.key==="S"){var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
       // 1/2/3 = 认识 / 模糊 / 不认识，跟按钮从左到右一一对应。
       // 按的是位置不是评分值，所以这里要转一道。
-      if(/^[1-3]$/.test(e.key)&&flashRevealed){e.preventDefault();
+      if(/^[1-3]$/.test(e.key)){e.preventDefault();
         gradeFlash([2,1,0][+e.key-1]);}});
     var wbc=document.getElementById("wb-clean");
     if(wbc)wbc.addEventListener("click",async function(){

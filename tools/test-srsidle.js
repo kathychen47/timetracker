@@ -234,17 +234,39 @@ T("时长的三个出口都改成用净时长了", function () {
   ok(whole.indexOf("fmtClock(flashStart?Date.now()-flashStart:0)") < 0, "旧的时钟算法必须没了");
 });
 
-T("走开过就把洞写进分段，让统计自己去扣", function () {
-  ok(count("ev.segs=flSegs.map(") === 1, "要给事件挂 segs");
-  ok(count("x.gap?{gap:true,sec:x.sec}") === 1, "洞要写成 {gap:true}，evNetMin 才认");
-  ok(count("gapSec>0&&flSegs.length>1") === 1, "没走开过就别挂 segs（evSegs 要求至少两段）");
+T("写进日历的是一根实心的，不挖空", function () {
+  // 她要的：「背单词自动记到 calendar 不需要跟其他的一样把中间停顿的挖空，
+  //          只需要汇总计算一个条就可以了」。
+  // 番茄钟那种「照真实跨度画、中间留洞」保留，背单词这条改成从开始那一刻
+  // 画一根长度正好等于净时长的块。
+  ok(count("var en2=st+Math.round(netMs/60000)*60000;") === 1, "结束时间要由净时长算出来");
+  ok(count("end:hhmm(en2)") === 1, "块的右端用算出来的那个，不是真正的结束时刻");
+  var i = whole.indexOf("function endStudySession(){");
+  var seg = whole.slice(i, i + 1600);
+  ok(seg.indexOf("ev.segs=") < 0, "背单词这条不许再挂分段 —— 挂了就会被画成中间有洞");
+  ok(seg.indexOf("gap:true") < 0, "endStudySession 里不该还有洞");
+  // 番茄钟那条得留着挖空，别一起误删了
+  ok(count("if(segs)ev.segs=segs;") === 1, "番茄钟的分段照旧");
+  ok(seg.indexOf("hhmm(en)") < 0, "真正的结束时刻不该再被用来画块");
 });
 
-T("动静监听挂在捕获阶段，五种事件一个不少", function () {
+T("没有分段时，统计拿到的就是这根的长度", function () {
+  // evNetMin 在没有 segs 时 == evMinutes == 块的长度。
+  // 而块的长度和写进 tt_srshist 的分钟数都是从同一个 netMs 算的，所以两边不会飘。
+  ok(count("var mins=Math.round(netMs/60000)") === 1, "记进历史的分钟数从 netMs 来");
+  ok(count("var en2=st+Math.round(netMs/60000)*60000;") === 1, "块的长度也从同一个 netMs 来");
+});
+
+T("只认真的操作：移动鼠标不算", function () {
   ok(count('document.addEventListener(t,flBeat,true)') === 1, "要走捕获 —— 有的按钮会 stopPropagation");
-  ["pointerdown", "keydown", "wheel", "touchstart", "mousemove"].forEach(function (t) {
-    ok(whole.indexOf('"' + t + '"') > 0, "少了 " + t);
+  var line = src[ln('["pointerdown","keydown"')];
+  var L = eval(line.slice(line.indexOf("["), line.indexOf("]") + 1));
+  ["pointerdown", "keydown", "wheel", "touchstart", "scroll"].forEach(function (t) {
+    ok(L.indexOf(t) >= 0, "少了 " + t);
   });
+  // 她报的：「其实这里暂停了还在跑时间，是因为我鼠标过去了？我要的是只要没任何操作就停止」
+  ok(L.indexOf("mousemove") < 0, "mousemove 必须去掉 —— 鼠标扫过去不是操作");
+  ok(L.length === 5, "就这五种，实得 " + L.join("/"));
 });
 
 T("设置项接上了，也进了云同步", function () {
@@ -301,5 +323,28 @@ T("那一排挪到词的上面了", function () {
   ok(count('<div class="flash-extra">') === 1, "只能有一排，别挪出两份来");
 });
 
-console.log((fail ? "x" : "√") + " 背单词卡片（走神不计时 + 评分按钮）：" + pass + " 过 / " + fail + " 败");
+T("释义还糊着的时候，下面也直接是三个评分按钮", function () {
+  // 她的原话：「有些单词不看释义也知道意思，所以没必要再点一下显示释义」
+  ok(count("function renderGradeBtns(x){") === 1, "评分按钮的渲染要抽出来，揭示前后共用");
+  ok(count("renderGradeBtns(x);") === 1, "showFlash 里一上来就摆出来");
+  ok(whole.indexOf('id="flash-reveal"') < 0, "那个占满一行的「显示释义」按钮不该还在");
+  ok(whole.indexOf("flash-reveal") < 0, "连带它的 onclick 也要清掉");
+});
+
+T("没揭示释义也能直接评分", function () {
+  var i = whole.indexOf("function gradeFlash(g){");
+  var seg = whole.slice(i, i + 260);
+  ok(seg.indexOf("if(!flashRevealed)return;") < 0, "评分不能再被「必须先看释义」挡住");
+  ok(count("if(/^[1-3]$/.test(e.key)){") === 1, "键盘 1/2/3 同样不该要求先揭示");
+  ok(whole.indexOf("/^[1-3]$/.test(e.key)&&flashRevealed") < 0, "旧的条件必须没了");
+});
+
+T("揭示这个动作只负责把糊掉的那层去掉", function () {
+  var i = whole.indexOf("function revealFlash(){");
+  var seg = whole.slice(i, i + 300);
+  ok(seg.indexOf("flash-def") > 0 && seg.indexOf("flash-tip") > 0, "去糊 + 收起提示");
+  ok(seg.indexOf("innerHTML") < 0, "不该再重建按钮 —— 按钮本来就一直在");
+});
+
+console.log((fail ? "x" : "√") + " 背单词卡片（走神不计时 + 评分按钮 + 直接评分）：" + pass + " 过 / " + fail + " 败");
 process.exit(fail ? 1 : 0);
