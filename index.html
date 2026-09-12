@@ -15242,7 +15242,7 @@ margin-left: -22px;
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
       if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
       flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;flSeen={};flashStart=Date.now();flReset(flashStart);startClock();
+    flashIdx=0;flashDone=0;flSeen={};flHold=null;flashStart=Date.now();flReset(flashStart);startClock();
     document.getElementById("flash-overlay").classList.add("on");
     bindFlashCfg();applyFlash();showFlash();}
   function flashProgress(){
@@ -15323,7 +15323,12 @@ margin-left: -22px;
     if(flashRevealed)return;flashRevealed=true;
     document.getElementById("flash-def").className="flash-def";
     document.getElementById("flash-tip").style.display="none";}
+  // 评过分、但还停在这张卡上让你看释义时，把这次的结果先存着：
+  //   {min: 排了多少分钟, g: 你评的是哪一档}
+  // null = 没在停留状态。
+  var flHold=null;
   function gradeFlash(g){
+    if(flHold)return;                           // 正在看释义，已经评过了，别重复评
     var x=flashArr[flashIdx];if(!x)return;      // 没揭示释义也能直接评 —— 认识的词不该逼你多点一下
     var isNew=!x.reps;
     // 一个词在一轮里会被答好几次（1 分钟 → 10 分钟两步），
@@ -15331,18 +15336,32 @@ margin-left: -22px;
     var k=x.id||x.w;
     if(!flSeen[k]){flSeen[k]=1;bumpDay(isNew);}
     var min=srsGrade(x,g);
+    saveWords();
+    // 评了「不认识」或「模糊」、而且还没看过释义：把释义摊开，停在这张卡上。
+    // 她的原话：「假如选了不认识，应该显示释义而不是直接跳过」「模糊也应该显示」——
+    // 这两档恰恰是最该看一眼释义的时候，一闪而过等于白背一次。
+    // 只有「认识」才直接翻页。评分照记（那就是你的答案），只是先不走。
+    if(g!==2&&!flashRevealed){
+      revealFlash();flHold={min:min,g:g};
+      var box=document.getElementById("flash-btns");
+      if(box)box.innerHTML='<button class="gb g2" data-gonext="1" style="grid-column:1/-1">下一个 →<small>空格</small></button>';
+      return;}
+    advanceFlash(min,g);}
+  function advanceFlash(min,g){
+    flHold=null;
     if(min<DAYMIN){
       // 还在学习 / 重学步骤里：本轮稍后再出现。这才是「学习步骤」真正起作用的地方。
       var again=flashArr.splice(flashIdx,1)[0];
       var pos=Math.min(flashArr.length,flashIdx+(g===0?3:6));
       flashArr.splice(pos,0,again);
     }else{flashDone++;flashIdx++;}                  // 排到一天以上 = 这个词今天过完了
-    saveWords();showFlash();}
+    showFlash();}
+  function goNextFlash(){if(flHold)advanceFlash(flHold.min,flHold.g);}
   function masterFlash(){
     var x=flashArr[flashIdx];if(!x)return;
     x.mastered=true;kchkSet(x,KCHK_MASTER);saveWords();   // 一年后回来抽查一次
     flashArr.splice(flashIdx,1);flashDone++;showFlash();}
-  function closeFlash(){flashSeq++;   // 关掉了：还在路上的查词/翻译作废，别往已经收起来的卡片上写
+  function closeFlash(){flashSeq++;flHold=null;   // 关掉了：还在路上的查词/翻译作废，别往已经收起来的卡片上写
     stopClock();endStudySession();document.getElementById("flash-overlay").classList.remove("on");renderWordbook();}
 
   // 这两个以前是 catch(e){} 全吞。绑定挂了的话，按钮就是死的，而且一点线索都没有。
@@ -15468,6 +15487,7 @@ margin-left: -22px;
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
     document.getElementById("flash-btns").addEventListener("click",function(e){
+      if(e.target.closest("[data-gonext]")){goNextFlash();return;}
       var g=e.target.closest("[data-g]");if(g)gradeFlash(+g.getAttribute("data-g"));});
     document.getElementById("flash-master").addEventListener("click",masterFlash);
     var fk=document.getElementById("flash-known");
@@ -15479,7 +15499,9 @@ margin-left: -22px;
       var ov=document.getElementById("flash-overlay");
       if(!ov||!ov.classList.contains("on"))return;
       if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
-      if(e.key===" "||e.key==="Enter"){e.preventDefault();if(!flashRevealed)revealFlash();return;}
+      if(e.key===" "||e.key==="Enter"){e.preventDefault();
+        if(flHold){goNextFlash();return;}                        // 看完了 → 下一个
+        if(!flashRevealed)revealFlash();return;}
       if(e.key==="Escape"){closeFlash();return;}
       if(e.key==="s"||e.key==="S"||e.key==="ArrowUp"){e.preventDefault();
         var x=flashArr[flashIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}

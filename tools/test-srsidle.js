@@ -360,5 +360,34 @@ T("揭示这个动作只负责把糊掉的那层去掉", function () {
   ok(seg.indexOf("innerHTML") < 0, "不该再重建按钮 —— 按钮本来就一直在");
 });
 
-console.log((fail ? "x" : "√") + " 背单词卡片（走神不计时 + 评分按钮 + 直接评分）：" + pass + " 过 / " + fail + " 败");
+T("评「不认识 / 模糊」而且还没看过释义 → 停下来把释义摊开", function () {
+  // 她的原话：「假如选了不认识，应该显示释义而不是直接跳过」「模糊也应该显示」
+  ok(count("if(g!==2&&!flashRevealed){") === 1, "只有「认识」直接翻页，另外两档都停");
+  ok(count("revealFlash();flHold={min:min,g:g};") === 1, "停的时候要把释义摊开，并记住这次的结果");
+  ok(count('data-gonext="1"') === 1, "换成一个「下一个 →」的按钮");
+  ok(count("function goNextFlash(){") === 1, "继续的入口只有一个");
+  ok(count("if(e.target.closest(\"[data-gonext]\")){goNextFlash();return;}") === 1, "按钮要接上");
+});
+
+T("评分和翻页拆成了两件事", function () {
+  ok(count("function advanceFlash(min,g){") === 1, "翻页单独一个函数");
+  ok(count("advanceFlash(min,g);") === 1, "认识那一档评完直接翻");
+  // 重排位置要用**当初评的那一档**，不是写死的 0 —— 不认识插 +3、模糊插 +6
+  ok(count("advanceFlash(flHold.min,flHold.g)") === 1, "继续时要把当初评的那档带回去");
+  ok(count("flashIdx+(g===0?3:6)") === 1, "不认识的插得更近一点");
+});
+
+T("停留期间不许重复评分，换卡 / 关掉要清干净", function () {
+  ok(count("if(flHold)return;") === 1, "已经评过了就别再接受评分");
+  ok(count("flHold=null;") >= 3, "advanceFlash / 开新一轮 / 关掉，三处都要清，实得 " + count("flHold=null;"));
+  ok(count("flSeen={};flHold=null;") === 1, "开新一轮时一起清");
+  ok(count("flashSeq++;flHold=null;") === 1, "关掉卡片时也要清");
+});
+
+T("空格在两种状态下各司其职", function () {
+  ok(count("if(flHold){goNextFlash();return;}") === 1, "停留时空格 = 下一个");
+  ok(count("if(!flashRevealed)revealFlash();return;}") === 1, "平时空格 = 显示释义");
+});
+
+console.log((fail ? "x" : "√") + " 背单词卡片（走神不计时 + 评分按钮 + 直接评分 + 看完再走）：" + pass + " 过 / " + fail + " 败");
 process.exit(fail ? 1 : 0);
