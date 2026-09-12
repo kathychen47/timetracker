@@ -3793,6 +3793,7 @@ margin-left: -22px;
             <button class="btn" id="wb-import">📥 导入单词</button>
             <button class="btn" id="wb-build">📚 从牛津选词</button>
             <button class="btn" id="wb-test">🧪 测词汇量</button>
+            <button class="btn" id="wb-clean" title="把明显不像单词的挑出来，确认后移到回收站">🧹 清一清</button>
             <button class="btn" id="wb-export">⬇️ 导出</button>
             <span class="wb-hint" id="wb-hint"></span>
           </div>
@@ -7465,6 +7466,9 @@ margin-left: -22px;
     ["词典没收录，翻译也失败了：","^词典没收录，翻译也失败了：(.+?)(.+?)$","Not in the dictionary, and the translation failed too: \u00011 \u00012"],
     ["个月","^(.+?) 个月$","\u00011 months"],
     ["转写功能没能初始化：","^转写功能没能初始化：(.+?)$","Transcription failed to start: \u00011"],
+    ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的，先列前 15 个： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words — the first 15 are: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
+    ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
+    ["个。误伤了的话，用「📥 导入单词」重新加回来就行。","^清掉了 (.+?) 个。误伤了的话，用「📥 导入单词」重新加回来就行。$","Cleared \u00011. If any were wrongly caught, add them back with 📥 Import words."],
     ["」？里面的词会移到默认词书。","^删除词书「(.+?)」？里面的词会移到默认词书。$","Delete the word book \"\u00011\"? The words inside move to the default word book."],
     ["」？里面的词会移到默认组。","^删除分组「(.+?)」？里面的词会移到默认组。$","Delete the group \"\u00011\"? The words inside move to the default group."],
     ["下载翻译模型 ~110MB（只有第一次）…","^下载翻译模型 ~110MB（只有第一次）… (.+?)%$","Downloading the translation model ~110MB (first time only)… \u00011%"],
@@ -13827,6 +13831,41 @@ margin-left: -22px;
     if(/(.)\1{3,}/.test(s))return "同一个字母连着好几个，像乱码";
     if(s.replace(/[^A-Za-zÀ-ɏ]/g,"").length<2&&!/^[ai]$/i.test(s))return "太短";
     return "";}
+  // ---- 自动收词时的那道细筛 ----
+  // wordIssue 管的是「这根本不是个词」（空行 / 网址 / 乱码 / 太长）。
+  // 这里管的是另一类：**是个词，但不值得背** —— 单个汉字、代词量词这类虚词、
+  // 分词切出来的碎片（「实验的」的真身是「实验」）。
+  // 只在**自动**加入时用。手动加的一律照收 —— 她想背什么是她的事，别替她拦。
+  var CN_STOP=("的 了 着 过 们 和 与 或 而 但 就 才 也 都 还 又 很 太 更 最 "+
+    "这 那 这个 那个 这些 那些 这样 那样 这里 那里 这种 那种 此 其 "+
+    "一个 一些 一种 两个 两种 几个 什么 怎么 为什么 哪个 哪些 多少 "+
+    "我 你 他 她 它 我们 你们 他们 她们 它们 自己 大家 "+
+    "是 有 在 会 能 要 可以 应该 已经 正在 将要 "+
+    "不 没 没有 不是 不能 不会 "+
+    "上 下 左 右 前 后 里 外 中 内 间 "+
+    "因为 所以 如果 虽然 但是 而且 然后 于是 并且 或者 "+
+    "非常 特别 比较 稍微 一直 总是 经常 有时").split(/\s+/);
+  var EN_STOP=("a an the and or but if of to in on at by for with from as into than then "+
+    "is are was were be been being am "+
+    "this that these those it its he she they them we you i me my your his her their our "+
+    "not no nor do does did done doing have has had having "+
+    "will would shall should can could may might must "+
+    "here there when where which who whom whose what why how all any some each every "+
+    "s t ll re ve d m n o y").split(/\s+/);
+  function wordJunk(s){
+    s=String(s||"").trim();
+    var bad=wordIssue(s);if(bad)return bad;                  // 先过粗筛
+    if(/[\u4e00-\u9fff\u3400-\u4dbf]/.test(s)){
+      if(s.length<2)return "单个汉字，多半是语素不是词";
+      if(CN_STOP.indexOf(s)>=0)return "常用虚词，不用背";
+      // 「实验的」这种是分词切出来的碎片。只认「的」结尾、且去掉之后还剩两个字以上 ——
+      // 一开始写的是 /[的地得了着过们]$/ 且长度≤3，结果「目的地」被当碎片拦了。
+      // 「红的」「跑着」这类漏掉了，认了：宁可少拦，也别误杀她真想记的词。
+      if(/的$/.test(s)&&s.length>=3&&s.length<=4)return "像分词切出来的碎片";
+      if(/们$/.test(s)&&s.length>=3)return "像分词切出来的碎片";
+      return "";}
+    if(EN_STOP.indexOf(s.toLowerCase())>=0)return "常用虚词，不用背";
+    return "";}
   // 把粘贴/读进来的文本分成四堆：能加的、已经有的、删过的、不像单词的
   // 一行 = 单词 + 可选的一段字（释义 / 例句 / 出处）。
   // 分隔符认：制表符、| ; , ： :，两边带空格的 - –，以及破折号 —。
@@ -14115,8 +14154,11 @@ margin-left: -22px;
       if(hit){matches.push([store,hit.rec]);if(hit.changed&&!viaBase)viaBase=hit.base;}}
     if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
-      // 标过「认识」或删过的词，不再自动收
-      if(!isSaved(w0)&&!trashHas(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();trashDrop(w0);updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
+      // 标过「认识」或删过的词，不再自动收。
+      // ⚠️ 这条路以前**完全没过筛子** —— 只要词典里查得到就收，
+      // 于是「而 / 物 / 度 / 原 / 包 / 这个 / 两种 / n」这些全进了生词本，
+      // 而且它们个个都是词典里查得到的。wordIssue 只挂在下面那条「查不到 → 翻译」的路上。
+      if(!isSaved(w0)&&!trashHas(w0)&&!wordJunk(d0)&&!wordJunk(w0)){words.push({w:w0,disp:d0,dict:m0[0],ts:Date.now(),group:wbGroups.def});saveWords();trashDrop(w0);updateWbCount();if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}}
     var html=matches.map(function(m){return dictCardHTML(m[0],m[1]);}).join("");
     if(!html){
       // 输入的是词组/句子 —— 直接给翻译
@@ -14143,7 +14185,7 @@ margin-left: -22px;
         mineBtnHTML(key,q)+
         '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
       var tr2=await trFillFB(q,box.querySelector("#dict-fallback"));
-      if(tr2&&dictPrefs.autoAdd&&!wordIssue(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);
+      if(tr2&&dictPrefs.autoAdd&&!wordJunk(q)&&!isSaved(key)&&!trashHas(key))addUnknownWord(key,q,tr2.text);
       return;}
     // 笔记挂在真正匹配上的那个词头上（查 running 命中 run 时，笔记是 run 的）
     var nk=matches.length?matches[0][1].k:key;
@@ -15295,6 +15337,24 @@ margin-left: -22px;
       // 按的是位置不是评分值，所以这里要转一道。
       if(/^[1-3]$/.test(e.key)&&flashRevealed){e.preventDefault();
         gradeFlash([2,1,0][+e.key-1]);}});
+    var wbc=document.getElementById("wb-clean");
+    if(wbc)wbc.addEventListener("click",async function(){
+      var bad=[];
+      words.forEach(function(x){
+        if(x.known||x.mastered)return;                      // 她自己标过的，是有意的，别碰
+        var why=wordJunk(x.disp||x.w);if(why)bad.push({x:x,why:why});});
+      if(!bad.length){await ttAlert("没找到明显不像单词的，生词本是干净的。",{anchor:wbc});return;}
+      var show=bad.slice(0,15).map(function(b){return (b.x.disp||b.x.w)+"（"+b.why+"）";}).join("\n");
+      // 拼成两句整话，别把「…… 还有 N 个」夹在中间 ——
+      // 词表是按整段文本节点匹配的，夹中文进去英文界面只翻得动外面半截。
+      var q=(bad.length>15)
+        ?("挑出 "+bad.length+" 个不像单词的，先列前 15 个：\n\n"+show+"\n\n移到回收站？以后自动收词也不会再收它们。")
+        :("挑出 "+bad.length+" 个不像单词的：\n\n"+show+"\n\n移到回收站？以后自动收词也不会再收它们。");
+      if(!await ttConfirm(q,{danger:true,okText:"清掉",anchor:wbc}))return;
+      var gone={};bad.forEach(function(b){gone[b.x.w]=1;trashAdd(b.x.w);});
+      words=words.filter(function(x){return !gone[x.w];});
+      saveWords();updateWbCount();renderWordbook();
+      await ttAlert("清掉了 "+bad.length+" 个。误伤了的话，用「📥 导入单词」重新加回来就行。",{anchor:wbc});});
     var wbe=document.getElementById("wb-export");if(wbe)wbe.addEventListener("click",exportWb);
     var wbi=document.getElementById("wb-import");if(wbi)wbi.addEventListener("click",openImport);
     var wbb=document.getElementById("wb-build");if(wbb)wbb.addEventListener("click",function(){openBuild(null);});

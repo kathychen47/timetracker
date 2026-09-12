@@ -157,6 +157,40 @@
       if (a === "star") saveWord(true);
     });
 
+  // ---- 自动收词时的那道细筛 ----
+  // 跟网站 index.html 里的 wordJunk 是同一套规则，两边各存一份。
+  // tools/test-wordjunk.js 会**同时抽这两份跑同样的用例**，防止哪天改了一边忘了另一边。
+  // 只管「自动收」。手点 ★ 的一律照收 —— 她想存什么是她的事。
+  const CN_STOP = ("的 了 着 过 们 和 与 或 而 但 就 才 也 都 还 又 很 太 更 最 " +
+    "这 那 这个 那个 这些 那些 这样 那样 这里 那里 这种 那种 此 其 " +
+    "一个 一些 一种 两个 两种 几个 什么 怎么 为什么 哪个 哪些 多少 " +
+    "我 你 他 她 它 我们 你们 他们 她们 它们 自己 大家 " +
+    "是 有 在 会 能 要 可以 应该 已经 正在 将要 " +
+    "不 没 没有 不是 不能 不会 " +
+    "上 下 左 右 前 后 里 外 中 内 间 " +
+    "因为 所以 如果 虽然 但是 而且 然后 于是 并且 或者 " +
+    "非常 特别 比较 稍微 一直 总是 经常 有时").split(/\s+/);
+  const EN_STOP = ("a an the and or but if of to in on at by for with from as into than then " +
+    "is are was were be been being am " +
+    "this that these those it its he she they them we you i me my your his her their our " +
+    "not no nor do does did done doing have has had having " +
+    "will would shall should can could may might must " +
+    "here there when where which who whom whose what why how all any some each every " +
+    "s t ll re ve d m n o y").split(/\s+/);
+  function wordJunk(s) {
+    s = String(s || "").trim();
+    if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(s)) {
+      if (s.length < 2) return "单个汉字，多半是语素不是词";
+      if (CN_STOP.indexOf(s) >= 0) return "常用虚词，不用背";
+      // 只认「的」结尾、且去掉之后还剩两个字以上。范围放宽一点就会把「目的地」误伤。
+      if (/的$/.test(s) && s.length >= 3 && s.length <= 4) return "像分词切出来的碎片";
+      if (/们$/.test(s) && s.length >= 3) return "像分词切出来的碎片";
+      return "";
+    }
+    if (EN_STOP.indexOf(s.toLowerCase()) >= 0) return "常用虚词，不用背";
+    return "";
+  }
+
     // ★ 和「查到就自动收」走同一条路。auto=true 是手点的，会多说一句话；
     // 自动收只把星星点亮 —— 每查一个词都弹一行提示太吵。
     let saved = false;
@@ -174,7 +208,9 @@
       });
     }
 
-    if (isWord) doLookup(bd, text, () => { if (settings.ttAutoAdd) saveWord(false); });
+    // 查得到 ≠ 该收。「而 / 物 / 这个 / n」这些词典里全都查得到，
+    // 原来只要命中就自动收，生词本很快被这类词灌满。
+    if (isWord) doLookup(bd, text, () => { if (settings.ttAutoAdd && !wordJunk(text)) saveWord(false); });
     else doTranslate(bd, text);
   }
 
