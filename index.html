@@ -11458,6 +11458,12 @@ margin-left: -22px;
     }
     save("tt_events",events);}
   function gcalEver(){return !!load("tt_gcal","");}
+  // gToken 这个变量在过期之后**还是那串字**：只有 fetchGcal 撞上 401 才会把它清掉，
+  // 而 fetchGcal 平时并不跑。所以「gToken 非空」说明不了什么，要看存的到期时间。
+  function gcalFresh(){
+    if(!gToken)return false;
+    var s=load("tt_gtok",null);
+    return !!(s&&s.t===gToken&&s.exp>Date.now());}
   function gcalPend(){var n=0;events.forEach(function(e){if(typeof e.gwant!=="undefined")n++;});return n;}
   function gcalWanted(o){return (o&&typeof o.gwant!=="undefined")?!!o.gwant:!!(o&&o.gid);}
   function gcalApply(o,want){                     // 有 token 直接同步；没有就先记着，等续上了补
@@ -11466,10 +11472,16 @@ margin-left: -22px;
     // 把她真实日历上那个会议的说明栏改写成我们截断到 120 字的纯文本残片；
     // 顺手取消那个勾 → 走 DELETE → 把别人组织的会议从她日历上真删了。
     if(o&&o.gro)return;
-    if(gToken){delete o.gwant;gcalSync(o,want);return;}
+    if(gcalFresh()){delete o.gwant;gcalSync(o,want);return;}
     if(!gcalEver())return;
+    // 她报的：「经常 google 登出但是有番茄钟在运行，等重新登录后没有自动同步」。
+    // 原来这里只看 gToken 非空 → 拿着过期的 token 去 POST → Google 回 401 →
+    // 下面 gcalSync 只认 j.id，401 的 JSON 里没有 id，就当没事发生。
+    // 这条既没 gid 也没 gwant，重新授权后 gcalFlush 根本找不到它。
     o.gwant=!!want;save("tt_events",events);
-    try{refreshGcalPend();}catch(e){}}
+    try{refreshGcalPend();}catch(e){}
+    if(gToken)try{gcalRenew(true);}catch(e){}   // 手上那个已经死了，趁现在悄悄续一个（有中转的话）
+  }
   // ---------- 补传：把还没进 Google 的一次性推上去 ----------
   // 她的原话：「有些之前一键加入 google 了，但是后面又没有了，有没有办法强制把之前所有没加入的全部加进去」。
   // 当时那个框没勾上的，事后完全没有补救入口 —— 只能一条条打开、重勾、保存。
@@ -13766,17 +13778,46 @@ margin-left: -22px;
   var GEV="https://www.googleapis.com/calendar/v3/calendars/primary/events";
   function gBody(o){var tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
     return {summary:o.title,description:o.note||"",start:{dateTime:o.date+"T"+o.start+":00",timeZone:tz},end:{dateTime:o.date+"T"+o.end+":00",timeZone:tz}};}
+  // 请求真发出去了才失败的兜底。gcalApply 那道「token 还新不新鲜」的闸挡住了绝大多数，
+  // 但发到一半过期、或者网络正好断了，还是会落到这里。
+  //   401 / 403 → token 死了：这条放回队列，把死 token 扔掉，悄悄续一个；续上 gcalFlush 会补。
+  //   网络错   → 也放回队列，但 token 别扔（它没错）。
+  //   其它 4xx → 是这条本身有问题（比如时间拼不出来），别放回队列 —— 不然每次重连都重试一遍。
+  function gcalRequeue(obj,want,st){
+    if(st!==401&&st!==403&&st!==0)return false;
+    if(!obj||obj.gro)return false;
+    obj.gwant=!!want;save("tt_events",events);
+    try{pLog("Google 推送失败，放回队列",{st:st,ev:obj.date+" "+obj.start});}catch(e){}
+    if(st===401||st===403){gToken=null;save("tt_gtok",null);
+      try{updateGcalUI();}catch(e){}try{gcalRenew(true);}catch(e){}}
+    try{refreshGcalPend();}catch(e){}
+    try{if(state.tab==="calendar")renderCal();}catch(e){}   // 那个 G 变成琥珀色，你看得见它还没上去
+    return true;}
   function gcalSync(obj,want){
     if(!gToken)return;
     if(want){
-      if(obj.gid){fetch(GEV+"/"+encodeURIComponent(obj.gid),{method:"PATCH",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(){fetchGcal();}).catch(function(){});}
-      else{fetch(GEV,{method:"POST",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))}).then(function(r){return r.json();}).then(function(j){if(j&&j.id){obj.gid=j.id;save("tt_events",events);}fetchGcal();}).catch(function(){});}
+      var isNew=!obj.gid;
+      var url=isNew?GEV:(GEV+"/"+encodeURIComponent(obj.gid));
+      fetch(url,{method:isNew?"POST":"PATCH",headers:{Authorization:"Bearer "+gToken,"Content-Type":"application/json"},body:JSON.stringify(gBody(obj))})
+        .then(function(r){
+          if(!r.ok){gcalRequeue(obj,want,r.status);return null;}
+          return r.json();})
+        .then(function(j){
+          if(j===null)return;
+          if(isNew&&j&&j.id){obj.gid=j.id;delete obj.gwant;save("tt_events",events);}
+          fetchGcal();})
+        .catch(function(){gcalRequeue(obj,want,0);});
     }else if(obj.gid){var gid=obj.gid;obj.gid=null;save("tt_events",events);gcalDeleteById(gid);}
       // 这里刻意不写 gid 墓碑：本地那条还活着，写了它就会在别的设备上被连坐删掉。
       // 防重复归档由 archPlan 的「同日同名同起点」那道闸兜着 —— 她那条记录还在，拦得住。
   }
   function gcalDeleteById(gid){if(!gToken||!gid)return;
-    fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}}).then(function(){fetchGcal();}).catch(function(){});}
+    fetch(GEV+"/"+encodeURIComponent(gid),{method:"DELETE",headers:{Authorization:"Bearer "+gToken}})
+      .then(function(r){
+        if(r.status===401||r.status===403){gPendDel[gid]=1;save("tt_gpend",gPendDel);
+          gToken=null;save("tt_gtok",null);try{updateGcalUI();}catch(e){}try{gcalRenew(true);}catch(e){}return;}
+        fetchGcal();})
+      .catch(function(){gPendDel[gid]=1;save("tt_gpend",gPendDel);});}
   updateGcalUI();
   (function(){
     var saved=load("tt_gtok",null);
