@@ -27,7 +27,9 @@ var CODE = [
   src.slice(ln("function evMinutes(e){"), ln("function evSegs(e){")).join(NL),
   src.slice(ln("function evSegs(e){"), ln("function evSegs(e){") + 2).join(NL),
   src.slice(ln("function fmtDur(min){"), ln("function fmtDur(min){") + 8).join(NL),
-  src.slice(ln("function repRange(p){"), ln("function repRange(p){") + 5).join(NL)
+  src.slice(ln("function repRange(p){"), ln("function repRange(p){") + 5).join(NL),
+  // 弹窗里「时长」那个框的算法（不含绑事件那几行）
+  src.slice(ln("function parseDurH(v){"), ln("if(fDur){fDur.addEventListener")).join(NL)
 ].join(NL);
 
 var NOW = new Date(2026, 8, 15, 14, 30, 0).getTime();      // 2026-09-15 周二 14:30
@@ -44,7 +46,8 @@ var ctx = {
   parse: function (s) { var p = s.split("-"); return new FakeDate(+p[0], +p[1] - 1, +p[2]); },
   toMin: function (s) { var p = String(s).split(":"); return (+p[0]) * 60 + (+p[1]); },
   parentObj: function (k) { for (var i = 0; i < CATS.length; i++) if (CATS[i].key === k) return CATS[i]; return null; },
-  statState: { expFrom: "", expTo: "" }
+  statState: { expFrom: "", expTo: "" },
+  fStart: { value: "09:00" }, fEnd: { value: "10:00" }, fDur: { value: "" }
 };
 vm.createContext(ctx);
 vm.runInContext(CODE, ctx);
@@ -142,9 +145,52 @@ T("填反了 → 自动掉个头", function () {
   C.statState.expFrom = ""; C.statState.expTo = "";
 });
 
+// ---------- 弹窗「时长」框：填多久，结束自己算 ----------
+T("光写数字按小时，带单位照单位", function () {
+  ok(C.parseDurH("2") === 120, "2 → 2h");
+  ok(C.parseDurH("1.5") === 90, "1.5 → 1.5h");
+  ok(C.parseDurH("90m") === 90, "90m 还是 90 分");
+  ok(C.parseDurH("1h30") === 90, "1h30");
+  ok(C.parseDurH("") === 0, "空 = 没填");
+});
+
+T("开始 10:00 填 2 → 结束 12:00", function () {
+  C.fStart.value = "10:00"; C.fDur.value = "2"; C.applyDur();
+  ok(C.fEnd.value === "12:00", "实得 " + C.fEnd.value);
+  C.fDur.value = "45m"; C.applyDur();
+  ok(C.fEnd.value === "10:45", "45m → 10:45，实得 " + C.fEnd.value);
+});
+
+T("跨夜：23:00 填 2 → 结束 01:00", function () {
+  C.fStart.value = "23:00"; C.fDur.value = "2"; C.applyDur();
+  ok(C.fEnd.value === "01:00", "对 24 取模，实得 " + C.fEnd.value);
+  ok(C.durFromTimes() === 120, "反过来算时长也认得跨夜，实得 " + C.durFromTimes());
+});
+
+T("改开始 / 结束，框里的数跟着回写", function () {
+  C.fStart.value = "09:00"; C.fEnd.value = "10:30"; C.showDur();
+  ok(C.fDur.value === "1.5h", "实得 " + C.fDur.value);
+  C.fEnd.value = "09:20"; C.showDur();
+  ok(C.fDur.value === "20m", "不满一小时用分钟，实得 " + C.fDur.value);
+  C.fEnd.value = "09:00"; C.showDur();
+  ok(C.fDur.value === "", "零时长留空");
+});
+
+T("填了认不出的东西，结束时间不动", function () {
+  C.fStart.value = "10:00"; C.fEnd.value = "11:00"; C.fDur.value = "abc"; C.applyDur();
+  ok(C.fEnd.value === "11:00", "别把结束改坏");
+});
+
 // ---------- 接线体检 ----------
 var whole = src.join(NL);
 function count(p) { return whole.split(p).length - 1; }
+
+T("时长框接上了", function () {
+  ok(count('id="ev-dur"') === 1, "框在开始和结束中间");
+  ok(count('fDur.addEventListener("input",applyDur)') === 1, "边打边算");
+  ok(count('fEnd.addEventListener("input",showDur)') === 1, "改结束回写");
+  ok(count("    showDur();") === 1, "打开弹窗先把现有的时长填上");
+});
 
 T("弹窗里有勾、有实际时长框，三条存的路都带上", function () {
   ok(count('id="ev-nostat"') === 1, "勾");

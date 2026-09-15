@@ -1867,6 +1867,7 @@
   .field input,.field select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px}
   .field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;min-height:46px}
   .field .row{display:flex;gap:10px}.field .row>div{flex:1}
+  .field .row>.ev-durw{flex:0 0 82px}.field .row>.ev-durw input{text-align:center}
   .cats{display:flex;flex-wrap:wrap;gap:7px}
   .cat-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;color:var(--text)}
   .cat-chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -4275,6 +4276,7 @@ margin-left: -22px;
     <div class="field"><label>日期</label><input type="date" lang="zh-CN" id="ev-date"></div>
     <div class="field"><div class="row">
       <div><label>开始</label><input type="time" id="ev-start" value="09:00"></div>
+      <div class="ev-durw"><label>时长</label><input type="text" id="ev-dur" placeholder="2h" autocomplete="off" title="填多久，结束时间自己算：2 / 2h / 1h30 / 90m"></div>
       <div><label>结束</label><input type="time" id="ev-end" value="10:00"></div>
     </div></div>
     <div class="field"><label>大类（决定颜色 · 输入标题会自动推荐）</label><div class="cats" id="ev-cats"></div></div>
@@ -5829,6 +5831,7 @@ margin-left: -22px;
     "培训":"training",
     "基金":"Fund",
     "塌得最厉害的句子":"Your worst sentences",
+    "填多久，结束时间自己算：2 / 2h / 1h30 / 90m":"Type how long; the end time is worked out: 2 / 2h / 1h30 / 90m",
     "处理中…":"Processing…",
     "备注":"Note",
     "备注 / 来源":"Note / source",
@@ -11364,6 +11367,19 @@ margin-left: -22px;
     fStart=document.getElementById("ev-start"),fEnd=document.getElementById("ev-end"),
     catsBox=document.getElementById("ev-cats"),subsBox=document.getElementById("ev-subs"),delBtn=document.getElementById("ev-delete");
   var editingId=null,adoptGid=null,selCat="focus",selSub=null,catManual=false,addMode="parent",selAddColor=PALETTE[0];
+  // 「开始」旁边那个时长框：她的原话「要可以输入起始时间后直接输入多少h自己计算结束时间」。
+  // 光写数字按小时算（2 = 2h），带单位的照单位；改了开始或结束，框里的数跟着回写。
+  var fDur=document.getElementById("ev-dur");
+  function parseDurH(v){v=String(v||"").trim();if(/^\d+(\.\d+)?$/.test(v))return Math.round(+v*60);return parseDurIn(v);}
+  function durFromTimes(){var a=toMin(fStart.value||""),b=toMin(fEnd.value||"");
+    if(!isFinite(a)||!isFinite(b))return 0;var d=b-a;if(d<0)d+=1440;return d;}     // 结束比开始早 = 跨夜
+  function showDur(){if(!fDur)return;var d=durFromTimes();fDur.value=d>0?fmtDur(d):"";}
+  function applyDur(){var m=parseDurH(fDur.value),a=toMin(fStart.value||"");
+    if(!(m>0)||!isFinite(a))return;var e=(a+m)%1440;fEnd.value=pad(Math.floor(e/60))+":"+pad(e%60);}
+  if(fDur){fDur.addEventListener("input",applyDur);
+    fDur.addEventListener("blur",function(){if(parseDurH(fDur.value)>0)showDur();});   // 离开时把 "2" 规整成 "2h"
+    fStart.addEventListener("input",function(){var m=parseDurH(fDur.value);if(m>0)applyDur();else showDur();});   // 改开始：时长不动，结束跟着挪
+    fEnd.addEventListener("input",showDur);}
   function renderParents(){
     catsBox.innerHTML=catsByUse().map(function(c){return '<div class="cat-chip" data-cat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+
       '<div class="cat-chip add-chip" data-add="parent" style="border-style:dashed">+ 新建大类</div>';
@@ -11633,6 +11649,7 @@ margin-left: -22px;
     fDate.value=obj?obj.date:(opts.date||fmt(new Date()));
     fStart.value=obj?obj.start:(opts.start||"09:00");
     fEnd.value=obj?obj.end:(opts.end||"10:00");
+    showDur();
     selCat=obj?obj.cat:(opts.cat||"focus");selSub=obj?(obj.sub||null):(opts.sub||null);
     renderParents();renderSubs();
     document.getElementById("ev-note").value=obj?(obj.note||""):"";

@@ -2073,5 +2073,6 @@
 "清掉，跟着上面的区间": "Clear, follow the range above",
 "报告自己的时间段。留空就跟着上面的日 / 周 / 月走": "The report's own date range. Leave blank to follow the day / week / month above",
 "统计时长（可选）": "Stats duration (optional)",
-"统计时长另算": "Stats duration set separately"
+"统计时长另算": "Stats duration set separately",
+"填多久，结束时间自己算：2 / 2h / 1h30 / 90m": "Type how long; the end time is worked out: 2 / 2h / 1h30 / 90m"
 }
