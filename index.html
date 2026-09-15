@@ -4291,7 +4291,7 @@ margin-left: -22px;
     </div>
     <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
-    <div class="field" id="ev-amin-field"><label>实际做了多久（可选 · 上面写给别人看，统计按这里算）</label><input type="text" id="ev-amin" placeholder="比如 3h / 1h30 / 90m —— 留空就按上面的时间算" autocomplete="off"></div>
+    <div class="field" id="ev-amin-field"><label>统计时长（可选）</label><input type="text" id="ev-amin" placeholder="3h / 1h30 / 90m" autocomplete="off"></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
     <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="就是日历块右下角那个小方块。块太小的时候那个方块会被藏起来、点不到 —— 在这儿勾是一样的"><input type="checkbox" id="ev-done"> ✓ 已完成</label>
@@ -5906,7 +5906,6 @@ margin-left: -22px;
     "定期利息":"Term deposit interest",
     "宝贝工资":"Babe's salary",
     "实收":"Gross",
-    "实际做了多久（可选 · 上面写给别人看，统计按这里算）":"Actual time spent (optional · the times above are what others see; stats use this)",
     "实际税率":"Effective rate",
     "家务":"chores",
     "家居":"home goods",
@@ -6403,7 +6402,6 @@ margin-left: -22px;
     "每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数":"Each row ends with \"declared / total\" · the undeclared ones are pre-tax figures",
     "每遍之后停":"Pause after each",
     "比如 3.96":"e.g. 3.96",
-    "比如 3h / 1h30 / 90m —— 留空就按上面的时间算":"e.g. 3h / 1h30 / 90m — leave blank to use the times above",
     "水果":"fruit",
     "水电":"utilities",
     "水电网":"utilities & internet",
@@ -6644,7 +6642,8 @@ margin-left: -22px;
     "给这段加笔记：":"Add a note to this passage:",
     "给这段录音起个名字":"Name this recording",
     "给这道菜起个名字吧":"Give this dish a name",
-    "统计按实际时长算，不按记录上的":"Stats use the actual time, not the logged time",
+    "统计时长另算":"Stats duration set separately",
+    "统计时长（可选）":"Stats duration (optional)",
     "继续":"Continue",
     "续保":"renewal",
     "维修保养":"service & repairs",
@@ -10834,7 +10833,7 @@ margin-left: -22px;
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
     if(evNoStat(e)){par+=" nostat";fish+='<span class="nost" title="不进统计">⊘</span>';}
-    else if(+e.amin>0)fish+='<span class="nost" title="统计按实际时长算，不按记录上的">≈</span>';
+    else if(+e.amin>0)fish+='<span class="nost" title="统计时长另算">≈</span>';
     // 块上那行小字写时长，不写开始时间 —— 几点开始，块画在哪一行本来就说明了；
     // 真正想一眼看见的是"这事花了多久"。够一小时按小时（1.5h），不够才用分钟（45m）。
     // 中间停过的那种用净时长（不含洞），跟统计口径一致。精确的起止时间移到悬停里。
