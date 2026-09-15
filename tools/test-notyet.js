@@ -31,7 +31,8 @@ function mk(gcalCount) {
     gcalCount: !!gcalCount,
     pad: function (n) { return (n < 10 ? "0" : "") + n; },
     fmt: function (d) { return d.getFullYear() + "-" + ctx.pad(d.getMonth() + 1) + "-" + ctx.pad(d.getDate()); },
-    toMin: function (s) { var p = String(s).split(":"); return (+p[0]) * 60 + (+p[1]); }
+    toMin: function (s) { var p = String(s).split(":"); return (+p[0]) * 60 + (+p[1]); },
+    parentObj: function () { return null; }   // evCounts 现在还看大类的「不进统计」，这里没有分类表
   };
   vm.createContext(ctx);
   vm.runInContext(CODE, ctx);
@@ -132,7 +133,7 @@ T("统计只有一个出口，改一处就全覆盖", function () {
   // 目标 / 图例 / 常用排序 / AI 周总结都是 evCounts(e) 这样调的
   ok(count("evCounts(") >= 5, "带括号的调用点至少 5 处（含定义），实得 " + count("evCounts("));
   // statPool 是直接把它当 filter 的回调传进去的，没有括号
-  ok(count("events.filter(evCounts)") === 1, "统计页那条路也得走同一个口径");
+  ok(count("events.filter(pred||evCounts)") === 1, "统计页那条路也得走同一个口径（报告那条路传自己的 pred 进来）");
 });
 
 T("Google 那边的镜像也得拦一道", function () {

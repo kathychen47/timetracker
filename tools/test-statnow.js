@@ -27,7 +27,7 @@ var CODE = [
   src.slice(ln("function startOfWeek(d){"), ln("function startOfWeek(d){") + 2).join(NL),
   'var WD=["一","二","三","四","五","六","日"];',
   src.slice(ln("var statState={mode:"), ln("var statView=load(")).join(NL),
-  src.slice(ln("function statPeriod(){"), ln("function statPool(){")).join(NL)
+  src.slice(ln("function statPeriod(){"), ln("function statPool(pred){")).join(NL)
 ].join(NL);
 
 var ctx = { console: console, Math: Math, Date: Date };

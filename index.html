@@ -259,6 +259,8 @@
   .pill.live{outline:1.4px dashed color-mix(in srgb,var(--c) 65%,transparent);outline-offset:-1px}
   @media (prefers-reduced-motion:reduce){.ev.live{animation:none;transition:none}}
   /* 摸鱼事件：斜条纹，一眼看出这段时间是叠在别的事情上面的 */
+  .cs-nostat{font-size:11px;padding:2px 8px;border:1px solid var(--border);border-radius:7px;background:var(--surface);color:var(--muted);cursor:pointer;margin-left:auto}
+  .cs-nostat.on{border-style:dashed;color:var(--text)}
   .ev.par{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.42) 0 6px,transparent 6px 12px)}
   .ev.par .fish{position:absolute;left:4px;bottom:2px;font-size:10px;line-height:1;opacity:.85}
   .ev .gtag{position:absolute;right:3px;bottom:3px;font-size:9px;font-weight:700;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:4px;line-height:13px;padding:0 3px}
@@ -381,6 +383,9 @@
   /* 还没到的日子：先淡着摆在那儿，到了当天自动变回正常 ——
      一眼就能分出「已经发生的」和「只是排着的」，不用去看日期 */
   .ev.future{opacity:.45}
+  /* 标了「不进统计」的：还在日历上，但描一圈虚线、淡一点，一眼知道它不算数 */
+  .ev.nostat{opacity:.55;outline:1.5px dashed color-mix(in srgb,var(--text) 45%,transparent);outline-offset:-1.5px}
+  .ev .nost{position:absolute;right:4px;top:2px;font-size:10px;line-height:1;opacity:.8}
   .ev.faded{opacity:.12}
   .pill.faded{opacity:.22}
 
@@ -1784,6 +1789,9 @@
   .stat-nav{display:flex;align-items:center;gap:8px}
   .stat-nav b{font-size:14px;font-weight:600;min-width:118px;text-align:center}
   .stat-now{padding:5px 11px;font-size:12.5px;border-radius:9px}
+  .exp-range{display:inline-flex;align-items:center;gap:6px;margin-left:auto;font-size:12px;color:var(--muted)}
+  .exp-range input[type=date]{padding:5px 8px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:12px}
+  @media print{.exp-range{display:none}}
   .stat-custom{display:flex;align-items:center;gap:6px}
   .stat-custom input{padding:8px 10px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:13px}
   .stat-custom span{color:var(--muted)}
@@ -4283,9 +4291,11 @@ margin-left: -22px;
     </div>
     <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
+    <div class="field" id="ev-amin-field"><label>实际做了多久（可选 · 上面写给别人看，统计按这里算）</label><input type="text" id="ev-amin" placeholder="比如 3h / 1h30 / 90m —— 留空就按上面的时间算" autocomplete="off"></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
     <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="就是日历块右下角那个小方块。块太小的时候那个方块会被藏起来、点不到 —— 在这儿勾是一样的"><input type="checkbox" id="ev-done"> ✓ 已完成</label>
+    <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="日历上照样显示，只是总时长、日均、目标进度都不算它"><input type="checkbox" id="ev-nostat"> ⊘ 不进统计</label>
     <div id="ev-gcal-row" style="display:none;margin-top:4px">
       <label class="pomo-log" style="justify-content:flex-start"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
       <div class="ev-gcal-hint" id="ev-gcal-hint" style="display:none"></div>
@@ -5008,7 +5018,14 @@ margin-left: -22px;
     if(!isFinite(m))return true;
     var n=new Date();
     return m<=n.getHours()*60+n.getMinutes();}
-  function evCounts(e){return !(e&&e.arch&&!gcalCount)&&evStarted(e);}
+  // 「不进统计」：她自己标的。两级 —— 事件上一个勾（e.nostat），或者整个大类（cat.nostat）。
+  // 她的原话：「我想要设置某些不进统计」。
+  // 日历上照样画（淡一点、虚线框），只是总时长 / 日均 / 目标进度 / 图例上的小时数都不算它。
+  // 和「还没发生」走同一道闸（evCounts），所以统计页、日历图例、目标热力图、仪表盘本周合计口径一致。
+  function catNoStat(k){var c=parentObj(k);return !!(c&&c.nostat);}
+  function evNoStat(e){return !!(e&&(e.nostat||catNoStat(e.cat)));}
+  function evRecorded(e){return !(e&&e.arch&&!gcalCount)&&evStarted(e);}   // 报告 / 明细用：记录都列，不管进不进统计
+  function evCounts(e){return evRecorded(e)&&!evNoStat(e);}
   // 一条记录在统计里算哪一天
   function statDay(e){
     if(!dayCutOn())return e&&e.date;
@@ -5284,6 +5301,7 @@ margin-left: -22px;
     "→ Generate new token → Repository access 选":"→ Generate new token → under Repository access pick",
     "↩ 恢复":"↩ Restore",
     "⇄ 边写边看":"⇄ Split",
+    "⊘ 不进统计":"⊘ Exclude from stats",
     "⏱ 上次那":"⏱ Last time's",
     "⏱ 时间线":"⏱ Timeline",
     "⏳ 同步中…":"⏳ Syncing…",
@@ -5407,6 +5425,7 @@ margin-left: -22px;
     "不认识":"Don't know",
     "不设目标值，只把日历里对得上的记录累计起来":"No target value — just adds up the matching records from your calendar",
     "不进云同步、不进仓库":"never uploaded to cloud sync, never in the repo",
+    "不进统计":"Excluded from stats",
     "不量血糖就选「不显示」，那一页会清爽很多。显示的时候点它标题那行可以收起来，收没收起会记住，下次打开还是你离开时的样子。":"If you don't track blood sugar, pick \"Hide\" and that page gets much cleaner. When shown, click its title row to collapse it — that's remembered, so next time it opens just as you left it.",
     "不限类别":"Any category",
     "专业术语、人名、缩写这类，机器翻译只能当草稿":"For jargon, names and abbreviations, machine translation is only a first draft",
@@ -5887,6 +5906,7 @@ margin-left: -22px;
     "定期利息":"Term deposit interest",
     "宝贝工资":"Babe's salary",
     "实收":"Gross",
+    "实际做了多久（可选 · 上面写给别人看，统计按这里算）":"Actual time spent (optional · the times above are what others see; stats use this)",
     "实际税率":"Effective rate",
     "家务":"chores",
     "家居":"home goods",
@@ -6076,6 +6096,7 @@ margin-left: -22px;
     "折算了":"for conversion",
     "护肤":"skincare",
     "报关":"customs clearance",
+    "报告自己的时间段。留空就跟着上面的日 / 周 / 月走":"The report's own date range. Leave blank to follow the day / week / month above",
     "报销":"Reimbursement",
     "拆解中…":"Breaking it down…",
     "拉五年日汇率":"Get 5 years of daily rates",
@@ -6228,6 +6249,7 @@ margin-left: -22px;
     "无类别":"No category",
     "无限量 · 断网可用 · 首次下 ~110MB":"Unlimited · works offline · ~110MB first time",
     "日":"Day",
+    "日历上照样显示，只是总时长、日均、目标进度都不算它":"Still shown on the calendar — just left out of total time, daily average and goal progress",
     "日历块右下角那个小方块默认打上勾。块太小的时候那个方块会整个藏起来、点不到，开着这个就不会漏。要单独改哪一条，在事件弹窗里勾或取消。":"The little box at the bottom-right of a calendar block starts out ticked. On very short blocks that box is hidden and you cannot tap it, so with this on you never miss one. To change a single event, tick or untick it in the event dialog.",
     "日历用的是你在「👤 账号」里登录的那个 Google 账号，":"Calendar uses the same Google account you signed in with under \"👤 Account\",",
     "日均支出":"Daily avg spend",
@@ -6381,6 +6403,7 @@ margin-left: -22px;
     "每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数":"Each row ends with \"declared / total\" · the undeclared ones are pre-tax figures",
     "每遍之后停":"Pause after each",
     "比如 3.96":"e.g. 3.96",
+    "比如 3h / 1h30 / 90m —— 留空就按上面的时间算":"e.g. 3h / 1h30 / 90m — leave blank to use the times above",
     "水果":"fruit",
     "水电":"utilities",
     "水电网":"utilities & internet",
@@ -6444,6 +6467,7 @@ margin-left: -22px;
     "清掉云端带下来的示例事件":"Removed demo events pulled from the cloud",
     "清掉存下来的":"Clear saved ones",
     "清掉这一句的听写和判分":"Clear this line's dictation and score",
+    "清掉，跟着上面的区间":"Clear, follow the range above",
     "清晰度 1.5×":"Sharpness 1.5×",
     "清晰度 1×":"Sharpness 1×",
     "清晰度 2×":"Sharpness 2×",
@@ -6620,6 +6644,7 @@ margin-left: -22px;
     "给这段加笔记：":"Add a note to this passage:",
     "给这段录音起个名字":"Name this recording",
     "给这道菜起个名字吧":"Give this dish a name",
+    "统计按实际时长算，不按记录上的":"Stats use the actual time, not the logged time",
     "继续":"Continue",
     "续保":"renewal",
     "维修保养":"service & repairs",
@@ -6793,6 +6818,7 @@ margin-left: -22px;
     "跑步":"Running",
     "距目标":"To goal",
     "跟上次选的一样":"Same as last time",
+    "跟上面":"Follow above",
     "跟着看":"Following",
     "跟读":"Follow along",
     "跨币种折算":"Currency conversion",
@@ -6868,6 +6894,7 @@ margin-left: -22px;
     "还没进 Google 的事件":"Events not in Google yet",
     "还没选":"None selected",
     "还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。":"No folder chosen yet, or the permission expired — click \"🗂 Local folder\" and pick it again.",
+    "这一整类都不算进总时长 / 日均 / 目标进度。日历上照样显示":"This whole category is left out of total time / daily average / goal progress. Still shown on the calendar",
     "这一格看哪本书":"Which book goes in this pane",
     "这一档下面没有目标。":"Nothing in this group.",
     "这一段你没写出来":"You didn't write this part",
@@ -6950,6 +6977,7 @@ margin-left: -22px;
     "这段时间的分段（正计时里换任务记下来的）":"Segments in this block (logged when you switched tasks in Count up)",
     "这段时间还没有记录":"No readings in this period",
     "这笔":"this entry",
+    "进统计":"Counted",
     "进行中":"Active",
     "连上了，但还没下载模型。先在 Mac 上跑：ollama pull qwen3:8b":"Connected, but no model downloaded yet. Run this on your Mac first: ollama pull qwen3:8b",
     "连接 Google Calendar":"Connect Google Calendar",
@@ -7361,8 +7389,9 @@ margin-left: -22px;
     ["月","^(.+?)(.+?)月(.+?)–(.+?)(.+?)月(.+?)日$","\u00011\u00012/\u00013–\u00014\u00015/\u00016"],
     ["其他","^其他 (.+?) 项$","\u00011 others"],
     ["趋势（按","^趋势（按(.+?)）$","Trend (by \u00011)"],
-    ["没算进统计 —— 统计默认只算你在 app 里记的。","^条来自 Google 日历的记录(.+?)没算进统计 —— 统计默认只算你在 app 里记的。$","records from Google Calendar\u00011 aren't counted in the stats — by default stats only count what you log in the app."],
+    ["条标了「不进统计」","^条标了「不进统计」(.+?)，没算进来。$","marked “Exclude from stats”\u00011, not counted."],
     ["（共","^（共 (.+?)）$","(\u00011 total)"],
+    ["没算进统计 —— 统计默认只算你在 app 里记的。","^条来自 Google 日历的记录(.+?)没算进统计 —— 统计默认只算你在 app 里记的。$","records from Google Calendar\u00011 aren't counted in the stats — by default stats only count what you log in the app."],
     ["天有记录","^按 (.+?) 天有记录$","over \u00011 days with records"],
     ["时间分布（","^时间分布（(.+?) · 按(.+?)）(.+?)$","Time distribution (\u00011 · by \u00012)\u00013"],
     ["⧉ 含重叠","^⧉ 含重叠 (.+?)(.+?)$","⧉ incl. \u00011 overlap\u00012"],
@@ -10691,7 +10720,13 @@ margin-left: -22px;
   // 正计时中途暂停，会在段里留下一个 {gap:true}。它占日历上的位置（那个洞），
   // 但不是专注时间 —— 所有"我做了多久"的地方都要用 evNetMin，别用 evMinutes。
   function evGapSec(e){var g=0,ss=(e&&e.segs)||[];ss.forEach(function(s){if(s.gap)g+=(+s.sec||0);});return g;}
-  function evNetMin(e){
+  // 「记的是 4h，实际按 3h 算」。她的原话：「我的纪录有些是给老板看的，
+  // 可能实际番茄钟是 3h 但是因为我更有效的做了，我会写到 4h」。
+  // 块画多高、Google 上是几点到几点，仍旧按记录（老板看的那份）；
+  // app 里所有算时间的地方（总时长 / 日均 / 分布 / 趋势 / 目标 / 图例）按这个数。
+  function evNetMin(e){return (e&&+e.amin>0)?+e.amin:evRecMin(e);}
+  // 记录上写的时长（给别人看的那份）：明细 / CSV / 复制文本 / 打印用这个，不受「实际做了多久」影响。
+  function evRecMin(e){
     var ss=evSegs(e);if(!ss)return evMinutes(e);
     var tot=0,work=0;ss.forEach(function(s){var x=+s.sec||0;tot+=x;if(!s.gap)work+=x;});
     if(tot<=0||work>=tot)return evMinutes(e);
@@ -10798,10 +10833,12 @@ margin-left: -22px;
     var grad=segGrad(e),multi=grad?" multi":"";
     if(evGapSec(e)>0)multi+=" gapped";                 // 中间空一截 —— 描一圈边，说明它还是一条
     var par=e.par?" par":"",fish=e.par?'<span class="fish" title="摸鱼 · 与其它事件重叠">🐟</span>':'';
+    if(evNoStat(e)){par+=" nostat";fish+='<span class="nost" title="不进统计">⊘</span>';}
+    else if(+e.amin>0)fish+='<span class="nost" title="统计按实际时长算，不按记录上的">≈</span>';
     // 块上那行小字写时长，不写开始时间 —— 几点开始，块画在哪一行本来就说明了；
     // 真正想一眼看见的是"这事花了多久"。够一小时按小时（1.5h），不够才用分钟（45m）。
     // 中间停过的那种用净时长（不含洞），跟统计口径一致。精确的起止时间移到悬停里。
-    var dmin=evNetMin(e),htxt=(dmin>0?fmtDur(dmin):e.start);
+    var dmin=evRecMin(e),htxt=(dmin>0?fmtDur(dmin):e.start);   // 块上写记录的时长，跟块画多高一致；统计按实际算的另有 ≈ 角标
     var tip=e.start+"–"+e.end+(e.note?" · "+e.note:"");
     return '<div class="ev'+sz+(e.done?" done":"")+(e.live?" live":"")+(e.gcal?" gcal":"")+(e.arch?" arch":"")+multi+par+faded+fut+'" data-id="'+e.id+'" title="'+esc(tip)+'" style="--c:'+evColor(e)+';'+box+(grad?';background:'+grad:'')+'">'+
       '<div class="t">'+esc(e.title)+'</div><div class="h">'+(e.live?liveLabel(e):htxt)+'</div>'+lbl+fish+corner+gm+'</div>';}
@@ -11611,6 +11648,8 @@ margin-left: -22px;
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.map(function(s){return Object.assign({},s);}):null;
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
+    document.getElementById("ev-nostat").checked=!!(obj&&obj.nostat);
+    document.getElementById("ev-amin").value=(obj&&+obj.amin>0)?fmtDur(+obj.amin):"";
     document.getElementById("ev-done").checked=obj?!!obj.done:doneDefault;
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
     refreshGcalRow();
@@ -11685,23 +11724,25 @@ margin-left: -22px;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     var isPar=!!document.getElementById("ev-par").checked;
     var isDone=!!document.getElementById("ev-done").checked;
+    var isNo=document.getElementById("ev-nostat").checked||undefined;
+    var aMin=parseDurIn(document.getElementById("ev-amin").value)||undefined;   // 同上：没填就不落字段   // undefined 存的时候会被 JSON 丢掉，不给每条都挂个 false
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
-      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
+      obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       gcalApply(obj,want);
       closeModal();renderCal();return;
     }
     if(editingId){var old=events.filter(function(e){return e.id===editingId;})[0]||{};
-      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};
+      obj={id:editingId,title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:old.gid||null,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};
       // 这几个跟着走：不带上的话，Google 那边重建系列之后认不出来，会再长出一条重复的归档件。
       // 故意不带 arch —— 保存过一次就是「认领」，从此归她管，不再被 Google 刷新。
       if(old.guid)obj.guid=old.guid;if(old.gots)obj.gots=old.gots;if(old.gts)obj.gts=old.gts;
       if(old.gup)obj.gup=old.gup;if(old.gtzo!==undefined)obj.gtzo=old.gtzo;if(old.gro)obj.gro=1;
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
-    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar};events.push(obj);}
+    else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};events.push(obj);}
     save("tt_events",events);
     gcalApply(obj,want);
     closeModal();renderCal();
@@ -12465,6 +12506,13 @@ margin-left: -22px;
 
   // ---------- stats ----------
   function fmtDur(min){return min>=60?((Math.round(min/6)/10)+"h"):(min+"m");}
+  // 她填的时长：3h / 1.5h / 1h30 / 90 / 90m / 2小时 —— 都认。认不出来 = 0（就当没填）。
+  function parseDurIn(s){
+    s=String(s||"").trim().toLowerCase().replace(/小时|时/g,"h").replace(/分钟|分/g,"m").replace(/\s+/g,"");
+    if(!s)return 0;
+    var m=/^(\d+(?:\.\d+)?)h(?:(\d+)m?)?$/.exec(s);if(m)return Math.round(+m[1]*60+(+m[2]||0));
+    m=/^(\d+(?:\.\d+)?)m?$/.exec(s);if(m)return Math.round(+m[1]);
+    return 0;}
   function rangeStart(range){var t=new Date();if(range==="week")return startOfWeek(t);if(range==="month")return new Date(t.getFullYear(),t.getMonth(),1);if(range==="30")return addDays(t,-29);return null;}
   function filterEvents(ck,sk,rg){var st=rangeStart(rg),today=new Date();
     return events.filter(function(e){if(!evHasCat(e,ck,sk))return false;if(st){var d=parse(e.date);if(d<st||d>today)return false;}return true;})
@@ -12475,9 +12523,9 @@ margin-left: -22px;
       if(st){st.forEach(function(s){         // 分段事件：一段一行，钟点按段顺序推算，方便进 Excel 透视
         var mn=s.min||Math.round(s.sec/60*100)/100;   // 不满 1 分钟的段写成小数，别在表里变成 0
         lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn,e.par?"是":""].join(","));});return;}
-      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evNetMin(e),e.par?"是":""].join(","));});
+      lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evRecMin(e),e.par?"是":""].join(","));});
     return "﻿"+lines.join("\r\n");}
-  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evNetMin(e)+"分)\n";});return s;}
+  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evRecMin(e)+"分)\n";});return s;}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
     if(!rows.length)return '<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+'</div></div><div class="stat-empty">该范围内没有记录</div>';
     var h='<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+' · 共 '+fmtDur(total)+' · '+rows.length+' 项</div></div>';
@@ -12488,7 +12536,7 @@ margin-left: -22px;
     h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>';
     rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];var cn=evCatLabel(e).replace(" · "," › ");
       var st=segTimes(e),det=st?'<div class="rep-segs">'+st.filter(function(s){return !s.gap;}).map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+secLabel(s.sec)+'</em>';}).join(" · ")+'</div>':'';
-      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evNetMin(e)+'分</td></tr>';});
+      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evRecMin(e)+'分</td></tr>';});
     return h+'</tbody></table></div>';}
   function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){ttAlert("此环境不支持直接下载，请改用「复制文本」");}}
   function copyText(txt,btn){function ok(){if(btn){var o=btn.textContent;btn.textContent="已复制";setTimeout(function(){btn.textContent=o;},1400);}}
@@ -12500,7 +12548,15 @@ margin-left: -22px;
   statState.dist=statView.dist||"donut";     // donut | rank
   statState.trend=statView.trend||"bar";     // bar | line
   statState.by=statView.by||"cat";           // cat 按大类 | sub 把所有大类下的小类一起铺开
-  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by});}
+  // 报告可以有自己的时间段（她要的：「这里的报告需要可以选择时间段导出」）。
+  // 不填 = 跟着上面的日/周/月走；填了就一直用这个，刷新也在，直到点「跟上面」清掉。
+  statState.expFrom=statView.expFrom||"";statState.expTo=statView.expTo||"";
+  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo});}
+  function repRange(p){                         // → {start,end,label,own}
+    if(!statState.expFrom&&!statState.expTo)return {start:p.start,end:p.end,label:p.label,own:false};
+    var f=statState.expFrom?parse(statState.expFrom):p.start,t=statState.expTo?parse(statState.expTo):p.end;
+    if(t<f){var tp=f;f=t;t=tp;}
+    return {start:f,end:t,label:fmt(f)+" ~ "+fmt(t),own:true};}
   var SUBPAL=["#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#ec8b76","#9aa1b0"];
   function statPeriod(){var m=statState.mode,c=statState.cursor;
     if(m==="day"){var s=new Date(c.getFullYear(),c.getMonth(),c.getDate());return{start:s,end:s,label:fmt(s)+" 周"+WD[(s.getDay()+6)%7],unit:"day"};}
@@ -12519,10 +12575,10 @@ margin-left: -22px;
     if(statState.mode==="custom")return true; // 自定义区间没有「现在」这回事，整条导航本来就是隐藏的
     var p=statPeriod(),d=fmt(new Date());
     return fmt(p.start)<=d&&d<=fmt(p.end);}
-  function statPool(){   // 是否把 Google 日历的事件也算进来（去重）
+  function statPool(pred){   // 是否把 Google 日历的事件也算进来（去重）。pred 不传 = 进统计的那些
     // 先滤再短路 —— 顺序不能反：断开 Google 之后 gcalEvents 是空的，
     // 要是先短路 return events，已经归档下来的那批就无条件混进统计了。
-    var base=events.filter(evCounts);
+    var base=events.filter(pred||evCounts);
     if(!gcalCount||!gcalEvents.length)return base;
     var gids={},sig={};
     base.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
@@ -12776,7 +12832,12 @@ margin-left: -22px;
         if(e.arch&&e.date>=_sf&&e.date<=_ef){archSkip++;archMin+=evNetMin(e);}});
       if(gcalEvents.length)gcalSkip=gcalEvents.filter(function(e){
         return e.date>=_sf&&e.date<=_ef&&!_gid[e.id.slice(2)]&&!_sig[e.title+"|"+e.date+"|"+e.start];}).length;}
+    // 标了「不进统计」的也数出来，明说。不然又是「某个大类凭空消失」，你无从查起。
+    var noN=0,noMin=0;(function(){var _sf=fmt(p.start),_ef=fmt(p.end);
+      events.forEach(function(e){if(e&&!e.arch&&evNoStat(e)&&e.date>=_sf&&e.date<=_ef&&evStarted(e)){noN++;noMin+=evNetMin(e);}});})();
+    var noNote=noN?('<div class="panel stat-gnote">⊘ 这个区间有 <b>'+noN+'</b> 条标了「不进统计」'+(noMin?('（共 '+fmtDur(noMin)+'）'):'')+'，没算进来。</div>'):"";
     var skipN=gcalSkip+archSkip;
+    var rr=repRange(p);
     var gcalNote=skipN?('<div class="panel stat-gnote">📅 这个区间有 <b>'+skipN+'</b> 条来自 Google 日历的记录'+
       (archMin?('（共 '+fmtDur(archMin)+'）'):'')+'没算进统计 —— 统计默认只算你在 app 里记的。'+
       '<button class="btn" id="stat-gon">把它们也算上</button></div>'):"";
@@ -12787,7 +12848,7 @@ margin-left: -22px;
           (statAtNow()?"":'<button class="btn stat-now" id="stat-now">'+STAT_NOWLAB[statState.mode]+'</button>')+'</div>'+
         '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" lang="zh-CN" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" lang="zh-CN" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
         catRow+subRow+
-      '</div>'+gcalNote+
+      '</div>'+gcalNote+noNote+
       '<div class="stat-cards">'+
         '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(ovMin?('<div class="sc-sub" title="这些分钟被算了不止一遍，因为同一时间安排了多件事">⧉ 含重叠 '+fmtDur(ovMin)+(parMin?'（🐟 摸鱼 '+fmtDur(parMin)+'）':'')+'</div>'):'')+'</div>'+
         '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
@@ -12806,6 +12867,8 @@ margin-left: -22px;
       '</div>'+
       '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
+        '<span class="exp-range" title="报告自己的时间段。留空就跟着上面的日 / 周 / 月走"><input type="date" lang="zh-CN" id="exp-from" value="'+(statState.expFrom||"")+'" placeholder="'+fmt(p.start)+'"><span>~</span><input type="date" lang="zh-CN" id="exp-to" value="'+(statState.expTo||"")+'" placeholder="'+fmt(p.end)+'">'+
+        (rr.own?'<button class="btn" id="exp-follow" title="清掉，跟着上面的区间">跟上面</button>':'')+'</span>'+
         '</div><div id="exp-report"></div></div>';
     var gon=wrap.querySelector("#stat-gon");
     // 这一下不只影响眼前这个区间：它是个全局开关，会把所有存下来的 Google 事件
@@ -12841,11 +12904,20 @@ margin-left: -22px;
       if(ck!==null){statState.cat=ck;statState.sub="__all";renderStatsView();return;}
       if(sk!==null){statState.sub=sk;renderStatsView();}});});
     var reportEl=wrap.querySelector("#exp-report");
-    var rowsSorted=evs.slice().sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});
+    // 报告列的是**记录**：区间按报告自己的（没设就跟上面），时长按记录上写的，
+    // 标了「不进统计」的也列出来 —— 给别人看的那份和自己算的那份本来就是两回事。
+    var rsf=fmt(rr.start),ref=fmt(rr.end);
+    var repRows=statPool(evRecorded).filter(function(e){var d=statDay(e);return d>=rsf&&d<=ref&&evHasCat(e,statState.cat,statState.sub);});
+    var rowsSorted=repRows.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});
+    var repTotal=rowsSorted.reduce(function(a,e){return a+evRecMin(e);},0);
     var scope=(statState.cat==="__all"?"全部":catName(statState.cat))+(statState.sub!=="__all"?" › "+subName(statState.cat,statState.sub):"");
-    reportEl.innerHTML=buildReportHTML(rowsSorted,scope,p.label,totalMin,statState.cat,statState.sub);
-    wrap.querySelector("#exp-csv").addEventListener("click",function(){downloadFile(scope+"_"+p.label+".csv",buildCSV(rowsSorted),"text/csv;charset=utf-8");});
-    wrap.querySelector("#exp-copy").addEventListener("click",function(){copyText(buildText(rowsSorted,scope,p.label,totalMin),this);});
+    reportEl.innerHTML=buildReportHTML(rowsSorted,scope,rr.label,repTotal,statState.cat,statState.sub);
+    wrap.querySelector("#exp-csv").addEventListener("click",function(){downloadFile(scope+"_"+rr.label+".csv",buildCSV(rowsSorted),"text/csv;charset=utf-8");});
+    wrap.querySelector("#exp-copy").addEventListener("click",function(){copyText(buildText(rowsSorted,scope,rr.label,repTotal),this);});
+    var xf=wrap.querySelector("#exp-from"),xt=wrap.querySelector("#exp-to"),xr=wrap.querySelector("#exp-follow");
+    if(xf)xf.addEventListener("change",function(){statState.expFrom=xf.value;saveStatView();renderStatsView();});
+    if(xt)xt.addEventListener("change",function(){statState.expTo=xt.value;saveStatView();renderStatsView();});
+    if(xr)xr.addEventListener("click",function(){statState.expFrom="";statState.expTo="";saveStatView();renderStatsView();});
     wrap.querySelector("#exp-print").addEventListener("click",function(){window.print();});
   }
 
@@ -12947,6 +13019,7 @@ margin-left: -22px;
   function renderCatSettings(){var box=document.getElementById("cat-settings");if(!box)return;
     box.innerHTML=cats.map(function(c){var subs=c.subs||[],kw=c.kw||[];
       return '<div class="cs-cat"><div class="cs-cat-h"><button class="cs-dot" type="button" data-colcat="'+c.key+'" title="点一下换颜色" style="background:'+c.color+'"></button><b class="cs-name" data-rencat="'+c.key+'" title="点一下改名">'+esc(c.name)+'</b>'+
+        '<button class="cs-nostat'+(c.nostat?" on":"")+'" type="button" data-nostat="'+c.key+'" title="这一整类都不算进总时长 / 日均 / 目标进度。日历上照样显示">'+(c.nostat?"⊘ 不进统计":"进统计")+'</button>'+
         '<button class="cs-del" type="button" data-delcat="'+c.key+'">删除</button></div>'+
         '<div class="cs-pal" data-pal="'+c.key+'" hidden>'+PALETTE.map(function(x){return '<span class="sw'+(x===c.color?" on":"")+'" data-setcol="'+c.key+'|'+x+'" style="background:'+x+'"></span>';}).join("")+
         swPicker('data-anycol="'+c.key+'"',c.color)+
@@ -12990,6 +13063,9 @@ margin-left: -22px;
       var setc=e.target.closest("[data-setcol]");
       if(setc){var pr0=setc.getAttribute("data-setcol").split("|"),c0=parentObj(pr0[0]);
         if(c0){c0.color=pr0[1];afterCatChange();}return;}
+      var ns=e.target.closest("[data-nostat]");
+      if(ns){var cn=parentObj(ns.getAttribute("data-nostat"));if(!cn)return;
+        if(cn.nostat)delete cn.nostat;else cn.nostat=true;afterCatChange();return;}
       // 改名：key 不动，所以已有的事件、目标、笔记全都跟着改，不会脱钩
       var rc=e.target.closest("[data-rencat]");
       if(rc){var c1=parentObj(rc.getAttribute("data-rencat"));if(!c1)return;

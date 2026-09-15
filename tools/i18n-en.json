@@ -2063,5 +2063,16 @@
 "🧾 其他零散": "🧾 Odds & ends",
 "🧾 点一单": "🧾 New order",
 "🧾 点单": "🧾 Orders",
-"🧾 点这道": "🧾 Order this"
+"🧾 点这道": "🧾 Order this",
+"⊘ 不进统计": "⊘ Exclude from stats",
+"进统计": "Counted",
+"不进统计": "Excluded from stats",
+"日历上照样显示，只是总时长、日均、目标进度都不算它": "Still shown on the calendar — just left out of total time, daily average and goal progress",
+"这一整类都不算进总时长 / 日均 / 目标进度。日历上照样显示": "This whole category is left out of total time / daily average / goal progress. Still shown on the calendar",
+"实际做了多久（可选 · 上面写给别人看，统计按这里算）": "Actual time spent (optional · the times above are what others see; stats use this)",
+"比如 3h / 1h30 / 90m —— 留空就按上面的时间算": "e.g. 3h / 1h30 / 90m — leave blank to use the times above",
+"统计按实际时长算，不按记录上的": "Stats use the actual time, not the logged time",
+"跟上面": "Follow above",
+"清掉，跟着上面的区间": "Clear, follow the range above",
+"报告自己的时间段。留空就跟着上面的日 / 周 / 月走": "The report's own date range. Leave blank to follow the day / week / month above"
 }
