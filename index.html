@@ -22666,23 +22666,34 @@ margin-left: -22px;
 
   // 手动记一笔。现金、别人代付、银行还没入账的，靠这个进来 ——
   // 这类记录 src 是 "manual"，同步和导入都不会碰它。
+  // 记一笔的「上次那套」：收支 / 币种 / 分类。她的原话：「记住上一次的输入设置偏好」。
+  // 存进 mnCfg.last（跟着 tt_mncfg 上云，换台设备也还在）。
+  // 只在**新记**的时候套用 —— 编辑一笔当然要显示它自己的值。
+  function mnLast(){return (mnCfg.last&&typeof mnCfg.last==="object")?mnCfg.last:{};}
+  function mnLastSet(o){mnCfg.last={sign:o.sign,cur:o.cur,cat:o.cat};save("tt_mncfg",mnCfg);}
   function mnAddForm(rec){
-    var isEdit=!!rec,curs=mnCurList();
-    if(curs.indexOf(mnCur)<0)curs.unshift(mnCur||"NZD");
+    var isEdit=!!rec,curs=mnCurList(),L=isEdit?{}:mnLast();
+    // 视图停在「合计」时 mnCur 是 "__all:NZD" 这种，不是一个真币种 ——
+    // 直接塞进下拉就会出现一个选不得的「__all:NZD」选项。mnViewCur() 把它还原成折算成的那个币种。
+    var curNow=mnViewCur();
+    if(curs.indexOf(curNow)<0)curs.unshift(curNow||"NZD");
     ["NZD","CNY","USD","AUD"].forEach(function(c){if(curs.indexOf(c)<0)curs.push(c);});
+    var defCur=(!isEdit&&L.cur&&curs.indexOf(L.cur)>=0)?L.cur:curNow;      // 记不住就退回当前视图
+    var defSign=(!isEdit&&(L.sign===1||L.sign===-1))?L.sign:-1;            // 没记过就还是「支出」
+    var defCat=isEdit?rec.cat:(L.cat||"");
     var b=wbtOpen(isEdit?"编辑一笔":"记一笔",
       '<div class="wt-row"><label class="t">日期</label><input class="tx-in" type="date" lang="zh-CN" id="mn-f-date" value="'+
         esc(rec?rec.d:mnYmd(new Date()))+'"></div>'+
       '<div class="wt-row"><label class="t">金额</label><input class="tx-in" type="number" step="0.01" id="mn-f-amt" value="'+
         (rec?Math.abs(rec.amt):"")+'" placeholder="12.50"></div>'+
       '<div class="wt-row"><label class="t">收支</label><select class="tx-in" id="mn-f-sign">'+
-        '<option value="-1"'+(rec&&rec.amt>0?"":" selected")+'>支出</option>'+
-        '<option value="1"'+(rec&&rec.amt>0?" selected":"")+'>收入</option></select></div>'+
+        '<option value="-1"'+((isEdit?(rec.amt>0?1:-1):defSign)===-1?" selected":"")+'>支出</option>'+
+        '<option value="1"'+((isEdit?(rec.amt>0?1:-1):defSign)===1?" selected":"")+'>收入</option></select></div>'+
       '<div class="wt-row"><label class="t">币种</label><select class="tx-in" id="mn-f-cur">'+
         curs.map(function(c){return '<option value="'+esc(c)+'"'+
-          (c===(rec?mnCurOf(rec):mnCur)?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select></div>'+
+          (c===(isEdit?mnCurOf(rec):defCur)?" selected":"")+'>'+esc(c)+'</option>';}).join("")+'</select></div>'+
       '<div class="wt-row"><label class="t">分类</label><select class="tx-in" id="mn-f-cat">'+
-        mnCatOpts(rec?rec.cat:"")+'</select></div>'+
+        mnCatOpts(defCat)+'</select></div>'+
       '<div class="wt-row"><label class="t">摘要</label><input class="tx-in" type="text" id="mn-f-desc" value="'+
         esc(rec?(rec.merchant||rec.desc||""):"")+'" placeholder="买菜 / 房东 Mike / 打车"></div>'+
       '<button class="btn primary" id="mn-f-save">'+(isEdit?"保存":"添加")+'</button>'+
@@ -22692,7 +22703,8 @@ margin-left: -22px;
       var d=b.querySelector("#mn-f-date").value;
       var a=parseFloat(b.querySelector("#mn-f-amt").value);
       if(!d||isNaN(a)){b.querySelector("#mn-f-msg").textContent="日期和金额要填对";return;}
-      var amt=Math.abs(a)*(+b.querySelector("#mn-f-sign").value)||0;
+      var sg=+b.querySelector("#mn-f-sign").value;
+      var amt=Math.abs(a)*sg||0;
       var o={d:d,date:d,amt:amt,cur:b.querySelector("#mn-f-cur").value,
         cat:b.querySelector("#mn-f-cat").value,manual:1,
         desc:b.querySelector("#mn-f-desc").value.trim(),merchant:"",acat:"",agrp:"",ref:"",acct:"",src:"manual"};
@@ -22700,6 +22712,7 @@ margin-left: -22px;
       if(isEdit)mnTxns=mnTxns.map(function(x){return x.id===rec.id?nt:x;});
       else mnTxns.push(nt);
       mnTxns.sort(function(x,y){return (x.d<y.d)?1:((x.d>y.d)?-1:0);});
+      mnLastSet({sign:sg,cur:o.cur,cat:o.cat});   // 下次打开就是这一套
       mnSave();
       if(mnAutoTax([nt]))try{renderTax();}catch(e2){}   // 这个付款人设过规则的话，手记的也自动记税
       // 记完不抢视图。以前这里无条件 mnCur=o.cur —— 你本来在「合计」上看得好好的，
