@@ -378,6 +378,13 @@
   #gcal-pend button{border:none;background:#B4720B;color:#fff;border-radius:7px;
     padding:3px 9px;font-size:11.5px;cursor:pointer}
   #gcal-pend button:hover{background:#95600a}
+  /* 过去了却没打勾的，也摆在日历顶上，不用一条一条找 */
+  #cal-undone{display:none;align-items:center;gap:8px;font-size:12px;color:#1F7A4D;
+    background:#E4F6EC;border:1px solid #A8DCC0;border-radius:9px;padding:4px 10px}
+  #cal-undone.on{display:flex}
+  #cal-undone button{border:none;background:#1F7A4D;color:#fff;border-radius:7px;
+    padding:3px 9px;font-size:11.5px;cursor:pointer}
+  #cal-undone button:hover{background:#18613d}
   .legend .li em{font-style:normal;font-size:10.5px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
   .legend .lg-more{color:var(--muted);border-style:dashed}
   /* 还没到的日子：先淡着摆在那儿，到了当天自动变回正常 ——
@@ -3700,6 +3707,7 @@ margin-left: -22px;
                   <button data-v="month">月</button>
                 </div>
                 <div id="gcal-pend"><span id="gcal-pend-t"></span><button type="button" id="gcal-pend-go">重新授权</button></div>
+                <div id="cal-undone"><span id="cal-undone-t"></span><button type="button" id="cal-undone-go">全打勾</button></div>
                 <button class="btn primary" id="add-btn">+ 事件</button>
               </div>
             </div>
@@ -5669,6 +5677,7 @@ margin-left: -22px;
     "免费建项目（建好后我给你一段 SQL 一贴就行）。":"to set up a free project (once it's up I'll give you some SQL to paste in).",
     "免费获取。":"for free.",
     "全不选":"Select none",
+    "全打勾":"Tick all",
     "全选（当前筛选下的）":"Select all (in this filter)",
     "全选（这一层）":"Select all (this level)",
     "全部做完了":"All steps done",
@@ -7463,6 +7472,8 @@ margin-left: -22px;
     ["待办","^(.+?) 待办 (.+?)$","\u00011 To-dos \u00012"],
     ["待办","^(.+?) 待办$","\u00011 To-dos"],
     ["年","^(.+?)年 (.+?)(.+?)月$","\u00012\u00013/\u00011"],
+    ["把这一屏里已经过去、却没打勾的","^把这一屏里已经过去、却没打勾的 (.+?) 条全都打上勾？(.+?)$","Tick all \u00011 entries on this screen that have already happened but aren't ticked?\u00012"],
+    ["条，换成「月」或者翻到那几周再点一次。）","^（更早还有 (.+?) 条，换成「月」或者翻到那几周再点一次。）$"," (\u00011 more before this range — switch to Month, or page back to those weeks, and click again.)"],
     ["截止","^截止 (.+?)$","Due \u00011"],
     ["开始下一步：","^开始下一步：(.+?)$","Start next step: \u00011"],
     ["▶ 下一步：","^▶ 下一步：(.+?)$","▶ Next step: \u00011"],
@@ -7487,6 +7498,7 @@ margin-left: -22px;
     ["条，没传成","^传上去 (.+?) 条，没传成 (.+?) 条。$","Sent \u00011; \u00012 did not go through."],
     ["传上去","^传上去 (.+?) 条。$","Sent \u00011."],
     ["和 Google 日历对齐了","^和 Google 日历对齐了 (.+?) 条 ✓$","\u00011 entries synced with Google Calendar ✓"],
+    ["条没打勾","^☐ (.+?) 条没打勾$","☐ \u00011 not ticked"],
     ["条还没同步到 Google","^⇡ (.+?) 条还没同步到 Google$","⇡ \u00011 not yet synced to Google"],
     ["之后会自动补传。","^之后会自动补传。(.+?)$","and they'll upload automatically after that.\u00011"],
     ["计入：","^计入：(.+?)$","Counts toward: \u00011"],
@@ -11146,6 +11158,7 @@ margin-left: -22px;
     if(state.view==="day")renderDay();else if(state.view==="month")renderMonth();else renderWeek();
     renderLegend();renderDashboard();
     try{refreshGcalPend();}catch(e){}    // 开页面第一眼就看得到有没有欠着的
+    try{refreshUndone();}catch(e){}      // 过去了还没打勾的，同理
   }
   var legendEl=document.getElementById("legend");
   // 当前这一屏覆盖的日期范围（日/周/月各不同）—— 图例只按"看得见的这段时间"来排
@@ -11228,6 +11241,20 @@ margin-left: -22px;
   document.getElementById("next-btn").addEventListener("click",function(){shift(1);});
   function shift(n){if(state.view==="day")state.cursor=addDays(state.cursor,n);else if(state.view==="week")state.cursor=addDays(state.cursor,n*7);else state.cursor=addMonths(state.cursor,n);renderCal();}
   document.getElementById("add-btn").addEventListener("click",function(){openModal(null,{date:fmt(state.cursor)});});
+  document.getElementById("cal-undone-go").addEventListener("click",async function(){
+    var r=viewRange(),list=undoneIn(r.a,r.b);
+    if(!list.length){refreshUndone();return;}
+    // 更早的还有多少：不连坐标地全勾上，但得让她知道换成「月」可以一下完
+    var older=events.filter(function(e){
+      return e&&!e.done&&!e.arch&&e.date<r.a&&evStarted(e);}).length;
+    if(!await ttConfirm("把这一屏里已经过去、却没打勾的 "+list.length+" 条全都打上勾？"+
+      (older?("（更早还有 "+older+" 条，换成「月」或者翻到那几周再点一次。）"):""),
+      {anchor:this,okText:"全打勾"}))return;
+    var ids={};list.forEach(function(e){ids[e.id]=1;});
+    events=load("tt_events",events)||events;                    // 别的网页刚记过东西的话，先把最新那份拿回来
+    events=events.map(function(x){return ids[x.id]?Object.assign({},x,{done:true}):x;});
+    if(!save("tt_events",events)){ttAlert("没能存住 —— 浏览器存储可能满了");return;}
+    renderCal();});
 
   calBody.addEventListener("click",function(e){
     if(e.target.closest("[data-todoband]")){todoBandCollapsed=!todoBandCollapsed;save("tt_todoband",todoBandCollapsed);renderCal();return;}
@@ -11817,6 +11844,18 @@ margin-left: -22px;
     try{if(state.tab==="calendar")renderCal();}catch(e){}    // 琥珀色的 G 变绿，你看得见它真的传上去了
     try{ttAlert("和 Google 日历对齐了 "+todo.length+" 条 ✓");}catch(e){}}
   // 有多少条在排队等着传。0 就整条藏起来 —— 平时不该占地方。
+  // 这一屏里已经发生过、却还没打勾的。
+  // 从 Google 存下来的（arch）不算：给它们打勾 = 把它们拉进统计，
+  // 那是统计页那条「把它们也算上」管的事，别在这儿悴悴改掉一堆数字。
+  function undoneIn(a,b){
+    return events.filter(function(e){
+      return e&&!e.done&&!e.arch&&e.date>=a&&e.date<=b&&evStarted(e);});}
+  function refreshUndone(){
+    var box=document.getElementById("cal-undone");if(!box)return;
+    var r=viewRange(),n=undoneIn(r.a,r.b).length;
+    box.classList.toggle("on",n>0);
+    // 整句拼好再塞进去，让模板那套接 —— 拆成 trv("☐ ")+n+trv(...) 就只能各翻各的
+    if(n>0)document.getElementById("cal-undone-t").textContent="☐ "+n+" 条没打勾";}
   function refreshGcalPend(){
     var box=document.getElementById("gcal-pend");if(!box)return;
     var n=gcalPend();

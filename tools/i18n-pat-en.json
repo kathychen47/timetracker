@@ -525,5 +525,8 @@
 "{1}：{2} 个": "{1}: {2} words",
 "工时表 · {1}": "Timesheet · {1}",
 "{1} · 合计 {2} h · {3} 行": "{1} · {2} h total · {3} rows",
-"不到 {1} 分钟的零头没单独成行：{2} 行，共 {3} 分钟。": "Scraps under {1} min are not listed on their own: {2} row(s), {3} min in all."
+"不到 {1} 分钟的零头没单独成行：{2} 行，共 {3} 分钟。": "Scraps under {1} min are not listed on their own: {2} row(s), {3} min in all.",
+"☐ {1} 条没打勾": "☐ {1} not ticked",
+"把这一屏里已经过去、却没打勾的 {1} 条全都打上勾？{2}": "Tick all {1} entries on this screen that have already happened but aren't ticked?{2}",
+"（更早还有 {1} 条，换成「月」或者翻到那几周再点一次。）": " ({1} more before this range — switch to Month, or page back to those weeks, and click again.)"
 }

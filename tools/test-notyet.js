@@ -128,7 +128,10 @@ function count(p) { return whole.split(p).length - 1; }
 
 T("统计只有一个出口，改一处就全覆盖", function () {
   ok(count("function evCounts(e){") === 1, "口径函数只能有一份");
-  ok(count("&&evStarted(e);}") === 1, "evCounts 要把 evStarted 串上");
+  // 原来这里数的是裸子串 "&&evStarted(e);}"，别处随便用一下 evStarted 就把它弄红了。
+  // 盯整句定义：既确认串上了，又确认统计只经 evRecorded 这一个口。
+  ok(count("function evRecorded(e){return !(e&&e.arch&&!gcalCount)&&evStarted(e);}") === 1, "evRecorded 要把 evStarted 串上");
+  ok(count("function evCounts(e){return evRecorded(e)&&!evNoStat(e);}") === 1, "evCounts 只走 evRecorded 这一个口");
   ok(count("function evStarted(e){") === 1, "只能有一份");
   // 目标 / 图例 / 常用排序 / AI 周总结都是 evCounts(e) 这样调的
   ok(count("evCounts(") >= 5, "带括号的调用点至少 5 处（含定义），实得 " + count("evCounts("));
