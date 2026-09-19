@@ -45,7 +45,7 @@ const dom = new JSDOM(html, {
     // 空账本下它们永远不渲染，体检就照不到 —— 所以先铺一点真实形状的数据。
     const today = new Date(), ymd = d => d.toISOString().slice(0, 10);
     const seed = {
-      tt_lang: "en",
+      tt_lang: (process.argv.indexOf("--zh") > 0 ? "zh" : "en"),
       tt_txns: [
         { id: "manual:a", d: ymd(today), date: ymd(today), amt: -82.5, cur: "NZD", cat: "grocery", desc: "New World", src: "manual", manual: 1 },
         { id: "manual:b", d: ymd(today), date: ymd(today), amt: 4600, cur: "NZD", cat: "salary", desc: "UC", src: "manual", manual: 1 },
@@ -163,6 +163,36 @@ const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "di
     }
   }
 
+  // 弹窗：一整片平时看不到的界面。开一个扫一个，再按 Esc 关掉。
+  const DIALOGS = [
+    ["事件", "#add-btn", "#overlay"],
+    ["待办", "#todo-new", "#todo-overlay"],
+    ["目标", "#goal-add-btn", "#goal-overlay"],
+    ["记一笔", "#mn-add", "#wbtool-overlay"],
+    ["AI", "#ai-btn", "#ai-overlay"],
+    ["背单词", "#wb-start", "#flash-overlay"],
+    ["菜谱", "#food-add", "#rc-overlay"],
+    ["技能", "#sk-add", null],
+    ["词典分组", "#wbg-add", "#wbtool-overlay"],
+  ];
+  for (const [name, trigger, host] of DIALOGS) {
+    const tb = D.querySelector(trigger);
+    if (!tb) { errs.push("没有入口：" + name + " " + trigger); continue; }
+    try { tb.click(); } catch (e) { errs.push("开不了 " + name + "：" + e.message); continue; }
+    await sleep(400);
+    scan("dlg:" + name);
+    // 关掉：先试 Esc，再试弹窗里的取消 / 关闭
+    try { D.dispatchEvent(new W.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) { }
+    await sleep(150);
+    if (host) {
+      const h = D.querySelector(host);
+      if (h && h.style && h.style.display !== "none" && !h.hidden) {
+        const x = h.querySelector("[id$='-cancel'],[id$='-close'],.wt-x,.modal-x");
+        if (x) { try { x.click(); } catch (e) { } await sleep(150); }
+      }
+    }
+  }
+
   const rows = Array.from(found.values()).map(v => ({ text: v.text, kind: v.kind, spots: Array.from(v.spots).slice(0, 3) }));
   rows.sort((a, b) => (a.spots[0] < b.spots[0] ? -1 : (a.spots[0] > b.spots[0] ? 1 : 0)));
   if (argJson) fs.writeFileSync(argJson, JSON.stringify({ visited, errs: errs.slice(0, 20), count: rows.length, rows }, null, 1), "utf8");
@@ -171,7 +201,7 @@ const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "di
   console.log("== 英文界面体检 ==");
   console.log("  走过：" + visited.join(" · ") + (opened ? " · 设置(" + PANES.length + " 页)" : ""));
   if (errs.length) { console.log("  运行时报错 " + errs.length + " 条"); errs.slice(0, 5).forEach(e => console.log("    " + e.slice(0, 150))); }
-  console.log("  还是中文：" + rows.length + " 条");
+  console.log((process.argv.indexOf("--zh") > 0 ? "  （中文模式：只看跑不跑得起来）还是中文：" : "  还是中文：") + rows.length + " 条");
   console.log("");
   const show = argMax > 0 ? rows.slice(0, argMax) : rows;
   show.forEach((r, i) => console.log(String(i + 1).padStart(3) + "  " + JSON.stringify(r.text).slice(0, 76).padEnd(78) + " " + r.spots[0].slice(0, 40)));
