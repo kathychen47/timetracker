@@ -20,6 +20,7 @@ const html = fs.readFileSync(path.join(ROOT, "index.html"), "utf8");
 const ZH = process.argv.indexOf("--zh") > 0;
 const VERBOSE = process.argv.indexOf("--verbose") > 0;
 const MAXCLICK = (() => { const i = process.argv.indexOf("--max"); return i > 0 ? +process.argv[i + 1] : 0; })();
+const EMPTY = process.argv.indexOf("--empty") > 0;   // 全空：新用户第一次打开的样子
 
 const errs = [];       // {msg, at}
 let clicking = "";     // 现在点的是谁 —— 报错时用来定位
@@ -54,7 +55,8 @@ const dom = new JSDOM(html, {
       tt_glu: [{ d: ymd(now), t: "空腹", v: 5.2 }]
     };
     const store = {};
-    Object.keys(seed).forEach(k => { store[k] = JSON.stringify(seed[k]); });
+    // --empty 时只留语言：空状态、首次铺示例数据、“还没有…”那一批分支只有这样才走得到
+    Object.keys(EMPTY ? { tt_lang: seed.tt_lang } : seed).forEach(k => { store[k] = JSON.stringify(seed[k]); });
     Object.defineProperty(w, "localStorage", {
       value: {
         getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v) },
@@ -150,7 +152,7 @@ async function clickAll(scope, where) {
   await sleep(3200);
   const bootErrs = errs.length;
   console.log("");
-  console.log("== 冒烟测试（" + (ZH ? "中文" : "英文") + "）==");
+  console.log("== 冒烟测试（" + (ZH ? "中文" : "英文") + (EMPTY ? " · 空库" : "") + "）==");
   console.log("  启动：" + (bootErrs ? bootErrs + " 条报错" : "干净"));
 
   for (const t of TABS) {
