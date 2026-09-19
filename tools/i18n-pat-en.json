@@ -517,5 +517,10 @@
 "打不开本地词典库{1}": "Can't open the local dictionary store{1}",
 "打不开本地词典库{1} —— 换个非隐私窗口再试。": "Can't open the local dictionary store{1} — try a non-private window.",
 "共学 {1} 次(新词 {2} · 复习 {3}){4}": "{1} sessions (new {2} · review {3}){4}",
-"⚠ 已逾期 · 截止 {1}": "⚠ Overdue · due {1}"
+"⚠ 已逾期 · 截止 {1}": "⚠ Overdue · due {1}",
+"开始下一步：{1}": "Start next step: {1}",
+"已经存下 {1} 条（约 {2}）—— 断开 Google 也不会丢。": "{1} saved so far (about {2}) — they stay even if you disconnect Google.",
+"{1}：新词 {2} · 复习 {3}{4}": "{1}: new {2} · review {3}{4}",
+"快捷键 {1}（数字键也行）": "Shortcut {1} (number keys work too)",
+"{1}：{2} 个": "{1}: {2} words"
 }

@@ -5351,6 +5351,7 @@ margin-left: -22px;
     "↩ 恢复":"↩ Restore",
     "⇄ 边写边看":"⇄ Split",
     "⊘ 不进统计":"⊘ Exclude from stats",
+    "⊘ 这个区间有":"⊘ This range has",
     "⏱ 上次那":"⏱ Last time's",
     "⏱ 时间线":"⏱ Timeline",
     "⏳ 同步中…":"⏳ Syncing…",
@@ -5816,6 +5817,7 @@ margin-left: -22px;
     "只影响统计和番茄钟的「今日」，日历上还是画在真实日期。":" Only affects \"today\" in Stats and Pomodoro — the calendar still draws events on their real date.",
     "只有文字":"Text only",
     "只要填了任意一个":"Fill in even one",
+    "只记录":"tracking only",
     "可不放":"Optional",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎。":"You can switch translation engine under ⚙️ Settings → 📖 Dictionary.",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎试试。":"Try another translation engine under ⚙️ Settings → 📖 Dictionary.",
@@ -5966,6 +5968,7 @@ margin-left: -22px;
     "定期利息":"Term deposit interest",
     "宝贝工资":"Babe's salary",
     "实收":"Gross",
+    "实际":"actual",
     "实际税率":"Effective rate",
     "家务":"chores",
     "家居":"home goods",
@@ -7303,6 +7306,7 @@ margin-left: -22px;
     "（跟着云同步走）":"(goes with cloud sync)",
     "（还包括书、词典）":"(books and dictionaries included)",
     "（还包括词典、录音）":"(dictionaries and recordings included)",
+    "（还没有，点一下粘进来）":"(nothing yet — click to paste one in)",
     "（这一格：选一本书）":"(This pane: pick a book)",
     "（这个模型你账号用不了或次数用完了——到 ⚙️设置 点「检测可用」换模型，或切成本地 Ollama）":"(Your account can't use this model, or you're out of quota — go to ⚙️ Settings, tap \"Detect\" and pick another model, or switch to local Ollama)",
     "（这个浏览器不支持实时转写）":"(this browser doesn't support live transcription)",
@@ -7407,7 +7411,6 @@ margin-left: -22px;
     ["第","^第 (.+?)(.+?) 句$","Sentence \u00011\u00012"],
     ["个词进生词本（已经有的跳过了）。去「词典 → 生词本」看。","^加了 (.+?) 个词进生词本（已经有的跳过了）。去「词典 → 生词本」看。$","Added \u00011 words to your word list (ones already there were skipped). Find them under \"Dictionary → Word list\"."],
     ["已选：","^已选：(.+?)$","Selected: \u00011"],
-    ["· 实际","^(.+?) · 实际$","\u00011 · actual"],
     ["预计","^预计 (.+?)$","Est. \u00011"],
     ["原文","^(.+?) 原文(.+?)$","\u00011 Original text\u00012"],
     ["天","^· (.+?)天$","· \u00011 days"],
@@ -7426,7 +7429,7 @@ margin-left: -22px;
     ["待办","^(.+?) 待办$","\u00011 To-dos"],
     ["年","^(.+?)年 (.+?)(.+?)月$","\u00012\u00013/\u00011"],
     ["截止","^截止 (.+?)$","Due \u00011"],
-    ["\" title=\"开始下一步：","^data-skgo=\"(.+?)\" title=\"开始下一步：(.+?)\"$","data-skgo=\"\u00011\" title=\"Start next step: \u00012\""],
+    ["开始下一步：","^开始下一步：(.+?)$","Start next step: \u00011"],
     ["▶ 下一步：","^▶ 下一步：(.+?)$","▶ Next step: \u00011"],
     ["还有","^还有 (.+?) 个$","\u00011 more"],
     ["已归档","^(.+?) 已归档 (.+?)$","\u00011 Archived \u00012"],
@@ -7523,7 +7526,7 @@ margin-left: -22px;
     ["条没存进去 —— 浏览器存储满了。先去设置里清一些数据，再点一次。","^存下了 (.+?) 条，还有 (.+?) 条没存进去 —— 浏览器存储满了。先去设置里清一些数据，再点一次。$","Saved \u00011, but \u00012 didn't make it in — browser storage is full. Clear some data in Settings first, then tap again."],
     ["条历史事件 ✓ —— 断开 Google 也不会丢了。","^存下了 (.+?) 条历史事件 ✓ —— 断开 Google 也不会丢了。$","Saved \u00011 past events ✓ — they won't be lost if you disconnect Google."],
     ["没能读取：","^没能读取：(.+?)$","Couldn't read: \u00011"],
-    ["）—— 断开 Google 也不会丢。","^条（约 (.+?)）—— 断开 Google 也不会丢。$","events (about \u00011) — they'll survive disconnecting Google."],
+    ["）—— 断开 Google 也不会丢。","^已经存下 (.+?) 条（约 (.+?)）—— 断开 Google 也不会丢。$","\u00011 saved so far (about \u00012) — they stay even if you disconnect Google."],
     ["打不开本地词典库","^打不开本地词典库(.+?)$","Can't open the local dictionary store\u00011"],
     ["· 柯林斯(中→英)","^牛津\\(英→中\\) (.+?) · 柯林斯\\(中→英\\) (.+?)$","Oxford (EN→ZH) \u00011 · Collins (ZH→EN) \u00012"],
     ["）。 重新导入会覆盖，确定继续吗？","^本机已经有词典了（(.+?)）。 重新导入会覆盖，确定继续吗？$","This device already has dictionaries (\u00011). Re-importing overwrites them — continue?"],
@@ -7556,8 +7559,10 @@ margin-left: -22px;
     ["下次","^下次 (.+?)$","Next \u00011"],
     ["次(新词","^共学 (.+?) 次\\(新词 (.+?) · 复习 (.+?)\\)(.+?)$","\u00011 sessions (new \u00012 · review \u00013)\u00014"],
     ["分钟","^，(.+?) 分钟$",", \u00011 min"],
+    ["· 复习","^(.+?)：新词 (.+?) · 复习 (.+?)(.+?)$","\u00011: new \u00012 · review \u00013\u00014"],
     ["分钟","^· (.+?) 分钟$","· \u00011 min"],
     ["现在有","^现在有 (.+?) 个到期$","\u00011 due right now"],
+    ["个","^(.+?)：(.+?) 个$","\u00011: \u00012 words"],
     ["天 · 近 14 天有","^已坚持 (.+?) 天 · 近 14 天有 (.+?) 天在背$","\u00011 days going · studied on \u00012 of the last 14"],
     ["分钟 ·","^累计 (.+?) 分钟 · (.+?) 词$","\u00011 min total · \u00012 words"],
     ["% 对比总体","^(.+?) (.+?)% 对比总体$","\u00011 \u00012% vs overall"],
@@ -7594,6 +7599,7 @@ margin-left: -22px;
     ["个单词","^复习 (.+?) 个单词$","Reviewed \u00011 words"],
     ["个词。 下次复习时间已按遗忘曲线安排好。","^本轮完成 🎉 共 (.+?) 个词。 下次复习时间已按遗忘曲线安排好。$","Round finished 🎉 \u00011 words in all. The next review is already scheduled on the forgetting curve."],
     ["词典没收录，翻译也失败了：","^词典没收录，翻译也失败了：(.+?)(.+?)$","Not in the dictionary, and the translation failed too: \u00011 \u00012"],
+    ["（数字键也行）","^快捷键 (.+?)（数字键也行）$","Shortcut \u00011 (number keys work too)"],
     ["转写功能没能初始化：","^转写功能没能初始化：(.+?)$","Transcription failed to start: \u00011"],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的，先列前 15 个： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words — the first 15 are: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
@@ -10512,7 +10518,7 @@ margin-left: -22px;
           '<input type="checkbox" class="sk-ck" data-ck="'+st.id+'"'+(st.done?" checked":"")+'>'+
           '<span class="sk-t" data-ren="'+st.id+'" title="点一下改名">'+esc(st.t)+'</span>'+
           '<span class="sk-time" data-est="'+st.id+'" title="预计 / 实际 —— 点一下改预计">'+
-            (st.est?("预计 "+hrs(st.est)):"未估")+' · 实际 <b>'+hrs(m)+'</b></span>'+
+            trv(st.est?("预计 "+hrs(st.est)):"未估")+' · '+trv("实际")+' <b>'+hrs(m)+'</b></span>'+
           '<button class="sk-go" data-go="'+st.id+'" title="开始正计时，时间自动记到这一步">▶</button>'+
           '<button class="sk-x" data-sdel="'+st.id+'" title="删掉这一步">✕</button></div>';}).join("");
       var open=sk.open!==false&&!sk.arch;
@@ -10527,7 +10533,7 @@ margin-left: -22px;
         (sk.note?('<div class="sk-note" data-sknote="'+sk.id+'" title="点一下改">'+esc(sk.note)+'</div>'):"")+
         '<div class="sk-plan'+(sk.planOpen?" open":"")+'">'+
           '<div class="sk-planh" data-skplantog="'+sk.id+'">'+(sk.planOpen?"▾":"▸")+' 原文'+
-            (sk.plan?"":' <em>（还没有，点一下粘进来）'+"</em>")+'</div>'+
+            (sk.plan?"":' <em>'+trv("（还没有，点一下粘进来）")+"</em>")+'</div>'+
           (sk.planOpen?('<div class="sk-plantx" data-skplan="'+sk.id+'" title="点一下改">'+esc(sk.plan||"（空）")+'</div>'):"")+
         '</div>'+
         '<div class="sk-cats"><select data-skcat="'+sk.id+'" title="这个技能的时间算进哪个大类">'+skCatOpts(sk.cat)+'</select>'+
@@ -11302,6 +11308,7 @@ margin-left: -22px;
     if(p==="month")return new Date(t.getFullYear(),t.getMonth()+1,0,23,59,59);
     var e=addDays(startOfWeek(t),6);return new Date(e.getFullYear(),e.getMonth(),e.getDate(),23,59,59);}
   function periodName(p){return trv(p==="month"?"每月":p==="year"?"每年":p==="custom"?"区间":"每周");}
+  function trackName(){return trv("只记录");}   // 不设目标值的那种
   function periodWord(p){return p==="month"?"月":p==="year"?"年":p==="custom"?"区间":"周";}
   function matchesGoal(e,g){
     if(!evCounts(e))return false;                 // 还没认领的 Google 归档件不进目标（进度条/热力图/相关记录都走这里）
@@ -11341,7 +11348,10 @@ margin-left: -22px;
     box.innerHTML=rows.map(function(r){
       var pct=r.s.total?r.s.done/r.s.total*100:0;
       var nx=(r.sk.steps||[]).filter(function(s){return !s.done;})[0];
-      return '<div class="skm'+(nx?" go":"")+'"'+(nx?(' data-skgo="'+nx.id+'" title="开始下一步：'+esc(nx.t)+'"'):' data-skmini="1"')+
+      // title 单独拼成一句再塞进去：写在同一个字面量里的话，
+      // 模板抽取器会把前面的 data-skgo="…" 一起吃进去，抽出来的模板永远匹配不上。
+      var nxT=nx?trv("开始下一步："+(nx.t||nx.name||"")):"";
+      return '<div class="skm'+(nx?" go":"")+'"'+(nx?(' data-skgo="'+nx.id+'" title="'+esc(nxT)+'"'):' data-skmini="1"')+
         ' style="--gc:'+(r.sk.cat?catColor(r.sk.cat):"var(--primary)")+'">'+
         '<div class="skm-top"><span class="skm-n">'+esc(r.sk.name)+'</span>'+
           '<span class="skm-v">'+r.s.done+'/'+r.s.total+' · '+hrs(r.s.act)+'</span></div>'+
@@ -11384,7 +11394,7 @@ margin-left: -22px;
         '<button class="sk-x" data-garch="'+g.id+'" title="'+(g.arch?"取消归档":"归档：收起来但不删")+'">'+(g.arch?SVG_UNARCH:SVG_ARCH)+'</button>'+
         '<button class="sk-x" data-gdel2="'+g.id+'" title="删掉这个目标">✕</button></div>'+
         mid+
-        '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+(pr.track?" · 只记录":"")+'</span>'+plus+'</div></div>';
+        '<div class="goal-row2"><span class="gsub">'+esc(subtxt)+(pr.track?(" · "+trackName()):"")+'</span>'+plus+'</div></div>';
     }).join("");
     if(goals.length&&!live.length)html='<div class="dash-empty">'+(all.length?"这一档下面没有目标。":"在跑的目标都归档完了。")+'</div>';
     html=pfBar+html;
@@ -12992,11 +13002,11 @@ margin-left: -22px;
     // 标了「不进统计」的也数出来，明说。不然又是「某个大类凭空消失」，你无从查起。
     var noN=0,noMin=0;(function(){var _sf=fmt(p.start),_ef=fmt(p.end);
       events.forEach(function(e){if(e&&!e.arch&&evNoStat(e)&&e.date>=_sf&&e.date<=_ef&&evStarted(e)){noN++;noMin+=evNetMin(e);}});})();
-    var noNote=noN?('<div class="panel stat-gnote">⊘ 这个区间有 <b>'+noN+'</b> 条标了「不进统计」'+(noMin?('（共 '+fmtDur(noMin)+'）'):'')+'，没算进来。</div>'):"";
+    var noNote=noN?('<div class="panel stat-gnote">⊘ 这个区间有 <b>'+noN+'</b> 条标了「不进统计」'+(noMin?trv('（共 '+fmtDur(noMin)+'）'):'')+'，没算进来。</div>'):"";
     var skipN=gcalSkip+archSkip;
     var rr=repRange(p);
     var gcalNote=skipN?('<div class="panel stat-gnote">📅 这个区间有 <b>'+skipN+'</b> 条来自 Google 日历的记录'+
-      (archMin?('（共 '+fmtDur(archMin)+'）'):'')+'没算进统计 —— 统计默认只算你在 app 里记的。'+
+      (archMin?trv('（共 '+fmtDur(archMin)+'）'):'')+'没算进统计 —— 统计默认只算你在 app 里记的。'+
       '<button class="btn" id="stat-gon">把它们也算上</button></div>'):"";
     wrap.innerHTML=
       '<div class="panel stat-controls">'+
@@ -13998,7 +14008,7 @@ margin-left: -22px;
   function refreshArchInfo(){
     var el=document.getElementById("gcal-arch-info");if(!el)return;
     var s=archStats();
-    el.innerHTML=s.n?("已经存下 <b>"+s.n+"</b> 条（约 "+kb(s.b)+"）—— 断开 Google 也不会丢。")
+    el.innerHTML=s.n?esc(trv("已经存下 "+s.n+" 条（约 "+kb(s.b)+"）—— 断开 Google 也不会丢。"))
                     :"还没存下任何历史事件。";}
   function archPurge(){                                // 后悔药：把自动存下来的全部清掉，并把开关关上
     var n=0;events=events.filter(function(e){if(e&&e.arch){n++;return false;}return true;});
@@ -14652,11 +14662,11 @@ margin-left: -22px;
       var st=srsStage(x),lab=STN[st],overdue=(!x.known&&!x.mastered&&x.due<=now);
       var kd=kchkDue(x);
       var when=(x.known||x.mastered)
-        ?(kd?"该抽查了":(x.kdue?("下次抽查 "+fmtWhen(x.kdue)):(x.known?"不用背了":"已掌握")))
-        :(overdue?"待复习":("下次 "+fmtWhen(x.due)));
+        ?(kd?trv("该抽查了"):(x.kdue?trv("下次抽查 "+fmtWhen(x.kdue)):trv(x.known?"不用背了":"已掌握")))
+        :(overdue?trv("待复习"):trv("下次 "+fmtWhen(x.due)));
       var meta=trv(x.dict==="collins"?"中→英":"英→中")+" · "+when;   // 分组由右边那颗按钮显示，别重复一遍
       return '<div class="wb-item'+(x.known?" isknown":"")+'" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
-        '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+(x.known?"认识":lab[0])+'</span>'+
+        '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+trv(x.known?"认识":lab[0])+'</span>'+
         '<span class="m">'+meta+'</span>'+
         '<button class="wb-note" data-note="'+esc(x.w)+'" title="'+(x.note?"编辑笔记":"写笔记")+'">'+(x.note?"📝":"✎")+'</button>'+
         '<button class="wb-move" data-w="'+esc(x.w)+'" title="在「'+esc(wbGroupName(wbGroupOf(x)))+'」里 · 点一下换个分组">'+esc(wbGroupName(wbGroupOf(x)))+' ▾</button>'+
@@ -14681,11 +14691,12 @@ margin-left: -22px;
       '<div class="wbc-bars">'+days.map(function(x,idx){
         var hn=x.n/max*100,hr=x.r/max*100;
         var mm=(hist[x.k]||{}).m||0;
-        return '<div class="col'+(idx===N-1?" today":"")+'" title="'+x.k+'：新词 '+x.n+' · 复习 '+x.r+(mm?(' · '+mm+' 分钟'):'')+'">'+
+        var ttl=x.k+"：新词 "+x.n+" · 复习 "+x.r+(mm?(" · "+mm+" 分钟"):"");
+        return '<div class="col'+(idx===N-1?" today":"")+'" title="'+esc(trv(ttl))+'">'+
           (x.r?'<i class="b2" style="height:'+hr+'%"></i>':'')+
           (x.n?'<i class="b1" style="height:'+hn+'%"></i>':'')+'</div>';}).join("")+'</div>'+
       '<div class="wbc-x">'+days.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div>'+
-      '<div class="wbc-lg"><span><i style="background:var(--primary)"></i>新词</span><span><i style="background:#7dd3ae"></i>复习</span></div></div>';
+      '<div class="wbc-lg"><span><i style="background:var(--primary)"></i>'+trv("新词")+'</span><span><i style="background:#7dd3ae"></i>'+trv("复习")+'</span></div></div>';
     // ② 未来 14 天复习预测（遗忘曲线排出来的）
     var fut=[],fmax=1,now=Date.now();
     var overdue=arr.filter(function(x){srsInit(x);return !x.known&&!x.mastered&&x.reps>0&&x.due<=now;}).length;
@@ -14697,7 +14708,7 @@ margin-left: -22px;
       fut.push({d:dd,c:c});fmax=Math.max(fmax,c);}
     var c2='<div class="wbc"><h4>未来 14 天要复习</h4><div class="sub">'+(overdue?("现在有 "+overdue+" 个到期"):"按遗忘曲线自动排的")+'</div>'+
       '<div class="wbc-bars">'+fut.map(function(x,idx){
-        return '<div class="col'+(idx===0?" today":"")+'" title="'+fmt(x.d)+'：'+x.c+' 个">'+
+        return '<div class="col'+(idx===0?" today":"")+'" title="'+esc(trv(fmt(x.d)+"："+x.c+" 个"))+'">'+
           (x.c?'<i class="b1" style="height:'+(x.c/fmax*100)+'%;background:'+(idx===0?"#e09a3e":"var(--primary)")+'"></i>':'')+'</div>';}).join("")+'</div>'+
       '<div class="wbc-x">'+fut.map(function(x,idx){return '<span>'+((idx%3===0||idx===N-1)?(x.d.getMonth()+1)+"/"+x.d.getDate():"")+'</span>';}).join("")+'</div></div>';
     // ③ 效率分析
@@ -15632,7 +15643,7 @@ margin-left: -22px;
     var box=document.getElementById("flash-btns");if(!box)return;
     box.innerHTML=L.map(function(it){
       var g=it[1],d=fmtGap(srsPreview(x,g));   // 学习步骤里是分钟，毕业之后才是天
-      return '<button class="gb '+it[2]+'" data-g="'+g+'" title="快捷键 '+it[3]+'（数字键也行）">'+
+      return '<button class="gb '+it[2]+'" data-g="'+g+'" title="'+esc(trv("快捷键 "+it[3]+"（数字键也行）"))+'">'+
         it[0]+'<small>'+d+' · '+it[3]+'</small></button>';}).join("");}
   function revealFlash(){
     if(flashRevealed)return;flashRevealed=true;
