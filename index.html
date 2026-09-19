@@ -6014,7 +6014,11 @@ margin-left: -22px;
     "导入菜谱":"Import recipes",
     "导入菜谱文件（.json）":"Import a recipe file (.json)",
     "导出 Markdown":"Export Markdown",
+    "导出中…":"Exporting…",
+    "导出于":"Exported",
     "导出全部菜谱为 Markdown":"Export all recipes as Markdown",
+    "导出没成 —— 换「打印 / 存 PDF」试试":"Export failed — try \"Print / PDF\" instead",
+    "导出网页":"Export web page",
     "导成 CSV，可用 Excel 打开":"Export as CSV, opens in Excel",
     "寿险":"life insurance",
     "封面：大图标，像 Windows 的文件夹":"Covers: big icons, like Windows folders",
@@ -6305,6 +6309,7 @@ margin-left: -22px;
     "数字变大算进步":"Higher is better",
     "数字变小算进步":"Lower is better",
     "数据库正在升级，被这个网站的其它标签页挡住了。 把其它标签页关掉，刷新一下再点。":"The database is upgrading and other tabs of this site are blocking it. Close the other tabs, refresh, then try again.",
+    "整个区间":"Whole range",
     "整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。":"Scales everything up or down. If it looks too small on another device, adjust here — it applies right away and this device remembers it (other devices aren't affected).",
     "整句翻译":"Sentence translation",
     "整段没写":"Skipped",
@@ -6379,6 +6384,7 @@ margin-left: -22px;
     "时长(h)":"Hours",
     "时长(分钟)":"Duration (min)",
     "时间":"Time",
+    "时间报告":"Time report",
     "时间管理":"Timetracker",
     "时间管理 · 初版":"Time Management · v1",
     "明天":"Tomorrow",
@@ -12906,6 +12912,93 @@ margin-left: -22px;
       '<td>'+tsH(ts.totalH)+' h</td></tr></tfoot></table></div>';
     if(ts.cut)h+='<div class="rep-cut">不到 '+floor+' 分钟的零头没单独成行：'+ts.cut+' 行，共 '+ts.cutMin+' 分钟。</div>';
     return h;}
+  // ---------- 把这一页整个导出去 ----------
+  // 她要的不是 CSV，是「整个页面，包括数据图」，而且导出来还能翻周。
+  //
+  // 不重写任何一张图：直接拿 renderStatsView 自己渲染出来的 innerHTML。
+  // 把区间切成一周一页（太长就一月一页），每页截一份，最后再截一份整区间的汇总，
+  // 拼成一个单文件网页 + 一段十几行的翻页脚本。样式直接把本页的 <style> 搬过去，
+  // 所以导出来的和她屏幕上看到的一模一样，发给谁都能直接用浏览器打开。
+  function expPages(a,b){                     // 区间 → 一周一页（超过 26 周改成一月一页）
+    var out=[],f=parse(a),t=parse(b),guard=0;
+    var weeks=Math.round((t-f)/604800000);
+    if(weeks>26){
+      var c=new Date(f.getFullYear(),f.getMonth(),1);
+      while(c<=t&&guard++<400){
+        var e1=new Date(c.getFullYear(),c.getMonth()+1,0);
+        out.push({a:fmt(c<f?f:c),b:fmt(e1>t?t:e1),lab:ymLab(c)});
+        c=addMonths(c,1);}
+      return out;}
+    var w=startOfWeek(f);
+    while(w<=t&&guard++<400){
+      var e2=addDays(w,6);
+      out.push({a:fmt(w<f?f:w),b:fmt(e2>t?t:e2),lab:rangeLab(w,e2)});
+      w=addDays(w,7);}
+    return out;}
+  function expHas(a,b){                       // 这一段里到底有没有记录（筛子跟报告那边一样）
+    return statPool(evRecorded).some(function(e){
+      var d=statDay(e);return d>=a&&d<=b&&evHasCat(e,statState.cat,statState.sub);});}
+  function expShot(a,b){                      // 把统计页按这个区间渲染一遍，把 HTML 截下来
+    statState.mode="custom";statState.from=a;statState.to=b;
+    statState.expFrom=a;statState.expTo=b;                     // 报告那块跟着同一个区间
+    renderStatsView();
+    var d=document.createElement("div");
+    d.innerHTML=document.getElementById("stats-wrap").innerHTML;
+    // 导出件里用不着的：导出按钮、日期框、各种切换、「把它们也算上」那颗
+    // 自家的提醒不该跟着发出去：「几条没算进统计」这种是给她自己看的
+    d.querySelectorAll(".exp-controls,.stat-custom,.stat-nav,.stat-catsel,.seg,#stat-gon,.stat-gnote,.stat-anote").forEach(function(x){x.remove();});
+    return d.innerHTML;}
+  function exportPageHTML(){
+    var rr=repRange(statPeriod());
+    var keep={mode:statState.mode,cursor:statState.cursor,from:statState.from,to:statState.to,
+      expFrom:statState.expFrom,expTo:statState.expTo};
+    var pages=[];
+    try{
+      // 汇总放第一页 —— 打开就看得到东西，而不是落在一个空周上
+      pages.push({lab:trv("整个区间"),html:expShot(fmt(rr.start),fmt(rr.end))});
+      expPages(fmt(rr.start),fmt(rr.end)).forEach(function(p){
+        if(!expHas(p.a,p.b))return;                            // 空周不必占一个页签
+        pages.push({lab:p.lab,html:expShot(p.a,p.b)});});
+    }finally{                                                   // 中途出了什么事也要把她的视图原样还回去
+      statState.mode=keep.mode;statState.cursor=keep.cursor;statState.from=keep.from;statState.to=keep.to;
+      statState.expFrom=keep.expFrom;statState.expTo=keep.expTo;
+      try{renderStatsView();}catch(e){}}
+    var css="";
+    try{css=document.querySelector("style").textContent;}catch(e){}
+    var scope=(statState.cat==="__all"?trv("全部"):catName(statState.cat))+
+      (statState.sub!=="__all"?" \u203a "+subName(statState.cat,statState.sub):"");
+    var title=trv("时间报告")+" · "+scope+" · "+rr.label;
+    var body=pages.map(function(p,i){
+      return '<section class="xpg"'+(i?' hidden':'')+'>'+p.html+'</section>';}).join("");
+    var tabs=pages.map(function(p,i){
+      return '<button type="button" data-i="'+i+'"'+(i?'':' class="on"')+'>'+esc(p.lab)+'</button>';}).join("");
+    var doc='<!DOCTYPE html>\n<html lang="'+(isEN()?"en":"zh-CN")+'" data-theme="light"><head><meta charset="utf-8">'+
+      '<meta name="viewport" content="width=device-width,initial-scale=1">'+
+      '<title>'+esc(title)+'</title><style>'+css+'</style><style>'+
+      'body{padding:22px 26px;background:var(--bg);color:var(--text)}'+
+      '.xh{font-size:19px;font-weight:700;margin:0 0 4px}'+
+      '.xm{font-size:12.5px;color:var(--muted);margin-bottom:14px}'+
+      '.xtabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}'+
+      '.xtabs button{font:inherit;font-size:12px;padding:5px 11px;border-radius:8px;cursor:pointer;'+
+        'border:1px solid var(--border);background:var(--surface);color:var(--muted)}'+
+      '.xtabs button.on{background:var(--primary);border-color:var(--primary);color:#fff;font-weight:600}'+
+      '.xpg[hidden]{display:none}'+
+      '.stats-wrap>.stat-bar{display:none}'+                   // 导出件里不需要那排筛选
+      '.xpg .stat-legend button,.xpg .rep-table{pointer-events:none}'+
+      '.xpg .panel:has(#exp-report)>h3,.xpg .panel:has(.rep-h)>h3{display:none}'+   // 「报告 / 导出」这个标题在导出件里没意义
+
+      '@media print{.xtabs{display:none}.xpg[hidden]{display:block!important;page-break-before:always}}'+
+      '</style></head><body>'+
+      '<h1 class="xh">'+esc(title)+'</h1>'+
+      '<div class="xm">'+esc(trv("导出于")+" "+dtstr(new Date()))+'</div>'+
+      '<div class="xtabs">'+tabs+'</div>'+body+
+      '<script>(function(){var t=document.querySelector(".xtabs"),p=document.querySelectorAll(".xpg");'+
+      't.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;'+
+      'var i=+b.getAttribute("data-i");'+
+      't.querySelectorAll("button").forEach(function(x,j){x.classList.toggle("on",j===i);});'+
+      'p.forEach(function(x,j){x.hidden=(j!==i);});});})();<\/script>'+
+      '</body></html>';
+    downloadFile(scope+"_"+rr.label+".html",doc,"text/html;charset=utf-8");}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
     if(!rows.length)return '<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+'</div></div><div class="stat-empty">该范围内没有记录</div>';
     var h='<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+' · 共 '+fmtDur(total)+' · '+rows.length+' 项</div></div>';
@@ -13252,7 +13345,7 @@ margin-left: -22px;
       '<div class="panel"><h3><span>报告 / 导出</span>'+       // 标题包一层：它和右边那组按钮是两个行内盒子，靠 float 分开，不是一句话
         '<span class="seg mini" id="rep-mode"><button data-rm="ts"'+(statState.rep==="detail"?"":' class="on"')+'>工时表</button>'+
         '<button data-rm="detail"'+(statState.rep==="detail"?' class="on"':'')+'>明细</button></span></h3><div class="exp-controls">'+
-        '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
+        '<button class="btn primary" id="exp-html">导出网页</button><button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn" id="exp-print">打印 / 存 PDF</button>'+
         (statState.rep==="detail"?"":
           ('<span class="seg mini" id="ts-round" title="工时表本来就是按刻钟计的。3.43h 这种数一看就是机器导出来的"><button data-tr="0.25"'+(statState.tsR===0.25?' class="on"':'')+'>0.25h</button>'+
            '<button data-tr="0.5"'+(statState.tsR===0.5?' class="on"':'')+'>0.5h</button>'+
@@ -13325,6 +13418,12 @@ margin-left: -22px;
     if(xt)xt.addEventListener("change",function(){statState.expTo=xt.value;saveStatView();renderStatsView();});
     if(xr)xr.addEventListener("click",function(){statState.expFrom="";statState.expTo="";saveStatView();renderStatsView();});
     wrap.querySelector("#exp-print").addEventListener("click",function(){window.print();});
+    wrap.querySelector("#exp-html").addEventListener("click",function(){
+      var b=this,o=b.textContent;b.textContent=trv("导出中…");b.disabled=true;
+      // 要把统计页重画好几遍，先让浏览器把这一帧画完，否则按钮看着像没反应
+      setTimeout(function(){
+        try{exportPageHTML();}catch(err){try{ttAlert(trv("导出没成 —— 换「打印 / 存 PDF」试试"));}catch(_e){}}
+        var nb=document.getElementById("exp-html");if(nb){nb.textContent=o;nb.disabled=false;}},30);});
   }
 
   // ---------- 设置里的说明文字：长的收进「?」 ----------

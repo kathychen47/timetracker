@@ -218,7 +218,9 @@ T("统计那些数字都走 evNetMin，记录那些都走 evRecMin", function ()
 });
 
 T("报告列的是记录，不是「进统计的」", function () {
-  ok(count("statPool(evRecorded)") === 1, "报告那条路传 evRecorded 进去");
+  // 导出网页那边（expHas）故意用同一把筛子，所以这儿只盯报告自己那一行。
+  ok(count("var repRows=statPool(evRecorded)") === 1, "报告那条路传 evRecorded 进去");
+  ok(count("var base=events.filter(pred||evCounts);") === 1, "不传筛子时 statPool 默认就是 evCounts");
   ok(count("events.filter(pred||evCounts)") === 1, "statPool 默认还是 evCounts —— 数字那边不受影响");
 });
 
@@ -229,7 +231,8 @@ T("日历块上有角标；设了「不进统计」就不再叠 ≈", function (
 });
 
 T("报告区间刷新后还在（她的规矩：手动选的不能刷没）", function () {
-  ok(count("expFrom:statState.expFrom,expTo:statState.expTo") === 1, "进了 tt_statview");
+  // exportPageHTML 里也有一份同名字段（导出前备份她的视图），所以盯整句 save。
+  ok(count('save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo') === 1, "进了 tt_statview");
   ok(count('statState.expFrom=statView.expFrom||""') === 1, "启动时读回来");
   ok(count('id="exp-follow"') === 1, "有一颗「跟上面」能清掉");
 });
