@@ -2222,7 +2222,14 @@
   .rep-segs{font-size:11px;color:var(--muted);margin-top:2px}
   .rep-segs em{font-style:normal;opacity:.8}
 
-  @media (max-width:560px){main{padding:12px 10px 50px}.stat-cards{grid-template-columns:1fr 1fr}}
+  @media (max-width:560px){main{padding:12px 10px 50px}.stat-cards{grid-template-columns:1fr 1fr}
+    /* 窄屏两处。只改经得起对比的那两条：
+       ① 页面副标题单起一行 —— 英文比中文长很多，跟在标题后面会顶到边上。
+       ② 状态行允许任意处换行 —— 里面有 supabase/AKAHU.md 这种断不开的东西。
+       （曾经还改过日期框的伸缩，等宽截图一比：反而把它们拉得过宽，撤了。）*/
+    .mn-status{overflow-wrap:anywhere}
+    .page-h .rd-sub{display:block;margin-top:2px;font-size:12px}
+  }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 
 /*OALD-ORIG-START*/
