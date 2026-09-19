@@ -10517,7 +10517,7 @@ margin-left: -22px;
         var m=stepMin(st);
         return '<div class="sk-step'+(st.done?" done":"")+'">'+
           '<input type="checkbox" class="sk-ck" data-ck="'+st.id+'"'+(st.done?" checked":"")+'>'+
-          '<span class="sk-t" data-ren="'+st.id+'" title="点一下改名">'+esc(st.t)+'</span>'+
+          '<span class="sk-t" data-ren="'+st.id+'" title="点一下改名">'+esc(st.t||"")+'</span>'+
           '<span class="sk-time" data-est="'+st.id+'" title="预计 / 实际 —— 点一下改预计">'+
             trv(st.est?("预计 "+hrs(st.est)):"未估")+' · '+trv("实际")+' <b>'+hrs(m)+'</b></span>'+
           '<button class="sk-go" data-go="'+st.id+'" title="开始正计时，时间自动记到这一步">▶</button>'+

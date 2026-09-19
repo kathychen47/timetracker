@@ -25,7 +25,11 @@ const dom = new JSDOM(html, {
   runScripts: "dangerously", pretendToBeVisual: true,
   url: "https://kathychen47.github.io/timetracker/", virtualConsole: vc,
   beforeParse(w) {
-    const store = { tt_lang: JSON.stringify("en") };
+    // 跟体检共用同一套「铺满状态」的数据 ——
+    // 只在某个状态下才出现的句子，空数据下永远渲染不出来，接缝也就无从查起。
+    const seed = require("./_seed")(false);
+    const store = {};
+    Object.keys(seed).forEach(k => { store[k] = JSON.stringify(seed[k]); });
     Object.defineProperty(w, "localStorage", {
       value: {
         getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v) },
@@ -62,7 +66,9 @@ function looksProse(s) { return s.length >= 4 && /[A-Za-z]/.test(s) && s.indexOf
 // 只看**行内**相邻：两个 block 元素挨在一起，视觉上本来就换行，不是粘连。
 // jsdom 没有真正的布局，getComputedStyle 也算不出样式表里的 display，
 // 所以直接用标签白名单 —— 这个 app 里只有这几种行内标签。
-const INLINE = { B: 1, I: 1, EM: 1, STRONG: 1, SPAN: 1, CODE: 1, SMALL: 1, A: 1, U: 1, MARK: 1, ABBR: 1 };
+// SMALL 故意不在里面：这个 app 里的 <small> 一律是另起一行、或者带 margin 的小标，
+// 不是句子的一部分（比如 .mn-row .ds small 有 margin-left:6px）。
+const INLINE = { B: 1, I: 1, EM: 1, STRONG: 1, SPAN: 1, CODE: 1, A: 1, U: 1, MARK: 1, ABBR: 1 };
 function inlineish(n) { return n.nodeType === 3 || (n.nodeType === 1 && INLINE[n.nodeName] === 1); }
 
 function where(el) {
@@ -82,6 +88,10 @@ function scan(tag) {
     for (let i = 0; i + 1 < kids.length; i++) {
       const a = kids[i], b = kids[i + 1];
       if (!inlineish(a) || !inlineish(b)) continue;
+      // 两个元素挨在一起往往是靠 CSS 留的空（徽章、胶囊、flex gap），
+      // jsdom 里看不到样式，全报出来就满屏误报。
+      // 真正的「翻译接缝」全都是文本节点 ↔ 行内标签，所以至少一侧得是文本。
+      if (a.nodeType !== 3 && b.nodeType !== 3) continue;
       const ta = (a.textContent || ""), tb = (b.textContent || "");
       if (!ta || !tb) continue;
       if (/\s$/.test(ta) || /^\s/.test(tb)) continue;      // 接缝处本来就有空白
