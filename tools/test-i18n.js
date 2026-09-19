@@ -108,7 +108,9 @@ console.log("== sweepLang 的接线 ==");
   ok(count("ns.forEach(function(tn){if(skip(tn))return;") === 1, "遍历时先看父节点再 trim");
   ok(count("if(root.nodeType===3){if(skip(root))return;") === 1, "直接传进来一个文本节点时也要挡");
   ok(count("var TR_MAX=2000;") === 1, "长度上限只定义一次");
-  ok(count("if(!s||s.length>TR_MAX)return undefined;") === 1, "trLookup 开头就挡");
+  // 两处：缓存包装那层一道、里层 trLookupRaw 一道。
+  // 包装那道是必须的 —— 1.7MB 的源码不能先拿去做缓存键。
+  ok(count("if(!s||s.length>TR_MAX)return undefined;") === 2, "trLookup 和 trLookupRaw 开头都要挡");
 })();
 
 console.log("");
@@ -124,6 +126,33 @@ console.log("== ?lang= 逃生通道 ==");
   const j = whole.indexOf("_lq");
   ok(i > 0 && j > i, "先读存的，再让网址覆盖");
   ok(whole.indexOf("catch(_e){}") > 0, "location 取不到也不能拦住启动");
+})();
+
+console.log("");
+console.log("== 查过的结果记住（词表运行时不变，缓存安全）==");
+// 没命中的代价是命中的 20–40 倍（要把 500 多条模板都试一遍），
+// 而 catName() / sweepLang() 都在热路径上，她自建的分类又永远命中不了。
+(function () {
+  const cases = ["日历", "PhD", "时间报告 · All", "zzz没这条zzz"];
+  const first = cases.map(s => ctx.trLookup(s));
+  const again = cases.map(s => ctx.trLookup(s));
+  if (JSON.stringify(first) === JSON.stringify(again)) pass++;
+  else { fail++; console.log("  x 第二次查结果不一样 —— 缓存把结果改了"); }
+  // 重复查同一个**没命中**的串，应该快得多
+  const miss = "Weekly team sync with the supervisor";
+  ctx.trLookup(miss);
+  const t0 = Date.now();
+  for (let i = 0; i < 20000; i++) ctx.trLookup(miss);
+  const ms = Date.now() - t0;
+  if (ms < 40) pass++;
+  else { fail++; console.log("  x 重复查没命中的串用了 " + ms + "ms/2万次 —— 缓存没生效"); }
+  const whole = src;
+  function count(p) { return whole.split(p).length - 1; }
+  function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
+  ok(count("if (s in TR_MEMO) return TR_MEMO[s];".replace(/ /g, "")) === 1 ||
+     count("if(s in TR_MEMO)return TR_MEMO[s];") === 1, "用 in 判断 —— undefined 也得算缓存命中，否则恰恰漏掉最贵的那一半");
+  ok(count("TR_MEMO_N<TR_MEMO_MAX") === 1, "缓存要封顶");
+  console.log("  命中 / 未命中 重复查 2万次：" + ms + "ms");
 })();
 
 console.log("");

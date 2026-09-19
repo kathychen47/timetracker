@@ -7872,7 +7872,19 @@ margin-left: -22px;
   // 但万一哪天又冒出一个巨大的文本节点（比如往 <pre> 里塞一整份日志），
   // 505 条模板正则挨个去啃它，页面就当场卡死 —— 这正是英文界面打不开的那个 bug。
   var TR_MAX=2000;
+  // 词表和模板运行时不会变，所以查过的结果可以直接记住。
+  // 为什么值得：**没命中**的代价是命中的 20–40 倍——要把 500 多条模板都试一遍。
+  // 而 catName() 和 sweepLang() 都在热路径上，且她自建的分类（PhD / CMS）
+  // 永远命中不了 —— 每渲染一个事件块就白跑一遍。
+  // 缓存 undefined 也要算数（用 in 判断，不是用值），否则恰恰漏掉最贵的那一半。
+  var TR_MEMO=Object.create(null),TR_MEMO_N=0,TR_MEMO_MAX=4000;
   function trLookup(s){
+    if(!s||s.length>TR_MAX)return undefined;
+    if(s in TR_MEMO)return TR_MEMO[s];
+    var r=trLookupRaw(s);
+    if(TR_MEMO_N<TR_MEMO_MAX){TR_MEMO[s]=r;TR_MEMO_N++;}   // 封顶，别让它无限长
+    return r;}
+  function trLookupRaw(s){
     if(!s||s.length>TR_MAX)return undefined;
     var v=I18N.en[s];if(v!==undefined)return v;
     var s2=s.replace(/\s+/g," ");
