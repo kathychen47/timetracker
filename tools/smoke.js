@@ -21,6 +21,11 @@ const ZH = process.argv.indexOf("--zh") > 0;
 const VERBOSE = process.argv.indexOf("--verbose") > 0;
 const MAXCLICK = (() => { const i = process.argv.indexOf("--max"); return i > 0 ? +process.argv[i + 1] : 0; })();
 const EMPTY = process.argv.indexOf("--empty") > 0;   // 全空：新用户第一次打开的样子
+// 假时钟：这个 app 通篇都是日期逻辑，跨年、月底、闰日、周日都是典型的坏点。
+const FIXDATE = (() => { const i = process.argv.indexOf("--date"); return i > 0 ? process.argv[i + 1] : null; })();
+// 断网：让 fetch 当场失败。平时打桁成“永远不返回”，
+// 那样没接住网络错误的地方永远暴露不了 —— 这一档专门剔它们。
+const OFFLINE = process.argv.indexOf("--offline") > 0;
 
 const errs = [];       // {msg, at}
 let clicking = "";     // 现在点的是谁 —— 报错时用来定位
@@ -65,7 +70,8 @@ const dom = new JSDOM(html, {
       }
     });
     w.matchMedia = () => ({ matches: false, addEventListener() { }, removeEventListener() { }, addListener() { }, removeListener() { } });
-    w.scrollTo = () => { }; w.fetch = () => new Promise(() => { });
+    w.scrollTo = () => { };
+    w.fetch = OFFLINE ? (() => Promise.reject(new TypeError("Failed to fetch"))) : (() => new Promise(() => { }));
     w.SpeechSynthesisUtterance = function () { }; w.speechSynthesis = { speak() { }, getVoices: () => [], cancel() { } };
     w.requestAnimationFrame = cb => setTimeout(() => cb(Date.now()), 0);
     w.HTMLCanvasElement.prototype.getContext = () => null;
@@ -82,6 +88,16 @@ const dom = new JSDOM(html, {
     w.HTMLMediaElement.prototype.play = () => Promise.resolve();
     w.HTMLMediaElement.prototype.pause = () => { };
     w.HTMLMediaElement.prototype.load = () => { };
+    if (FIXDATE) {
+      const T = new Date(FIXDATE + "T10:30:00").getTime();
+      const R = w.Date;
+      class Fake extends R {
+        constructor(...a) { if (a.length === 0) super(T); else super(...a); }
+        static now() { return T; }
+      }
+      Fake.parse = R.parse; Fake.UTC = R.UTC;
+      w.Date = Fake;
+    }
   }
 });
 const W = dom.window, D = W.document;
@@ -152,7 +168,7 @@ async function clickAll(scope, where) {
   await sleep(3200);
   const bootErrs = errs.length;
   console.log("");
-  console.log("== 冒烟测试（" + (ZH ? "中文" : "英文") + (EMPTY ? " · 空库" : "") + "）==");
+  console.log("== 冒烟测试（" + (ZH ? "中文" : "英文") + (EMPTY ? " · 空库" : "") + (OFFLINE ? " · 断网" : "") + (FIXDATE ? " · " + FIXDATE : "") + "）==");
   console.log("  启动：" + (bootErrs ? bootErrs + " 条报错" : "干净"));
 
   for (const t of TABS) {
