@@ -7472,7 +7472,7 @@ margin-left: -22px;
     ["，点「开始」接着走","^上次暂停在 (.+?)，点「开始」接着走$","You paused at \u00011 — tap \"Start\" to carry on"],
     ["，点「开始」接着走","^上次暂停时还剩 (.+?)，点「开始」接着走$","\u00011 left when you paused — tap \"Start\" to carry on"],
     ["番茄钟接着走，还剩","^番茄钟接着走，还剩 (.+?) 分钟$","Pomodoro resumed — \u00011 min left"],
-    ["截止","^(.+?)截止 (.+?)$","\u00011Due \u00012"],
+    ["⚠ 已逾期 · 截止","^⚠ 已逾期 · 截止 (.+?)$","⚠ Overdue · due \u00011"],
     ["」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：{\"todos\":[{\"t\":\"待办\",\"prio\":\"mid\"}]}","^把下面这件事拆成几条可以直接动手的待办。 事情：「(.+?)」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：\\{\"todos\":\\[\\{\"t\":\"待办\",\"prio\":\"mid\"\\}\\]\\}$","Break the following into a few to-dos you can act on straight away. The thing: \"\u00011\" Rules: - 3~7 items, ordered first to last - each one is a single action, 20 characters or fewer - prio must be high / mid / low - output JSON only, no explanation, no code fences Format: {\"todos\":[{\"t\":\"to-do\",\"prio\":\"mid\"}]}"],
     ["拆解失败：","^拆解失败：(.+?)$","Breakdown failed: \u00011"],
     ["时间报告 ·","^时间报告 · (.+?) (.+?) · 共 (.+?) · (.+?) 项$","Time report · \u00011 \u00012 · \u00013 total · \u00014 entries"],
@@ -12581,7 +12581,11 @@ margin-left: -22px;
     if(!arr.length){todoList.innerHTML='<div class="todo-empty">'+(showArchived?"没有已归档的待办":"这里还没有待办 ✦")+'</div>';}
     else todoList.innerHTML=arr.map(function(t){
       var overdue=t.due&&!t.done&&t.due<todayStr;
-      var due=t.due?'<div class="due'+(overdue?" overdue":"")+'">'+(overdue?"⚠ 已逾期 · ":"")+'截止 '+t.due+'</div>':'';
+      // 两个分支各自拼成一句完整的话。
+      // 写成 (cond?"⚠ 已逾期 · ":"")+"截止 "+d 的话，渲染出来是一个文本节点
+      // 「⚠ 已逾期 · 截止 2026-09-19」，而词表里只有前半截 —— 永远对不上。
+      var due=t.due?'<div class="due'+(overdue?" overdue":"")+'">'+
+        (overdue?("⚠ 已逾期 · 截止 "+t.due):("截止 "+t.due))+'</div>':'';
       var archAct=t.archived?'<button class="tact" data-act="unarch" title="取消归档">'+SVG_UNARCH+'</button>':'<button class="tact" data-act="arch" title="归档">'+SVG_ARCH+'</button>';
       var tc=(t.cat&&parentObj(t.cat))?catColor(t.cat):"var(--border)";
       return '<div class="ti'+(t.done?" done":"")+(overdue?" overdue":"")+'" data-id="'+t.id+'" style="--tc:'+tc+'">'+

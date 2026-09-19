@@ -516,5 +516,6 @@
 "打不开本地书库{1}。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。": "Can't open the local book library{1}. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window.",
 "打不开本地词典库{1}": "Can't open the local dictionary store{1}",
 "打不开本地词典库{1} —— 换个非隐私窗口再试。": "Can't open the local dictionary store{1} — try a non-private window.",
-"共学 {1} 次(新词 {2} · 复习 {3}){4}": "{1} sessions (new {2} · review {3}){4}"
+"共学 {1} 次(新词 {2} · 复习 {3}){4}": "{1} sessions (new {2} · review {3}){4}",
+"⚠ 已逾期 · 截止 {1}": "⚠ Overdue · due {1}"
 }

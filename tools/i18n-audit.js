@@ -57,7 +57,13 @@ const dom = new JSDOM(html, {
         { t: "2026-09-19 23:02", tag: "拉取时保住本机刚改还没上云的", mode: "up", sec: 0, run: false, fol: false, me: "abcde", own: "-", cal: false },
         { t: "2026-09-19 22:55", tag: "Money auto-sync", mode: "up", sec: 0, run: false, fol: false, me: "abcde", own: "-", cal: false }
       ],
-      tt_pstats: { [ymd(today)]: { count: 3, min: 75 } }
+      tt_pstats: { [ymd(today)]: { count: 3, min: 75 } },
+      // 故意铺一条**逾期**的待办：「⚠ 已逾期」只在这个状态下出现，
+      // 不造出来就永远扫不到（之前就是这么漏的，真浏览器里才看见）。
+      tt_todos: [
+        { id: "t1", title: "Overdue sample", prio: "high", due: ymd(new Date(today - 86400000 * 3)), done: false },
+        { id: "t2", title: "Today sample", prio: "mid", due: ymd(today), done: false }
+      ]
     };
     const store = {};
     Object.keys(seed).forEach(k => { store[k] = JSON.stringify(seed[k]); });
@@ -134,7 +140,11 @@ const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "di
 
   for (const t of TABS) {
     if (!click('.rail button[data-tab="' + t + '"]')) { errs.push("没有标签：" + t); continue; }
-    await sleep(350); visited.push(t); scan(t);
+    await sleep(350);
+    // 词典页分「查词 / 生词本」两个子页，默认停在查词 ——
+    // 不切过去的话，生词本那一大片（统计卡、效率、词条）根本没渲染过。
+    if (t === "dict") { click('#dict-tabs button[data-dt="study"]'); await sleep(400); }
+    visited.push(t); scan(t);
     // 统计页的几个切换
     if (t === "stats") {
       for (const s of ["#stat-mode button", "#stat-dist button", "#stat-trend button", "#stat-by button"]) {
@@ -179,7 +189,7 @@ const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "di
     const tb = D.querySelector(trigger);
     if (!tb) { errs.push("没有入口：" + name + " " + trigger); continue; }
     try { tb.click(); } catch (e) { errs.push("开不了 " + name + "：" + e.message); continue; }
-    await sleep(400);
+    await sleep(900);      // 卡片释义是 async 取的，等它画完再扫
     scan("dlg:" + name);
     // 关掉：先试 Esc，再试弹窗里的取消 / 关闭
     try { D.dispatchEvent(new W.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) { }
