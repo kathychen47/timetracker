@@ -117,7 +117,7 @@ console.log("== ?lang= 逃生通道 ==");
   const whole = src;
   function count(p) { return whole.split(p).length - 1; }
   function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
-  ok(count("/[?&]lang=(zh|en)\b/.exec(location.search)") === 1, "网址上认 ?lang=zh / ?lang=en");
+  ok(count("/[?&]lang=(zh|en)\\b/.exec(location.search)") === 1, "网址上认 ?lang=zh / ?lang=en");
   ok(count('if(_lq&&_lq[1]!==lang){lang=_lq[1];save("tt_lang",lang);}') === 1,
     "不只是这一次生效，还要存下来 —— 否则下一次打开又被锁回去");
   const i = whole.indexOf("var lang=load(\"tt_lang\"");
