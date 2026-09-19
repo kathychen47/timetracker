@@ -921,6 +921,7 @@
 "手臂": "arm",
 "手记": "Manual",
 "打不开本地书库。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。": "Can't open the local book library. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window.",
+"打不开本地词典库": "Can't open the local dictionary store",
 "打卡": "check-in",
 "打开后，白名单里的邮箱登录这个网站，就能看到你的菜谱和你想吃的菜（他们只能看，不能改）。": "Once it's on, anyone on the allow-list who signs in to this site can see your recipes and what you're craving (view only — they can't change anything).",
 "打开完整应用 ↗": "Open full app ↗",

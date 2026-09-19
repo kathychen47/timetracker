@@ -6110,6 +6110,7 @@ margin-left: -22px;
     "手臂":"arm",
     "手记":"Manual",
     "打不开本地书库。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。":"Can't open the local book library. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window.",
+    "打不开本地词典库":"Can't open the local dictionary store",
     "打卡":"check-in",
     "打开后，白名单里的邮箱登录这个网站，就能看到你的菜谱和你想吃的菜（他们只能看，不能改）。":"Once it's on, anyone on the allow-list who signs in to this site can see your recipes and what you're craving (view only — they can't change anything).",
     "打开完整应用 ↗":"Open full app ↗",
@@ -7507,6 +7508,7 @@ margin-left: -22px;
     ["条历史事件 ✓ —— 断开 Google 也不会丢了。","^存下了 (.+?) 条历史事件 ✓ —— 断开 Google 也不会丢了。$","Saved \u00011 past events ✓ — they won't be lost if you disconnect Google."],
     ["没能读取：","^没能读取：(.+?)$","Couldn't read: \u00011"],
     ["）—— 断开 Google 也不会丢。","^条（约 (.+?)）—— 断开 Google 也不会丢。$","events (about \u00011) — they'll survive disconnecting Google."],
+    ["打不开本地词典库","^打不开本地词典库(.+?)$","Can't open the local dictionary store\u00011"],
     ["· 柯林斯(中→英)","^牛津\\(英→中\\) (.+?) · 柯林斯\\(中→英\\) (.+?)$","Oxford (EN→ZH) \u00011 · Collins (ZH→EN) \u00012"],
     ["）。 重新导入会覆盖，确定继续吗？","^本机已经有词典了（(.+?)）。 重新导入会覆盖，确定继续吗？$","This device already has dictionaries (\u00011). Re-importing overwrites them — continue?"],
     ["（名字里要含 oald 或 collins）","^认不出文件：(.+?)（名字里要含 oald 或 collins）$","Can't tell what this file is: \u00011 (the name has to contain oald or collins)"],
@@ -7525,6 +7527,7 @@ margin-left: -22px;
     ["到云端…（","^上传 (.+?) 到云端…（(.+?)(.+?)/(.+?)）$","Uploading \u00011 to the cloud… (\u00012\u00013/\u00014)"],
     ["—— 多半是还没跑配置 SQL","^上传失败：(.+?) —— 多半是还没跑配置 SQL$","Upload failed: \u00011 — you probably haven't run the setup SQL yet"],
     ["” 按原形","^“(.+?)” 按原形$","“\u00011” looked up by base form"],
+    ["—— 换个非隐私窗口再试。","^打不开本地词典库(.+?) —— 换个非隐私窗口再试。$","Can't open the local dictionary store\u00011 — try a non-private window."],
     ["翻译 ·","^翻译 · (.+?)$","Translation · \u00011"],
     ["词典没收录 “","^词典没收录 “(.+?)”。(.+?)$","“\u00011” isn't in the dictionary. \u00012"],
     ["」里 · 点一下换个分组","^在「(.+?)」里 · 点一下换个分组$","In \"\u00011\" · tap to change group"],
@@ -14184,19 +14187,29 @@ margin-left: -22px;
       DICT_STORES.forEach(function(s){if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:"k"});});
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});};
     r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
-  function ensureDictDB(){return DICT_DB?Promise.resolve(DICT_DB):idbOpen().then(function(db){DICT_DB=db;return db;});}
+  // 拿不到就返回 null，**绝不 reject**。
+  // 调用方全是 `await ensureDictDB()` 开头的 async 函数，一 reject 就整个炸在半路：
+  // 背单词那条路（showFlash → wbDefHTML）会渲染不出卡片，白着，一个字都不说。
+  // 库开不了是有真实场景的：隐私窗口、站点存储被禁、磁盘满。
+  var dictDBFail=null;
+  function ensureDictDB(){
+    if(DICT_DB)return Promise.resolve(DICT_DB);
+    return idbOpen().then(function(db){DICT_DB=db;dictDBFail=null;return db;},
+      function(e){dictDBFail=(e&&e.message)||String(e||"");return null;});}
+  function dictDBWhy(){return dictDBFail?("（"+dictDBFail+"）"):"";}
   function idbGet(store,key){return new Promise(function(res,rej){
     try{var rq=DICT_DB.transaction(store,"readonly").objectStore(store).get(key);
       rq.onsuccess=function(){res(rq.result);};rq.onerror=function(){rej(rq.error);};}catch(e){rej(e);}});}
   function idbCount(store){return new Promise(function(res){
     try{var rq=DICT_DB.transaction(store,"readonly").objectStore(store).count();
       rq.onsuccess=function(){res(rq.result);};rq.onerror=function(){res(0);};}catch(e){res(0);}});}
-  function refreshDictCounts(){return ensureDictDB().then(function(){
+  function refreshDictCounts(){return ensureDictDB().then(function(db){
+    if(!db){DICT_STORES.forEach(function(s){dictCounts[s]=0;});return;}
     return Promise.all(DICT_STORES.map(function(s){return idbCount(s).then(function(n){dictCounts[s]=n;});}));});}
 
   async function loadDictBlob(store,blob,onProg){
     if(typeof DecompressionStream==="undefined")throw new Error("浏览器太旧，不支持解压(DecompressionStream)，请用新版 Chrome/Edge/Safari");
-    await ensureDictDB();
+    if(!await ensureDictDB())throw new Error("打不开本地词典库"+dictDBWhy());
     var stream=blob.stream().pipeThrough(new DecompressionStream("gzip")).pipeThrough(new TextDecoderStream());
     var reader=stream.getReader(),buf="",count=0,batch=[];
     function flush(arr){return new Promise(function(res,rej){
@@ -14352,9 +14365,11 @@ margin-left: -22px;
   function firstEnabledStore(cjk){var pref=cjk?["collins","oald"]:["oald","collins"];
     for(var i=0;i<pref.length;i++)if(dictPrefs.enabled[pref[i]]!==false&&dictCounts[pref[i]])return pref[i];return pref[0];}
   async function getSuggest(q){q=(q||"").trim();if(!q)return [];
-    await ensureDictDB();var key=q.toLowerCase(),store=firstEnabledStore(isCJK(q));
+    if(!await ensureDictDB())return [];
+    var key=q.toLowerCase(),store=firstEnabledStore(isCJK(q));
     return await prefixSearch(store,key,12);}
-  async function fuzzySuggest(q){await ensureDictDB();var key=(q||"").trim().toLowerCase();if(!key)return [];
+  async function fuzzySuggest(q){if(!await ensureDictDB())return [];
+    var key=(q||"").trim().toLowerCase();if(!key)return [];
     if(isCJK(q))return await prefixSearch(firstEnabledStore(true),key.slice(0,2),8);
     var store=firstEnabledStore(false);
     var cand=await prefixSearch(store,key.slice(0,Math.min(3,key.length)),900);
@@ -14410,7 +14425,7 @@ margin-left: -22px;
     q=(q||"").trim();var box=document.getElementById("dict-result");if(!box)return;
     renderSugg([]);
     if(!q){box.innerHTML="";return;}
-    await ensureDictDB();
+    if(!await ensureDictDB()){box.innerHTML='<div class="dict-hint">'+esc("打不开本地词典库"+dictDBWhy()+" —— 换个非隐私窗口再试。")+'</div>';return;}
     var key=q.toLowerCase(),matches=[],viaBase="";
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];
       if(dictPrefs.enabled[store]===false)continue;
@@ -14830,7 +14845,11 @@ margin-left: -22px;
     x.note=v.trim();saveWords();
     if(state.tab==="dict")renderWordbook();
     return true;}
-  async function wbDefHTML(w){await ensureDictDB();var key=(w||"").toLowerCase(),html=wordNoteHTML(key),via="",cards="";
+  async function wbDefHTML(w){
+    // 库开不了也要把卡片渲染出来 —— 释义没有，词本身还在背。
+    var db=await ensureDictDB();
+    var key=(w||"").toLowerCase(),html=wordNoteHTML(key),via="",cards="";
+    if(!db)return html||('<div class="dict-hint">'+esc("打不开本地词典库"+dictDBWhy())+'</div>');
     for(var i=0;i<dictPrefs.order.length;i++){var store=dictPrefs.order[i];if(dictPrefs.enabled[store]===false)continue;
       var hit=null;try{hit=await dictFind(store,key);}catch(e){}
       var rec=hit?hit.rec:null;
@@ -15089,7 +15108,9 @@ margin-left: -22px;
     try{var tx=DICT_DB.transaction(store,"readwrite");tx.objectStore(store).put(val);
       tx.oncomplete=function(){res();};tx.onerror=function(){rej(tx.error);};}catch(e){rej(e);}});}
   function buildLevelIndex(onProg){
-    return ensureDictDB().then(function(){return new Promise(function(res,rej){
+    return ensureDictDB().then(function(db){
+      if(!db)throw new Error("打不开本地词典库"+dictDBWhy());
+      return new Promise(function(res,rej){
       var idx={a1:[],a2:[],b1:[],b2:[],c1:[]},beyond=[],seen=0;
       var rq=DICT_DB.transaction("oald","readonly").objectStore("oald").openCursor();
       rq.onsuccess=function(){var c=rq.result;
@@ -15107,7 +15128,9 @@ margin-left: -22px;
         c.continue();};
       rq.onerror=function(){rej(rq.error);};});});}
   function getLevelIndex(onProg){
-    return ensureDictDB().then(function(){return idbGet("meta","levels");}).then(function(rec){
+    return ensureDictDB().then(function(db){
+      if(!db)throw new Error("打不开本地词典库"+dictDBWhy());
+      return idbGet("meta","levels");}).then(function(rec){
       if(rec&&rec.idx&&rec.idx.a1&&rec.idx.a1.length)return rec;
       if(!dictCounts.oald)throw new Error("先在 ⚙️设置 → 📖词典 里加载牛津词典");
       return buildLevelIndex(onProg).then(function(r){return idbPut("meta",r).then(function(){return r;});});});}
@@ -18717,7 +18740,7 @@ margin-left: -22px;
   function hideHl(){if(rdHl)rdHl.style.display="none";}
   // 依次尝试候选词（中文 4→1 字），命中就弹卡片
   async function lookupCands(cands,rect){
-    await ensureDictDB();
+    if(!await ensureDictDB())return false;
     for(var i=0;i<cands.length;i++){
       var w=cands[i].toLowerCase();
       var hit=null;

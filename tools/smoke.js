@@ -31,7 +31,30 @@ const dom = new JSDOM(html, {
   runScripts: "dangerously", pretendToBeVisual: true,
   url: "https://kathychen47.github.io/timetracker/", virtualConsole: vc,
   beforeParse(w) {
-    const store = { tt_lang: JSON.stringify(ZH ? "zh" : "en") };
+    // 空库下很多界面根本不渲染，按钮也就点不到 —— 先铺一点真实形状的数据
+    const ymd = d => new Date(d).toISOString().slice(0, 10);
+    const now = Date.now();
+    const seed = {
+      tt_lang: ZH ? "zh" : "en",
+      tt_txns: [
+        { id: "manual:a", d: ymd(now), date: ymd(now), amt: -82.5, cur: "NZD", cat: "grocery", desc: "New World", src: "manual", manual: 1 },
+        { id: "manual:b", d: ymd(now), date: ymd(now), amt: 4600, cur: "NZD", cat: "income", desc: "UC", src: "manual", manual: 1 }
+      ],
+      tt_mncfg: { lastSync: now - 7 * 60000, since: "2026-01-01", accts: [{ id: "a1", name: "Kaisi", num: "0400", bal: 4453.46, cur: "NZD" }] },
+      tt_pomolog: [{ t: "2026-09-18 17:25", tag: "落库:成功", mode: "up", sec: 1860, run: false, fol: false, me: "abcde", own: "-", cal: true }],
+      tt_pstats: { [ymd(now)]: { count: 3, min: 75 } },
+      tt_words: [
+        { w: "serendipity", disp: "serendipity", def: "the occurrence of happy accidents", ts: now - 86400000 * 5, upd: now - 86400000 * 5 },
+        { w: "inelastic", disp: "inelastic", def: "not elastic", ts: now - 86400000 * 2, upd: now - 86400000 * 2 }
+      ],
+      tt_recipes: [{ id: "r1", name: "Tomato beef", ing: ["beef 500g"], steps: ["blanch"], ts: now }],
+      tt_notes: [{ id: "n1", t: "doc", title: "Reading notes", body: "hello", ts: now }],
+      tt_skills: [{ id: "s1", name: "SQL", steps: [{ id: "p1", name: "Joins", est: 60, act: 420, done: false }], ts: now }],
+      tt_body: [{ d: ymd(now), w: 62.5, waist: 72 }],
+      tt_glu: [{ d: ymd(now), t: "空腹", v: 5.2 }]
+    };
+    const store = {};
+    Object.keys(seed).forEach(k => { store[k] = JSON.stringify(seed[k]); });
     Object.defineProperty(w, "localStorage", {
       value: {
         getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v) },
@@ -48,6 +71,10 @@ const dom = new JSDOM(html, {
     w.ResizeObserver = function () { return { observe() { }, disconnect() { }, unobserve() { } }; };
     w.indexedDB = { open: () => { const r = {}; setTimeout(() => { r.onerror && r.onerror({ target: r }); }, 0); return r; }, deleteDatabase: () => ({}) };
     w.URL.createObjectURL = () => "blob:stub"; w.URL.revokeObjectURL = () => { };
+    // 下载是靠 <a download> 点一下实现的，jsdom 把它当成“导航到另一个文档”报错。
+    // 这是沙箱的限制，不是页面的毛病 —— 打个桁，别把真问题淹了。
+    const _click = w.HTMLAnchorElement.prototype.click;
+    w.HTMLAnchorElement.prototype.click = function () { if (this.hasAttribute("download")) return; return _click.apply(this, arguments); };
     w.print = () => { }; w.open = () => null; w.alert = () => { }; w.confirm = () => true; w.prompt = () => null;
     // jsdom 不实现播放 —— 不打桁的话每次 play/pause 都报一条，把真问题淡化了
     w.HTMLMediaElement.prototype.play = () => Promise.resolve();
@@ -104,8 +131,31 @@ async function clickAll(scope, where) {
     try { tab.click(); } catch (e) { errs.push({ msg: "throw: " + e.message.slice(0, 140), at: clicking }); }
     await sleep(320);
     const view = D.querySelector("#view-" + t) || D.body;
+    // 点两轮：第一轮会揭出一批新渲染出来的按钮（展开、切档、子面板）
     await clickAll(view, t);
+    await sleep(150);
+    await clickAll(view, t + "·2");
     await sleep(120);
+  }
+
+  // 弹窗：开一个，把里面的按钮也点一遍，再关掉
+  const DIALOGS = [
+    ["事件", "#add-btn", "#overlay"], ["待办", "#todo-new", "#todo-overlay"],
+    ["目标", "#goal-add-btn", "#goal-overlay"], ["记一笔", "#mn-add", "#wbtool-overlay"],
+    ["AI", "#ai-btn", "#ai-overlay"], ["背单词", "#wb-start", "#flash-overlay"],
+    ["菜谱", "#food-add", "#rc-overlay"], ["词典分组", "#wbg-add", "#wbtool-overlay"],
+    ["技能", "#sk-add", null]
+  ];
+  for (const [name, trig, host] of DIALOGS) {
+    const tb = D.querySelector(trig);
+    if (!tb) { errs.push({ msg: "没有入口", at: name + " " + trig }); continue; }
+    clicking = "开弹窗 " + name;
+    try { tb.click(); } catch (e) { errs.push({ msg: "throw: " + e.message.slice(0, 140), at: clicking }); continue; }
+    await sleep(400);
+    const h = host && D.querySelector(host);
+    if (h) await clickAll(h, "弹窗:" + name);
+    try { D.dispatchEvent(new W.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) { }
+    await sleep(200);
   }
 
   // 设置面板
