@@ -77,7 +77,7 @@ const DIALOGS = [["事件", "#add-btn"], ["待办", "#todo-new"], ["目标", "#g
   await sleep(3200);
   snapshot("启动");
   for (const t of TABS) { if (click('.rail button[data-tab="' + t + '"]')) { await sleep(320); snapshot(t); } }
-  if (click("#set-btn")) {
+  if (click("#settings-btn")) {
     await sleep(400); snapshot("设置");
     for (const p of PANES) { if (click('.set-nav-i[data-pane="' + p + '"]')) { await sleep(250); snapshot("设置:" + p); } }
     try { D.dispatchEvent(new W.KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) { }

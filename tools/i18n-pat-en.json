@@ -342,7 +342,7 @@
 "松手就放进「{1}」": "Let go to file it in \"{1}\"",
 "核心词表（{1} 词，带 CEFR 等级标记）。": "core word list ({1} words, tagged with CEFR levels).",
 "检测失败：{1}": "Detection failed: {1}",
-"比如 8 月 9 日 0:00–{1}:00 的记录，都算 8 月 8 日的。": "E.g. anything logged on 9 Aug between 0:00 and {1}:00 counts as 8 Aug.",
+"比如 8 月 9 日 0:00–{1}:00 的记录，都算 8 月 8 日的。": " E.g. anything logged on 9 Aug between 0:00 and {1}:00 counts as 8 Aug.",
 "汇率已保存：1 {1} = {2} {3}": "Rate saved: 1 {1} = {2} {3}",
 "没有了{1}": "No more{1}",
 "没有能读的：'{1}'{2} —— 支持 PDF / EPUB / Word / TXT / Markdown / HTML": "Nothing readable: '{1}'{2} — supported: PDF / EPUB / Word / TXT / Markdown / HTML",

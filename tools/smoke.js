@@ -207,7 +207,7 @@ async function clickAll(scope, where) {
   }
 
   // 设置面板
-  const sb = D.querySelector("#set-btn");
+  const sb = D.querySelector("#settings-btn");
   if (sb) {
     clicking = "打开设置"; try { sb.click(); } catch (e) { errs.push({ msg: "throw: " + e.message, at: clicking }); }
     await sleep(400);

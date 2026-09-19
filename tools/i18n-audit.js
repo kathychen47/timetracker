@@ -151,7 +151,7 @@ const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "di
 
   // 设置面板：每一分页都点开
   let opened = false;
-  for (const s of ["#set-btn", "#settings-btn", ".rail .set", '[data-open="settings"]']) {
+  for (const s of ["#settings-btn", "#settings-btn", ".rail .set", '[data-open="settings"]']) {
     if (D.querySelector(s)) { click(s); await sleep(500); opened = true; break; }
   }
   if (!opened) errs.push("打不开设置面板");
