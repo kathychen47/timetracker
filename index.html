@@ -2008,7 +2008,7 @@
   .nb-doc-foot{font-size:11.5px;color:var(--muted);min-height:16px}
   /* 时间分布：环形图 + 引出线 */
   .dn-wrap{display:flex;justify-content:center}
-  .dn-svg{width:100%;max-width:760px;height:auto;display:block}
+  .dn-svg{width:100%;max-width:760px;height:auto;display:block;clear:both}   /* 英文标题长，右上那两组浮动按钮换行后会把环形图挤成一小块 */
   .dn-lead{fill:none;stroke-width:1.4;opacity:.65}
   .dn-nm{fill:var(--text);font-size:16px;font-weight:650}
   .dn-val{fill:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
@@ -2193,6 +2193,13 @@
   .set-row-txt{flex:1 1 240px;min-width:200px}
   .set-row-t{font-size:13.5px;font-weight:600;color:var(--text)}
   .set-row-txt .set-desc{margin-top:3px}
+  /* 长说明收进圆形的「?」里：平铺只留第一行，点一下展开。短的照旧平铺（helpify 决定谁长谁短） */
+  .hq{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:700 10.5px/1 inherit;font-family:inherit;margin-left:6px;vertical-align:-2px;cursor:pointer;padding:0;flex:none;transition:color .12s,border-color .12s}
+  .hq:hover,.hq.on{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 10%,var(--surface))}
+  .set-sec-h .hq{width:15px;height:15px;font-size:10px;margin-left:5px;vertical-align:-3px;letter-spacing:0;text-transform:none}
+  .set-desc.clamp{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .set-desc.clamp.open{display:block;-webkit-line-clamp:unset;overflow:visible}
+  .set-desc .hq.lead{margin:0 6px 0 0;vertical-align:-3px}
   .switch{position:relative;flex:none;cursor:pointer;display:inline-flex}
   .switch input{position:absolute;opacity:0;width:0;height:0}
   .sw-track{display:block;width:42px;height:24px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);position:relative;transition:background .2s}
@@ -6025,6 +6032,7 @@ margin-left: -22px;
     "展开导航（显示文字）":"Expand nav (show labels)",
     "展开本子栏":"Show sidebar",
     "展开能看到剔除的理由":"Expand to see why",
+    "展开说明":"Show details",
     "工具":"tools",
     "工具建材":"Tools & Hardware",
     "工时表":"Timesheet",
@@ -13280,6 +13288,42 @@ margin-left: -22px;
     wrap.querySelector("#exp-print").addEventListener("click",function(){window.print();});
   }
 
+  // ---------- 设置里的说明文字：长的收进「?」 ----------
+  // 她说的：「成熟的软件是把详细信息放在标题后一个圆形的小问号里，而不是全部平铺」，
+  // 又补了一句「平铺的只需要非常简单的信息，但也不能全部没有，不然不能马上识别出这是干嘛的」。
+  // 所以：短说明照旧平铺；长的只露第一行，标题旁边加一个圆形「?」，点开看全文。
+  // 在运行时做而不是改 61 处 HTML：文字一个字不动，词表照旧能对上，英文也不用重翻。
+  // 只处理启动时就在页面上的那些；后来由 JS 填进去的（连接状态、报错）是状态不是说明，不能藏。
+  function helpify(root){
+    root=root||document;
+    var LIM=isEN()?90:44;                     // 英文同一句话字数多一倍
+    Array.prototype.forEach.call(root.querySelectorAll(".set-desc"),function(d){
+      if(d.getAttribute("data-hq")||d.id)return;   // 带 id 的是 JS 填状态 / 报错的地方，不能藏
+      var txt=(d.textContent||"").replace(/\s+/g," ").trim();
+      if(!txt)return;
+      d.setAttribute("data-hq","1");
+      if(txt.length<=LIM)return;              // 短的平铺就好
+      // 找这段说明的「主」：往前跳过同一组里其他说明，碰到行标题 / 选项名 / 节标题就是它
+      var host=null,lead=false,pv=d.previousElementSibling;
+      while(pv&&pv.classList.contains("set-desc"))pv=pv.previousElementSibling;
+      if(pv&&(pv.classList.contains("set-row-t")||pv.classList.contains("do-name")||pv.classList.contains("set-sec-h")))host=pv;
+      if(!host){var item=d.closest(".set-item"),ps=item&&item.previousElementSibling;   // 节标题下第一段无主的介绍
+        if(ps&&ps.classList.contains("set-sec-h")&&item.querySelectorAll(".set-desc")[0]===d)host=ps;}
+      if(!host){host=d;lead=true;}             // 实在无主：问号放在这行开头
+      d.classList.add("clamp");
+      var b=lead?null:host.querySelector(":scope > .hq");
+      if(!b){
+        b=document.createElement("button");
+        b.type="button";b.className="hq"+(lead?" lead":"");b.textContent="?";b._descs=[];
+        b.setAttribute("aria-label",trv("展开说明"));b.title=trv("展开说明");
+        b.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();
+          var open=!b.classList.contains("on");
+          b.classList.toggle("on",open);
+          b._descs.forEach(function(x){x.classList.toggle("open",open);});
+          b.title=open?trv("收起"):trv("展开说明");});
+        if(lead)d.insertBefore(b,d.firstChild);else host.appendChild(b);}
+      b._descs.push(d);                        // 同一个标题下好几段：一个问号一起展开
+    });}
   // ---------- settings (Gemini API key，只存本机) ----------
   var apiKey=load("tt_apikey",""),apiModel=load("tt_aimodel","")||"gemini-flash-latest";
   if(/^gemini-(1\.5|2\.0|2\.5)/.test(apiModel)){apiModel="gemini-flash-latest";save("tt_aimodel",apiModel);} // 这些旧/受限模型对新用户已不可用，自动切到自动最新版
@@ -23864,7 +23908,7 @@ margin-left: -22px;
       try{if(pFollow)return;var r=load("tt_pomorun",null);
         if(r&&r.owner===TABID){r.owner=null;save("tt_pomorun",r);}}catch(_e){}});
   }
-  initLang();renderBookmarklet();
+  initLang();try{helpify();}catch(e){}renderBookmarklet();   // 说明文字先翻好再量长短
   try{extReady();}catch(e){}      // 告诉划词扩展：可以把攒下的生词递过来了
   // 浏览器扩展把划词收藏的生词并进来时，立即刷新并上传
   window.addEventListener("tt-words-merged",function(){
