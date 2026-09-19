@@ -522,5 +522,8 @@
 "已经存下 {1} 条（约 {2}）—— 断开 Google 也不会丢。": "{1} saved so far (about {2}) — they stay even if you disconnect Google.",
 "{1}：新词 {2} · 复习 {3}{4}": "{1}: new {2} · review {3}{4}",
 "快捷键 {1}（数字键也行）": "Shortcut {1} (number keys work too)",
-"{1}：{2} 个": "{1}: {2} words"
+"{1}：{2} 个": "{1}: {2} words",
+"工时表 · {1}": "Timesheet · {1}",
+"{1} · 合计 {2} h · {3} 行": "{1} · {2} h total · {3} rows",
+"不到 {1} 分钟的零头没单独成行：{2} 行，共 {3} 分钟。": "Scraps under {1} min are not listed on their own: {2} row(s), {3} min in all."
 }

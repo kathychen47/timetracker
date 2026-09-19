@@ -1847,6 +1847,10 @@
   .exp-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
   .exp-controls select{padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:13px}
   .exp-controls select:disabled{opacity:.5}
+  .exp-ck{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
+  .exp-ck input{margin:0}
+  .rep-cut{margin-top:9px;font-size:12px;color:var(--muted)}
+  .rep-table tfoot td{font-weight:650;border-top:2px solid var(--border);border-bottom:none;padding-top:8px}
   #exp-report{border:1px solid var(--border);border-radius:10px;padding:16px;background:var(--bg)}
   .rep-h h4{margin:0 0 3px;font-size:15px;font-weight:650}.rep-meta{font-size:12.5px;color:var(--muted);margin-bottom:13px}
   .rep-break{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;padding-bottom:13px;border-bottom:1px solid var(--border)}
@@ -5473,6 +5477,7 @@ margin-left: -22px;
     "不停":"Never pause",
     "不像单词，已剔除":"Not word-like, dropped",
     "不到 1 分钟，没记进日历":"Under 1 minute — not logged to the calendar",
+    "不取整":"Exact",
     "不含 GST":"No GST",
     "不在这台设备":"Not on this device",
     "不填就用「大类 · 小类」":"Leave blank to use \"Category · Sub-category\"",
@@ -5621,6 +5626,7 @@ margin-left: -22px;
     "偏瘦":"Underweight",
     "偏胖":"Overweight",
     "偏高":"Elevated",
+    "做了什么":"What you did",
     "做好了":"Mark as cooked",
     "做过的句子":"Sentences done",
     "停":"Stop",
@@ -5841,6 +5847,7 @@ margin-left: -22px;
     "合计 · 全部账户":"Total · All accounts",
     "同一个字母连着好几个，像乱码":"Same letter repeated, looks like gibberish",
     "同一个词只留一个":"Only one copy kept",
+    "同一天的几个项目首尾相接排成整块，不重叠也不留空隙":"Lays the day's projects end to end as solid blocks — no overlaps, no gaps",
     "同时加到 Google 日历":"Also add to Google Calendar",
     "同步中…":"Syncing…",
     "同步超时了（30 秒没回应）—— 再点一次试试":"Sync timed out (no response for 30s) — try again",
@@ -6020,6 +6027,8 @@ margin-left: -22px;
     "展开能看到剔除的理由":"Expand to see why",
     "工具":"tools",
     "工具建材":"Tools & Hardware",
+    "工时表":"Timesheet",
+    "工时表本来就是按刻钟计的。3.43h 这种数一看就是机器导出来的":"Timesheets are billed in quarter hours anyway. A number like 3.43h screams \"exported by a machine\".",
     "工资":"Salary",
     "左原文右译文（整页翻译，保留排版）":"Original left, translation right (whole page, layout kept)",
     "左右对照":"Side by side",
@@ -6068,6 +6077,7 @@ margin-left: -22px;
     "币种":"Currency",
     "带例句":"With example",
     "带备注":"With note",
+    "带钟点":"With times",
     "常驻":"Persistent",
     "平均":"Average",
     "平均听对":"Average correct",
@@ -6174,6 +6184,7 @@ margin-left: -22px;
     "折线":"Line",
     "护肤":"skincare",
     "报关":"customs clearance",
+    "报告 / 导出":"Report / Export",
     "报告自己的时间段。留空就跟着上面的日 / 周 / 月走":"The report's own date range. Leave blank to follow the day / week / month above",
     "报销":"Reimbursement",
     "拆解中…":"Breaking it down…",
@@ -6348,6 +6359,7 @@ margin-left: -22px;
     "早餐":"Breakfast",
     "早餐后":"After breakfast",
     "时长":"Duration",
+    "时长(h)":"Hours",
     "时长(分钟)":"Duration (min)",
     "时间":"Time",
     "时间管理":"Timetracker",
@@ -6911,6 +6923,7 @@ margin-left: -22px;
     "购物":"shopping",
     "费用 / 税":"Fees / Tax",
     "起始日期":"Start date",
+    "起止":"From–to",
     "起，每":"every",
     "超出":"Over",
     "超市":"Groceries",
@@ -7155,6 +7168,7 @@ margin-left: -22px;
     "音频已经删了。文字都在，可以只看不听。":"Audio deleted. The text is all here — you can still read it.",
     "音频收到了。把文本贴进②，再点③。":"Got the audio. Paste the text into ②, then hit ③.",
     "页":"Page",
+    "项目":"Project",
     "预估税负":"Estimated tax",
     "预估税负只算你点过「记入税务」的那":"Estimated tax only counts the",
     "预计":"Estimate",
@@ -7492,6 +7506,9 @@ margin-left: -22px;
     ["」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：{\"todos\":[{\"t\":\"待办\",\"prio\":\"mid\"}]}","^把下面这件事拆成几条可以直接动手的待办。 事情：「(.+?)」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：\\{\"todos\":\\[\\{\"t\":\"待办\",\"prio\":\"mid\"\\}\\]\\}$","Break the following into a few to-dos you can act on straight away. The thing: \"\u00011\" Rules: - 3~7 items, ordered first to last - each one is a single action, 20 characters or fewer - prio must be high / mid / low - output JSON only, no explanation, no code fences Format: {\"todos\":[{\"t\":\"to-do\",\"prio\":\"mid\"}]}"],
     ["拆解失败：","^拆解失败：(.+?)$","Breakdown failed: \u00011"],
     ["时间报告 ·","^时间报告 · (.+?) (.+?) · 共 (.+?) · (.+?) 项$","Time report · \u00011 \u00012 · \u00013 total · \u00014 entries"],
+    ["工时表 ·","^工时表 · (.+?)$","Timesheet · \u00011"],
+    ["· 合计","^(.+?) · 合计 (.+?) h · (.+?) 行$","\u00011 · \u00012 h total · \u00013 rows"],
+    ["分钟的零头没单独成行：","^不到 (.+?) 分钟的零头没单独成行：(.+?) 行，共 (.+?) 分钟。$","Scraps under \u00011 min are not listed on their own: \u00012 row(s), \u00013 min in all."],
     ["时间报告 ·","^时间报告 · (.+?)$","Time report · \u00011"],
     ["· 共","^(.+?) · 共 (.+?) · (.+?) 项$","\u00011 · \u00012 total · \u00013 entries"],
     ["其他","^其他 (.+?) 项$","\u00011 others"],
@@ -10903,10 +10920,13 @@ margin-left: -22px;
   // 所以这条事件的时长可以按各段实测秒数分账给不同分类，加起来仍等于实际时长，不会虚高。
   function evSegs(e){var ss=e&&e.segs;if(!ss||ss.length<2)return null;
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});return tot>0?ss:null;}
-  function evMix(e){                       // → [{cat,sub,min}]，同分类合并；min 之和恰好等于 evNetMin(e)
-    var m=evMinutes(e),ss=evSegs(e);
-    if(!ss)return [{cat:e.cat,sub:e.sub||null,min:m}];
-    var net=evNetMin(e),work=0,by={},order=[];
+  // 把 total 分钟按各段实测时长摊到分类头上（最大余数法，和分毫不差）。
+  // 统计用 evMix（实际做了多久），报告/导出用 evMixRec（记录上写的那个数）。
+  // 原来不分段的那支返的是 evMinutes，于是她写的「实际做了多久」对统计根本没生效。
+  function evMixTo(e,total){               // → [{cat,sub,min}]，同分类合并；min 之和恰好等于 total
+    var ss=evSegs(e);
+    if(!ss)return [{cat:e.cat,sub:e.sub||null,min:total}];
+    var net=total,work=0,by={},order=[];
     ss.forEach(function(s){if(!s.gap)work+=(+s.sec||0);});
     if(work<=0)return [];                                      // 整条都是洞：不该发生，真发生了也别算进统计
     ss.forEach(function(s){if(s.gap)return;                    // 暂停不属于任何分类
@@ -10918,6 +10938,8 @@ margin-left: -22px;
     var left=net-out.reduce(function(a,x){return a+x.min;},0);   // 最大余数法补齐，保证总和分毫不差
     out.slice().sort(function(a,b){return b.r-a.r;}).forEach(function(x){if(left>0){x.min++;left--;}});
     return out.map(function(x){return {cat:x.cat,sub:x.sub,min:x.min};});}
+  function evMix(e){return evMixTo(e,evNetMin(e));}      // 统计：实际做了多久
+  function evMixRec(e){return evMixTo(e,evRecMin(e));}   // 报告 / 导出：记录上写的
   function evMinFor(e,ck,sk){              // 这条事件算给某大类/小类的分钟数（"__all" 或空 = 不筛）
     var t=0;evMix(e).forEach(function(x){
       if(ck&&ck!=="__all"&&x.cat!==ck)return;
@@ -12756,6 +12778,87 @@ margin-left: -22px;
       lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evRecMin(e),e.par?"是":""].join(","));});
     return "﻿"+lines.join("\r\n");}
   function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evRecMin(e)+trv("分")+")\n";});return s;}
+  // ---------- 工时表 ----------
+  // 她的原话：「我工作导出时间给老板不可能给她看我几分钟干了一个事情，
+  // 又休息了几分钟又开始干另外一个」。
+  // 明细是给自己复盘的；给别人看的那份，一天 × 一个项目一行，钟点一概不写 ——
+  // 只要表里有起止时间，碎片和空隙就藏不住，一眼能看出你几点歇了几分钟。
+  var TS_FLOOR=15;                              // 当天不到这么多分钟的零头，不单独成行
+  function tsH(h){return String(+(+h).toFixed(2));}          // 1 不写成 1.00，5.25 还是 5.25
+  function tsHours(min,step){                   // 分钟 → 小时，按 step 取整（step=0 就不取整）
+    var h=min/60;
+    return (+step>0)?Math.round(h/step)*step:Math.round(h*100)/100;}
+  function tsParts(e){                          // 一条事件 → 按分类分账，并带上这段都干了什么
+    var mix=evMixRec(e),ss=evSegs(e),ti=(e.title||"").trim();
+    if(!ss)return mix.map(function(x){return {cat:x.cat,sub:x.sub,min:x.min,what:ti?[ti]:[]};});
+    return mix.map(function(x){
+      var names=[];                             // 分段的事件，title 只是分类名，真正干了什么在段里
+      ss.forEach(function(sg){
+        if(sg.gap||sg.cat!==x.cat||(sg.sub||null)!==(x.sub||null))return;
+        var t=(sg.t||"").trim();if(t&&names.indexOf(t)<0)names.push(t);});
+      return {cat:x.cat,sub:x.sub,min:x.min,what:names.length?names:(ti?[ti]:[])};});}
+  function tsBuild(rows,step,floor,clock){      // → {rows,totalH,cut,cutMin}
+    var by={},order=[];
+    rows.forEach(function(e){tsParts(e).forEach(function(x){
+      if(!x.min)return;
+      var k=e.date+"|"+(x.cat||"")+"|"+(x.sub||"");
+      if(!by[k]){by[k]={date:e.date,cat:x.cat,sub:x.sub||null,min:0,what:[],start:e.start};order.push(k);}
+      var r=by[k];r.min+=x.min;
+      if(e.start<r.start)r.start=e.start;
+      x.what.forEach(function(t){if(r.what.indexOf(t)<0)r.what.push(t);});});});
+    var all=order.map(function(k){return by[k];}).sort(function(a,b){
+      return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:(a.start>b.start?1:0)));});
+    var keep=[],cut=0,cutMin=0;
+    all.forEach(function(r){if(r.min<floor){cut++;cutMin+=r.min;return;}keep.push(r);});
+    keep.forEach(function(r){r.h=tsHours(r.min,step);});
+    if(clock){                                  // 同一天首尾相接排开：不重叠，也不留空隙
+      var day={},dk=[];
+      keep.forEach(function(r){if(!day[r.date]){day[r.date]=[];dk.push(r.date);}day[r.date].push(r);});
+      dk.forEach(function(d){
+        var list=day[d],tot=0;
+        list.forEach(function(r){tot+=Math.round(r.h*60);});
+        var m=toMin(list[0].start);
+        if(m+tot>1440)m=Math.max(0,1440-tot);   // 排不下就整体往前挪，别排到第二天去
+        list.forEach(function(r){r.cs=mmStr(m);m+=Math.round(r.h*60);r.ce=mmStr(m);});});}
+    var totalH=0;keep.forEach(function(r){totalH+=r.h;});
+    return {rows:keep,totalH:Math.round(totalH*100)/100,cut:cut,cutMin:cutMin};}
+  function tsProj(r){return catName(r.cat)+(r.sub?" · "+subName(r.cat,r.sub):"");}
+  function tsWhat(r){return r.what.join(isEN()?"; ":"、");}
+  function buildTSCSV(ts,clock){
+    var head=[trv("日期"),trv("星期"),trv("项目"),trv("做了什么")];
+    if(clock)head.push(trv("开始"),trv("结束"));
+    head.push(trv("时长(h)"));
+    var lines=[head.map(csvCell).join(",")];
+    ts.rows.forEach(function(r){
+      var c=[r.date,wdLab(parse(r.date)),csvCell(tsProj(r)),csvCell(tsWhat(r))];
+      if(clock)c.push(r.cs,r.ce);
+      c.push(tsH(r.h));
+      lines.push(c.join(","));});
+    var tail=[csvCell(trv("合计")),"","",""];
+    if(clock)tail.push("","");
+    tail.push(tsH(ts.totalH));
+    lines.push(tail.join(","));
+    return "\ufeff"+lines.join("\r\n");}
+  function buildTSText(ts,scope,rl,clock){
+    var s=trv("工时表")+" · "+scope+"\n"+rl+" · "+trv("合计")+" "+tsH(ts.totalH)+"h\n\n";
+    ts.rows.forEach(function(r){
+      s+=r.date+"  "+tsProj(r)+"  "+(clock?(r.cs+"-"+r.ce+"  "):"")+tsH(r.h)+"h"+
+        (tsWhat(r)?("  "+tsWhat(r)):"")+"\n";});
+    return s;}
+  function buildTSHTML(ts,scope,rl,clock,floor){
+    if(!ts.rows.length)return '<div class="rep-h"><h4>工时表 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+
+      '</div></div><div class="stat-empty">该范围内没有记录</div>';
+    var h='<div class="rep-h"><h4>工时表 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+
+      ' · 合计 '+tsH(ts.totalH)+' h · '+ts.rows.length+' 行</div></div>';
+    h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>项目</th><th>做了什么</th>'+
+      (clock?'<th>起止</th>':'')+'<th>时长</th></tr></thead><tbody>';
+    ts.rows.forEach(function(r){
+      h+='<tr><td>'+r.date+' '+wdLab(parse(r.date))+'</td><td>'+esc(tsProj(r))+'</td><td>'+esc(tsWhat(r))+'</td>'+
+        (clock?('<td>'+r.cs+'–'+r.ce+'</td>'):'')+'<td>'+tsH(r.h)+' h</td></tr>';});
+    h+='</tbody><tfoot><tr><td>合计</td><td></td><td></td>'+(clock?'<td></td>':'')+
+      '<td>'+tsH(ts.totalH)+' h</td></tr></tfoot></table></div>';
+    if(ts.cut)h+='<div class="rep-cut">不到 '+floor+' 分钟的零头没单独成行：'+ts.cut+' 行，共 '+ts.cutMin+' 分钟。</div>';
+    return h;}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
     if(!rows.length)return '<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+'</div></div><div class="stat-empty">该范围内没有记录</div>';
     var h='<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+' · 共 '+fmtDur(total)+' · '+rows.length+' 项</div></div>';
@@ -12780,8 +12883,12 @@ margin-left: -22px;
   statState.by=statView.by||"cat";           // cat 按大类 | sub 把所有大类下的小类一起铺开
   // 报告可以有自己的时间段（她要的：「这里的报告需要可以选择时间段导出」）。
   // 不填 = 跟着上面的日/周/月走；填了就一直用这个，刷新也在，直到点「跟上面」清掉。
-  statState.expFrom=statView.expFrom||"";statState.expTo=statView.expTo||"";
-  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo});}
+    statState.expFrom=statView.expFrom||"";statState.expTo=statView.expTo||"";
+  // 报告默认给工时表，明细留给自己看。三个选择都跟着存，刷新不重置。
+  statState.rep=statView.rep||"ts";          // ts 工时表 | detail 明细
+  statState.tsR=(statView.tsR===undefined||statView.tsR===null)?0.25:+statView.tsR;
+  statState.tsClock=!!statView.tsClock;
+  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo,rep:statState.rep,tsR:statState.tsR,tsClock:statState.tsClock});}
   function repRange(p){                         // → {start,end,label,own}
     if(!statState.expFrom&&!statState.expTo)return {start:p.start,end:p.end,label:p.label,own:false};
     var f=statState.expFrom?parse(statState.expFrom):p.start,t=statState.expTo?parse(statState.expTo):p.end;
@@ -13095,8 +13202,15 @@ margin-left: -22px;
           '<span class="seg mini" id="stat-trend"><button data-t="bar"'+(statState.trend==="bar"?' class="on"':'')+'>柱状</button><button data-t="line"'+(statState.trend==="line"?' class="on"':'')+'>折线</button></span></h3>'+
           (statState.trend==="line"&&trendVals?trendLineSVG(trendLabs,trendVals,trendStack,segColor,segName):'<div class="bars">'+trendHTML+'</div>')+'</div>'+
       '</div>'+
-      '<div class="panel"><h3>明细 / 导出</h3><div class="exp-controls">'+
+      '<div class="panel"><h3><span>报告 / 导出</span>'+       // 标题包一层：它和右边那组按钮是两个行内盒子，靠 float 分开，不是一句话
+        '<span class="seg mini" id="rep-mode"><button data-rm="ts"'+(statState.rep==="detail"?"":' class="on"')+'>工时表</button>'+
+        '<button data-rm="detail"'+(statState.rep==="detail"?' class="on"':'')+'>明细</button></span></h3><div class="exp-controls">'+
         '<button class="btn" id="exp-csv">下载 CSV</button><button class="btn" id="exp-copy">复制文本</button><button class="btn primary" id="exp-print">打印 / 存 PDF</button>'+
+        (statState.rep==="detail"?"":
+          ('<span class="seg mini" id="ts-round" title="工时表本来就是按刻钟计的。3.43h 这种数一看就是机器导出来的"><button data-tr="0.25"'+(statState.tsR===0.25?' class="on"':'')+'>0.25h</button>'+
+           '<button data-tr="0.5"'+(statState.tsR===0.5?' class="on"':'')+'>0.5h</button>'+
+           '<button data-tr="0"'+(statState.tsR?'':' class="on"')+'>不取整</button></span>'+
+           '<label class="exp-ck" title="同一天的几个项目首尾相接排成整块，不重叠也不留空隙"><input type="checkbox" id="ts-clock"'+(statState.tsClock?" checked":"")+'>带钟点</label>'))+
         '<span class="exp-range" title="报告自己的时间段。留空就跟着上面的日 / 周 / 月走"><input type="date" lang="zh-CN" id="exp-from" value="'+(statState.expFrom||"")+'" placeholder="'+fmt(p.start)+'"><span>~</span><input type="date" lang="zh-CN" id="exp-to" value="'+(statState.expTo||"")+'" placeholder="'+fmt(p.end)+'">'+
         (rr.own?'<button class="btn" id="exp-follow" title="清掉，跟着上面的区间">跟上面</button>':'')+'</span>'+
         '</div><div id="exp-report"></div></div>';
@@ -13141,9 +13255,24 @@ margin-left: -22px;
     var rowsSorted=repRows.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});
     var repTotal=rowsSorted.reduce(function(a,e){return a+evRecMin(e);},0);
     var scope=(statState.cat==="__all"?trv("全部"):catName(statState.cat))+(statState.sub!=="__all"?" › "+subName(statState.cat,statState.sub):"");
-    reportEl.innerHTML=buildReportHTML(rowsSorted,scope,rr.label,repTotal,statState.cat,statState.sub);
-    wrap.querySelector("#exp-csv").addEventListener("click",function(){downloadFile(scope+"_"+rr.label+".csv",buildCSV(rowsSorted),"text/csv;charset=utf-8");});
-    wrap.querySelector("#exp-copy").addEventListener("click",function(){copyText(buildText(rowsSorted,scope,rr.label,repTotal),this);});
+    var isTS=(statState.rep!=="detail");
+    var ts=isTS?tsBuild(rowsSorted,statState.tsR,TS_FLOOR,statState.tsClock):null;
+    reportEl.innerHTML=isTS?buildTSHTML(ts,scope,rr.label,statState.tsClock,TS_FLOOR)
+      :buildReportHTML(rowsSorted,scope,rr.label,repTotal,statState.cat,statState.sub);
+    wrap.querySelector("#exp-csv").addEventListener("click",function(){
+      downloadFile(scope+"_"+rr.label+(isTS?("_"+trv("工时表")):"")+".csv",
+        isTS?buildTSCSV(ts,statState.tsClock):buildCSV(rowsSorted),"text/csv;charset=utf-8");});
+    wrap.querySelector("#exp-copy").addEventListener("click",function(){
+      copyText(isTS?buildTSText(ts,scope,rr.label,statState.tsClock)
+        :buildText(rowsSorted,scope,rr.label,repTotal),this);});
+    var rmw=wrap.querySelector("#rep-mode");
+    if(rmw)rmw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+      statState.rep=b.getAttribute("data-rm");saveStatView();renderStatsView();});
+    var trw=wrap.querySelector("#ts-round");
+    if(trw)trw.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+      statState.tsR=+b.getAttribute("data-tr");saveStatView();renderStatsView();});
+    var tcw=wrap.querySelector("#ts-clock");
+    if(tcw)tcw.addEventListener("change",function(){statState.tsClock=tcw.checked;saveStatView();renderStatsView();});
     var xf=wrap.querySelector("#exp-from"),xt=wrap.querySelector("#exp-to"),xr=wrap.querySelector("#exp-follow");
     if(xf)xf.addEventListener("change",function(){statState.expFrom=xf.value;saveStatView();renderStatsView();});
     if(xt)xt.addEventListener("change",function(){statState.expTo=xt.value;saveStatView();renderStatsView();});

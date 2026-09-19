@@ -26,6 +26,7 @@ var CODE = [
   src.slice(ln('var calTodayS="",calTodayAt=0;'), ln("function evCounts(e){") + 1).join(NL),
   src.slice(ln("function evMinutes(e){"), ln("function evSegs(e){")).join(NL),
   src.slice(ln("function evSegs(e){"), ln("function evSegs(e){") + 2).join(NL),
+  src.slice(ln("function evMixTo(e,total){"), ln("function evHasCat(e,ck,sk){")).join(NL),
   src.slice(ln("function fmtDur(min){"), ln("function fmtDur(min){") + 8).join(NL),
   src.slice(ln("function repRange(p){"), ln("function repRange(p){") + 5).join(NL),
   // 弹窗里「时长」那个框的算法（不含绑事件那几行）
@@ -212,7 +213,8 @@ T("统计那些数字都走 evNetMin，记录那些都走 evRecMin", function ()
   ok(count("var dmin=evRecMin(e)") === 1, "日历块上写的也按记录 —— 块画多高就写多少");
   ok(count("a+evRecMin(e);},0)") === 1, "报告顶上那个「共 xh」按记录加");
   ok(count("wkMin+=evNetMin(e)") === 1, "仪表盘本周合计按实际");
-  ok(count("var net=evNetMin(e)") === 1, "分类分账按实际");
+  ok(count("function evMix(e){return evMixTo(e,evNetMin(e));}") === 1, "分类分账按实际");
+  ok(count("function evMixRec(e){return evMixTo(e,evRecMin(e));}") === 1, "报告 / 导出那份按记录");
 });
 
 T("报告列的是记录，不是「进统计的」", function () {
@@ -235,6 +237,29 @@ T("报告区间刷新后还在（她的规矩：手动选的不能刷没）", fu
 T("统计页明说有几条没算", function () {
   ok(count("条标了「不进统计」") >= 1, "那句提示在");
   ok(whole.indexOf("'</div>'+gcalNote+noNote+") >= 0, "而且真的塞进页面了");
+});
+
+T("写了「实际做了多久」的，统计得真的用它", function () {
+  // 这一条以前是错的：不分段的事件分账时走的是墙上时间，
+  // 所以她写的 amin 对分布图 / 排行 / 目标进度都没生效。
+  var e = ev({ start: "09:00", end: "13:00", amin: 180 });    // 记录 4h，实际 3h
+  ok(C.evRecMin(e) === 240, "记录还是 4h");
+  ok(C.evNetMin(e) === 180, "实际是 3h");
+  ok(C.evMinFor(e, "__all", "__all") === 180, "统计分账跟着实际走，实际 " + C.evMinFor(e, "__all", "__all"));
+  var mixR = C.evMixRec(e);
+  ok(mixR.length === 1 && mixR[0].min === 240, "报告 / 导出那份还是 4h");
+});
+
+T("分段的事件：两份各自分账，都不多不少", function () {
+  var e = ev({ start: "09:00", end: "11:00", cat: "phd",
+    segs: [{ t: "A", cat: "phd", sec: 1800 }, { gap: true, t: "暂停", sec: 1800 },
+           { t: "B", cat: "life", sec: 3600 }] });
+  var rec = C.evMixRec(e), net = C.evMix(e);
+  var sr = 0, sn = 0;
+  rec.forEach(function (x) { sr += x.min; }); net.forEach(function (x) { sn += x.min; });
+  ok(sr === C.evRecMin(e), "记录那份加起来 = evRecMin：" + sr + " vs " + C.evRecMin(e));
+  ok(sn === C.evNetMin(e), "实际那份加起来 = evNetMin：" + sn + " vs " + C.evNetMin(e));
+  ok(rec.length === 2 && net.length === 2, "暂停不归任何分类");
 });
 
 console.log((fail ? "x" : "√") + " 不进统计 / 实际时长 / 报告区间：" + pass + " 过 / " + fail + " 败");
