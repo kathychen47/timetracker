@@ -7772,8 +7772,14 @@ margin-left: -22px;
     for(var i=0;i<I18NP.length;i++){
       try{I18NPc.push({a:I18NP[i][0],r:new RegExp(I18NP[i][1]),t:I18NP[i][2]});}catch(e){}}
     return I18NPc;}
+  // 词表里最长的一条 156 个字，模板锚点最长 353。2000 是个很宽的上限 ——
+  // 超过它的"文本"一定不是界面文案，直接不查。
+  // 这道闸是保命用的：下面 sweepLang 已经跳过 script/style 了，
+  // 但万一哪天又冒出一个巨大的文本节点（比如往 <pre> 里塞一整份日志），
+  // 505 条模板正则挨个去啃它，页面就当场卡死 —— 这正是英文界面打不开的那个 bug。
+  var TR_MAX=2000;
   function trLookup(s){
-    if(!s)return undefined;
+    if(!s||s.length>TR_MAX)return undefined;
     var v=I18N.en[s];if(v!==undefined)return v;
     var s2=s.replace(/\s+/g," ");
     if(s2!==s){v=I18N.en[s2];if(v!==undefined)return v;}
@@ -7796,10 +7802,16 @@ margin-left: -22px;
     // 替换一律走函数式：译文里可能带 $（记账页全是 $145.03 这种金额），
     // 直接当替换串传的话 $& / $1 会被当成特殊记号，金额就被吃掉了。
     var put=function(node,k,v){node.nodeValue=node.nodeValue.replace(k,function(){return v;});};
-    if(root.nodeType===3){var kk=(root.nodeValue||"").trim(),vv=trLookup(kk);if(kk&&vv!==undefined)put(root,kk,vv);return;}
+    // <script> / <style> 里的内容也是文本节点。整份 JS 源码 1.7MB，
+    // 拿去跑 505 条模板正则 = 页面永远打不开。它们从来就不是界面文案，跳过。
+    var skip=function(tn){var p=tn&&tn.parentNode,t=p&&p.nodeName;
+      return t==="SCRIPT"||t==="STYLE"||t==="NOSCRIPT";};
+    if(root.nodeType===3){if(skip(root))return;
+      var kk=(root.nodeValue||"").trim(),vv=trLookup(kk);if(kk&&vv!==undefined)put(root,kk,vv);return;}
     if(root.nodeType!==1&&root.nodeType!==9)return;
     var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,ns=[];while(n=w.nextNode())ns.push(n);
-    ns.forEach(function(tn){var k=(tn.nodeValue||"").trim(),v=trLookup(k);if(k&&v!==undefined)put(tn,k,v);});
+    ns.forEach(function(tn){if(skip(tn))return;          // 先看父节点再 trim —— 别为了 1.7MB 的源码白做一次 trim
+      var k=(tn.nodeValue||"").trim(),v=trLookup(k);if(k&&v!==undefined)put(tn,k,v);});
     if(root.querySelectorAll)Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),function(el){["placeholder","title","aria-label"].forEach(function(a){if(!el.hasAttribute(a))return;var v=(el.getAttribute(a)||"").trim(),t=trLookup(v);if(v&&t!==undefined)el.setAttribute(a,t);});});
   }catch(e){}}
   function initLang(){if(lang!=="en")return;sweepLang(document.body);

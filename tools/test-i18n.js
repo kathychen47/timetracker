@@ -77,6 +77,41 @@ is("Timetracker", undefined, "英文原样");
 is("zzz这不是界面文案zzz", undefined, "词表里没有就返回 undefined");
 
 console.log("");
+console.log("== 超长文本不许进正则（英文界面打不开的那个 bug）==");
+// 根因：sweepLang 用 TreeWalker 抓「所有文本节点」，而 <script> 里那 1.7MB 源码
+// 本身就是一个文本节点。它被 trim 之后丢进 505 条模板正则里挨个啃 —— 页面永远打不开。
+// 两道闸：trLookup 的长度上限，和 sweepLang 里跳过 script/style。
+(function () {
+  const huge = "(function(){ var x=1; ".repeat(9000);   // ~200KB，跟真实 <script> 一个量级
+  const t0 = Date.now();
+  const got = ctx.trLookup(huge);
+  const ms = Date.now() - t0;
+  if (got === undefined) pass++; else { fail++; console.log("  x 超长文本不该翻出东西来"); }
+  if (ms < 200) pass++; else { fail++; console.log("  x 超长文本查了 " + ms + "ms —— 长度闸没拦住"); }
+})();
+is("x".repeat(2001), undefined, "2000 字以上一律不查");
+has("日历", "闸不能误伤正常长度的文案");
+(function () {
+  // 词表里最长那条必须还能翻 —— 上限不能定得比它还低
+  const longest = Object.keys(ctx.I18N.en).sort((a, b) => b.length - a.length)[0];
+  if (ctx.trLookup(longest) !== undefined) pass++;
+  else { fail++; console.log("  x 词表里最长的那条（" + longest.length + " 字）被长度闸拦掉了"); }
+})();
+
+console.log("");
+console.log("== sweepLang 的接线 ==");
+(function () {
+  const whole = src;
+  function count(p) { return whole.split(p).length - 1; }
+  function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
+  ok(count('t==="SCRIPT"||t==="STYLE"||t==="NOSCRIPT"') === 1, "要跳过 script/style/noscript");
+  ok(count("ns.forEach(function(tn){if(skip(tn))return;") === 1, "遍历时先看父节点再 trim");
+  ok(count("if(root.nodeType===3){if(skip(root))return;") === 1, "直接传进来一个文本节点时也要挡");
+  ok(count("var TR_MAX=2000;") === 1, "长度上限只定义一次");
+  ok(count("if(!s||s.length>TR_MAX)return undefined;") === 1, "trLookup 开头就挡");
+})();
+
+console.log("");
 console.log("== 规模 ==");
 console.log("  词表 " + Object.keys(ctx.I18N.en).length + " 条 · 模板 " + ctx.I18NP.length + " 条");
 let bad = 0;
