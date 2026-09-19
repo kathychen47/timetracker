@@ -14081,7 +14081,8 @@ margin-left: -22px;
   function doAI(o,orig){
     if(o.action==="create_event"){
       var ck=catKeyByName(o.category)||autoCat(o.title||orig).cat;
-      var ev={id:uid(),date:o.date||fmt(new Date()),start:o.start||"09:00",end:o.end||"10:00",title:o.title||orig,cat:ck,sub:null,done:false};
+      // 跟弹窗里新建走同一个规矩：都是「新记一条」，没道理一个打勾一个不打
+      var ev={id:uid(),date:o.date||fmt(new Date()),start:o.start||"09:00",end:o.end||"10:00",title:o.title||orig,cat:ck,sub:null,done:doneDefault};
       events.push(ev);save("tt_events",events);renderCal();
       aiMsg("✅ "+esc(o.reply||"已加入日历")+"<br><span style='color:var(--muted);font-size:12px'>"+ev.date+" "+ev.start+"–"+ev.end+" · "+esc(catName(ck))+" · "+esc(ev.title)+"</span>","ok");
     }else if(o.action==="create_todo"){

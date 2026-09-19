@@ -242,6 +242,15 @@ T("统计页明说有几条没算", function () {
   ok(whole.indexOf("'</div>'+gcalNote+noNote+") >= 0, "而且真的塞进页面了");
 });
 
+T("新记一条事件：哪条路都得认「默认打勾」", function () {
+  // AI 那条路原来写死了 done:false，绕过了这个设置 ——
+  // 同样是新记一条，走弹窗就打勾、让 AI 记就不打勾，看着像功能坏了。
+  ok(count("done:doneDefault") === 3, "弹窗 / 番茄钟进行中的那块 / AI 建的，三条路都认它，实际 " + count("done:doneDefault"));
+  ok(whole.indexOf('title:o.title||orig,cat:ck,sub:null,done:doneDefault') >= 0, "AI 建事件那条路");
+  // 番茄钟落库、目标打卡、背完单词：这些是「已经做完了」，永远打勾，不归这个设置管
+  ok(count("done:true,par:!!(pf&&pf.checked)") === 1, "番茄钟落库的永远打勾");
+});
+
 T("写了「实际做了多久」的，统计得真的用它", function () {
   // 这一条以前是错的：不分段的事件分账时走的是墙上时间，
   // 所以她写的 amin 对分布图 / 排行 / 目标进度都没生效。
