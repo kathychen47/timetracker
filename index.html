@@ -5134,7 +5134,13 @@ margin-left: -22px;
   var WD=["一","二","三","四","五","六","日"];
 
   // ---------- i18n (界面中/英) ----------
+  // 网址上带 ?lang=zh 就地切回中文（而且记下来）。
+  // 这是条逃生通道：语言开关存在 localStorage 里，要改它只能进设置面板 ——
+  // 万一哪天英文这条路又出岔子、页面打不开，那个面板你就永远点不到了，等于被锁在门外。
+  // 有了它，地址栏敲一下就能出来。?lang=en 同理。
   var lang=load("tt_lang","zh");
+  try{var _lq=/[?&]lang=(zh|en)\b/.exec(location.search);
+    if(_lq&&_lq[1]!==lang){lang=_lq[1];save("tt_lang",lang);}}catch(_e){}
   var I18N={en:{
     "日历":"Calendar","待办":"To-do","计划":"Plan","统计":"Stats","AI 助手":"AI Assistant","设置":"Settings","切换明暗":"Toggle theme",
     "上一个":"Previous","下一个":"Next","上月":"Prev month","下月":"Next month","今天":"Today","+ 事件":"+ Event","全部":"All",

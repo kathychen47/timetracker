@@ -112,6 +112,21 @@ console.log("== sweepLang 的接线 ==");
 })();
 
 console.log("");
+console.log("== ?lang= 逃生通道 ==");
+(function () {
+  const whole = src;
+  function count(p) { return whole.split(p).length - 1; }
+  function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
+  ok(count("/[?&]lang=(zh|en)\b/.exec(location.search)") === 1, "网址上认 ?lang=zh / ?lang=en");
+  ok(count('if(_lq&&_lq[1]!==lang){lang=_lq[1];save("tt_lang",lang);}') === 1,
+    "不只是这一次生效，还要存下来 —— 否则下一次打开又被锁回去");
+  const i = whole.indexOf("var lang=load(\"tt_lang\"");
+  const j = whole.indexOf("_lq");
+  ok(i > 0 && j > i, "先读存的，再让网址覆盖");
+  ok(whole.indexOf("catch(_e){}") > 0, "location 取不到也不能拦住启动");
+})();
+
+console.log("");
 console.log("== 规模 ==");
 console.log("  词表 " + Object.keys(ctx.I18N.en).length + " 条 · 模板 " + ctx.I18NP.length + " 条");
 let bad = 0;
