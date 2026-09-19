@@ -6109,6 +6109,7 @@ margin-left: -22px;
     "手续费":"transaction fee",
     "手臂":"arm",
     "手记":"Manual",
+    "打不开本地书库。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。":"Can't open the local book library. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window.",
     "打卡":"check-in",
     "打开后，白名单里的邮箱登录这个网站，就能看到你的菜谱和你想吃的菜（他们只能看，不能改）。":"Once it's on, anyone on the allow-list who signs in to this site can see your recipes and what you're craving (view only — they can't change anything).",
     "打开完整应用 ↗":"Open full app ↗",
@@ -7597,6 +7598,7 @@ margin-left: -22px;
     ["✓ 以后导入的书会往「","^✓ 以后导入的书会往「(.+?)」里存一份$","✓ From now on, imported books also get a copy saved in \"\u00011\""],
     ["选文件夹失败：","^选文件夹失败：(.+?)(.+?)$","Couldn't pick a folder: \u00011\u00012"],
     ["✓ 往文件夹里补了","^✓ 往文件夹里补了 (.+?) 本$","✓ Copied \u00011 books into the folder"],
+    ["打不开本地书库","^打不开本地书库(.+?)$","Can't open the local book library\u00011"],
     ["读文件夹失败：","^读文件夹失败：(.+?)$","Couldn't read the folder: \u00011"],
     ["本书库里没有的，导进来？","^从文件夹里找到 (.+?) 本书库里没有的，导进来？$","Found \u00011 books in that folder that aren't in your library. Import them?"],
     ["」存一份 · 点这里可以改文件夹或把书找回来","^导入的书会往「(.+?)」存一份 · 点这里可以改文件夹或把书找回来$","Imported books get a copy saved in \"\u00011\" · click here to change the folder or bring the books back"],
@@ -7608,6 +7610,7 @@ margin-left: -22px;
     ["第","^第 (.+?) 页$","Page \u00011"],
     ["第","^第 (.+?)(.+?) 节$","Section \u00011\u00012"],
     ["已选","^已选 (.+?) 项$","\u00011 selected"],
+    ["。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。","^打不开本地书库(.+?)。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。$","Can't open the local book library\u00011. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window."],
     ["本 ·","^(.+?) 本 · (.+?)$","\u00011 books · \u00012"],
     ["篇自己写的 ·","^(.+?) 篇自己写的 · (.+?) 条书里划的$","\u00011 written by you · \u00012 highlighted from books"],
     ["打开失败：","^打开失败：(.+?)$","Couldn't open it: \u00011"],
@@ -7734,7 +7737,6 @@ margin-left: -22px;
     ["已申报","^已申报 (.+?) 笔$","\u00011 declared"],
     ["）—— 已经在发薪时扣过 PAYE 的工资不该记进去，否则这里会算重。真扣税之后回来对一下，差多少一目了然。","^笔（实收 (.+?)）—— 已经在发薪时扣过 PAYE 的工资不该记进去，否则这里会算重。真扣税之后回来对一下，差多少一目了然。$","(received \u00011) — wages that already had PAYE taken out at payday shouldn't go in here, or this double-counts. Come back once you've actually paid the tax and the gap is obvious at a glance."],
     ["· 右边是跟上","^(.+?) · 右边是跟上(.+?)比$","\u00011 · the right-hand column compares with last \u00012"],
-    ["收入来源","^收入来源(.+?)$","Income sources\u00011"],
     ["没有","^这(.+?)没有(.+?)$","No \u00012 this \u00011"],
     ["收入合计","^收入合计(.+?)$","Total income\u00011"],
     ["没有流水","^这(.+?)(.+?)没有流水(.+?)$","No transactions\u00012 this \u00011\u00013"],
@@ -16152,6 +16154,13 @@ margin-left: -22px;
     r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};
     r.onblocked=function(){rej(new Error("书库正在别的标签页里升级，刷新一下再试"));};});}
   function ensureBDB(){return BDB?Promise.resolve(BDB):bdbOpen().then(function(d){BDB=d;return d;});}
+  // IndexedDB 不是永远开得了的：隐私模式、站点存储被禁、别的标签页还占着旧版本升不上去。
+  // 开不了的时候不能就这么炸在 await 上 —— 页面会白着，而且一个字都不说，
+  // 你只会觉得「看书页坏了」。所以统一走这个：失败返回 null，由调用方给一句人话。
+  var bdbFail=null;
+  function bAllSafe(){return bAll().then(function(a){bdbFail=null;return a;},
+    function(e){bdbFail=(e&&e.message)||String(e||"");return null;});}
+  function bdbWhy(){return bdbFail?("（"+bdbFail+"）"):"";}
   function bPut(store,val){return ensureBDB().then(function(d){return new Promise(function(res,rej){
     var tx=d.transaction(store,"readwrite");tx.objectStore(store).put(val);
     tx.oncomplete=function(){res();};tx.onerror=function(){rej(tx.error);};});});}
@@ -16252,7 +16261,8 @@ margin-left: -22px;
     var h=await bookDirOK(true);if(!h)return;
     var have={};
     try{for await(var ent of h.values())if(ent.kind==="file")have[ent.name]=1;}catch(e){return;}
-    var metas=await bAll(),n=0;
+    var metas=await bAllSafe();if(!metas)return;
+    var n=0;
     for(var i=0;i<metas.length;i++){
       var m=metas[i],fn=bookFileName(m);
       if(have[fn])continue;
@@ -16267,7 +16277,9 @@ margin-left: -22px;
     var h=null;
     try{h=await bookDirOK(true);}catch(e){}
     if(!h){ttAlert("还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。");return;}
-    var metas=await bAll(),known={};
+    var metas=await bAllSafe();
+    if(!metas){ttAlert("打不开本地书库"+bdbWhy());return;}
+    var known={};
     metas.forEach(function(m){known[bookFileName(m)]=1;});
     var picked=[];
     try{for await(var ent of h.values()){
@@ -16563,7 +16575,8 @@ margin-left: -22px;
   async function renderShelf(){
     var g=document.getElementById("rd-grid");if(!g)return;
     await ensureFolders();                 // 头一次进来先把两套旧文件夹合成一棵树
-    var all=await bAll();
+    var all=await bAllSafe();
+    if(!all){g.innerHTML='<div class="dict-hint">'+esc("打不开本地书库"+bdbWhy()+"。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。")+'</div>';return;}
     all.sort(function(a,b){return (b.added||0)-(a.added||0);});
     renderFolders(all);
     renderShelfFrom(all);
@@ -16575,8 +16588,9 @@ margin-left: -22px;
   async function renderFxStore(){
     var box=document.getElementById("fx-stbody");if(!box)return;
     box.innerHTML='<div class="dict-hint">数一下…</div>';
-    var all=await bAll(),bytes=0;
-    all.forEach(function(b){bytes+=(+b.size||0);});
+    var all=await bAllSafe();
+    if(!all){box.innerHTML='<div class="dict-hint">'+esc("打不开本地书库"+bdbWhy())+'</div>';return;}
+    var bytes=0;all.forEach(function(b){bytes+=(+b.size||0);});
     var docs=(notes||[]).filter(function(r){return r.t==="doc";}).length;
     var hl=(notes||[]).length-docs;
     var est={},per=false;
@@ -18199,7 +18213,8 @@ margin-left: -22px;
     var sel=document.getElementById("rs-pick");if(sel)sel.value=sideBook;}
   async function fillSidePick(){
     var sel=document.getElementById("rs-pick");if(!sel)return;
-    var all=await bAll();
+    var all=await bAllSafe();                 // 开不了库就空着，别把分屏整个炸掉
+    if(!all){sel.innerHTML='<option value="">'+esc("打不开本地书库"+bdbWhy())+'</option>';return;}
     all.sort(function(a,b){return (b.added||0)-(a.added||0);});
     sel.innerHTML='<option value="">（这一格：选一本书）</option>'+all.map(function(b){
       var cur=(curBook&&b.id===curBook.id)?"（左边正在看）":"";
@@ -18973,13 +18988,13 @@ margin-left: -22px;
       function fxToggle(fid,wasOpen){fxOpen[fid]=!wasOpen;save("tt_fxopen",fxOpen);renderShelf();}
       async function fxDelFolder(fid,anchor){
         var kids=fxSubtree(fid),n=0;
-        (await bAll()).forEach(function(b){if(kids.indexOf(b.folder)>=0)n++;});
+        ((await bAllSafe())||[]).forEach(function(b){if(kids.indexOf(b.folder)>=0)n++;});
         (notes||[]).forEach(function(r){if(r.t==="doc"&&kids.indexOf(r.folder)>=0)n++;});
         var sub=kids.length-1;
         if(!await ttConfirm("删除文件夹「"+folderName(fid)+"」？"+
           (sub?"（连同里面 "+sub+" 个子文件夹）":"")+
           "\n里面的 "+n+" 件东西不会删，会退回「我的文件」最外层。",{danger:true,anchor:anchor}))return;
-        var all=await bAll();
+        var all=(await bAllSafe())||[];
         for(var i=0;i<all.length;i++)if(kids.indexOf(all[i].folder)>=0){all[i].folder="";await bPut("meta",all[i]);}
         var moved=false;
         (notes||[]).forEach(function(r){if(kids.indexOf(r.folder)>=0){r.folder="";moved=true;}});
@@ -19010,7 +19025,7 @@ margin-left: -22px;
         if(b.getAttribute("data-fsoff")){fxSelMode(false);return;}
         if(b.getAttribute("data-fsnone")){fxSel={};fxLastKey=null;renderShelf();return;}
         if(b.getAttribute("data-fsall")){
-          var all=await bAll();fxSel={};fxOrder(all,fxCur).forEach(function(k){fxSel[k]=1;});renderShelf();return;}
+          var all=(await bAllSafe())||[];fxSel={};fxOrder(all,fxCur).forEach(function(k){fxSel[k]=1;});renderShelf();return;}
         if(b.getAttribute("data-fsmove")){fxMoveSelected(b);return;}
         if(b.getAttribute("data-fsdel")){fxDelSelected(b);return;}});
       // 移到哪儿：把整棵树列出来点，比让你打名字准（打错一个字就变成新建一个文件夹了）
@@ -19065,7 +19080,7 @@ margin-left: -22px;
         if(!await ttConfirm("删除 "+what.join(" + ")+"？"+
           (nf?"\n文件夹里的东西不会删，会退回「我的文件」最外层。":"")+
           (nb?"\n书里划过的笔记会留在「🔍 笔记总览」里。":""),{danger:true,anchor:anchor}))return;
-        var all=await bAll(),dead=[];
+        var all=(await bAllSafe())||[],dead=[];
         keys.forEach(function(k){if(k.charAt(0)==="f")dead=dead.concat(fxSubtree(k.slice(2)));});
         var delBooks={},delDocs={};
         keys.forEach(function(k){if(k.charAt(0)==="b")delBooks[k.slice(2)]=1;else if(k.charAt(0)==="d")delDocs[k.slice(2)]=1;});
@@ -19087,7 +19102,7 @@ margin-left: -22px;
         var card=e.target.closest("[data-k]");
         if(card&&(fxSel||e.ctrlKey||e.metaKey)){
           e.preventDefault();e.stopPropagation();
-          fxPickToggle(card.getAttribute("data-k"),e.shiftKey,await bAll());return;}
+          fxPickToggle(card.getAttribute("data-k"),e.shiftKey,(await bAllSafe())||[]);return;}
         var delf=e.target.closest("[data-delf]");
         if(delf){e.stopPropagation();fxDelFolder(delf.getAttribute("data-delf"),delf);return;}
         var dd=e.target.closest("[data-docdel]");
