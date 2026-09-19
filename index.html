@@ -5139,6 +5139,11 @@ margin-left: -22px;
   var MONF_EN=["January","February","March","April","May","June","July","August","September","October","November","December"];
   function isEN(){return lang==="en";}
   function wdLab(d){return isEN()?WD_EN[(d.getDay()+6)%7]:("周"+WD[(d.getDay()+6)%7]);}
+  // 表头那一格的单字缩写。周一开头，跟 WD 一个顺序。
+  function wdCell(i){return isEN()?WD_EN[i]:WD[i];}
+  // 周日开头那几处（本地数组是 ["日","一",…]，跟 getDay() 对齐）
+  var WD_EN_SUN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  function wdSun(i,zh){return isEN()?WD_EN_SUN[i]:zh[i];}
   function mdLab(d){return isEN()?(d.getDate()+" "+MON_EN[d.getMonth()]):((d.getMonth()+1)+"月"+d.getDate()+"日");}
   function ymLab(d){return isEN()?(MONF_EN[d.getMonth()]+" "+d.getFullYear()):(d.getFullYear()+"年"+(d.getMonth()+1)+"月");}
   // 一段区间：同月 "14–20 Sep"，跨月 "28 Sep – 3 Oct"
@@ -6159,7 +6164,7 @@ margin-left: -22px;
     "拉取时捡回本机的事件":"Recovered local events on pull",
     "拖一个 CSV / xlsx 进来。":"to drag in a CSV / xlsx.",
     "拖到浏览器书签栏":"onto your browser's bookmarks bar",
-    "拖动圆环设时长 · 一圈 60 分":"Drag the ring to set duration · one loop = 60 min",
+    "拖动圆环设时长 · 一圈 60 分":"Drag the ring · one loop = 60 min",
     "拖动调整两边宽度":"Drag to resize the two panes",
     "拼写错":"Spelling mistakes",
     "拼写（听对了）":"Spelling (heard right)",
@@ -6438,7 +6443,7 @@ margin-left: -22px;
     "正常":"Normal",
     "正文字号":"Text size",
     "正文支持 Markdown：## 标题、- 列表、**加粗**、`代码` 选中任意文字即可查词/翻译":"Markdown works here: ## heading, - list, **bold**, `code` Select any text to look up / translate",
-    "正计时 · 一圈 60 分，最多 3 小时":"Count up · 60 min per lap, up to 3 hours",
+    "正计时 · 一圈 60 分，最多 3 小时":"Count up · one loop = 60 min, up to 3 h",
     "正计时到 3 小时上限，已自动结束并记好了 ✓":"Count-up hit the 3-hour limit — stopped and logged automatically ✓",
     "正计时到了 3 小时上限，已按当时的时间结束并记好了 ✓":"Count-up hit the 3-hour limit — ended and logged at that moment ✓",
     "正计时接着走：离开这段时间也算进去了":"Count-up picks up again: the time you were away counts too",
@@ -7908,15 +7913,25 @@ margin-left: -22px;
     // 属性：querySelectorAll **不包含根元素自己**。innerHTML 一赋值，
     // MutationObserver 给的 addedNode 往往就是那个带 title 的元素本身 ——
     // 不把根也算上，它的 title 永远翻不到。
+    // 那些 <input type="date"> 上写死了 lang="zh-CN"，英文界面下换成 en。
+    // 丑话说在前面：**这一下改不了日期框里那个「年/月/日」占位符**。
+    // 实测过：Chrome 的日期控件跟**浏览器界面语言**走，跟页面的 lang 无关 ——
+    // 同一个页面用 --lang=en-US 跑就是 mm/dd/yyyy，用中文 Chrome 跑就是年/月/日。
+    // （所以原来那个 zh-CN 其实一直是空的。）改成 en 是为了语义上不说假话。
+    var delang=function(el){if(el&&el.nodeType===1&&el.hasAttribute&&el.hasAttribute("lang"))el.setAttribute("lang","en");};
     var attrs=function(el){if(!el||el.nodeType!==1)return;
+      delang(el);
       ["placeholder","title","aria-label"].forEach(function(a){
         if(!el.hasAttribute(a))return;
         var v=(el.getAttribute(a)||"").trim(),t=trLookup(v);
         if(v&&t!==undefined)el.setAttribute(a,t);});};
     attrs(root);
-    if(root.querySelectorAll)Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),attrs);
+    if(root.querySelectorAll){
+      Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),attrs);
+      Array.prototype.forEach.call(root.querySelectorAll("[lang]"),delang);}
   }catch(e){}}
   function initLang(){if(lang!=="en")return;
+    try{document.documentElement.setAttribute("lang","en");}catch(e){}
     // <title> 在 <head> 里，sweepLang 扫的是 document.body —— 它永远轮不到。
     try{var t=trLookup(document.title.trim());if(t!==undefined)document.title=t;}catch(e){}
     sweepLang(document.body);
@@ -11050,7 +11065,7 @@ margin-left: -22px;
     calTitle.innerHTML=c.getFullYear()+"年 "+(c.getMonth()+1)+"月";
     var first=new Date(c.getFullYear(),c.getMonth(),1),gstart=startOfWeek(first);
     var html='<div style="min-width:560px"><div class="m-head">';
-    for(var w=0;w<7;w++)html+="<div>"+WD[w]+"</div>";
+    for(var w=0;w<7;w++)html+="<div>"+wdCell(w)+"</div>";
     html+='</div><div class="m-grid">';
     for(var i=0;i<42;i++){
       var day=addDays(gstart,i),ds=fmt(day),dim=day.getMonth()!==c.getMonth(),isT=sameDay(day,today);
@@ -11225,7 +11240,7 @@ margin-left: -22px;
     var grid=document.getElementById("mc-grid"),today=new Date();
     document.getElementById("mc-title").textContent=ymLab(miniCursor);
     var first=new Date(miniCursor.getFullYear(),miniCursor.getMonth(),1),gs=startOfWeek(first);
-    var html="";for(var w=0;w<7;w++)html+='<div class="wd">'+WD[w]+'</div>';
+    var html="";for(var w=0;w<7;w++)html+='<div class="wd">'+wdCell(w)+'</div>';
     for(var i=0;i<42;i++){
       var day=addDays(gs,i),ds=fmt(day),dim=day.getMonth()!==miniCursor.getMonth();
       var cls="dd"+(dim?" dim":"")+(sameDay(day,today)?" today":"")+(sameDay(day,state.cursor)?" sel":"");
@@ -11301,9 +11316,9 @@ margin-left: -22px;
     var cnt=matched.length;
     // 记录型：没有目标值，只累计。时长和次数都给出来 —— 花了多少时间、来回多少趟，都是"精力"的一面。
     if(g.track)return{cur:(g.type==="time"?mins:cnt),target:0,mins:mins,cnt:cnt,track:true,
-      disp:(Math.round(mins/6)/10)+"h · "+cnt+trv(g.unit||"次")};
+      disp:(Math.round(mins/6)/10)+"h · "+cnt+(isEN()?" ":"")+trv(g.unit||"次")};
     if(g.type==="time")return{cur:mins,target:g.target*60,mins:mins,cnt:cnt,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};
-    return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+trv(g.unit||"次")};
+    return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+(isEN()?" ":"")+trv(g.unit||"次")};   // 中文「10次」不带空格，英文 "10 times" 得带
   }
   var goalArchOpen=load("tt_goalarch",false);
   function goalExpired(g){                 // 只有"自定义区间"才有过期这回事
@@ -12741,7 +12756,7 @@ margin-left: -22px;
       if(cs!==null)uni+=ce-cs;});
     return Math.max(0,sum-uni);}
   function statBuckets(p){var arr=[],i,d;
-    if(p.unit==="week"){for(i=0;i<7;i++){d=addDays(p.start,i);arr.push({label:WD[i],s:fmt(d)});}return arr;}
+    if(p.unit==="week"){for(i=0;i<7;i++){d=addDays(p.start,i);arr.push({label:wdCell(i),s:fmt(d)});}return arr;}
     if(p.unit==="month"){var n=p.end.getDate();for(i=1;i<=n;i++){d=new Date(p.start.getFullYear(),p.start.getMonth(),i);arr.push({label:""+i,s:fmt(d)});}return arr;}
     if(p.unit==="year"){for(i=0;i<12;i++)arr.push({label:(i+1)+"月",ym:p.start.getFullYear()+"-"+pad(i+1)});return arr;}
     if(p.unit==="custom"){var days=Math.round((p.end-p.start)/86400000)+1;
@@ -21870,14 +21885,14 @@ margin-left: -22px;
       var day="";
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
-          var p=day.split("-"),wd=WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
+          var p=day.split("-"),wd=wdSun(new Date(+p[0],+p[1]-1,+p[2]).getDay(),WD);
           // 「全部」和跨年的自选区间里，不写年份就分不清是哪一年的 8 月 7 日
           var showY=(mnScope==="all")||(mnScope==="range"&&mnFrom.slice(0,4)!==mnTo.slice(0,4));
           // 英文界面写 "19 Sep 2026"，中文还是「2026 年 9 月 19 日」
           h+='<div class="mn-day"><span>'+(isEN()
               ?((+p[2])+" "+MON_EN[(+p[1])-1]+(showY?(" "+p[0]):""))
               :((showY?(p[0]+" 年 "):"")+(+p[1])+" 月 "+(+p[2])+" 日"))+'</span>'+
-            '<span class="wd">周'+wd+'</span>'+
+            '<span class="wd">'+(isEN()?wd:("周"+wd))+'</span>'+
             ((dayOut[day]||dayIn[day])?('<span class="dsum'+(dayOut[day]?" out":"")+'">'+
               (dayOut[day]?mnMoney(-dayOut[day]):"")+
               (dayIn[day]?('<span class="in">+'+mnMoney(dayIn[day])+'</span>'):"")+
