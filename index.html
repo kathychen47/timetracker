@@ -20625,13 +20625,19 @@ margin-left: -22px;
     "shipping and marine transport services":"post","freight forwarding services":"post",
     // 保险
     "insurance":"insure",
-    // 住房 —— 修房子、园艺、垃圾、仓储都算住的开销，不是购物
-    "building and carpentry services":"housing","plumbing and gasfitting supplies and services":"housing",
-    "roofing services":"housing","electrical supplies and services":"housing",
+    // 住房 —— 修房子、园艺、垃圾、仓储都算住的开销，不是购物。
+    // 分界是「请人干」还是「自己买材料」：
+    //   … services → 住房（付的是工钱）
+    //   … supplies → 工具建材（买的是东西，在下面那组）
+    // 以前这儿多写了三条 supplies，跟下面重了 —— 同一个对象里重复的键
+    // 只有最后一个算数，所以它们实际一直归的是工具建材，这几行是死的。
+    // 删掉，行为不变，只是代码不再说假话。
+    "building and carpentry services":"housing",
+    "roofing services":"housing",
     "cleaning, sanitation, and pest control services":"housing",
     "waste and recycling services":"housing","storage facilities":"housing",
     "landscaping, garden, and horticultural services":"housing",
-    "nurseries and garden supplies":"housing","real estate services":"housing",
+    "real estate services":"housing",
     // 运动健身归娱乐，不归医疗
     "gyms, fitness, aquatic facilities, yoga, pilates":"fun",
     "sports and athletic clubs":"fun",
@@ -20695,6 +20701,20 @@ margin-left: -22px;
   // 币种符号。混币种加总没有意义，所以页面永远只看一种，符号跟着走。
   var MN_SYM={NZD:"$",AUD:"$",USD:"$",CNY:"¥",HKD:"$",GBP:"£",EUR:"€",JPY:"¥"};
   var mnTxns=load("tt_txns",[])||[];
+  // 自愈：修掉币种被写成 "__all:NZD" 的记录。
+  // 视图停在「合计」档时 mnCur 是 "__all:NZD" 这种合成值，不是一个真币种；
+  // 以前「记一笔」的币种下拉直接把它塞进了 <option>，没注意就保存的话，
+  // 这笔的 cur 就成了一个不存在的货币 —— 之后按币种筛选、折算、合计都会漏掉它。
+  // 下拉那处已经修了，这儿把已经落盘的捡回来：取冒号后面那个真币种。
+  (function(){
+    var fixed=0;
+    mnTxns.forEach(function(t){
+      var c=t&&t.cur;
+      if(typeof c==="string"&&c.indexOf("__all")===0){
+        var i=c.indexOf(":");
+        t.cur=(i>0?c.slice(i+1):"")||"NZD";fixed++;}});
+    if(fixed)save("tt_txns",mnTxns);
+  })();
   var mnRules=load("tt_mnrules",null)||{};       // {分类key:[关键词,…]}，叠在内置表之上，优先级更高
   var mnCfg=load("tt_mncfg",null)||{};           // {lastSync, accts, cats, fx, taxAcct…}
   mnCatIdx();                                    // 内置 + 自定义，合成一张查找表（要等 mnCfg 就位）

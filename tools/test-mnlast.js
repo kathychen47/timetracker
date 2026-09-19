@@ -122,6 +122,32 @@ T("存「上次那套」发生在存流水之前，且只有新记这一条路",
     "收支读一次存进变量 —— 弹窗马上要关，别再去 DOM 里捞第二遍");
 });
 
+T("已经落盘的 __all:NZD 会被捡回来", function () {
+  // 下拉那处修了，可之前存进去的还在。启动时自愈：取冒号后面那个真币种。
+  const heal = txns => {
+    let fixed = 0;
+    txns.forEach(t => {
+      const c = t && t.cur;
+      if (typeof c === "string" && c.indexOf("__all") === 0) {
+        const i = c.indexOf(":");
+        t.cur = (i > 0 ? c.slice(i + 1) : "") || "NZD"; fixed++;
+      }
+    });
+    return fixed;
+  };
+  const rows = [{ cur: "__all:NZD" }, { cur: "__all:CNY" }, { cur: "__all" }, { cur: "NZD" }, {}];
+  const n = heal(rows);
+  ok(n === 3, "只动中招的那几条，实得 " + n);
+  ok(rows[0].cur === "NZD", "__all:NZD → NZD，实得 " + rows[0].cur);
+  ok(rows[1].cur === "CNY", "__all:CNY → CNY，实得 " + rows[1].cur);
+  ok(rows[2].cur === "NZD", "没冒号就退回 NZD，实得 " + rows[2].cur);
+  ok(rows[3].cur === "NZD", "正常的不碰");
+  ok(rows[4].cur === undefined, "没币种字段的不给它凭空加一个");
+  // 接线：真的接在启动路径上了吗
+  ok(count('if(typeof c==="string"&&c.indexOf("__all")===0){') === 1, "自愈那段只有一处");
+  ok(count("if(fixed)save(\"tt_txns\",mnTxns);") === 1, "改了才存，没改就别白写一遍");
+});
+
 T("这一路只有一份实现", function () {
   ["mnLast", "mnLastSet"].forEach(function (f) {
     ok(count("function " + f + "(") === 1, f + " 只能有一份");
