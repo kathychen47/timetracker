@@ -22,12 +22,14 @@ function ln(pat, from) {
 var CODE = [
   src.slice(ln("function srsInit(x){"), ln("function srsStage(x){")).join(NL),
   src.slice(ln("function srsStage(x){"), ln('return "mature";}') + 1).join(NL),
-  src.slice(ln("var FSRS_W=["), ln('return (d/365).toFixed(1)+" 年";}') + 1).join(NL)
+  src.slice(ln("var FSRS_W=["), ln('var y=(d/365).toFixed(1);return y+(isEN()?" yr":" 年");}') + 1).join(NL)
 ].join(NL);
 
 function mk(retention) {
   var ctx = {
     console: console, Math: Math, Date: Date,
+    // fmtGap 现在要看界面语言（英文换一套单位）；这里的用例钉的是中文那一套
+    isEN: function () { return false; },
     dictPrefs: retention === undefined ? {} : { retention: retention }
   };
   vm.createContext(ctx);
@@ -285,7 +287,9 @@ T("旧的 SM-2 实现必须整个没了", function () {
 
 T("背诵那边接上了学习步骤", function () {
   ok(count("var min=srsGrade(x,g);") === 1, "srsGrade 要返回分钟数");
-  ok(count("if(min<DAYMIN){") === 1, "不到一天的要在本轮里再出现一次");
+  // 锐一点的锚点：fmtGap 里也有一句 if(min<DAYMIN)，光数它会撞上
+  ok(count("function advanceFlash(min,g){") === 1, "评分和翻页是分开的");
+  ok(count("var again=flashArr.splice(flashIdx,1)[0];") === 1, "不到一天的要在本轮里再出现一次");
   ok(count("if(!flSeen[k]){flSeen[k]=1;bumpDay(isNew);}") === 1,
     "一个词一轮里答好几次，但「今天学了几个」只能算一次");
   ok(count("flashDone=0;flSeen={};") === 1, "开新一轮要清空");

@@ -23,7 +23,7 @@ function ln(pat) {
 var CODE = [
   src.slice(ln("function srsInit(x){"), ln("function srsStage(x){")).join(NL),
   src.slice(ln("function srsStage(x){"), ln('return "mature";}') + 1).join(NL),
-  src.slice(ln("var FSRS_W=["), ln('return (d/365).toFixed(1)+" 年";}') + 1).join(NL)
+  src.slice(ln("var FSRS_W=["), ln('var y=(d/365).toFixed(1);return y+(isEN()?" yr":" 年");}') + 1).join(NL)
 ].join(NL);
 
 var ctx = { console: console, Math: Math, Date: Date, dictPrefs: {} };

@@ -111,7 +111,10 @@ function label(el) {
   return (id || cls || el.nodeName.toLowerCase()) + (data ? "[" + data + "]" : "") + (txt ? " «" + txt + "»" : "");
 }
 // 这几类别点：会把页面带走、或者卡住等外部东西
-const SKIP = /^(set-sb-auth|acct-login|gcal-connect|set-gcal|exp-print|mn-sync|rec-start|wb-start-dl)/;
+// 这几类别碰：会把页面带走、或者卡着等外部东西。
+// set-lang 改了就 location.reload() —— 浏览器里是对的，jsdom 不实现导航，
+// 不排掉的话每次都报一条，把真问题淹了。
+const SKIP = /^(set-sb-auth|acct-login|gcal-connect|set-gcal|exp-print|mn-sync|rec-start|wb-start-dl|set-lang)/;
 function clickable(root) {
   return Array.from(root.querySelectorAll("button, .li, .tf-chip, [data-tab], [data-pane], .seg button, .cs-name, [data-g]"))
     .filter(el => !el.disabled && !SKIP.test(el.id || ""));
@@ -124,7 +127,7 @@ let clicked = 0, changed = 0;
 // 很多 handler 挂在 change 上，不是 click：下拉、勾选、日期、色轮。
 // 下拉挨个选一遍，勾选翻一下再翻回来。
 async function changeAll(scope, where) {
-  const sels = Array.from(scope.querySelectorAll("select")).filter(el => !el.disabled);
+  const sels = Array.from(scope.querySelectorAll("select")).filter(el => !el.disabled && !SKIP.test(el.id || ""));
   for (const sel of sels) {
     if (!sel.isConnected) continue;
     const opts = Array.from(sel.options || []).map(o => o.value);

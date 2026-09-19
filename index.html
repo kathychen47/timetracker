@@ -7554,7 +7554,7 @@ margin-left: -22px;
     ["· 已隐藏","^· 已隐藏 (.+?) 个已掌握$","· \u00011 mastered hidden"],
     ["下次抽查","^下次抽查 (.+?)$","next spot check \u00011"],
     ["下次","^下次 (.+?)$","Next \u00011"],
-    ["次(新词","^共学 (.+?)(.+?) 次\\(新词 (.+?) · 复习 (.+?)\\)(.+?)$","\u00011\u00012 studied (new \u00013 · review \u00014)\u00015"],
+    ["次(新词","^共学 (.+?) 次\\(新词 (.+?) · 复习 (.+?)\\)(.+?)$","\u00011 sessions (new \u00012 · review \u00013)\u00014"],
     ["分钟","^，(.+?) 分钟$",", \u00011 min"],
     ["分钟","^· (.+?) 分钟$","· \u00011 min"],
     ["现在有","^现在有 (.+?) 个到期$","\u00011 due right now"],
@@ -7567,9 +7567,6 @@ margin-left: -22px;
     ["年后","^(.+?) 年后$","in \u00011 years"],
     ["笔记：","^笔记：(.+?)$","Note: \u00011"],
     ["」写笔记（记忆法/例句/用法都行）：","^给「(.+?)」写笔记（记忆法/例句/用法都行）：$","Write a note for \"\u00011\" (mnemonic, example, usage — anything):"],
-    ["分钟","^(.+?) 分钟$","\u00011 min"],
-    ["小时","^(.+?) 小时$","\u00011 h"],
-    ["个月","^(.+?) 个月$","\u00011 months"],
     ["同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。","^同一份名单可以放心反复导入 —— 已经在生词本里的会自动跳过，不像单词的会挑出来让你过目。(.+?)$","You can import the same list again and again — words already in your word list are skipped automatically, and anything that doesn't look like a word is set aside for you to look over.\u00011"],
     ["个词你删过或标了「认识」，它们不会被自动收藏；如果导入名单里又出现，会单独问你要不要加回来。","^🗑 有 (.+?) 个词你删过或标了「认识」，它们不会被自动收藏；如果导入名单里又出现，会单独问你要不要加回来。$","🗑 \u00011 words you deleted or marked \"Known\" won't be saved automatically; if they turn up in an imported list again, you'll be asked separately whether to add them back."],
     ["导入","^导入 (.+?) 个词$","Import \u00011 words"],
@@ -7595,8 +7592,6 @@ margin-left: -22px;
     ["词）","^（(.+?) 词）$","(\u00011 words)"],
     ["个单词 · 中途离开","^复习 (.+?) 个单词 · 中途离开 (.+?) 分钟不计$","Reviewed \u00011 words · \u00012 min away, not counted"],
     ["个单词","^复习 (.+?) 个单词$","Reviewed \u00011 words"],
-    ["· 已完成","^(.+?)(.+?) · 已完成$","\u00011\u00012 · Done"],
-    ["复习","^复习 (.+?)$","Review \u00011"],
     ["个词。 下次复习时间已按遗忘曲线安排好。","^本轮完成 🎉 共 (.+?) 个词。 下次复习时间已按遗忘曲线安排好。$","Round finished 🎉 \u00011 words in all. The next review is already scheduled on the forgetting curve."],
     ["词典没收录，翻译也失败了：","^词典没收录，翻译也失败了：(.+?)(.+?)$","Not in the dictionary, and the translation failed too: \u00011 \u00012"],
     ["转写功能没能初始化：","^转写功能没能初始化：(.+?)$","Transcription failed to start: \u00011"],
@@ -7720,6 +7715,7 @@ margin-left: -22px;
     ["失败：","^失败：(.+?)$","Failed: \u00011"],
     ["税年","^(.+?) 税年$","\u00011 tax year"],
     ["收入记录 ·","^收入记录 · (.+?) 笔$","Income log · \u00011 entries"],
+    ["个月","^(.+?) 个月$","\u00011 months"],
     ["· 到手","^(.+?)：实收 (.+?) · 到手 (.+?)$","\u00011: Gross \u00012 · Take-home \u00013"],
     ["：无记录","^(.+?)：无记录$","\u00011: no records"],
     ["· 实际税率","^实收合计 (.+?) · 实际税率 (.+?)%$","Total gross \u00011 · Effective rate \u00012%"],
@@ -14074,7 +14070,7 @@ margin-left: -22px;
   var wbActive=load("tt_wbactive","")||"all";
   function saveWbGroups(){save("tt_wbgroups",wbGroups);}
   function wbGroupOf(x){return x.group||wbGroups.def;}
-  function wbGroupName(id){for(var i=0;i<wbGroups.list.length;i++)if(wbGroups.list[i].id===id)return wbGroups.list[i].name;return "默认";}
+  function wbGroupName(id){for(var i=0;i<wbGroups.list.length;i++)if(wbGroups.list[i].id===id)return trv(wbGroups.list[i].name);return trv("默认");}
   function wbFiltered(){return (wbActive==="all")?words.slice():words.filter(function(x){return wbGroupOf(x)===wbActive;});}
   function dlFile(name,content,mime){var b=new Blob([content],{type:(mime||"text/plain")+";charset=utf-8"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},120);}
   var pronAccent=load("tt_pronacc","en-GB");
@@ -14411,7 +14407,7 @@ margin-left: -22px;
     return out;}
   function renderSugg(list){var el=document.getElementById("dict-sugg");if(!el)return;
     if(!list||!list.length){el.innerHTML="";return;}
-    el.innerHTML=list.map(function(s){return '<div class="sg" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'<span class="m">'+(s.store==="collins"?"中→英":"英→中")+'</span></div>';}).join("");}
+    el.innerHTML=list.map(function(s){return '<div class="sg" data-w="'+esc(s.disp||s.k)+'">'+esc(s.disp||s.k)+'<span class="m">'+trv(s.store==="collins"?"中→英":"英→中")+'</span></div>';}).join("");}
 
   // 词形还原：grunted→grunt、boxes→box、studied→study、running→run…
   function wordVariants(w){
@@ -14477,7 +14473,7 @@ margin-left: -22px;
         if(!trAuto){box.innerHTML=trAskHTML(q);return;}
         box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
         try{var tres=await translateText(q);
-          box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(q)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tres.by)+'</span></div>'+
+          box.innerHTML='<div class="dict-card"><div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(q)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(trv(tres.by))+'</span></div>'+
             '<div class="rd-tr">'+esc(tres.text)+'</div><div class="rd-tr-src">'+esc(q)+'</div></div>';
         }catch(e){box.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(e&&e.message||e))+'<br>可到 ⚙️设置 → 📖词典 换个翻译引擎。</div>';}
         return;}
@@ -14654,7 +14650,7 @@ margin-left: -22px;
       var when=(x.known||x.mastered)
         ?(kd?"该抽查了":(x.kdue?("下次抽查 "+fmtWhen(x.kdue)):(x.known?"不用背了":"已掌握")))
         :(overdue?"待复习":("下次 "+fmtWhen(x.due)));
-      var meta=(x.dict==="collins"?"中→英":"英→中")+" · "+when;   // 分组由右边那颗按钮显示，别重复一遍
+      var meta=trv(x.dict==="collins"?"中→英":"英→中")+" · "+when;   // 分组由右边那颗按钮显示，别重复一遍
       return '<div class="wb-item'+(x.known?" isknown":"")+'" data-w="'+esc(x.w)+'"><div class="wb-head"><span class="wb-caret">▶</span><span class="w">'+esc(x.disp||x.w)+'</span>'+
         '<span class="badge '+(x.known?"known":(overdue?"due":lab[1]))+'">'+(x.known?"认识":lab[0])+'</span>'+
         '<span class="m">'+meta+'</span>'+
@@ -14670,8 +14666,14 @@ margin-left: -22px;
     for(var i=N-1;i>=0;i--){var d=addDays(today,-i),k=fmt(d),h=hist[k]||{n:0,r:0};
       days.push({k:k,d:d,n:h.n||0,r:h.r||0});max=Math.max(max,(h.n||0)+(h.r||0));}
     var totalN=days.reduce(function(a,x){return a+x.n;},0),totalR=days.reduce(function(a,x){return a+x.r;},0);
-    var c1='<div class="wbc"><h4>最近 14 天</h4><div class="sub">共学 '+(totalN+totalR)+' 次(新词 '+totalN+' · 复习 '+totalR+')'+
-      (function(){var mm=0;days.forEach(function(d){mm+=(hist[d.k]||{}).m||0;});return mm?("，"+mm+" 分钟"):"";})()+'</div>'+
+    // 和先算进变量，别在字符串里写 (a+b)：
+    // 模板抽取器会把它当成**两个**变量位，正则就要求那儿至少两个字符 ——
+    // 值是 "0" 的时候永远对不上，英文界面下这行就一直是中文。
+    // （同一个坑之前在「传第 "+(i+1)+" 条」上踩过。）
+    var totAll=totalN+totalR,totMin=0;
+    days.forEach(function(d){totMin+=(hist[d.k]||{}).m||0;});
+    var c1='<div class="wbc"><h4>最近 14 天</h4><div class="sub">共学 '+totAll+' 次(新词 '+totalN+' · 复习 '+totalR+')'+
+      (totMin?("，"+totMin+" 分钟"):"")+'</div>'+
       '<div class="wbc-bars">'+days.map(function(x,idx){
         var hn=x.n/max*100,hr=x.r/max*100;
         var mm=(hist[x.k]||{}).m||0;
@@ -14928,8 +14930,8 @@ margin-left: -22px;
   // opt.src=false  → 不再重复一遍原词（生词本、背单词卡片上，词就在正上方）
   function trCardHTML(w,tr,opt){
     opt=opt||{};
-    var head=(opt.pick===false)?('<span class="dict-src">翻译 · '+esc(tr.by)+'</span>')
-      :('<span class="dict-src trpick" data-trpick="'+esc(w)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span>');
+    var head=(opt.pick===false)?('<span class="dict-src">翻译 · '+esc(trv(tr.by))+'</span>')
+      :('<span class="dict-src trpick" data-trpick="'+esc(w)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(trv(tr.by))+'</span>');
     return '<div class="dict-card"><div class="dict-card-top">'+head+'</div>'+
       '<div class="rd-tr">'+esc(tr.text)+'</div>'+
       ((opt.src===false)?'':('<div class="rd-tr-src">'+esc(w)+'</div>'))+'</div>';}
@@ -14940,7 +14942,7 @@ margin-left: -22px;
     // 新壳的 id 一模一样 —— 按 id 去找会找到人家的壳，把上一个词的译文写进这个词的卡里。
     if(!fb||!fb.isConnected)return null;
     fb.innerHTML=tr?('<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(w)+
-        '" title="点一下换引擎，当场重翻">翻译 · '+esc(tr.by)+'</span></div>'+
+        '" title="点一下换引擎，当场重翻">翻译 · '+esc(trv(tr.by))+'</span></div>'+
         '<div class="rd-tr">'+esc(tr.text)+'</div><div class="rd-tr-src">'+esc(w)+'</div>')
       :('<div class="dict-hint">翻译失败：'+esc(String(err&&err.message||err))+'</div>');
     return tr;}
@@ -15096,12 +15098,13 @@ margin-left: -22px;
     x.due=Date.now()+o.min*60000;x.last=Date.now();
     return o.min;}                       // 返回「多少分钟后再见」，背诵那边拿它判断要不要本轮再出现
   function fmtGap(min){
-    if(min<60)return Math.max(1,Math.round(min))+" 分钟";
-    if(min<DAYMIN)return Math.round(min/60)+" 小时";
+    // 这一串是拼出来的，词表够不着 —— 英文界面直接换一套单位。
+    if(min<60){var m=Math.max(1,Math.round(min));return m+(isEN()?" min":" 分钟");}
+    if(min<DAYMIN){var h=Math.round(min/60);return h+(isEN()?(h>1?" hrs":" hr"):" 小时");}
     var d=min/DAYMIN;
-    if(d<30)return Math.round(d)+" 天";
-    if(d<365)return (d/30).toFixed(d<60?1:0)+" 个月";
-    return (d/365).toFixed(1)+" 年";}
+    if(d<30){var dd=Math.round(d);return dd+(isEN()?(dd>1?" days":" day"):" 天");}
+    if(d<365){var mo=(d/30).toFixed(d<60?1:0);return mo+(isEN()?" mo":" 个月");}
+    var y=(d/365).toFixed(1);return y+(isEN()?" yr":" 年");}
 
   function dueList(){var now=Date.now();
     return words.filter(function(x){srsInit(x);return !x.mastered&&x.reps>0&&x.due<=now;});}
@@ -15556,9 +15559,11 @@ margin-left: -22px;
     document.getElementById("fp-fill").style.width=(total?(flashIdx/total*100):0).toFixed(1)+"%";
     var nn=0,rr=0;
     for(var i=flashIdx;i<flashArr.length;i++){if(flashArr[i].reps)rr++;else nn++;}
+    var PL=isEN()?{left:"Left",neu:"New",rev:"Review",done:"Done"}
+                 :{left:"剩",neu:"新",rev:"复习",done:"已完成"};
     document.getElementById("flash-prog").innerHTML=
-      '剩 <b>'+left+'</b>'+(nn?' · <span class="tagn">新 '+nn+'</span>':'')+(rr?' · <span class="tagr">复习 '+rr+'</span>':'')+
-      ' · 已完成 <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flNetMs())+'</span>'+
+      PL.left+' <b>'+left+'</b>'+(nn?' · <span class="tagn">'+PL.neu+' '+nn+'</span>':'')+(rr?' · <span class="tagr">'+PL.rev+' '+rr+'</span>':'')+
+      ' · '+PL.done+' <b>'+flashDone+'</b> · <span id="flash-clock">'+fmtClock(flNetMs())+'</span>'+
       (flAway?'<span class="fl-idle" title="这么久没有任何操作，先把计时停下了。点一下、按个键、滚一下就继续 —— 光移动鼠标不算。">⏸ 已暂停</span>':'');}
   function fmtClock(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}   // 背单词计时用，别和统计的 fmtDur(分钟) 重名
   var flashTick=null;
@@ -16100,7 +16105,7 @@ margin-left: -22px;
     var txt=b.getAttribute("data-trgo")||"",card=b.closest(".dict-card");if(!card)return;
     card.innerHTML='<div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div>';
     translateText(txt).then(function(r){
-      card.innerHTML='<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(txt)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(r.by)+'</span></div>'+
+      card.innerHTML='<div class="dict-card-top"><span class="dict-src trpick" data-trpick="'+esc(txt)+'" title="点一下换引擎，当场重翻">翻译 · '+esc(trv(r.by))+'</span></div>'+
         '<div class="rd-tr">'+esc(r.text)+'</div>';},
       function(err){card.innerHTML='<div class="dict-hint">翻译失败：'+esc(String(err&&err.message||err))+'</div>';});
   },true);
@@ -16128,7 +16133,7 @@ margin-left: -22px;
       translateText(txt).then(function(r){
         if(body)body.textContent=r.text;
         try{if(!/不可用/.test(r.by||""))trWordCache[trWordKey(txt)]=r;}catch(e){}   // 换了引擎重翻的结果也存一份，别下次又端出旧的
-        t.textContent="翻译 · "+r.by;t.setAttribute("data-trpick",txt);},
+        t.textContent="翻译 · "+trv(r.by);t.setAttribute("data-trpick",txt);},
         function(err){if(body)body.textContent="翻译失败："+String(err&&err.message||err);});});
   },true);
   function translateText(text){
