@@ -4632,6 +4632,14 @@ margin-left: -22px;
           </select>
         </div>
       </div>
+      <div class="set-sec-h" style="margin-top:22px">🍅 番茄钟</div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">中间的暂停，从这条记录里挖掉</div>
+            <div class="set-desc">正计时中途按暂停：开着 = 日历块的起止是真实的墙上时间，暂停那段在块里画成一个空洞，统计只算做事的部分；关着（默认）= 整段并成一块实心的，块的长度就是钟上真正走过的时间。<b>只管之后记的，已经记下的不动。</b></div></div>
+          <label class="switch"><input type="checkbox" id="set-pgap"><span class="sw-track"></span></label>
+        </div>
+      </div>
     </div>
 
     <div class="set-pane" data-pane="cats">
@@ -5502,6 +5510,7 @@ margin-left: -22px;
     "中文（普通话）":"Chinese (Mandarin)",
     "中文（粤语）":"Chinese (Cantonese)",
     "中英":"Both",
+    "中间的暂停，从这条记录里挖掉":"Cut the pause out of the record",
     "中餐 家常 汤":"Chinese homestyle soup",
     "为准，时间用 Whisper 的。":", timing comes from Whisper.",
     "主币种":"Base currency",
@@ -5817,6 +5826,7 @@ margin-left: -22px;
     "只存在你本机浏览器，不上传、不进代码。别人打开你的网站用的是他们自己填的 key，动不到你的额度。在":"Stored only in your own browser — never uploaded, never in the code. Anyone else opening your site uses their own key, so your quota is untouched. Get one at",
     "只影响统计和番茄钟的「今日」，日历上还是画在真实日期。":" Only affects \"today\" in Stats and Pomodoro — the calendar still draws events on their real date.",
     "只有文字":"Text only",
+    "只管之后记的，已经记下的不动。":"Only affects what gets logged from now on — nothing already recorded changes.",
     "只要填了任意一个":"Fill in even one",
     "只记录":"tracking only",
     "可不放":"Optional",
@@ -6455,6 +6465,7 @@ margin-left: -22px;
     "正文字号":"Text size",
     "正文支持 Markdown：## 标题、- 列表、**加粗**、`代码` 选中任意文字即可查词/翻译":"Markdown works here: ## heading, - list, **bold**, `code` Select any text to look up / translate",
     "正计时 · 一圈 60 分，最多 3 小时":"Count up · one loop = 60 min, up to 3 h",
+    "正计时中途按暂停：开着 = 日历块的起止是真实的墙上时间，暂停那段在块里画成一个空洞，统计只算做事的部分；关着（默认）= 整段并成一块实心的，块的长度就是钟上真正走过的时间。":"Pausing partway through a count-up run: ON keeps the calendar block's real start and end times and draws the paused stretch as a hollow gap, so stats count only the part you were working; OFF (the default) merges it into one solid block whose length is exactly what the clock ran. ",
     "正计时到 3 小时上限，已自动结束并记好了 ✓":"Count-up hit the 3-hour limit — stopped and logged automatically ✓",
     "正计时到了 3 小时上限，已按当时的时间结束并记好了 ✓":"Count-up hit the 3-hour limit — ended and logged at that moment ✓",
     "正计时接着走：离开这段时间也算进去了":"Count-up picks up again: the time you were away counts too",
@@ -7184,6 +7195,7 @@ margin-left: -22px;
     "🌐 整篇翻译（只翻没翻过的）":"🌐 Translate all (only what's untranslated)",
     "🌐 翻译":"🌐 Translate",
     "🌐 译":"🌐 Translated",
+    "🍅 番茄钟":"🍅 Pomodoro",
     "🍅 番茄钟完成":"🍅 Pomodoro finished",
     "🍅 番茄钟日志（出问题时给我看）":"🍅 Pomodoro log (show me this if something breaks)",
     "🎧导入音频·自动转写":"🎧 Import audio · auto-transcribe",
@@ -11369,7 +11381,7 @@ margin-left: -22px;
         '<div class="skm-top"><span class="skm-n">'+esc(r.sk.name)+'</span>'+
           '<span class="skm-v">'+r.s.done+'/'+r.s.total+' · '+hrs(r.s.act)+'</span></div>'+
         '<div class="goal-bar"><i style="width:'+pct.toFixed(0)+'%"></i></div>'+
-        (nx?('<div class="skm-next">▶ 下一步：'+esc(nx.t)+'</div>'):'<div class="skm-next done">全部做完了</div>')+'</div>';}).join("")+
+        (nx?('<div class="skm-next">▶ 下一步：'+esc(nx.t||nx.name||"")+'</div>'):'<div class="skm-next done">全部做完了</div>')+'</div>';}).join("")+
       (live.length>rows.length?('<div class="dash-empty" style="padding:6px 0 0">还有 '+(live.length-rows.length)+' 个</div>'):"");}
   (function(){
     var c=document.getElementById("skmini-card");if(!c)return;
@@ -12047,6 +12059,11 @@ margin-left: -22px;
   // 单个洞封顶 2 小时。停到这个份上，「这还算同一次专注吗」已经很可疑了 ——
   // 不封顶的话，暂停着过一夜会造出一条跨天的坏记录。
   var GAPMIN=30,GAPMAX=7200,pPauseAt=0,pPauseT=null;
+  // 中途暂停怎么记，两种都留着，设置里切：
+  //   挖空（pgap 开着）= 日历块的起止是真实的墙上时间，中间那段画成空洞，统计不算它；
+  //   并成一整段（默认，也是原来的做法）= 块的长度就是钟上真正走过的时间，看着是实心一条。
+  // 洞照旧存进 pSegs，只在取段的时候过滤 —— 所以中途改设置也立刻生效，切回去洞还在。
+  function gapOn(){return !!settings.pgap;}
   function curPauseSec(){return pPauseAt?Math.min(GAPMAX,Math.max(0,Math.round((Date.now()-pPauseAt)/1000))):0;}
   function cancelPause(){if(pPauseT){clearInterval(pPauseT);pPauseT=null;}pPauseAt=0;}
   function endPause(){var g=curPauseSec();cancelPause();      // 继续走：把这个洞正式落进段里
@@ -12063,7 +12080,8 @@ margin-left: -22px;
     return out;}
   function allSegs(){var out=pSegs.slice(),sec=curSegSec();
     if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});  // 几秒也照记
-    var g=curPauseSec();if(g>=GAPMIN)out.push({gap:true,t:"暂停",sec:g});   // 正在长的那个洞
+    var g=curPauseSec();if(gapOn()&&g>=GAPMIN)out.push({gap:true,t:"暂停",sec:g});   // 正在长的那个洞
+    if(!gapOn())out=out.filter(function(x){return !x.gap;});   // 并成一整段：洞不单独成段，mergeSegs 会把两边接起来
     return mergeSegs(out);}
   function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+trv("秒")):(Math.round(sec/60)+trv("分"));}
   function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();}
@@ -12249,7 +12267,7 @@ margin-left: -22px;
   document.addEventListener("touchmove",function(e){if(ringDrag){ringSetFromEvent(e);e.preventDefault();}},{passive:false});
   document.addEventListener("touchend",function(){if(ringDrag){ringDrag=false;drawPomo();}});
   // 计时靠"墙上时钟"而不是每秒减一：切到后台被浏览器降频也不会走慢；关掉网页也能接着算
-  var pEndAt=0,pStartAt=0,pBase=0,pTitleOld=null;
+  var pEndAt=0,pStartAt=0,pBase=0,pTitleOld=null,pRid="";
   // ---- 只让一个网页真的在计时 ----
   // 两个网页都开着的时候，以前两边都会 restorePomoRun() 各起一个 interval，
   // 各自数各自的秒，结束时各写一条事件 —— 于是"一次专注出现两条记录"。
@@ -12283,6 +12301,7 @@ margin-left: -22px;
   function followTick(){                                       // 只读地把那边的进度画出来
     var r=pomoRunOther();
     if(!r){leaveFollow();return;}
+    if(r.rid)pRid=r.rid;
     timerMode=r.mode;pMode2=r.p2||"focus";pTotal=+r.total||pTotal;
     document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
     // 任务名/分类只在那边真的改了才抄过来 —— 每半秒无脑覆盖的话，这边正打字就被抹掉了
@@ -12306,7 +12325,7 @@ margin-left: -22px;
     // 存档没了、这边手上却还攥着一段时间 —— 那边八成已经结束并记好了，
     // 但也可能是被谁清掉的。归零之前先落进黑匣子，别让它无声无息地没。
     if(pElapsed>=60){pLog("leaveFollow:存档没了，手上还有时间");savePomoSeen(true);}
-    pElapsed=0;pBase=0;pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;
+    pRid="";pElapsed=0;pBase=0;pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;
     clearSegs();startBtn.textContent="开始";drawPomo();try{drawLostChip();}catch(e){}}
   function takeOver(){                                         // 手动点「接管」
     if(!pFollow)return;
@@ -12328,11 +12347,11 @@ margin-left: -22px;
     // 那两处自己会 save("tt_pomorun",null)，不需要这里代劳。
     if(pFollow)return;                                         // 只是跟着看别的标签页，别去覆盖人家的存档
     var walked=(timerMode==="up")?(pElapsed>0):(pLeft>0&&pLeft<pTotal);
-    if(!pTimer&&!walked){save("tt_pomorun",null);return;}      // 没跑过也没暂停 → 确实没什么可存
+    if(!pTimer&&!walked){pRid="";save("tt_pomorun",null);return;}      // 没跑过也没暂停 → 确实没什么可存
     save("tt_pomorun",{mode:timerMode,p2:pMode2,run:!!pTimer,endAt:pEndAt,startAt:pStartAt,base:pBase,
       left:pLeft,elapsed:pElapsed,total:pTotal,
       task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",tocal:!!pomoToCal.checked,
-      segs:pSegs,segStart:pSegStart,at:Date.now(),owner:TABID});}
+      segs:pSegs,segStart:pSegStart,at:Date.now(),owner:TABID,rid:pRid});}
   function pomoTitle(){
     if(!pTimer){if(pTitleOld!==null){document.title=pTitleOld;pTitleOld=null;}return;}
     if(pTitleOld===null)pTitleOld=document.title;
@@ -12361,6 +12380,7 @@ margin-left: -22px;
     startBtn.textContent="开始";savePomoRun();pomoTitle();try{drawPomo();}catch(e){}}
   function startTimer(){
     if(pTimer)return;
+    if(!pRid)pRid=Date.now().toString(36)+TABID.slice(-4);   // 这一次计时的编号：黑匣子里那条是不是它，全靠它认
     endPause();
     var now=Date.now();
     if(timerMode==="up"){pStartAt=now;pBase=pElapsed;}
@@ -12371,7 +12391,7 @@ margin-left: -22px;
     startBtn.textContent="暂停";savePomoRun();savePomoLast();pomoTick();}
   function resetPomo(){pLog("重置");stopTimer();pBase=0;pomoManual=false;autoPomoCat();clearSegs();
     if(timerMode==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
-    save("tt_pomorun",null);drawPomo();}
+    pRid="";save("tt_pomorun",null);markSeenLogged();drawPomo();}
   // ---------- 番茄钟黑匣子 ----------
   // 一次 70 分钟的专注结束后没出现在日历上，查不出走的是哪条路 ——
   // 番茄钟有太多能悄悄丢时间的分支：不是自己管的就直接 return、
@@ -12424,17 +12444,42 @@ margin-left: -22px;
     var sec=(timerMode==="up")?pElapsed:Math.max(0,pTotal-pLeft);
     if(sec<60)return;
     pSeenAt=now;
-    save("tt_pomoseen",{sec:sec,end:now,mode:timerMode,
+    keepLost();                               // 上一条要是还没销账，先挪进队列，别被这次盖掉
+    save("tt_pomoseen",{sec:sec,end:now,mode:timerMode,rid:pRid,
+      tocal:!!(pomoToCal&&pomoToCal.checked),
       task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",
       par:!!(document.getElementById("pomo-par")||{}).checked,logged:false});}
+  // 黑匣子只有一格：新的一次计时跑到 60 秒，就把上一条盖掉了。
+  // 上一条要是真丢了时间（还没销账），先挪进这个队列，一条一条地问过去，最多留 5 条。
+  function lostQ(){var a=load("tt_pomolost",[]);return (a&&a.length)?a:[];}
+  function keepLost(){
+    var r=load("tt_pomoseen",null);
+    if(!r||r.logged||!(+r.sec>=60)||r.tocal===false)return;
+    if(!r.rid||!pRid||r.rid===pRid)return;    // 还是同一次计时（或者认不出来）：正常更新，不入队
+    var q=lostQ();
+    for(var i=0;i<q.length;i++)if(q[i]&&q[i].end===r.end&&q[i].sec===r.sec)return;
+    q.push(r);while(q.length>5)q.shift();
+    save("tt_pomolost",q);}
   function markSeenLogged(){
     var r=load("tt_pomoseen",null);
     if(r&&!r.logged){r.logged=true;save("tt_pomoseen",r);}
     try{drawLostChip();}catch(e){}}
+  function dropLost(r){                       // 这一条销账：补记过了，或者她点了「✕」
+    var q=lostQ(),n=q.filter(function(x){return !(x&&x.end===r.end&&x.sec===r.sec);});
+    if(n.length!==q.length){save("tt_pomolost",n);try{drawLostChip();}catch(e){}return;}
+    markSeenLogged();}
+  // 什么才算「那段时间丢了」。原来这里只问了一句「销账没有」，于是只要页面一刷新，
+  // 还在钟上跑着的这一次也被当成丢了 —— 番茄钟正跑着，下面却提示「上次那 25 分钟没记进日历」。
   function lostRun(){
+    var now=Date.now();
+    var fresh=function(x){return !!x&&+x.sec>=60&&now-(+x.end||0)<=7*86400000;};   // 一周前的就别再提了
+    var q=lostQ();
+    for(var i=q.length-1;i>=0;i--)if(fresh(q[i]))return q[i];   // 排队等着的先问
     var r=load("tt_pomoseen",null);
-    if(!r||r.logged||!(+r.sec>=60))return null;
-    if(Date.now()-(+r.end||0)>7*86400000)return null;    // 一周前的就别再提了
+    if(!r||r.logged||!fresh(r))return null;
+    if(r.tocal===false)return null;           // 「完成后记入日历」是她自己取消的：当时说过一句就够了，不是丢
+    var live=load("tt_pomorun",null);         // 还在钟上（跑着或者暂停着）的那一次，不算丢
+    if(live&&live.mode&&(!r.rid||!live.rid||r.rid===live.rid))return null;
     return r;}
   function drawLostChip(){
     var box=document.getElementById("pomo-lost-box");if(!box)return;
@@ -12454,11 +12499,11 @@ margin-left: -22px;
         done:true,par:!!r.par,note:(r.task||null)};
       events=load("tt_events",events)||events;events.push(ev);
       if(!save("tt_events",events)){pomoNote("还是没存住 —— 浏览器存储可能满了");return;}
-      markSeenLogged();
+      dropLost(r);
       if(state.tab==="calendar")renderCal();
       try{renderDashboard();}catch(e){}
       pomoNote("补记好了："+dstr(e2)+" "+ev.start+"–"+ev.end);};
-    document.getElementById("pomo-lost-x").onclick=function(){markSeenLogged();};}
+    document.getElementById("pomo-lost-x").onclick=function(){dropLost(r);};}
 
   function logDone(sec,endMs){var k=statToday();if(!pstats[k])pstats[k]={count:0,min:0};pstats[k].count++;pstats[k].min+=Math.round(sec/60);save("tt_pstats",pstats);renderPomoStats();logFocusToCalendar(sec,endMs);}
   function upHitMs(){return pStartAt+Math.max(0,UPMAX-pBase)*1000;}   // 正好走到 3 小时的那一刻
@@ -12475,16 +12520,17 @@ margin-left: -22px;
     pLog("finishUp:落库");
     if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
     else if(pElapsed>0){pLog("finishUp:不到1分钟丢弃");pomoNote("不到 1 分钟，没记进日历");}
-    pElapsed=0;pBase=0;clearSegs();save("tt_pomorun",null);
+    pElapsed=0;pBase=0;pRid="";clearSegs();save("tt_pomorun",null);
     pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
     try{if(state.tab==="todo")renderSkills();}catch(e){}
+    try{drawLostChip();}catch(e){}      // 真结束了 —— 这会儿才该问「要不要补记」
     drawPomo();}
   function onComplete(endMs){
     if(!pomoOwned()){pLog("onComplete:不归我管");savePomoSeen(true);startFollow();try{drawLostChip();}catch(e){}return;}
     stopTimer();try{beep();}catch(e){}
     if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
-    save("tt_pomorun",null);drawPomo();}
+    pRid="";save("tt_pomorun",null);drawPomo();try{drawLostChip();}catch(e){}}
   // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）
   function restorePomoRun(){
     if(SOLO)return;                                   // 分屏副屏只是同一个 app 装在 iframe 里，它不该也跑一份
@@ -12504,6 +12550,7 @@ margin-left: -22px;
   function restorePomoRun0(){
     var r=load("tt_pomorun",null);
     if(!r||!r.mode)return;
+    pRid=r.rid||pRid;                                       // 接着跑的还是同一次计时，编号也要接回来
     timerMode=r.mode;pMode2=r.p2||"focus";pTotal=+r.total||pTotal;
     document.querySelectorAll("#pomo-mode-seg button").forEach(function(x){x.classList.toggle("on",x.getAttribute("data-tm")===timerMode);});
     skipBtn.textContent=(timerMode==="up"?"结束":"跳过");
@@ -12553,7 +12600,7 @@ margin-left: -22px;
     if(followGuard())return;
     stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
     skipBtn.textContent=(tm==="up"?"结束":"跳过");
-    pBase=0;save("tt_pomorun",null);clearSegs();savePomoLast();   // 记住这次选的模式，下次打开还是它
+    pBase=0;pRid="";save("tt_pomorun",null);markSeenLogged();clearSegs();savePomoLast();   // 记住这次选的模式，下次打开还是它
     if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();});
   // 打开页面时回到上次用的模式（必须放在 timerMode 声明之后，否则会被 var timerMode="down" 覆盖掉）
   function applyPomoMode(){
@@ -12566,6 +12613,9 @@ margin-left: -22px;
     drawPomo();}
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
+  document.getElementById("set-pgap").addEventListener("change",function(){
+    settings.pgap=this.checked;save("tt_settings",settings);
+    try{renderSegs();}catch(e){}try{renderCal();}catch(e){}});   // 正跑着也能改：段落条和日历上那块当场重画
   function renderPomoStats(){var k=statToday(),st=pstats[k]||{count:0,min:0};
     document.getElementById("stat-count").textContent=st.count;document.getElementById("stat-min").innerHTML=st.min+'<small> 分</small>';}
   function beep(){var ctx=new(window.AudioContext||window.webkitAudioContext)();var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=660;g.gain.value=0.08;o.start();setTimeout(function(){o.stop();ctx.close();},350);}
@@ -13143,7 +13193,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-done-default").checked=!!doneDefault;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-done-default").checked=!!doneDefault;document.getElementById("set-pgap").checked=!!settings.pgap;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
