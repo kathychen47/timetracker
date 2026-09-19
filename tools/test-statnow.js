@@ -25,12 +25,13 @@ var CODE = [
   src[ln("function addDays(d,n){")],
   src[ln("function addMonths(d,n){")],
   src.slice(ln("function startOfWeek(d){"), ln("function startOfWeek(d){") + 2).join(NL),
-  'var WD=["一","二","三","四","五","六","日"];',
+  // statPeriod 现在用 wdLab / ymLab / rangeLab 拼标签（英文界面换一套写法），一起抽进来
+  src.slice(ln('var WD=["一","二","三","四","五","六","日"];'), ln("function rangeLab(a,b){") + 5).join(NL),
   src.slice(ln("var statState={mode:"), ln("var statView=load(")).join(NL),
   src.slice(ln("function statPeriod(){"), ln("function statPool(pred){")).join(NL)
 ].join(NL);
 
-var ctx = { console: console, Math: Math, Date: Date };
+var ctx = { console: console, Math: Math, Date: Date, lang: "zh" };   // 日期助手要看 lang
 vm.createContext(ctx);
 vm.runInContext(CODE, ctx);
 var C = ctx;

@@ -206,8 +206,8 @@ T("大类那颗开关接上了", function () {
 });
 
 T("统计那些数字都走 evNetMin，记录那些都走 evRecMin", function () {
-  ok(count("evRecMin(e)+'分") === 1, "明细表按记录");
-  ok(count('evRecMin(e)+"分)') === 1, "复制文本按记录");
+  ok(count("evRecMin(e)+trv(\"分\")+'</td>") === 1, "明细表按记录（单位也跟着界面语言走）");
+  ok(count('evRecMin(e)+trv("分")+")') === 1, "复制文本按记录");
   ok(count("e.start,e.end,evRecMin(e)") === 1, "CSV 按记录");
   ok(count("var dmin=evRecMin(e)") === 1, "日历块上写的也按记录 —— 块画多高就写多少");
   ok(count("a+evRecMin(e);},0)") === 1, "报告顶上那个「共 xh」按记录加");

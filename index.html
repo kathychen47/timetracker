@@ -5132,6 +5132,21 @@ margin-left: -22px;
   document.addEventListener("click",function(e){
     if(e.target&&e.target.closest&&!e.target.closest("#tt-pop"))window.__ttLastClick=e.target;},true);
   var WD=["一","二","三","四","五","六","日"];
+  // 日期的写法是拼出来的，词表够不着 —— 英文界面下换一套写法。
+  // 星期的下标跟 WD 一样是「周一起」：(getDay()+6)%7。
+  var WD_EN=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  var MON_EN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var MONF_EN=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  function isEN(){return lang==="en";}
+  function wdLab(d){return isEN()?WD_EN[(d.getDay()+6)%7]:("周"+WD[(d.getDay()+6)%7]);}
+  function mdLab(d){return isEN()?(d.getDate()+" "+MON_EN[d.getMonth()]):((d.getMonth()+1)+"月"+d.getDate()+"日");}
+  function ymLab(d){return isEN()?(MONF_EN[d.getMonth()]+" "+d.getFullYear()):(d.getFullYear()+"年"+(d.getMonth()+1)+"月");}
+  // 一段区间：同月 "14–20 Sep"，跨月 "28 Sep – 3 Oct"
+  function rangeLab(a,b){
+    if(!isEN())return (a.getMonth()+1)+"月"+a.getDate()+"–"+(b.getMonth()!==a.getMonth()?(b.getMonth()+1)+"月":"")+b.getDate()+"日";
+    return a.getMonth()===b.getMonth()
+      ?(a.getDate()+"–"+b.getDate()+" "+MON_EN[a.getMonth()])
+      :(a.getDate()+" "+MON_EN[a.getMonth()]+" – "+b.getDate()+" "+MON_EN[b.getMonth()]);}
 
   // ---------- i18n (界面中/英) ----------
   // 网址上带 ?lang=zh 就地切回中文（而且记下来）。
@@ -5171,6 +5186,12 @@ margin-left: -22px;
     "🌐 通用 · General":"🌐 General","🎨 外观":"🎨 Appearance","✨ AI 助手":"✨ AI Assistant","📅 Google 日历":"📅 Google Calendar","☁️ 云同步（多设备）":"☁️ Cloud sync","🌐 通用":"🌐 General",
     /* i18n:auto:begin */
     /* 以下由 tools/i18n-apply.js 从 tools/i18n-en.json 生成，别手改这一段。 */
+    " 个月":" months",
+    " 天":" days",
+    " 笔":" entries",
+    " 笔已申报":" declared",
+    " 笔转账/存款没算":" transfers / savings not counted",
+    " 词":" words",
     "# 我的菜谱":"# My recipes",
     "(无标题)":"(Untitled)",
     "**做法**":"**Method**",
@@ -5234,8 +5255,10 @@ margin-left: -22px;
     "Google 授权过期了，正在尝试自动续…":"Google access expired, trying to renew…",
     "Google 授权过期了，点右边「重新授权」一次即可（每次约管 1 小时）":"Google access expired — just tap \"Re-authorise\" on the right (each time lasts about 1 hour)",
     "Google 授权过期了，点右边「重新授权」一次即可（约管 1 小时）":"Google access expired — just tap \"Re-authorise\" on the right (lasts about 1 hour)",
+    "Google 推送失败，放回队列":"Google push failed, back in the queue",
     "Google 日历":"Google Calendar",
     "Google 翻译":"Google Translate",
+    "Google 翻译▾":"Google Translate ▾",
     "Google 翻译（不用 key · 按 IP 限速）":"Google Translate (no key · rate-limited by IP)",
     "IRD 退税":"IRD tax refund",
     "Kaisi 工资":"Kaisi salary",
@@ -5269,6 +5292,7 @@ margin-left: -22px;
     "Whisper 绑定失败":"Whisper failed to bind",
     "[图片 $1]":"[Image $1]",
     "base · 推荐":"base · recommended",
+    "base ·推荐· 77MB":"base · recommended · 77MB",
     "extension 文件夹在哪？（在资源管理器里打开那个文件夹，地址栏复制过来）":"Where is the extension folder? (Open it in File Explorer and copy the path from the address bar)",
     "eyJ… 开头的 anon public key":"anon public key starting with eyJ…",
     "finishUp:不到1分钟丢弃":"finishUp: under 1 min, discarded",
@@ -5279,7 +5303,9 @@ margin-left: -22px;
     "leaveFollow:存档没了，手上还有时间":"leaveFollow: saved state gone, time still on hand",
     "onComplete:不归我管":"onComplete: not this tab's timer",
     "small · 最准":"small · most accurate",
+    "small ·最准· 240MB":"small · most accurate · 240MB",
     "tiny · 最快":"tiny · fastest",
+    "tiny ·最快· 42MB":"tiny · fastest · 42MB",
     "· ☁️ 云端":"· ☁️ Cloud",
     "· 全对 🎉":"· all correct 🎉",
     "· 到日子会自己记":"· it will log itself when the day comes",
@@ -5317,11 +5343,16 @@ margin-left: -22px;
     "① 去 Supabase → SQL Editor 跑下面这段（建分享表 + 白名单）；":"① In Supabase → SQL Editor, run the block below (creates the share table + allow-list);",
     "① 选音频":"① Pick audio",
     "① 配置云端(SQL)":"① Set up cloud (SQL)",
+    "①浏览器地址栏输":"① In the browser address bar, type",
     "② 把文本贴在这里。\n整篇贴进来就行 —— 我会按句号 / 问号 / 感叹号切句，太长的句子再按逗号拆短。":"② Paste the text here.\nThe whole thing is fine — I'll cut it at periods / question marks / exclamation marks, then break over-long sentences at commas.",
     "② 把文本贴在这里。&#10;整篇贴进来就行 —— 我会按句号 / 问号 / 感叹号切句，太长的句子再按逗号拆短。":"② Paste the text here.&#10;The whole thing is fine — I'll cut it at periods / question marks / exclamation marks, then break over-long sentences at commas.",
+    "②打开右上角":"② Turn on, top right,",
     "③ 开始对齐":"③ Start aligning",
+    "③点左上角":"③ Click, top left,",
+    "④列表里出现「划词查词· Timetracker」就成了，随便找个英文网页选中一个单词试试":"④ Once “划词查词 · Timetracker” shows up in the list you're set — open any English page and select a word to try it",
     "■ 停止":"■ Stop",
     "▦ 封面":"▦ Covers",
+    "▾待办":"▾ To-do",
     "● 开始录音":"● Start recording",
     "☁️ 云同步":"☁️ Cloud sync",
     "☁️ 从云端下载":"☁️ Download from cloud",
@@ -5371,6 +5402,7 @@ margin-left: -22px;
     "⭐ 我加的":"⭐ Mine",
     "⭐ 把错词加进生词本":"⭐ Add the missed words to your word list",
     "。以后在任何网页选中一个单词，点书签栏上的它，就会弹出小窗用你的词典查词，并自动存进生词本（跟着云同步）。":". After that, select a word on any web page and click it in the bookmarks bar: a small window opens, looks it up in your dictionary and saves it to your word list (synced to the cloud).",
+    "。停掉的那段不算进「今天背了多久」，也不写进日历。阈值以内的停顿照常算——盯着一个难词想一会儿是真在背。要是读长释义时老被判成走神，把这里调到 1 分钟。":". That paused stretch doesn't count toward “time spent today”, and isn't written to the calendar either. Pauses under the threshold still count — staring at a hard word for a while is real studying. If long definitions keep getting judged as idle, turn this up to 1 minute.",
     "「中⇄英 自动」按这段话本身是什么语言定方向：中文多就翻成英文，英文多就翻成中文 —— 不会再出现「输入中文、译文还是那段中文」。":"\"ZH⇄EN auto\" picks the direction from the text itself: mostly Chinese → translate into English, mostly English → translate into Chinese. No more \"typed Chinese, got the same Chinese back\".",
     "「关键词」：新建事件或番茄钟的标题里出现这些词，就自动归到这个分类（小类的关键词优先）。小类的关键词点它旁边的 🏷 改。":"\"Keywords\": if a new event or Pomodoro title contains one of these words, it goes into this category automatically (a sub-category's keywords win). Tap the 🏷 next to a sub-category to edit its keywords.",
     "「加载已解压的扩展程序」/ Load unpacked":"Load unpacked",
@@ -5474,6 +5506,7 @@ margin-left: -22px;
     "书名,位置,类型,颜色,原文摘录,笔记,标签,时间":"Book,Location,Type,Color,Excerpt,Note,Tags,Time",
     "书在浏览器的 IndexedDB，库名":"Books live in the browser's IndexedDB, database name",
     "书库正在别的标签页里升级，刷新一下再试":"The library is upgrading in another tab, refresh and try again",
+    "书签那条路每次都要弹一个新窗口，还会被 GitHub 这类网站的安全策略挡住。":"The bookmarklet route pops open a new window every time, and sites like GitHub block it with their security policy.",
     "书里划的":"From books",
     "书里划过的笔记会留在「🔍 笔记总览」里。":"The notes you made in the books stay in \"🔍 All notes\".",
     "书里的目录":"Book contents",
@@ -5593,6 +5626,7 @@ margin-left: -22px;
     "先选个文件，或者把 JSON 粘进来":"Pick a file first, or paste the JSON in",
     "先选至少一个等级":"Pick at least one level",
     "先选音频（第①步）。":"Pick an audio file first (step ①).",
+    "光移动鼠标不算":"moving the mouse alone doesn't count",
     "免费建项目（建好后我给你一段 SQL 一贴就行）。":"to set up a free project (once it's up I'll give you some SQL to paste in).",
     "免费获取。":"for free.",
     "全不选":"Select none",
@@ -5697,6 +5731,7 @@ margin-left: -22px;
     "删音频":"Delete audio",
     "利息":"interest",
     "别人分享的菜谱不能改，可以先「复制到我的菜谱」":"You can't edit someone else's recipe — try \"Copy to my recipes\" first",
+    "别人整理好的稿子没有时间戳。做法：先让 Whisper 转一遍拿到时间，再把你这份文本按词对齐过去——文字以":"Someone else's transcript has no timestamps. How it works: Whisper transcribes once to get the timing, then your text is aligned to it word by word — the wording comes from",
     "到复习那天，你希望还记得住多大比例。调高 → 间隔变短、每天复习量变大；调低 → 间隔拉长、省时间但忘得多一点。90% 是通用的甜点，拿不准就别动。":"How much you want to still remember on the day a card comes up. Higher means shorter gaps and more reviews per day; lower means longer gaps, less time, and a bit more forgetting. 90% is the usual sweet spot — leave it alone if you are unsure.",
     "到手":"Take-home",
     "到手收入":"Take-home income",
@@ -6092,16 +6127,19 @@ margin-left: -22px;
     "把整本书都翻好存起来":"Translate the whole book and keep it",
     "把整篇翻一遍（本地模型没有配额，一场会也翻得完）":"Translate the whole transcript (the local model has no quota, so a full meeting is fine)",
     "把文本贴进第②步那个框里。":"Paste the text into the box in step ②.",
+    "把明显不像单词的挑出来，确认后移到回收站":"Pick out the ones that clearly aren't words; they go to the trash once you confirm",
     "把更早的也存下来":"Archive older ones too",
     "把术语表套到所有已有的录音上":"Apply the glossary to every recording you already have",
     "把过去的 Google 事件存进我的记录":"Save past Google events into my records",
     "把这本书的笔记导成 Markdown":"Export this book's notes as Markdown",
     "把这段的音频文件存到电脑上（IndexedDB 里拿不出来，只能这样导）":"Save this recording's audio file to your computer (IndexedDB won't hand it over any other way)",
+    "把这段贴到 Supabase → SQL Editor 运行一次（建私有桶 + 只授权你自己），然后回来点「⬆️ 上传到云端」：":"Run this once in Supabase → SQL Editor (creates a private bucket, grants only you), then come back and hit “⬆️ Upload to cloud”:",
     "把这笔从税务记录里撤回？":"Pull this entry out of your tax records?",
     "把这笔算进税务页的收入":"Count this as income on the Tax page",
     "投保":"insure",
     "投资":"Investment",
     "折算了":"for conversion",
+    "折线":"Line",
     "护肤":"skincare",
     "报关":"customs clearance",
     "报告自己的时间段。留空就跟着上面的日 / 周 / 月走":"The report's own date range. Leave blank to follow the day / week / month above",
@@ -6110,6 +6148,7 @@ margin-left: -22px;
     "拉五年日汇率":"Get 5 years of daily rates",
     "拉取中…":"Fetching…",
     "拉取中…（要几秒）":"Fetching… (takes a few seconds)",
+    "拉取时保住本机刚改还没上云的":"kept local edits not yet uploaded, on pull",
     "拉取时按墓碑剔掉删过的事件":"Dropped deleted events on pull (tombstones)",
     "拉取时捡回本机的事件":"Recovered local events on pull",
     "拖一个 CSV / xlsx 进来。":"to drag in a CSV / xlsx.",
@@ -6129,6 +6168,7 @@ margin-left: -22px;
     "按住快捷键":"Hold a hotkey",
     "按关键词归并":"By keyword",
     "按原书位置摆放译文":"Put the translation where it sits in the book",
+    "按墓碑清掉别的设备删过的":"cleared what another device deleted, by tombstone",
     "按墓碑清掉别的设备删过的事件":"Dropped events deleted on other devices (tombstones)",
     "按当前灵敏度把这篇重新断句（可以反复调，不会越合越死）":"Re-split this transcript at the current sensitivity (adjust as often as you like — it never keeps gluing lines together)",
     "按当天汇率":"Daily rates",
@@ -6144,6 +6184,7 @@ margin-left: -22px;
     "换单位":"Switch unit",
     "授权过期，正在自动续…":"Access expired, renewing…",
     "排版方式":"Layout",
+    "排行":"Ranking",
     "接管":"Take over",
     "推送前捡回云端的事件":"Recovered cloud events before push",
     "提交（已选":"Submit (selected:",
@@ -6166,7 +6207,9 @@ margin-left: -22px;
     "收入和结余改成按":"Income and net now show",
     "收入来源":"Income sources",
     "收入来源归并":"Income source grouping",
+    "收入来源（已申报部分扣税）":"Income sources (tax taken off the declared part)",
     "收入记录":"Income log",
+    "收入（税后）":"Income (after tax)",
     "收回本机了，云端那份已经删掉。":"Back on this device, and the cloud copy is deleted.",
     "收支":"In / out",
     "收租":"Rent income",
@@ -6359,6 +6402,7 @@ margin-left: -22px;
     "查词后自动加入生词本":"Auto-add to word list after look-up",
     "查词后自动发音":"Auto-speak after look-up",
     "柯林斯 · 中英/近义词":"Collins · ZH–EN / synonyms",
+    "柱状":"Bars",
     "标了认识":"Marked known",
     "标成「已掌握」「本来就认识」的词默认仍列在生词本里（只是不再排复习）。勾上就从列表里藏起来，眼不见为净。":"Words marked Mastered or Already knew it stay in the list by default (they are just never scheduled again). Tick this to hide them from the list instead.",
     "标注":"Annotation",
@@ -6406,6 +6450,7 @@ margin-left: -22px;
     "每月固定一天扣费":"A charge on a fixed day each month",
     "每月平均":"Monthly average",
     "每月构成（实收 = 到手 + PAYE + ACC + GST）":"Monthly breakdown (Gross = Take-home + PAYE + ACC + GST)",
+    "每次番茄钟「结束 / 完成 / 让位给别的网页 / 归零」都会在这里记一行，只留最近 60 条。哪次专注没记进日历，看这张表就知道卡在哪一步了——截图发我，或者点导出。":"Every time a pomodoro ends / completes / hands over to another tab / resets, a line lands here; only the last 60 are kept. If a focus session never made it into the calendar, this table shows you where it stopped — screenshot it for me, or hit export.",
     "每次背完自动在日历上添一条，时间就是你实际背的那段（不足 1 分钟不记）。":"Each session adds one calendar entry covering the time you actually spent (under 1 minute isn't logged).",
     "每笔那天的汇率":"each entry's own-day rate",
     "每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数":"Each row ends with \"declared / total\" · the undeclared ones are pre-tax figures",
@@ -6495,6 +6540,9 @@ margin-left: -22px;
     "点「检测可用」会用你的 key 拉出你账号真正能用的模型（最准）。不同账号能用的不一样，免费约 20 次/天。":"Click \"Detect\" and it uses your key to list the models your account can really use (most accurate). Accounts differ; free tier is about 20/day.",
     "点「测试连接」确认能连上、并看有哪些模型。":"Click \"Test connection\" to check it connects and see which models you have.",
     "点「用 Google 登录」开始同步（同时会连上 Google 日历，不用再单独登录）":"Tap \"Sign in with Google\" to start syncing (this also connects Google Calendar — no separate sign-in)",
+    "点「📄 导入文件」拖一个 CSV / xlsx 进来。":"Tap “📄 Import file” and drop in a CSV / xlsx.",
+    "点「🔄 同步」从 Westpac 拉（要先照 supabase/AKAHU.md 配好）。":"Tap “🔄 Sync” to pull from Westpac (set up supabase/AKAHU.md first).",
+    "点「＋ 记一笔」自己记一笔。":"Tap “＋ Add entry” to log one yourself.",
     "点一下只看这个账户":"Click to see only this account",
     "点一下就能改 · 回车换行 · 点别处保存":"Click to edit · Enter for a new line · click away to save",
     "点一下恢复：重新排进复习":"Click to restore: back into the review rotation",
@@ -6524,6 +6572,7 @@ margin-left: -22px;
     "点色块高亮。":"or tap a color swatch to highlight.",
     "烧烤":"BBQ",
     "照片":"Photo",
+    "熬到凌晨的那段时间，统计上算作前一天——不然一晚上的活儿会被零点劈成两半，两天都不像话。":"Work that runs past midnight counts toward the day before — otherwise one night's work gets cut in half at 0:00 and neither day looks right.",
     "熬夜算前一天":"Late nights count as the previous day",
     "燃气":"gas",
     "爬山":"Hiking",
@@ -6537,6 +6586,7 @@ margin-left: -22px;
     "牛腩冷水下锅焯水&#10;番茄炒出汁":"Blanch the brisket from cold water&#10;Fry the tomatoes until saucy",
     "物业":"property fees",
     "物流":"logistics",
+    "环形":"Donut",
     "现在不自动翻，卡片上有按钮想翻再点 · 点一下打开":"Auto-translate is off; use the button on the card when you want it · click to turn on",
     "现在按真实日期算，零点一过就是新的一天。":"Days follow the real date right now — a new one starts the moment it hits midnight.",
     "现在没有想吃的，去菜谱库点一道吧":"Nothing on the want list — go order one from your recipes",
@@ -6569,6 +6619,7 @@ margin-left: -22px;
     "疑似连读 / 吞音":"Likely linking / swallowed sounds",
     "登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去":"Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
     "登录过期了，去 设置 → 👤 账号 重新登录一次":"Your session expired — go to Settings → 👤 Account and sign in again",
+    "的 Google 事件存成你自己的记录——断开 Google、换台设备、授权过期，它们都还在（跟着云同步走）。自动存的范围是":"of Google events as records of your own — disconnect Google, switch devices, let the token expire, and they're all still here (they ride along with cloud sync). The range saved automatically is",
     "目前没有别人分享给你（或对方还没打开分享）":"Nobody has shared anything with you yet (or they haven't turned sharing on)",
     "目录":"Contents",
     "目标":"Goals",
@@ -6590,11 +6641,13 @@ margin-left: -22px;
     "确定":"OK",
     "磅":"lb",
     "磅 lb":"lb",
+    "秒":"s",
     "租金":"rental",
     "移到哪个文件夹？":"Move to which folder?",
     "移到哪个文件夹？打名字即可，没有会新建（和书架是同一批文件夹）。 留空＝移出文件夹（变成未归类）":"Move to which folder? Just type a name — a new one is created if it doesn't exist (same folders as the shelf). Leave empty = remove from folder (becomes unfiled)",
     "移除该单词":"Remove this word",
     "移除（以后查到也不会再自动收）":"Remove (and don't auto-save it on future look-ups)",
+    "税前":"pre-tax",
     "税前收入":"Pre-tax income",
     "税务":"Tax",
     "税务账户":"Tax account",
@@ -6632,6 +6685,7 @@ margin-left: -22px;
     "管理分组…":"Manage groups…",
     "类别":"Category",
     "粘贴 AIza… 开头的 key":"Paste your key starting with AIza…",
+    "粘贴 JSON，例如 [{\"name\":\"番茄牛腩\",\"ing\":[\"牛腩 500g\"],\"steps\":[\"焯水\"]}]":"Paste JSON, e.g. [{\"name\":\"Braised beef\",\"ing\":[\"beef brisket 500g\"],\"steps\":[\"blanch\"]}]",
     "粘贴单词（每行一个）":"Paste words (one per line)",
     "粮油":"pantry staples",
     "精听":"Listening",
@@ -6643,6 +6697,8 @@ margin-left: -22px;
     "繁體中文":"Traditional Chinese",
     "红包":"Red packet",
     "纯文字":"Plain text",
+    "结余":"Net",
+    "结余（税后）":"Net (after tax)",
     "结束后记入日历":"Log to calendar when done",
     "结束方式":"Ends",
     "结束日期要写成 2026-12-31 这种":"The end date has to look like 2026-12-31",
@@ -6685,6 +6741,7 @@ margin-left: -22px;
     "肌肉量":"Muscle",
     "肥胖":"Obese",
     "背单词":"Vocabulary",
+    "背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一操作就继续。算数的操作是：点一下、按键、滚动、触屏 ——":"If nothing happens on the flashcard for longer than this, the timer pauses (the card shows “Paused”) and picks up again the moment you do something. What counts: a click, a key press, scrolling, a touch —",
     "背单词卡片上超过这个时间没有任何操作，就先把计时停下（画面上显示「已暂停」），你一操作就继续。算数的操作是：点一下、按键、滚动、触屏 —— 光移动鼠标不算。停掉的那段不算进「今天背了多久」，也不写进日历。阈值以内的停顿照常算 —— 盯着一个难词想一会儿是真在背。要是读长释义时老被判成走神，把这里调到 1 分钟。":"If nothing happens on the flashcard for longer than this, the timer pauses (the card shows “Paused”) and picks up the moment you do something. What counts: a click, a key press, scrolling, a touch — moving the mouse on its own does not. The paused stretch is left out of how long you studied today and never reaches the calendar. Pauses shorter than the threshold still count — staring at a hard word for a bit is real studying. If reading long definitions keeps tripping it, set this to 1 minute.",
     "背单词计划（遗忘曲线）":"Vocabulary plan (forgetting curve)",
     "背完自动记入日历（记为「背单词」）":"Log to calendar when done (as \"Vocabulary\")",
@@ -6882,6 +6939,7 @@ margin-left: -22px;
     "还没有目标，点右上「+ 新目标」":"No goals yet — hit \"+ New goal\" in the top right",
     "还没有相关记录，去日历添加或点「打卡 +1」":"No matching records yet — add one on the calendar or hit \"Check-in +1\"",
     "还没有笔记。":"No notes yet.",
+    "还没有素材。上面导入一段音频就行——已经有现成文本（别人整理好的稿子）就走「音频 + 已有文本」，我会把文本对齐到音频上。":"No material yet. Just import an audio file above — if you already have a transcript (someone else's write-up), use “Audio + existing text” and I'll align that text to the audio.",
     "还没有菜谱":"No recipes yet",
     "还没有菜谱。":"No recipes yet.",
     "还没有菜谱可导出":"No recipes to export",
@@ -7002,6 +7060,7 @@ margin-left: -22px;
     "选一个本地文件夹，导入的书自动往那儿存一份":"Pick a local folder and every imported book gets a copy saved there",
     "选一整个文件夹，里面的子文件夹结构会一起搭出来":"Pick a whole folder — its subfolder structure is rebuilt along with it",
     "选中整句会自动翻译 · 点一下关掉":"Selecting a sentence translates it automatically · click to turn off",
+    "选中整句会自动翻译·点一下关掉":"Selecting a whole sentence translates it automatically · click to turn off",
     "选中文字 → 点 📝 加笔记，":"Select text → tap 📝 to add a note,",
     "选择":"Select",
     "选指标":"Pick metrics",
@@ -7104,6 +7163,7 @@ margin-left: -22px;
     "🌐 译":"🌐 Translated",
     "🍅 番茄钟完成":"🍅 Pomodoro finished",
     "🍅 番茄钟日志（出问题时给我看）":"🍅 Pomodoro log (show me this if something breaks)",
+    "🎧导入音频·自动转写":"🎧 Import audio · auto-transcribe",
     "🎯 目标打卡 +1":"🎯 Goal check-in +1",
     "🏠 我的文件（最外层）":"🏠 My files (top level)",
     "🏷️ 分类":"🏷️ Categories",
@@ -7172,6 +7232,7 @@ margin-left: -22px;
     "🗑️ 只删音频（文字全留着）":"🗑️ Delete audio only (all text stays)",
     "🙂 本来就认识":"🙂 Already knew it",
     "🧪 测词汇量":"🧪 Vocab test",
+    "🧹清一清":"🧹 Tidy up",
     "🧺 食材":"🧺 Ingredients",
     "🧾 其他零散":"🧾 Odds & ends",
     "🧾 点一单":"🧾 New order",
@@ -7242,13 +7303,18 @@ margin-left: -22px;
     "＋ 新文件夹":"＋ New folder",
     "＋ 自定义指标":"＋ Custom metric",
     "＋ 记一笔":"＋ Add entry",
+    "＋小类":"＋ Sub-category",
+    "＋词":"＋ Keyword",
     "，一个数折算所有年份。要按每笔自己那天的汇率折，用下面那块。":"— one number covering every year. To convert each entry at its own day's rate, use the block below.",
     "，不用点下面任何按钮；改好回列表点 🔄 同步 就从新日期开始拉。":"— no button below to press; go back to the list and tap 🔄 Sync to pull from the new date.",
     "，只有菜谱本身会。":", only the recipes themselves are.",
     "，合并过的句子要重新翻译":", and merged sentences need re-translating",
     "，回头在税务页确认一下":"— confirm it on the Tax page later",
     "，永不结束":", never ends",
+    "，点了报错就还用书签。扩展是":", and if that errors just keep using the bookmarklet. The extension is",
     "，跟现在的行为一致。想让某一条算进去，在日历上给它打个勾就行（打了勾就归你管，以后 Google 那边再改也不动它）。":", same as it behaves now. To make one count, just tick it on the calendar (once ticked it's yours — later changes on Google won't touch it).",
+    "，选中":", and pick",
+    "：选中单词出释义、选中句子出翻译，点★收进生词本，下次打开 Timetracker 自动并进来（之后跟着云同步）。装一次，以后什么都不用点。":": select a word to see its definition, select a sentence to see a translation, tap ★ to save it to your word list, and next time you open Timetracker it merges in automatically (and rides along with cloud sync from then on). Install once, nothing to click afterwards.",
     "；同一 Wi-Fi 下的手机/别的电脑填":"; on a phone/another computer on the same Wi-Fi use",
     "；更早的用下面那颗按钮一次性捞回来。":"; use the button below to pull in older ones in one go.",
     /* i18n:auto:end */
@@ -7265,6 +7331,9 @@ margin-left: -22px;
     /* i18n:pat:begin */
     /* 由 tools/i18n-pat-apply.js 生成，别手改。每条是 [锚点, 正则源, 英文模板]。 */
     ["（浏览器上限约 5 MB）。占得最多的：","^已用 (.+?)（浏览器上限约 5 MB）。占得最多的：(.+?)。$","\u00011 used (the browser caps it at about 5 MB). Biggest users: \u00012."],
+    ["月","^(.+?)(.+?)月(.+?)日$","\u00011\u00012/\u00013"],
+    ["年","^(.+?)年(.+?)(.+?)月$","\u00012\u00013/\u00011"],
+    ["月","^(.+?)(.+?)月(.+?)–(.+?)(.+?)日$","\u00011\u00012/\u00013–\u00014\u00015"],
     [":00 的记录，都算 8 月 8 日的。","^比如 8 月 9 日 0:00–(.+?):00 的记录，都算 8 月 8 日的。$","E.g. anything logged on 9 Aug between 0:00 and \u00011:00 counts as 8 Aug."],
     ["条 ·","^(.+?) 条 · (.+?)$","\u00011 items · \u00012"],
     ["⚠️ 那个目录是 LevelDB 数据库，打开也看不到 .webm —— 要拿到音频文件，用每条录音右上角的「🎵 导出音频」。","^⚠️ 那个目录是 LevelDB 数据库，打开也看不到 \\.webm —— 要拿到音频文件，用每条录音右上角的「🎵 导出音频」。(.+?)$","⚠️ That folder is a LevelDB database — you won't find .webm files in it. To get the audio file, use \"🎵 Export audio\" at the top right of each recording.\u00011"],
@@ -7334,12 +7403,9 @@ margin-left: -22px;
     ["」这一步？已经记下的时间不会从日历里删掉。","^删掉「(.+?)」这一步？已经记下的时间不会从日历里删掉。$","Delete the step \"\u00011\"? Time already logged stays in the calendar."],
     ["」和它下面所有步骤？日历里已经记下的时间不受影响。","^删掉技能「(.+?)」和它下面所有步骤？日历里已经记下的时间不受影响。$","Delete the skill \"\u00011\" and every step under it? Time already logged in the calendar is unaffected."],
     ["（停","^（停 (.+?)）$","(paused \u00011)"],
-    ["月","^(.+?)(.+?)月(.+?)日$","\u00011\u00012/\u00013"],
     ["待办","^(.+?) 待办 (.+?)$","\u00011 To-dos \u00012"],
-    ["月","^(.+?)(.+?)月(.+?)–(.+?)(.+?)日$","\u00011\u00012/\u00013–\u00014\u00015"],
     ["待办","^(.+?) 待办$","\u00011 To-dos"],
     ["年","^(.+?)年 (.+?)(.+?)月$","\u00012\u00013/\u00011"],
-    ["年","^(.+?)年(.+?)(.+?)月$","\u00012\u00013/\u00011"],
     ["截止","^截止 (.+?)$","Due \u00011"],
     ["\" title=\"开始下一步：","^data-skgo=\"(.+?)\" title=\"开始下一步：(.+?)\"$","data-skgo=\"\u00011\" title=\"Start next step: \u00012\""],
     ["▶ 下一步：","^▶ 下一步：(.+?)$","▶ Next step: \u00011"],
@@ -7391,10 +7457,8 @@ margin-left: -22px;
     ["」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：{\"todos\":[{\"t\":\"待办\",\"prio\":\"mid\"}]}","^把下面这件事拆成几条可以直接动手的待办。 事情：「(.+?)」 要求： - 3~7 条，按先做后做排列 - 每条都是一个动作，不超过 20 个字 - prio 只能是 high / mid / low - 只输出 JSON，不要解释、不要代码围栏 格式：\\{\"todos\":\\[\\{\"t\":\"待办\",\"prio\":\"mid\"\\}\\]\\}$","Break the following into a few to-dos you can act on straight away. The thing: \"\u00011\" Rules: - 3~7 items, ordered first to last - each one is a single action, 20 characters or fewer - prio must be high / mid / low - output JSON only, no explanation, no code fences Format: {\"todos\":[{\"t\":\"to-do\",\"prio\":\"mid\"}]}"],
     ["拆解失败：","^拆解失败：(.+?)$","Breakdown failed: \u00011"],
     ["时间报告 ·","^时间报告 · (.+?) (.+?) · 共 (.+?) · (.+?) 项$","Time report · \u00011 \u00012 · \u00013 total · \u00014 entries"],
-    ["分)","^(.+?) (.+?)-(.+?) (.+?) \\((.+?)分\\)$","\u00011 \u00012-\u00013 \u00014 (\u00015 min)"],
     ["时间报告 ·","^时间报告 · (.+?)$","Time report · \u00011"],
     ["· 共","^(.+?) · 共 (.+?) · (.+?) 项$","\u00011 · \u00012 total · \u00013 entries"],
-    ["月","^(.+?)(.+?)月(.+?)–(.+?)(.+?)月(.+?)日$","\u00011\u00012/\u00013–\u00014\u00015/\u00016"],
     ["其他","^其他 (.+?) 项$","\u00011 others"],
     ["趋势（按","^趋势（按(.+?)）$","Trend (by \u00011)"],
     ["条标了「不进统计」","^条标了「不进统计」(.+?)，没算进来。$","marked “Exclude from stats”\u00011, not counted."],
@@ -7664,13 +7728,8 @@ margin-left: -22px;
     ["笔是税前原数","^；另外 (.+?) 笔是税前原数$","; the other \u00011 are pre-tax figures"],
     ["笔都没点过「记入税务」，显示的是税前原数","^这 (.+?) 笔都没点过「记入税务」，显示的是税前原数$","None of these \u00011 were ever marked \"Count for tax\" — these are pre-tax figures"],
     ["合计（折算成","^合计（折算成 (.+?)）$","Total (converted to \u00011)"],
-    ["收入","^收入(.+?)$","Income\u00011"],
-    ["结余","^结余(.+?)$","Net\u00011"],
     ["按","^按 (.+?)(.+?)算$","over \u00011\u00012"],
-    ["笔已申报 · 税前","^· (.+?) 笔已申报 · 税前 (.+?)$","· \u00011 declared · pre-tax \u00012"],
-    ["税前","^税前 (.+?)$","Pre-tax \u00011"],
-    ["笔转账/存款没算","^(.+?) 笔转账/存款没算$","\u00011 transfers/savings not counted"],
-    ["笔 ·","^(.+?) 笔 · (.+?)，不算支出$","\u00011 · \u00012, not counted as spending"],
+    ["，不算支出","^(.+?)(.+?) · (.+?)，不算支出$","\u00011\u00012 · \u00013, not counted as spending"],
     ["已申报","^已申报 (.+?) 笔$","\u00011 declared"],
     ["）—— 已经在发薪时扣过 PAYE 的工资不该记进去，否则这里会算重。真扣税之后回来对一下，差多少一目了然。","^笔（实收 (.+?)）—— 已经在发薪时扣过 PAYE 的工资不该记进去，否则这里会算重。真扣税之后回来对一下，差多少一目了然。$","(received \u00011) — wages that already had PAYE taken out at payday shouldn't go in here, or this double-counts. Come back once you've actually paid the tax and the gap is obvious at a glance."],
     ["· 右边是跟上","^(.+?) · 右边是跟上(.+?)比$","\u00011 · the right-hand column compares with last \u00012"],
@@ -7733,7 +7792,8 @@ margin-left: -22px;
     ["确定「","^确定「(.+?)」？(.+?)$","Confirm \"\u00011\"?\u00012"],
     ["笔银行同步不回来的记录（导入的和手记的）。 备份已经导到下载文件夹了，真的要删？","^再确认一次：这会删掉 (.+?) 笔银行同步不回来的记录（导入的和手记的）。 备份已经导到下载文件夹了，真的要删？$","One more check: this deletes \u00011 entries that bank sync can't bring back (imported and hand-entered). A backup has already been exported to your Downloads folder — really delete?"],
     ["，同时撤掉","^，同时撤掉 (.+?) 条税务记录$",", and pulled \u00011 tax records back out"],
-    ["上次同步","^上次同步 (.+?)(.+?)$","Last synced \u00011\u00012"],
+    ["· 只收","^上次同步 (.+?) · 只收 (.+?) 起的流水$","Last synced \u00011 · only transactions from \u00012 on"],
+    ["上次同步","^上次同步 (.+?)$","Last synced \u00011"],
     ["删掉「","^删掉「(.+?)」(.+?)？(.+?)$","Delete \"\u00011\" \u00012?\u00013"],
     ["）· 去「税务」页还能改","^已记入税务（(.+?) 的规则：(.+?)）· 去「税务」页还能改$","Logged to Tax (\u00011 rule: \u00012) · you can still change it on the \"Tax\" page"],
     ["」都按含 GST 自动记","^以后「(.+?)」都按含 GST 自动记$","Always log \"\u00011\" as GST included from now on"],
@@ -7776,7 +7836,10 @@ margin-left: -22px;
     if(I18NPc)return I18NPc;
     I18NPc=[];
     for(var i=0;i<I18NP.length;i++){
-      try{I18NPc.push({a:I18NP[i][0],r:new RegExp(I18NP[i][1]),t:I18NP[i][2]});}catch(e){}}
+      // 末尾那个变量放宽成「可以为空」：模板是从 '...'+x+'<span…' 这种链子里抽的，
+      // 源码上 x 后面还有东西，可渲染出来文本节点到 x 就结束了。
+      // 不放宽的话，凡是结尾带变量的模板全都白写。
+      try{I18NPc.push({a:I18NP[i][0],r:new RegExp(I18NP[i][1].replace(/\(\.\+\?\)\$$/,"(.*)$")),t:I18NP[i][2]});}catch(e){}}
     return I18NPc;}
   // 词表里最长的一条 156 个字，模板锚点最长 353。2000 是个很宽的上限 ——
   // 超过它的"文本"一定不是界面文案，直接不查。
@@ -7796,14 +7859,28 @@ margin-left: -22px;
     var s3=s2;
     for(var q=0;q<2;q++)s3=s3.replace(/([^\x00-\x7F])\s+([^\x00-\x7F])/g,"$1$2");
     if(s3!==s2){v=I18N.en[s3];if(v!==undefined)return v;}
+    // 模板要拿 s2（只把连续空白压成一个空格）去试，**不能用 s3**。
+    // s3 是为词表准备的：它把两个中文字之间的空白整个删掉，好让 HTML 里折行写的长句子
+    // 也能命中词表。可模板是从源码字面量抽出来的，里头 " · " 这类空格是真实存在的 ——
+    // 拿 s3 去匹配，"时间报告 · All" 早被压成 "时间报告·All"，
+    // 而正则写的是 "^时间报告 · (.+?)$"，于是**所有带 · 的模板全部失配**。
+    // 这一条曾经让统计页、目标、报告标题在英文界面下整片留着中文。
     var ps=trPatterns();
     for(var i=0;i<ps.length;i++){
       var p=ps[i];
-      if(p.a&&s3.indexOf(p.a)<0)continue;          // 快筛：锚点都不在里面，不用试正则
-      var m=s3.match(p.r);
+      var m=null;
+      if(!p.a||s2.indexOf(p.a)>=0)m=s2.match(p.r);   // 快筛：锚点都不在里面，不用试正则
+      if(!m&&s3!==s2&&(!p.a||s3.indexOf(p.a)>=0))m=s3.match(p.r);   // 再给删空格那版一次机会
       // 占位记号用  而不是 $1：译文里本来就可能有 "$5" 这种金额，用 $ 会打架
       if(m)return p.t.replace(/(\d)/g,function(_,d){return m[+d]!==undefined?m[+d]:"";});}
     return undefined;}
+  // 把一个**值**也翻一下。
+  // 跟 sweepLang 的分工：sweepLang 扫的是已经进了 DOM 的整段文本节点；
+  // trv 是在**拼字符串之前**把值换掉。嵌套拼接只能在这儿解决 ——
+  // 比如「时间分布（{区间} · 按{大类}）」，外层模板把「大类」当变量原样带过去，
+  // 界面上就成了 "Time distribution (… · by 大类)"。
+  // 词表里没有就原样返回，所以她自建的分类（PhD / CMS）不会被乱动。
+  function trv(s){if(lang!=="en"||!s)return s;var v=trLookup(String(s));return v===undefined?s:v;}
   function sweepLang(root){if(lang!=="en"||!root)return;try{
     // 替换一律走函数式：译文里可能带 $（记账页全是 $145.03 这种金额），
     // 直接当替换串传的话 $& / $1 会被当成特殊记号，金额就被吃掉了。
@@ -7818,7 +7895,16 @@ margin-left: -22px;
     var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,ns=[];while(n=w.nextNode())ns.push(n);
     ns.forEach(function(tn){if(skip(tn))return;          // 先看父节点再 trim —— 别为了 1.7MB 的源码白做一次 trim
       var k=(tn.nodeValue||"").trim(),v=trLookup(k);if(k&&v!==undefined)put(tn,k,v);});
-    if(root.querySelectorAll)Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),function(el){["placeholder","title","aria-label"].forEach(function(a){if(!el.hasAttribute(a))return;var v=(el.getAttribute(a)||"").trim(),t=trLookup(v);if(v&&t!==undefined)el.setAttribute(a,t);});});
+    // 属性：querySelectorAll **不包含根元素自己**。innerHTML 一赋值，
+    // MutationObserver 给的 addedNode 往往就是那个带 title 的元素本身 ——
+    // 不把根也算上，它的 title 永远翻不到。
+    var attrs=function(el){if(!el||el.nodeType!==1)return;
+      ["placeholder","title","aria-label"].forEach(function(a){
+        if(!el.hasAttribute(a))return;
+        var v=(el.getAttribute(a)||"").trim(),t=trLookup(v);
+        if(v&&t!==undefined)el.setAttribute(a,t);});};
+    attrs(root);
+    if(root.querySelectorAll)Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),attrs);
   }catch(e){}}
   function initLang(){if(lang!=="en")return;sweepLang(document.body);
     try{new MutationObserver(function(muts){muts.forEach(function(m){Array.prototype.forEach.call(m.addedNodes,function(nd){sweepLang(nd);});});}).observe(document.body,{childList:true,subtree:true});}catch(e){}}
@@ -7876,7 +7962,7 @@ margin-left: -22px;
   function parentObj(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return cats[i];return null;}
   function catIndex(k){for(var i=0;i<cats.length;i++)if(cats[i].key===k)return i;return 99;}
   function subsOf(k){var p=parentObj(k);return p&&p.subs?p.subs:[];}
-  function subName(pk,sk){var s=subsOf(pk);for(var i=0;i<s.length;i++)if(s[i].key===sk)return s[i].name;return "";}
+  function subName(pk,sk){var s=subsOf(pk);for(var i=0;i<s.length;i++)if(s[i].key===sk)return trv(s[i].name);return "";}
   function catColor(k){var p=parentObj(k);return p?p.color:"var(--cat-focus)";}
   // 小类颜色：和大类同色系，按它在列表里的顺序做深→浅的渐变，一眼看出是一家子。
   // 用 CSS color-mix 而不是自己算 HSL，因为内置分类的颜色是 var(--cat-xxx)，取不到具体值；
@@ -7894,7 +7980,7 @@ margin-left: -22px;
     var n=subs.length;if(n<=1)return p.color;
     return shade(p.color,Math.round(-22+36*(i/(n-1))));}   // 第一个最深，最后一个略浅
   function evColor(e){return (e&&e.sub)?subColor(e.cat,e.sub):catColor(e&&e.cat);}
-  function catName(k){var p=parentObj(k);return p?p.name:"专注";}
+  function catName(k){var p=parentObj(k);return trv(p?p.name:"专注");}   // 内置分类翻，她自建的原样
   // ===== 标题 → 分类 记忆：手动设过一次，以后同名/同系列自动归类 =====
   var catMemo=load("tt_catmemo",{})||{};
   function memoKey(title){
@@ -8733,8 +8819,8 @@ margin-left: -22px;
       sys.checked=!!load("tt_recsys",false);
       sys.addEventListener("change",function(){save("tt_recsys",this.checked);});
       if(/Mac OS X/i.test(navigator.userAgent||"")&&lab)
-        lab.title="开会时把对方的声音也录进来（戴耳机也行）。macOS 上只有浏览器标签页的声音抓得到 —— "+
-          "会议开在网页里就选那个标签页并勾「分享音频」；开在 Zoom/Teams 桌面版里的话 macOS 不放行，需要 BlackHole 之类的虚拟声卡。";
+        lab.title=trv("开会时把对方的声音也录进来（戴耳机也行）。macOS 上只有浏览器标签页的声音抓得到 —— "+
+          "会议开在网页里就选那个标签页并勾「分享音频」；开在 Zoom/Teams 桌面版里的话 macOS 不放行，需要 BlackHole 之类的虚拟声卡。");
     })();
     document.getElementById("rec-lang").addEventListener("change",function(){save("tt_reclang",this.value);});
     var lg=load("tt_reclang","");if(lg)try{document.getElementById("rec-lang").value=lg;}catch(e){}
@@ -10879,7 +10965,7 @@ margin-left: -22px;
 
   function renderDay(){
     var d=state.cursor,ds=fmt(d),today=new Date();
-    calTitle.innerHTML=(d.getMonth()+1)+"月"+d.getDate()+"日<em>周"+WD[(d.getDay()+6)%7]+"</em>";
+    calTitle.innerHTML=mdLab(d)+"<em>"+wdLab(d)+"</em>";
     fitPH();                                   // 先按窗口高度定行高，再算位置
     var dayEvents=eventsOn(ds);
     var dtds=todosOn(ds);
@@ -10893,7 +10979,7 @@ margin-left: -22px;
       var subcols=[];
       defined.forEach(function(s){if(used[s.key])subcols.push({key:s.key,name:s.name});});
       var hasNone=ce.some(function(e){return !e.sub||!defined.some(function(s){return s.key===e.sub;});});
-      if(hasNone||!subcols.length)subcols.push({key:"__none",name:subcols.length?"未细分":""});
+      if(hasNone||!subcols.length)subcols.push({key:"__none",name:subcols.length?trv("未细分"):""});
       return{ck:ck,name:catName(ck),color:catColor(ck),subcols:subcols,events:ce};
     });
     var W=150;
@@ -10924,7 +11010,7 @@ margin-left: -22px;
 
   function renderWeek(){
     var start=startOfWeek(state.cursor),today=new Date(),end=addDays(start,6);
-    calTitle.innerHTML=(start.getMonth()+1)+"月"+start.getDate()+"–"+(end.getMonth()!==start.getMonth()?(end.getMonth()+1)+"月":"")+end.getDate()+"日<em>"+start.getFullYear()+"</em>";
+    calTitle.innerHTML=rangeLab(start,end)+"<em>"+start.getFullYear()+"</em>";
     fitPH();
     var head='<div class="grid-head" style="grid-template-columns:46px repeat(7,1fr)"><div class="gh"></div>';
     var body='<div class="grid-body" style="grid-template-columns:46px repeat(7,1fr)"><div class="gutter" style="height:'+GH+'px">'+hoursGutter()+'</div>';
@@ -11116,7 +11202,7 @@ margin-left: -22px;
       var k=h.getAttribute("data-foldc"),card=h.parentNode;
       if(card&&card.classList.contains("dash-card2"))card=card.parentNode;   // 番茄钟外面还套了一层
       if(card)card.classList.toggle("cfold",!!cardFolds[k]);
-      h.setAttribute("title",cardFolds[k]?"展开":"收起");});}
+      h.setAttribute("title",trv(cardFolds[k]?"展开":"收起"));});}   // 属性改动 MutationObserver 不管，得自己翻
   document.addEventListener("click",function(e){
     var h=e.target.closest("[data-foldc]");
     if(!h||e.target.closest("button"))return;                 // 点标题里的「+ 新目标」不算折叠
@@ -11124,7 +11210,7 @@ margin-left: -22px;
     cardFolds[k]=!cardFolds[k];save("tt_folds",cardFolds);applyFolds();});
   function renderMiniCal(){
     var grid=document.getElementById("mc-grid"),today=new Date();
-    document.getElementById("mc-title").textContent=miniCursor.getFullYear()+"年"+(miniCursor.getMonth()+1)+"月";
+    document.getElementById("mc-title").textContent=ymLab(miniCursor);
     var first=new Date(miniCursor.getFullYear(),miniCursor.getMonth(),1),gs=startOfWeek(first);
     var html="";for(var w=0;w<7;w++)html+='<div class="wd">'+WD[w]+'</div>';
     for(var i=0;i<42;i++){
@@ -11184,7 +11270,7 @@ margin-left: -22px;
     if(p==="year")return new Date(t.getFullYear(),11,31,23,59,59);
     if(p==="month")return new Date(t.getFullYear(),t.getMonth()+1,0,23,59,59);
     var e=addDays(startOfWeek(t),6);return new Date(e.getFullYear(),e.getMonth(),e.getDate(),23,59,59);}
-  function periodName(p){return p==="month"?"每月":p==="year"?"每年":p==="custom"?"区间":"每周";}
+  function periodName(p){return trv(p==="month"?"每月":p==="year"?"每年":p==="custom"?"区间":"每周");}
   function periodWord(p){return p==="month"?"月":p==="year"?"年":p==="custom"?"区间":"周";}
   function matchesGoal(e,g){
     if(!evCounts(e))return false;                 // 还没认领的 Google 归档件不进目标（进度条/热力图/相关记录都走这里）
@@ -11202,9 +11288,9 @@ margin-left: -22px;
     var cnt=matched.length;
     // 记录型：没有目标值，只累计。时长和次数都给出来 —— 花了多少时间、来回多少趟，都是"精力"的一面。
     if(g.track)return{cur:(g.type==="time"?mins:cnt),target:0,mins:mins,cnt:cnt,track:true,
-      disp:(Math.round(mins/6)/10)+"h · "+cnt+(g.unit||"次")};
+      disp:(Math.round(mins/6)/10)+"h · "+cnt+trv(g.unit||"次")};
     if(g.type==="time")return{cur:mins,target:g.target*60,mins:mins,cnt:cnt,disp:(Math.round(mins/6)/10)+"/"+g.target+"h"};
-    return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+(g.unit||"次")};
+    return{cur:cnt,target:g.target,mins:mins,cnt:cnt,disp:cnt+"/"+g.target+trv(g.unit||"次")};
   }
   var goalArchOpen=load("tt_goalarch",false);
   function goalExpired(g){                 // 只有"自定义区间"才有过期这回事
@@ -11354,7 +11440,7 @@ margin-left: -22px;
     var cells="";
     for(var w=0;w<weeks;w++){for(var d=0;d<7;d++){var day=addDays(startW,w*7+d),ds=fmt(day),val=counts[ds]||0,lv=levelOf(g,val),fut=day>today;
       var bg=fut?"transparent":(lv===0?"var(--surface-2)":"color-mix(in srgb,"+gc+" "+(18+lv*19)+"%,var(--bg))");
-      cells+='<div class="hm-c" title="'+ds+"："+(g.type==="time"?val+"分":val+"次")+'" style="background:'+bg+'"></div>';}}
+      cells+='<div class="hm-c" title="'+ds+"："+(g.type==="time"?(val+trv("分")):(val+trv("次")))+'" style="background:'+bg+'"></div>';}}
     document.getElementById("gd-hm").innerHTML=cells;
     var lg='<span>少</span>';for(var l=0;l<=4;l++){lg+='<i style="background:'+(l===0?"var(--surface-2)":"color-mix(in srgb,"+gc+" "+(18+l*19)+"%,var(--bg))")+'"></i>';}lg+='<span>多</span>';
     document.getElementById("gd-legend").innerHTML=lg;
@@ -11411,7 +11497,7 @@ margin-left: -22px;
     evTitlePH();
   }
   function evTitlePH(){                              // 占位符现算：让你一眼看到"不填的话它会叫什么"
-    if(fTitle)fTitle.placeholder="不填就叫「"+catLabelOf(selCat,selSub)+"」";}
+    if(fTitle)fTitle.placeholder=trv("不填就叫「"+catLabelOf(selCat,selSub)+"」");}
   // 标题是不是"跟着分类自动凑出来的"（番茄钟记的、或者你留空自动补的）。
   // 是 → 改分类时让它一起改回去；不是（你自己打的字）→ 一个字都不动。
   function evTitleAuto(){
@@ -11912,7 +11998,7 @@ margin-left: -22px;
   function endPause(){var g=curPauseSec();cancelPause();      // 继续走：把这个洞正式落进段里
     if(g>=GAPMIN)pSegs.push({gap:true,t:"暂停",sec:g});return g;}
   var segsBox=document.getElementById("pomo-segs");
-  function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||"专注");}
+  function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||trv("专注"));}
   function curSegLabel(){return (pomoTask.value||"").trim()||catLabelOf(pomoCat.value,pomoSub.value||null);}
   function curSegSec(){return Math.max(0,pElapsed-pSegStart);}
   function mergeSegs(list){var out=[];                       // 连着的同任务同分类合成一段
@@ -11925,7 +12011,7 @@ margin-left: -22px;
     if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});  // 几秒也照记
     var g=curPauseSec();if(g>=GAPMIN)out.push({gap:true,t:"暂停",sec:g});   // 正在长的那个洞
     return mergeSegs(out);}
-  function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+"秒"):(Math.round(sec/60)+"分");}
+  function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+trv("秒")):(Math.round(sec/60)+trv("分"));}
   function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();}
   function renderSegs(){
     if(!segsBox)return;
@@ -12267,7 +12353,7 @@ margin-left: -22px;
       a.map(function(r){
         var lost=/不归我管|丢弃|没勾|存档没了/.test(r.tag||"");
         return '<tr><td>'+esc(r.t||"")+'</td>'+
-          '<td class="'+(lost?"bad":(/成功/.test(r.tag||"")?"ok":""))+'">'+esc(r.tag||"")+
+          '<td class="'+(lost?"bad":(/成功/.test(r.tag||"")?"ok":""))+'">'+esc(trv(r.tag||""))+
             (r.ev?('　'+esc(r.ev)):"")+'</td>'+
           '<td>'+secLabel(+r.sec||0)+'</td><td>'+esc(r.mode||"")+'</td>'+
           '<td>'+(r.run?"是":"否")+'</td><td>'+(r.fol?"是":"否")+'</td>'+
@@ -12553,24 +12639,24 @@ margin-left: -22px;
       .sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});}
   function csvCell(s){s=String(s==null?"":s);if(/[",\n]/.test(s))s='"'+s.replace(/"/g,'""')+'"';return s;}
   function buildCSV(rows){var lines=[["日期","星期","标题","大类","小类","开始","结束","时长(分钟)","摸鱼"].join(",")];
-    rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7],st=segTimes(e);
+    rows.forEach(function(e){var d=parse(e.date),wd=wdLab(d),st=segTimes(e);
       if(st){st.forEach(function(s){         // 分段事件：一段一行，钟点按段顺序推算，方便进 Excel 透视
         var mn=s.min||Math.round(s.sec/60*100)/100;   // 不满 1 分钟的段写成小数，别在表里变成 0
         lines.push([e.date,wd,csvCell(s.t||e.title),csvCell(catName(s.cat)),csvCell(s.sub?subName(s.cat,s.sub):""),s.start,s.end,mn,e.par?"是":""].join(","));});return;}
       lines.push([e.date,wd,csvCell(e.title),csvCell(catName(e.cat)),csvCell(e.sub?subName(e.cat,e.sub):""),e.start,e.end,evRecMin(e),e.par?"是":""].join(","));});
     return "﻿"+lines.join("\r\n");}
-  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evRecMin(e)+"分)\n";});return s;}
+  function buildText(rows,scope,rl,total){var s="时间报告 · "+scope+"\n"+rl+" · 共 "+fmtDur(total)+" · "+rows.length+" 项\n\n";rows.forEach(function(e){s+=e.date+" "+e.start+"-"+e.end+"  "+e.title+"  ("+evRecMin(e)+trv("分")+")\n";});return s;}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
     if(!rows.length)return '<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+'</div></div><div class="stat-empty">该范围内没有记录</div>';
     var h='<div class="rep-h"><h4>时间报告 · '+esc(scope)+'</h4><div class="rep-meta">'+rl+' · 共 '+fmtDur(total)+' · '+rows.length+' 项</div></div>';
     if(ck&&ck!=="__all"&&(!sk||sk==="__all")){var bySub={};rows.forEach(function(e){
       evMix(e).forEach(function(x){if(x.cat!==ck||!x.min)return;var k=x.sub||"__none";bySub[k]=(bySub[k]||0)+x.min;});});
       var keys=Object.keys(bySub).sort(function(a,b){return bySub[b]-bySub[a];});
-      if(keys.length>1||keys[0]!=="__none"){h+='<div class="rep-break">';keys.forEach(function(k){var nm=k==="__none"?"（未细分）":subName(ck,k),m=bySub[k];h+='<div class="rb"><span>'+esc(nm)+'</span><span>'+fmtDur(m)+' · '+Math.round(m/total*100)+'%</span></div>';});h+='</div>';}}
+      if(keys.length>1||keys[0]!=="__none"){h+='<div class="rep-break">';keys.forEach(function(k){var nm=k==="__none"?trv("（未细分）"):subName(ck,k),m=bySub[k];h+='<div class="rb"><span>'+esc(nm)+'</span><span>'+fmtDur(m)+' · '+Math.round(m/total*100)+'%</span></div>';});h+='</div>';}}
     h+='<div style="overflow-x:auto"><table class="rep-table"><thead><tr><th>日期</th><th>标题</th><th>类别</th><th>时长</th></tr></thead><tbody>';
-    rows.forEach(function(e){var d=parse(e.date),wd="周"+WD[(d.getDay()+6)%7];var cn=evCatLabel(e).replace(" · "," › ");
+    rows.forEach(function(e){var d=parse(e.date),wd=wdLab(d);var cn=evCatLabel(e).replace(" · "," › ");
       var st=segTimes(e),det=st?'<div class="rep-segs">'+st.filter(function(s){return !s.gap;}).map(function(s){return esc(s.t||"")+' <em>'+catName(s.cat)+' '+secLabel(s.sec)+'</em>';}).join(" · ")+'</div>':'';
-      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evRecMin(e)+'分</td></tr>';});
+      h+='<tr><td>'+e.date+' '+wd+'</td><td>'+esc(e.title)+det+'</td><td>'+esc(cn)+'</td><td>'+evRecMin(e)+trv("分")+'</td></tr>';});
     return h+'</tbody></table></div>';}
   function downloadFile(name,text,mime){try{var blob=new Blob([text],{type:mime||"text/plain;charset=utf-8"});var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},120);}catch(err){ttAlert("此环境不支持直接下载，请改用「复制文本」");}}
   function copyText(txt,btn){function ok(){if(btn){var o=btn.textContent;btn.textContent="已复制";setTimeout(function(){btn.textContent=o;},1400);}}
@@ -12593,11 +12679,11 @@ margin-left: -22px;
     return {start:f,end:t,label:fmt(f)+" ~ "+fmt(t),own:true};}
   var SUBPAL=["#5f9bd8","#5cbd90","#9d8bd8","#eeb85f","#61c4cf","#e57ea0","#7c83e6","#8bb04f","#d9925f","#54bcae","#ec8b76","#9aa1b0"];
   function statPeriod(){var m=statState.mode,c=statState.cursor;
-    if(m==="day"){var s=new Date(c.getFullYear(),c.getMonth(),c.getDate());return{start:s,end:s,label:fmt(s)+" 周"+WD[(s.getDay()+6)%7],unit:"day"};}
-    if(m==="month"){var s3=new Date(c.getFullYear(),c.getMonth(),1),e3=new Date(c.getFullYear(),c.getMonth()+1,0);return{start:s3,end:e3,label:c.getFullYear()+"年"+(c.getMonth()+1)+"月",unit:"month"};}
+    if(m==="day"){var s=new Date(c.getFullYear(),c.getMonth(),c.getDate());return{start:s,end:s,label:fmt(s)+" "+wdLab(s),unit:"day"};}
+    if(m==="month"){var s3=new Date(c.getFullYear(),c.getMonth(),1),e3=new Date(c.getFullYear(),c.getMonth()+1,0);return{start:s3,end:e3,label:ymLab(c),unit:"month"};}
     if(m==="year")return{start:new Date(c.getFullYear(),0,1),end:new Date(c.getFullYear(),11,31),label:c.getFullYear()+"年",unit:"year"};
     if(m==="custom"){var f=statState.from?parse(statState.from):startOfWeek(c),t=statState.to?parse(statState.to):new Date(c.getFullYear(),c.getMonth(),c.getDate());if(t<f){var tp=f;f=t;t=tp;}return{start:f,end:t,label:fmt(f)+" ~ "+fmt(t),unit:"custom"};}
-    var s2=startOfWeek(c),e2=addDays(s2,6);return{start:s2,end:e2,label:(s2.getMonth()+1)+"月"+s2.getDate()+"–"+(e2.getMonth()+1)+"月"+e2.getDate()+"日",unit:"week"};}
+    var s2=startOfWeek(c),e2=addDays(s2,6);return{start:s2,end:e2,label:rangeLab(s2,e2),unit:"week"};}
   function statShift(dir){var c=statState.cursor,m=statState.mode;
     if(m==="day")statState.cursor=addDays(c,dir);else if(m==="week")statState.cursor=addDays(c,dir*7);
     else if(m==="month")statState.cursor=addMonths(c,dir);else if(m==="year")statState.cursor=new Date(c.getFullYear()+dir,c.getMonth(),c.getDate());}
@@ -12806,8 +12892,8 @@ margin-left: -22px;
       if(allSubs){var q=k.split("|");return q[1]?subColor(q[0],q[1]):catColor(q[0]);}
       if(groupByCat)return catColor(k);if(k==="__none")return "var(--cat-life)";return subColor(statState.cat,k);}   // 小类用大类的同色系深浅
     function segName(k){
-      if(allSubs){var q=k.split("|");return catName(q[0])+" · "+(q[1]?subName(q[0],q[1]):"未细分");}
-      if(groupByCat)return catName(k);if(k==="__none")return "未细分";return subName(statState.cat,k);}
+      if(allSubs){var q=k.split("|");return catName(q[0])+" · "+(q[1]?subName(q[0],q[1]):trv("未细分"));}
+      if(groupByCat)return catName(k);if(k==="__none")return trv("未细分");return subName(statState.cat,k);}
     var segs=Object.keys(gmap).map(function(k){return{k:k,m:gmap[k]};}).sort(function(a,b){return b.m-a.m;});
     var acc=0,stops=[];segs.forEach(function(s,i){s.pct=totalMin?s.m/totalMin*100:0;s.col=segColor(s.k,i);s.start=acc;stops.push(s.col+" "+acc.toFixed(2)+"% "+(acc+s.pct).toFixed(2)+"%");acc+=s.pct;});
     var donutBg=totalMin?"conic-gradient("+stops.join(",")+")":"var(--surface-2)";
@@ -12834,7 +12920,7 @@ margin-left: -22px;
           var v=by[k];if(!v)return "";
           return '<i style="height:'+(v/m*100).toFixed(2)+'%;background:'+segColor(k)+'" title="'+esc(segName(k)+" "+fmtDur(v))+'"></i>';}).join(""):"";
         return '<div class="bar"><div class="amt">'+(m?fmtDur(m):"")+'</div><div class="col2 stack" style="height:'+h+'px">'+inner+'</div><div class="lb">'+b.label+'</div></div>';}).join("");
-      trendTitle="趋势（按"+(p.unit==="year"?"月":(p.unit==="custom"&&buckets[0]&&buckets[0].ym?"月":"天"))+"）";
+      trendTitle="趋势（按"+trv(p.unit==="year"?"月":(p.unit==="custom"&&buckets[0]&&buckets[0].ym?"月":"天")).toLowerCase()+"）";
     }else{var byc={};evs.forEach(function(e){evMix(e).forEach(function(x){if(x.min)byc[x.cat]=(byc[x.cat]||0)+x.min;});});
       var keys=Object.keys(byc).sort(function(a,b){return byc[b]-byc[a];}),mx2=Math.max.apply(null,keys.map(function(k){return byc[k];}).concat([1]));
       trendVals=keys.map(function(k){return byc[k];});trendLabs=keys.map(function(k){return catName(k);});
@@ -12885,13 +12971,13 @@ margin-left: -22px;
       '</div>'+gcalNote+noNote+
       '<div class="stat-cards">'+
         '<div class="sc"><div class="k">总时长</div><div class="v">'+totH+'<small> h</small></div>'+(ovMin?('<div class="sc-sub" title="这些分钟被算了不止一遍，因为同一时间安排了多件事">⧉ 含重叠 '+fmtDur(ovMin)+(parMin?'（🐟 摸鱼 '+fmtDur(parMin)+'）':'')+'</div>'):'')+'</div>'+
-        '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+'<small> 个</small></div></div>'+
+        '<div class="sc"><div class="k">事件数</div><div class="v">'+evs.length+(isEN()?"":'<small> 个</small>')+'</div></div>'+
         '<div class="sc" title="总时长 ÷ 有记录的天数。没记录的日子（还没到的、休息的）不进分母，不然平均值会被摊薄"><div class="k">日均时长</div><div class="v">'+avgH+'<small> h</small></div>'+
           '<div class="sc-sub">按 '+days+' 天有记录</div></div>'+
-        '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+'<small> 个</small></div></div>'+
+        '<div class="sc"><div class="k">专注番茄</div><div class="v">'+statPomo(p)+(isEN()?"":'<small> 个</small>')+'</div></div>'+
       '</div>'+
       '<div class="stat-grid">'+
-        '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+(groupByCat?"大类":"小类")+'）'+
+        '<div class="panel"><h3>时间分布（'+esc(p.label)+' · 按'+trv(groupByCat?"大类":"小类").toLowerCase()+'）'+
           (statState.cat==="__all"?('<span class="seg mini" id="stat-by" title="小类：把所有大类下面的小类一起铺开"><button data-by="cat"'+(statState.by==="sub"?"":' class="on"')+'>大类</button><button data-by="sub"'+(statState.by==="sub"?' class="on"':'')+'>小类</button></span>'):"")+
           '<span class="seg mini" id="stat-dist"><button data-d="donut"'+(statState.dist==="donut"?' class="on"':'')+'>环形</button><button data-d="rank"'+(statState.dist==="rank"?' class="on"':'')+'>排行</button></span></h3>'+
           (statState.dist==="rank"?rankHTML(segs,totalMin,segName):donutSVG(segs,totalMin,totH,groupByCat?"":(allSubs?"":catName(statState.cat)),segName))+'</div>'+
@@ -12944,7 +13030,7 @@ margin-left: -22px;
     var repRows=statPool(evRecorded).filter(function(e){var d=statDay(e);return d>=rsf&&d<=ref&&evHasCat(e,statState.cat,statState.sub);});
     var rowsSorted=repRows.sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.start<b.start?-1:1));});
     var repTotal=rowsSorted.reduce(function(a,e){return a+evRecMin(e);},0);
-    var scope=(statState.cat==="__all"?"全部":catName(statState.cat))+(statState.sub!=="__all"?" › "+subName(statState.cat,statState.sub):"");
+    var scope=(statState.cat==="__all"?trv("全部"):catName(statState.cat))+(statState.sub!=="__all"?" › "+subName(statState.cat,statState.sub):"");
     reportEl.innerHTML=buildReportHTML(rowsSorted,scope,rr.label,repTotal,statState.cat,statState.sub);
     wrap.querySelector("#exp-csv").addEventListener("click",function(){downloadFile(scope+"_"+rr.label+".csv",buildCSV(rowsSorted),"text/csv;charset=utf-8");});
     wrap.querySelector("#exp-copy").addEventListener("click",function(){copyText(buildText(rowsSorted,scope,rr.label,repTotal),this);});
@@ -14167,7 +14253,7 @@ margin-left: -22px;
   function renderDictSetup(){
     var el=document.getElementById("dict-setup");if(!el)return;
     var ao=dictCounts.oald,co=dictCounts.collins;
-    var line='牛津(英→中) '+(ao?'<b>✓ '+ao.toLocaleString()+'</b>':'✗ 未加载')+' · 柯林斯(中→英) '+(co?'<b>✓ '+co.toLocaleString()+'</b>':'✗ 未加载');
+    var line='牛津(英→中) '+(ao?'<b>✓ '+ao.toLocaleString()+'</b>':trv('✗ 未加载'))+' · 柯林斯(中→英) '+(co?'<b>✓ '+co.toLocaleString()+'</b>':trv('✗ 未加载'));
     var loggedIn=(typeof SB!=="undefined"&&SB&&sbUser);
     var btns='<label class="btn primary" style="cursor:pointer">📁 导入文件<input type="file" id="dict-file" accept=".gz" multiple hidden></label> <button class="btn" id="dict-dl">☁️ 从云端下载</button>';
     if(loggedIn)btns+=' <button class="btn" id="dict-up">⬆️ 上传到云端</button> <button class="btn" id="dict-sqlbtn">① 配置云端(SQL)</button>';
@@ -14405,11 +14491,11 @@ margin-left: -22px;
       b.classList.toggle("saved",saved);b.innerHTML=starSVG(saved)+" "+(saved?"已收藏":"加入生词本");});
     document.querySelectorAll(".dict-grp").forEach(function(b){
       if(b.getAttribute("data-w")!==w)return;
-      b.style.display=saved?"":"none";b.textContent=gn+" ▾";b.title="在「"+gn+"」里 · 点一下换个分组";});
+      b.style.display=saved?"":"none";b.textContent=gn+" ▾";b.title=trv("在「"+gn+"」里 · 点一下换个分组");});
     var rs=document.getElementById("rd-pop-star"),rg=document.getElementById("rd-pop-grp");
     if(rs&&rdPopWord&&rdPopWord.w===w){
       rs.classList.toggle("on",saved);rs.innerHTML=starSVG(saved);rs.title=saved?"已收藏（点取消）":"加入生词本";
-      if(rg){rg.style.display=saved?"":"none";rg.textContent=gn+" ▾";rg.title="在「"+gn+"」里 · 点一下换个分组";}}}
+      if(rg){rg.style.display=saved?"":"none";rg.textContent=gn+" ▾";rg.title=trv("在「"+gn+"」里 · 点一下换个分组");}}}
   function openWbGroups(){                               // 跳到生词本页面的词书那一栏
     gotoTab("dict");
     var tb=document.querySelector('#dict-tabs button[data-dt="study"]');if(tb)tb.click();
@@ -14589,7 +14675,7 @@ margin-left: -22px;
     dlFile("vocab_"+(wbActive==="all"?"all":wbGroupName(wbActive))+".csv",csv,"text/csv");}
   function renderWbgManage(){var el=document.getElementById("wbg-manage");if(!el)return;
     el.innerHTML=wbGroups.list.map(function(g){var isDef=g.id===wbGroups.def,n=words.filter(function(x){return wbGroupOf(x)===g.id;}).length;
-      return '<div class="do-row"><span class="wbg-l"><button class="wbg-def'+(isDef?" on":"")+'" type="button" data-def="'+g.id+'" title="设为默认（新词进这里）">'+(isDef?"⭐":"☆")+'</button><b>'+esc(g.name)+'</b> <span class="wbg-n">'+n+' 词</span></span>'+
+      return '<div class="do-row"><span class="wbg-l"><button class="wbg-def'+(isDef?" on":"")+'" type="button" data-def="'+g.id+'" title="设为默认（新词进这里）">'+(isDef?"⭐":"☆")+'</button><b>'+esc(g.name)+'</b> <span class="wbg-n">'+n+trv(" 词")+'</span></span>'+
         '<span class="do-btns"><button class="do-mv" type="button" data-ren="'+g.id+'" title="重命名">✎</button>'+((wbGroups.list.length>1&&!isDef)?'<button class="do-mv" type="button" data-delg="'+g.id+'" title="删除">✕</button>':'')+'</span></div>';}).join("");}
   function wordOf(w){w=(w||"").toLowerCase();for(var i=0;i<words.length;i++)if(words[i].w===w)return words[i];return null;}
   // ===== 语境：查词时把这个词所在的句子抄一份到词条上 =====
@@ -14725,7 +14811,7 @@ margin-left: -22px;
       var st=document.getElementById("rd-mine-st");
       if(st){st.textContent="✓ 已存";st.className="rd-mine-st";}
       var s2=document.getElementById("rd-pop-star");
-      if(s2&&s2.style.display!=="none"){s2.classList.add("on");s2.innerHTML=starSVG(true);s2.title="已收藏（点取消）";}
+      if(s2&&s2.style.display!=="none"){s2.classList.add("on");s2.innerHTML=starSVG(true);s2.title=trv("已收藏（点取消）");}
       if(state.tab==="dict")try{renderWordbook();}catch(e){}}
     if(now)go();else mineT=setTimeout(go,600);}
   function mineTyping(e){
@@ -15943,7 +16029,7 @@ margin-left: -22px;
     var b=document.getElementById("dict-trauto");if(!b)return;
     b.textContent=trAuto?"翻译 开":"翻译 关";
     b.classList.toggle("off",!trAuto);
-    b.title=trAuto?"选中整句会自动翻译 · 点一下关掉":"现在不自动翻，卡片上有按钮想翻再点 · 点一下打开";}
+    b.title=trv(trAuto?"选中整句会自动翻译 · 点一下关掉":"现在不自动翻，卡片上有按钮想翻再点 · 点一下打开");}
   function trToggleAuto(){trAuto=!trAuto;save("tt_trauto",trAuto);trPaintAuto();}
   // 不自动翻时给一张"要不要翻"的卡片，点了才真去翻
   function trAskHTML(text){
@@ -15963,7 +16049,7 @@ margin-left: -22px;
   },true);
   function trPaintEng(){
     var c=document.getElementById("dict-treng");
-    if(c){c.textContent=trEngName(trEngine)+" ▾";c.title="翻译引擎 · 点一下换（现在是"+trEngName(trEngine)+"）";}
+    if(c){c.textContent=trEngName(trEngine)+" ▾";c.title=trv("翻译引擎 · 点一下换（现在是"+trv(trEngName(trEngine))+"）");}
     var s=document.getElementById("tr-engine");if(s)s.value=trEngine;}
   function trPick(anchor,after){
     return ttMenu(TRENG.map(function(e){
@@ -18182,7 +18268,7 @@ margin-left: -22px;
       setTimeout(function(){relayoutPdf();updateScrub();},80);});
     if(load("tt_rdsplitv",false)){
       sp.classList.add("vert");
-      var db=document.getElementById("rs-dir");if(db){db.textContent="⇆";db.title="改成左右分屏";}}
+      var db=document.getElementById("rs-dir");if(db){db.textContent="⇆";db.title=trv("改成左右分屏");}}
     applySideSize();}
 
   // ===== 沉浸式阅读（隐藏所有按钮，全屏看书）=====
@@ -18274,7 +18360,7 @@ margin-left: -22px;
     if(found&&dictPrefs.autoAdd&&rdPopWord===me&&!isSaved(me.w)&&!trashHas(me.w)){
       if(addWords([{w:me.w,disp:me.disp}],wbGroups.def).added){
         updateWbCount();
-        star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";
+        star.classList.add("on");star.innerHTML=starSVG(true);star.title=trv("已收藏（点取消）");
         wbPaintWord(me.w);
         if(state.tab==="dict")renderWordbook();}}
     if(!found){                                              // 词典里没有 → 翻译 + 让你自己写释义
@@ -18286,7 +18372,7 @@ margin-left: -22px;
         bd.innerHTML=trCardHTML(w0,tr)+mine;
         if(dictPrefs.autoAdd&&rdPopWord===me&&!wordIssue(me.disp)&&!isSaved(me.w)&&!trashHas(me.w)){   // 开了自动收藏：查不到的也收
           addUnknownWord(me.w,me.disp,tr.text);
-          star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}}
+          star.classList.add("on");star.innerHTML=starSVG(true);star.title=trv("已收藏（点取消）");}}
       catch(err){if(rdPopWord!==me)return;
         bd.innerHTML='<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(err&&err.message||err))+'</div>'+mine;}
       applyPopSize(false);placeRdPop(rect);}
@@ -18688,7 +18774,7 @@ margin-left: -22px;
       if(w>200&&h>100){save("tt_popsize",{w:w,h:h,fix:1});rdPop.style.maxHeight="none";}});
     var hd=rdPop.querySelector(".rd-pop-hd");
     if(hd){
-      hd.title="双击这里：让卡片大小重新跟着内容走";
+      hd.title=trv("双击这里：让卡片大小重新跟着内容走");
       hd.addEventListener("dblclick",function(e){
         if(e.target.closest("button"))return;
         save("tt_popsize",null);applyPopSize(false);
@@ -18736,7 +18822,7 @@ margin-left: -22px;
         (can?mineBtnHTML(k,t):"");
       if(can&&dictPrefs.autoAdd&&!isSaved(k)&&!trashHas(k)){   // 开了自动收藏：词组也收，翻译先当草稿
         addUnknownWord(k,t,res.text);
-        star.classList.add("on");star.innerHTML=starSVG(true);star.title="已收藏（点取消）";}
+        star.classList.add("on");star.innerHTML=starSVG(true);star.title=trv("已收藏（点取消）");}
       applyPopSize(false);placeRdPop(rect);
       rdPopIdle(9000);
     },function(e){
@@ -20350,7 +20436,12 @@ margin-left: -22px;
   // 内置的那些是死的，你自己加的存在 mnCfg.cats 里，两边合起来才是完整的分类表。
   // 自定义分类没有内置关键词，靠 ⚙️ 设置里的分类规则来命中。
   var MN_CAT={};
-  function mnCats(){return MN_CATS.concat(mnCfg&&mnCfg.cats||[]);}
+  function mnCats(){
+    var a=MN_CATS.concat(mnCfg&&mnCfg.cats||[]);
+    if(lang!=="en")return a;
+    // 只换显示用的名字，key 一律不动 —— 规则匹配、存盘、下拉的 value 走的都是 k。
+    // 她自建的分类词表里没有，trv 原样返回。
+    return a.map(function(c){var n=trv(c.n);return n===c.n?c:Object.assign({},c,{n:n});});}
   function mnCatIdx(){MN_CAT={};mnCats().forEach(function(c){MN_CAT[c.k]=c;});}
   // 进账时只允许这几类 —— 不然「UNIVERSITY CNTBRY UOC NET PAY」会因为
   // 含 "university" 被判成教育支出，工资就成了学费
@@ -21524,9 +21615,9 @@ margin-left: -22px;
 
     if(!mnTxns.length){
       body.innerHTML='<div class="mn-empty">还没有任何流水。<br>'+
-        '点 <b>＋ 记一笔</b> 自己记，点 <b>🔄 同步</b> 从 Westpac 拉'+
-        '（要先照 <code>supabase/AKAHU.md</code> 配好），'+
-        '或点 <b>📄 导入文件</b> 拖一个 CSV / xlsx 进来。</div>';
+        '点「＋ 记一笔」自己记一笔。<br>'+
+        '点「🔄 同步」从 Westpac 拉（要先照 supabase/AKAHU.md 配好）。<br>'+
+        '点「📄 导入文件」拖一个 CSV / xlsx 进来。</div>';
       return;}
 
     var inP=mnTxns.filter(mnBase),A=mnAgg(inP);
@@ -21568,21 +21659,21 @@ margin-left: -22px;
     var netShow=net-cut;
 
     var h=mnBalHtml()+'<div class="mn-kpis">'+
-      '<div class="mn-kpi"><div class="k">支出</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
-        '<div class="sub">'+A.nOut+' 笔 '+delta(A.out,P.out)+'</div></div>'+
-      '<div class="mn-kpi"><div class="k">收入'+(afterTax?'（税后）':'')+'</div>'+
+      '<div class="mn-kpi"><div class="k">'+trv("支出")+'</div><div class="v out">'+mnMoney(-A.out)+'</div>'+
+        '<div class="sub">'+A.nOut+trv(" 笔")+' '+delta(A.out,P.out)+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">'+trv(afterTax?"收入（税后）":"收入")+'</div>'+
         '<div class="v in">'+mnMoney(incShow)+'</div>'+
         // 「几笔已申报」要写在这儿 —— 只有申报过的那几笔扣了税，
         // 光写「税后」会让人以为每一笔都扣干净了
-        '<div class="sub">'+A.nIn+' 笔 '+
-          (afterTax?('· '+TX.n+' 笔已申报 · 税前 '+mnMoney(A.inc)):delta(A.inc,P.inc))+'</div></div>'+
-      '<div class="mn-kpi"><div class="k">结余'+(afterTax?'（税后）':'')+'</div>'+
+        '<div class="sub">'+A.nIn+trv(" 笔")+' '+
+          (afterTax?('· '+TX.n+trv(" 笔已申报")+' · '+trv("税前")+' '+mnMoney(A.inc)):delta(A.inc,P.inc))+'</div></div>'+
+      '<div class="mn-kpi"><div class="k">'+trv(afterTax?"结余（税后）":"结余")+'</div>'+
         '<div class="v'+(netShow<0?" out":"")+'">'+mnMoney(netShow)+'</div>'+
-        '<div class="sub">'+(afterTax?('税前 '+mnMoney(net)):
-          (A.tf?(A.tf+" 笔转账/存款没算"):"收入减支出"))+'</div></div>'+
-      (A.nSav?('<div class="mn-kpi"><div class="k">存入</div>'+
+        '<div class="sub">'+(afterTax?(trv("税前")+' '+mnMoney(net)):
+          (A.tf?(A.tf+trv(" 笔转账/存款没算")):trv("收入减支出")))+'</div></div>'+
+      (A.nSav?('<div class="mn-kpi"><div class="k">'+trv("存入")+'</div>'+
         '<div class="v'+(A.sav<0?"":" in")+'">'+mnMoney(A.sav>0?A.sav:A.sav)+'</div>'+
-        '<div class="sub">'+A.nSav+' 笔 · '+(A.sav>=0?"净存入":"净取出")+
+        '<div class="sub">'+A.nSav+trv(" 笔")+' · '+trv(A.sav>=0?"净存入":"净取出")+
         '，不算支出</div></div>'):"")+
       // 税负这格不摆数字 —— 具体金额和 PAYE/ACC/GST 的拆分在税务页看得更清楚，
       // 这里只做入口。整格可点，里面那个切换按钮要拦住冒泡，否则点它也会跳走。
@@ -21594,8 +21685,8 @@ margin-left: -22px;
         '<div class="sub">已申报 '+TX.n+' 笔　'+
           '<button class="mn-mini" data-aftertax>'+
           (afterTax?"改回税前":"改按税后看")+'</button></div></div>'):"")+
-      '<div class="mn-kpi"><div class="k">'+spanLb+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
-        '<div class="sub">按 '+span+(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
+      '<div class="mn-kpi"><div class="k">'+trv(spanLb)+'</div><div class="v">'+mnMoney(-avg)+'</div>'+
+        '<div class="sub">按 '+span+trv(mnScope==="year"?" 个月":" 天")+'算</div></div>'+
       '</div>'+
       (TX?('<div class="mn-note">预估税负只算你点过「记入税务」的那 <b>'+TX.n+
         '</b> 笔（实收 '+mnMoney(TX.gross)+'）—— 已经在发薪时扣过 PAYE 的工资不该记进去，'+
@@ -21636,14 +21727,14 @@ margin-left: -22px;
       '</div>';
     // 标题不写「税后」—— 扣掉的只是你点过「记入税务」的那几笔的税。
     // 一栏里九笔只申报了两笔，写「税后」就是在说整栏都扣干净了，不是实话。
-    h+='<div class="panel"><h3>'+(isIn?("收入来源"+(afterTax?"（已申报部分扣税）":"")):"分类统计")+
+    h+='<div class="panel"><h3>'+trv(isIn?(afterTax?"收入来源（已申报部分扣税）":"收入来源"):"分类统计")+
       ' <span style="font-weight:400;color:var(--muted);font-size:12px">'+
-      (isIn?(afterTax?"每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数"
+      trv(isIn?(afterTax?"每行后面是「已申报 / 总笔数」 · 没申报的那些是税前原数"
                      :"点一类只看那一类 · 银行摘要按前两个词归并")
            :"点一类只看那一类")+
-      ' · 右边是跟上'+(mnScope==="year"?"年":"月")+'比</span><span class="grow"></span>'+toggle+'</h3>';
+      ' · 右边是跟上'+trv(mnScope==="year"?"年":"月").toLowerCase()+'比</span><span class="grow"></span>'+toggle+'</h3>';
     if(!ranked.length){
-      h+='<div class="mn-empty">这'+(mnScope==="year"?"年":"个月")+'没有'+(isIn?"收入":"支出")+'</div></div>';
+      h+='<div class="mn-empty">这'+trv(mnScope==="year"?"年":"个月")+'没有'+trv(isIn?"收入":"支出")+'</div></div>';
     }else{
       var acc=0,stops=[];
       ranked.forEach(function(k,i){
@@ -21713,7 +21804,10 @@ margin-left: -22px;
           var p=day.split("-"),wd=WD[new Date(+p[0],+p[1]-1,+p[2]).getDay()];
           // 「全部」和跨年的自选区间里，不写年份就分不清是哪一年的 8 月 7 日
           var showY=(mnScope==="all")||(mnScope==="range"&&mnFrom.slice(0,4)!==mnTo.slice(0,4));
-          h+='<div class="mn-day"><span>'+(showY?(p[0]+" 年 "):"")+(+p[1])+" 月 "+(+p[2])+' 日</span>'+
+          // 英文界面写 "19 Sep 2026"，中文还是「2026 年 9 月 19 日」
+          h+='<div class="mn-day"><span>'+(isEN()
+              ?((+p[2])+" "+MON_EN[(+p[1])-1]+(showY?(" "+p[0]):""))
+              :((showY?(p[0]+" 年 "):"")+(+p[1])+" 月 "+(+p[2])+" 日"))+'</span>'+
             '<span class="wd">周'+wd+'</span>'+
             ((dayOut[day]||dayIn[day])?('<span class="dsum'+(dayOut[day]?" out":"")+'">'+
               (dayOut[day]?mnMoney(-dayOut[day]):"")+
@@ -22677,8 +22771,11 @@ margin-left: -22px;
     }
     mnRender();
     if(!mnCfg.lastSync)mnStatus("还没同步过 —— 点 🔄 同步（要先照 <code>supabase/AKAHU.md</code> 配好 Edge Function）");
-    else mnStatus("上次同步 "+mnAgo(mnCfg.lastSync)+
-      (mnCfg.since?(" · 只收 <b>"+esc(mnCfg.since)+"</b> 起的流水"):""));
+    // 两个分支各自拼成**一句完整的话**：
+    // 写成 A+(cond?B:"") 的话，模板抽取器会得到两条残句，
+    // 而页面上它们是同一个文本节点 —— 哪条都对不上。
+    else if(mnCfg.since)mnStatus("上次同步 "+trv(mnAgo(mnCfg.lastSync))+" · 只收 "+esc(mnCfg.since)+" 起的流水");
+    else mnStatus("上次同步 "+trv(mnAgo(mnCfg.lastSync)));
     mnAutoSync("open");        // 进页面顺手同步一下（闸门和条件都在 mnAutoSync 里）
     mnAutoWatch(true);}        // 页面开着别不动 —— 每 10 分钟看一眼够不够 1 小时了
 
@@ -23247,7 +23344,7 @@ margin-left: -22px;
         '<div class="legend stat-legend" id="bd-lines">'+bodyChartable().map(function(m){return '<button class="li'+(shown.indexOf(m.k)>=0?" on":"")+'" data-bm="'+m.k+'" style="--c:'+m.c+'"><i></i>'+esc(m.n)+'</button>';}).join("")+'</div>'+
         '<div class="seg bd-range">'+ranges.map(function(r){return '<button data-br="'+r[0]+'"'+(bodyRange===r[0]?' class="on"':'')+'>'+r[1]+'</button>';}).join("")+'</div>'+
         '<div class="bd-chart" id="bd-chart">'+bodyChart(shown)+'</div></div>'+
-      '<div class="panel"><h3>各项变化（'+esc(ranges.filter(function(r){return r[0]===bodyRange;}).map(function(r){return r[1];})[0]||"全部")+'）</h3><div class="bd-deltas">'+(deltas||'<div class="stat-empty">还没有记录</div>')+'</div></div>'+
+      '<div class="panel"><h3>各项变化（'+esc(trv(ranges.filter(function(r){return r[0]===bodyRange;}).map(function(r){return r[1];})[0]||"全部"))+'）</h3><div class="bd-deltas">'+(deltas||'<div class="stat-empty">还没有记录</div>')+'</div></div>'+
       '<div class="panel"><h3>全部记录 <button class="bd-mini" id="bd-csv">下载 CSV</button></h3>'+
         (rows?('<div style="overflow-x:auto"><table class="rep-table bd-table"><thead><tr><th>日期</th><th>时间</th>'+heads+'<th>备注</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'):'<div class="stat-empty">还没有记录，上面记第一笔吧</div>')+
       '</div>';

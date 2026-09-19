@@ -508,5 +508,8 @@
 "📝 {1} 笔记 · {2} 标注": "📝 {1} notes · {2} annotations",
 "🗑 以前删掉过的 {1} 个 —— 点一下就加回来": "🗑 {1} you deleted before — tap one to add it back",
 "🗑 有 {1} 个词你删过或标了「认识」，它们不会被自动收藏；如果导入名单里又出现，会单独问你要不要加回来。": "🗑 {1} words you deleted or marked \"Known\" won't be saved automatically; if they turn up in an imported list again, you'll be asked separately whether to add them back.",
-"条标了「不进统计」{1}，没算进来。": "marked “Exclude from stats”{1}, not counted."
+"条标了「不进统计」{1}，没算进来。": "marked “Exclude from stats”{1}, not counted.",
+"{1}{2} · {3}，不算支出": "{1}{2} · {3}, not counted as spending",
+"上次同步 {1} · 只收 {2} 起的流水": "Last synced {1} · only transactions from {2} on",
+"上次同步 {1}": "Last synced {1}"
 }
