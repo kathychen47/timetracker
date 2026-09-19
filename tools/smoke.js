@@ -102,7 +102,36 @@ function clickable(root) {
 const TABS = ["calendar", "todo", "stats", "dict", "money", "food", "rec", "listen", "body", "reader"];
 const PANES = ["recent", "account", "ai", "gcal", "cloud", "appear", "cats", "dict", "general"];
 
-let clicked = 0;
+let clicked = 0, changed = 0;
+// 很多 handler 挂在 change 上，不是 click：下拉、勾选、日期、色轮。
+// 下拉挨个选一遍，勾选翻一下再翻回来。
+async function changeAll(scope, where) {
+  const sels = Array.from(scope.querySelectorAll("select")).filter(el => !el.disabled);
+  for (const sel of sels) {
+    if (!sel.isConnected) continue;
+    const opts = Array.from(sel.options || []).map(o => o.value);
+    const keep = sel.value;
+    for (const v of opts.slice(0, 6)) {
+      if (!sel.isConnected) break;
+      clicking = where + " → select " + (sel.id ? "#" + sel.id : "") + " = " + JSON.stringify(String(v).slice(0, 20));
+      try { sel.value = v; sel.dispatchEvent(new W.Event("change", { bubbles: true })); }
+      catch (e) { errs.push({ msg: "throw: " + e.message.slice(0, 140), at: clicking }); }
+      changed++; await sleep(40);
+    }
+    if (sel.isConnected) { try { sel.value = keep; sel.dispatchEvent(new W.Event("change", { bubbles: true })); } catch (e) { } }
+    await sleep(30);
+  }
+  const boxes = Array.from(scope.querySelectorAll('input[type="checkbox"]')).filter(el => !el.disabled && !SKIP.test(el.id || ""));
+  for (const b of boxes) {
+    if (!b.isConnected) continue;
+    for (let i = 0; i < 2; i++) {
+      clicking = where + " → checkbox " + (b.id ? "#" + b.id : "");
+      try { b.checked = !b.checked; b.dispatchEvent(new W.Event("change", { bubbles: true })); }
+      catch (e) { errs.push({ msg: "throw: " + e.message.slice(0, 140), at: clicking }); }
+      changed++; await sleep(40);
+    }
+  }
+}
 async function clickAll(scope, where) {
   const els = clickable(scope);
   for (const el of els) {
@@ -135,6 +164,7 @@ async function clickAll(scope, where) {
     await clickAll(view, t);
     await sleep(150);
     await clickAll(view, t + "·2");
+    await changeAll(view, t);
     await sleep(120);
   }
 
@@ -170,11 +200,11 @@ async function clickAll(scope, where) {
       try { nav.click(); } catch (e) { errs.push({ msg: "throw: " + e.message, at: clicking }); }
       await sleep(250);
       const pane = D.querySelector('.set-pane[data-pane="' + p + '"]');
-      if (pane) await clickAll(pane, "设置:" + p);
+      if (pane) { await clickAll(pane, "设置:" + p); await changeAll(pane, "设置:" + p); }
     }
   }
 
-  console.log("  点了 " + clicked + " 下");
+  console.log("  点了 " + clicked + " 下，改了 " + changed + " 次选项");
   const byMsg = new Map();
   errs.forEach(e => {
     const k = e.msg;

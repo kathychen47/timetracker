@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<title>时间管理 · 初版</title>
+<title>时间管理</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- 网站图标。内联成 data URI，本地直接打开这个文件时也有图标。
      改图标请跑 tools/make-favicon.py，别手改这几行。
@@ -5177,7 +5177,10 @@ margin-left: -22px;
     "账号":"Account","登录":"Sign in","用 Google 登录":"Sign in with Google","退出登录":"Sign out",
     "主题":"Theme","浅色":"Light","深色":"Dark","界面缩放":"UI scale","自动（按屏幕）":"Auto (by screen)","语言 / Language":"Language",
     "番茄钟":"Pomodoro","倒计时":"Countdown","正计时":"Count up","这次专注做什么？（记进日历备注）":"What are you focusing on? (saved as the note)",
-    "完成后记入日历":"Log to calendar when done","开始":"Start","重置":"Reset","跳过":"Skip","结束":"Finish",
+    // 「开始」「结束」上面那组里已经有了。这儿再写一遍的话，**后写的静默胜出** ——
+    // “结束”曾经被这条的 "Finish" 盖掉，于是事件弹窗里那个结束时间的 label
+    // 英文一直写着 "Finish"。番茄钟那边压根没有单独的「结束」按钮。
+    "完成后记入日历":"Log to calendar when done","重置":"Reset","跳过":"Skip",
     "今日次数":"Sessions today","今日时长":"Minutes today","拖动圆环设置时长":"Drag the ring to set duration",
     "新目标":"New goal","编辑目标":"Edit goal","名称":"Name","类型":"Type","时长(小时)":"Time (hours)","次数":"Count","目标值":"Target",
     "单位（次数型 · 如 次 / 杯 / 页 / 趟）":"Unit (e.g. times / cups / pages)","周期":"Period","每周":"Weekly","每月":"Monthly","每年":"Yearly","自定义区间":"Custom range",
@@ -6321,6 +6324,7 @@ margin-left: -22px;
     "时长":"Duration",
     "时长(分钟)":"Duration (min)",
     "时间":"Time",
+    "时间管理":"Timetracker",
     "时间管理 · 初版":"Time Management · v1",
     "明天":"Tomorrow",
     "明暗":"Light / dark",
@@ -7912,7 +7916,10 @@ margin-left: -22px;
     attrs(root);
     if(root.querySelectorAll)Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),attrs);
   }catch(e){}}
-  function initLang(){if(lang!=="en")return;sweepLang(document.body);
+  function initLang(){if(lang!=="en")return;
+    // <title> 在 <head> 里，sweepLang 扫的是 document.body —— 它永远轮不到。
+    try{var t=trLookup(document.title.trim());if(t!==undefined)document.title=t;}catch(e){}
+    sweepLang(document.body);
     try{new MutationObserver(function(muts){muts.forEach(function(m){Array.prototype.forEach.call(m.addedNodes,function(nd){sweepLang(nd);});});}).observe(document.body,{childList:true,subtree:true});}catch(e){}}
 
   // ---------- categories (2-level) ----------
@@ -12289,7 +12296,9 @@ margin-left: -22px;
     if(!pTimer){if(pTitleOld!==null){document.title=pTitleOld;pTitleOld=null;}return;}
     if(pTitleOld===null)pTitleOld=document.title;
     var s=(timerMode==="up")?pElapsed:pLeft;
-    document.title="("+pad(Math.floor(s/60))+":"+pad(s%60)+") "+(pMode2==="break"?"休息":"专注");}
+    // 这儿不走词表：“休息”在句子里翻成小写 break，当标题用得大写。
+    document.title="("+pad(Math.floor(s/60))+":"+pad(s%60)+") "+
+      (isEN()?(pMode2==="break"?"Break":"Focus"):(pMode2==="break"?"休息":"专注"));}
   function pomoTick(){
     var now=Date.now();
     if(timerMode==="up"){pElapsed=pBase+Math.max(0,Math.round((now-pStartAt)/1000));

@@ -127,6 +127,58 @@ console.log("== ?lang= 逃生通道 ==");
 })();
 
 console.log("");
+console.log("== 词表里不允许有重复键 ==");
+// 对象字面量里同一个键写两遍，**后面那个静默胜出**。
+// 两处译文不一样的话，界面上就会出现一个你以为改过、实际没生效的译文 ——
+// 而且怎么看源码都看不出来，因为两处都在。
+// 真发生过："结束" 被番茄钟那组的 "Finish" 盖掉，
+// 事件弹窗里的结束时间英文一直写着 "Finish"。
+(function () {
+  const ls = src.split(/\r?\n/);
+  const a = ls.findIndex(l => l.indexOf("var I18N={en:{") >= 0);
+  const b = ls.findIndex((l, i) => i >= a && l.trim() === "}};");
+  function pairs(line) {
+    const out = []; let i = 0;
+    function str() {
+      if (line[i] !== '"') return null;
+      let j = i + 1, buf = "";
+      while (j < line.length) {
+        const c = line[j];
+        if (c === "\\") { buf += line[j] + line[j + 1]; j += 2; continue; }
+        if (c === '"') { i = j + 1; return buf; }
+        buf += c; j++;
+      }
+      return null;
+    }
+    while (i < line.length) {
+      if (line[i] !== '"') { i++; continue; }
+      const k = str(); if (k === null) break;
+      while (i < line.length && /\s/.test(line[i])) i++;
+      if (line[i] !== ":") continue;
+      i++; while (i < line.length && /\s/.test(line[i])) i++;
+      const v = str(); if (v === null) continue;
+      out.push([k, v]);
+    }
+    return out;
+  }
+  const seen = new Map(); let diff = 0, same = 0;
+  for (let i = a; i <= b; i++) pairs(ls[i]).forEach(([k, v]) => {
+    if (seen.has(k)) {
+      if (seen.get(k).v !== v) {
+        diff++; fail++;
+        console.log("  x 重复键且译文不同 " + JSON.stringify(k) +
+          "：" + (seen.get(k).line) + " 行 " + JSON.stringify(seen.get(k).v) +
+          " / " + (i + 1) + " 行 " + JSON.stringify(v) + "（生效的是后一条）");
+      } else same++;
+    } else seen.set(k, { v, line: i + 1 });
+  });
+  if (!diff) pass++;
+  if (same) { fail++; console.log("  x 还有 " + same + " 处完全重复的键（译文一样，属于冗余）"); }
+  else pass++;
+  console.log("  键 " + seen.size + " 个，重复 " + (diff + same) + " 处");
+})();
+
+console.log("");
 console.log("== 规模 ==");
 console.log("  词表 " + Object.keys(ctx.I18N.en).length + " 条 · 模板 " + ctx.I18NP.length + " 条");
 let bad = 0;
