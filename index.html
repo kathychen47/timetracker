@@ -1890,6 +1890,24 @@
   .field textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:14px;font-family:inherit;resize:vertical;min-height:46px}
   .field .row{display:flex;gap:10px}.field .row>div{flex:1}
   .field .row>.ev-durw{flex:0 0 82px}.field .row>.ev-durw input{text-align:center}
+  /* 新建/编辑事件这一个弹窗单独放宽：分类色块从 3 行挤成 2 行，整体矮一大截。
+     别去改 .modal 本身 —— 那是所有弹窗（确认、提示…）共用的，放宽会把小对话框撑成一条。 */
+  .ev-modal{max-width:660px}
+  .ev-when{flex-wrap:wrap}
+  .ev-when>div{min-width:104px}
+  .ev-when>.ev-datew{flex:0 0 156px}
+  @media (max-width:520px){.ev-when>.ev-datew{flex:1 1 100%}}
+  /* 「保存」永远够得着：弹窗再长，这一条也跟着贴在底上 ——
+     她之前得把整个网页缩小才点得到它。 */
+  .ev-modal .modal-actions{position:sticky;bottom:-20px;z-index:3;margin-top:16px;
+    padding:12px 0 20px;margin-bottom:-20px;background:var(--bg);
+    box-shadow:0 -12px 16px -12px rgba(20,22,30,.22)}
+  /* 「同时还在做别的事」：弹窗里跟上面的大类/小类一样用色块选，一眼就看得出是哪个项目 */
+  .pomo-mate.chips{display:block;border:1px solid var(--border);border-radius:12px;
+    padding:9px 10px 10px;background:var(--surface);margin-top:7px}
+  .pomo-mate.chips .pm-h{display:flex;gap:7px;align-items:center}
+  .pomo-mate.chips .pm-h input[type=text]{flex:1 1 auto;min-width:0;text-align:left}
+  .pomo-mate.chips .pm-cats{margin-top:8px}
   .cats{display:flex;flex-wrap:wrap;gap:7px}
   .cat-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;color:var(--text)}
   .cat-chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -4308,11 +4326,11 @@ margin-left: -22px;
 
 <!-- event modal -->
 <div class="overlay" id="overlay">
-  <div class="modal">
+  <div class="modal ev-modal">
     <h3 id="modal-title">新建事件</h3>
     <div class="field"><label>标题</label><input type="text" id="ev-title" placeholder="不填就用「大类 · 小类」"></div>
-    <div class="field"><label>日期</label><input type="date" lang="zh-CN" id="ev-date"></div>
-    <div class="field"><div class="row">
+    <div class="field"><div class="row ev-when">
+      <div class="ev-datew"><label>日期</label><input type="date" lang="zh-CN" id="ev-date"></div>
       <div><label>开始</label><input type="time" id="ev-start" value="09:00"></div>
       <div class="ev-durw"><label>时长</label><input type="text" id="ev-dur" placeholder="2h" autocomplete="off" title="填多久，结束时间自己算：2 / 2h / 1h30 / 90m"></div>
       <div><label>结束</label><input type="time" id="ev-end" value="10:00"></div>
@@ -11930,7 +11948,7 @@ margin-left: -22px;
   }
   var editSegs=null,evMates=[];
   var renderEvMates=mateUI(document.getElementById("ev-mates"),document.getElementById("ev-mate-add"),
-    evMates,function(){return selCat||"";},null,"这条的时间会平分给上面这几件事，总时长不变");
+    evMates,function(){return selCat||"";},null,"这条的时间会平分给上面这几件事，总时长不变",true);
   // 保存时把这条的时间平分，存成「段」—— 跟番茄钟那边同一套账。
   // 已经有分段的（番茄钟里换过任务、或者上次就分过）不碰：那种交给上面那个分段面板改，
   // 在这儿再平分一次会把「A 20 分 / B 40 分」抹平成「30 / 30」，等于把她记的东西改掉。
@@ -12070,18 +12088,30 @@ margin-left: -22px;
   // arr 是调用方自己的数组，这里**只在原地改**（push / splice），从不重新赋值 ——
   // 外面那个名字始终指着同一个数组，不会某天拿到一个旧空壳。
   // 满 4 件就把「＋」收起来：4 行明摆在那儿，比弹一句「最多 4 件」清楚。
-  function mateUI(box,add,arr,defCat,onChange,noteText){
+  function mateUI(box,add,arr,defCat,onChange,noteText,chips){
     if(!box)return function(){};
+    // 两种样子：番茄钟那一侧栏窄，跟它自己的主任务一样用下拉；
+    // 事件弹窗里跟上面的大类/小类一样用色块 —— 她要的就是「一眼看出是哪个项目」。
+    function rowSel(m){
+      var subs=m.cat?subsByUse(m.cat):[];
+      return '<input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
+        '<select class="pm-cat"><option value="">（选大类）</option>'+
+          catsByUse().map(function(c){return '<option value="'+c.key+'"'+(m.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select>'+
+        '<select class="pm-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+
+          subs.map(function(x){return '<option value="'+x.key+'"'+((m.sub||"")===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'+
+        '<button type="button" class="pm-x" title="不算这件事了">✕</button>';}
+    function rowChips(m){
+      var subs=m.cat?subsByUse(m.cat):[],pc=m.cat?catColor(m.cat):"var(--border)";
+      return '<div class="pm-h"><input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
+        '<button type="button" class="pm-x" title="不算这件事了">✕</button></div>'+
+        '<div class="cats pm-cats">'+catsByUse().map(function(c){
+          return '<div class="cat-chip sub-chip'+(m.cat===c.key?" on":"")+'" data-mcat="'+c.key+'" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+'</div>'+
+        (subs.length?('<div class="cats pm-cats">'+subs.map(function(x){
+          return '<div class="cat-chip sub-chip'+((m.sub||"")===x.key?" on":"")+'" data-msub="'+x.key+'" style="--c:'+pc+'"><i></i>'+esc(x.name)+'</div>';}).join("")+'</div>'):"");}
     function draw(){
       box.innerHTML=arr.map(function(m,i){
-        var subs=m.cat?subsByUse(m.cat):[];
-        return '<div class="pomo-mate" data-i="'+i+'">'+
-          '<input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
-          '<select class="pm-cat"><option value="">（选大类）</option>'+
-            catsByUse().map(function(c){return '<option value="'+c.key+'"'+(m.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select>'+
-          '<select class="pm-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+
-            subs.map(function(x){return '<option value="'+x.key+'"'+((m.sub||"")===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'+
-          '<button type="button" class="pm-x" title="不算这件事了">✕</button></div>';}).join("")+
+        return '<div class="pomo-mate'+(chips?" chips":"")+'" data-i="'+i+'">'+
+          (chips?rowChips(m):rowSel(m))+'</div>';}).join("")+
         (arr.length?('<div class="pomo-mate-note">'+noteText+'</div>'):"");
       if(add){add.textContent=arr.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";
         add.style.display=(arr.length>=4)?"none":"";}}
@@ -12096,9 +12126,16 @@ margin-left: -22px;
       if(e.target.classList.contains("pm-cat")){arr[i].cat=e.target.value;arr[i].sub=null;touched();draw();}
       else if(e.target.classList.contains("pm-sub")){arr[i].sub=e.target.value||null;touched();}});
     box.addEventListener("click",function(e){
-      var x=e.target.closest(".pm-x");if(!x)return;
-      var row=x.closest(".pomo-mate");if(!row)return;
-      arr.splice(+row.getAttribute("data-i"),1);touched();draw();});
+      var row=e.target.closest(".pomo-mate");if(!row)return;
+      var i=+row.getAttribute("data-i");
+      if(e.target.closest(".pm-x")){arr.splice(i,1);touched();draw();return;}
+      var ch=e.target.closest("[data-mcat],[data-msub]");if(!ch||!arr[i])return;
+      var ck=ch.getAttribute("data-mcat");
+      if(ck!==null){                                     // 再点一下选中的那个 = 取消，这一行就不算数了
+        if(arr[i].cat===ck){arr[i].cat="";}else{arr[i].cat=ck;}
+        arr[i].sub=null;}
+      else{var sk=ch.getAttribute("data-msub");arr[i].sub=((arr[i].sub||"")===sk)?null:sk;}
+      touched();draw();});
     if(add)add.addEventListener("click",function(){
       if(arr.length>=4)return;
       arr.push({t:"",cat:(defCat?defCat():"")||"",sub:null});touched();draw();
