@@ -4354,7 +4354,13 @@ margin-left: -22px;
     </div>
     <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
-    <div class="field" id="ev-amin-field"><label>统计时长（可选）</label><input type="text" id="ev-amin" placeholder="3h / 1h30 / 90m" autocomplete="off"></div>
+    <!-- 「统计时长」她说不需要了，默认不再露面。
+         但它不是摆设：evNetMin() 真按它算统计。以前填过的那几条要是就这么藏了，
+         就成了一个看不见、改不掉、又在悔改数字的东西。所以：只有这条自己填过才显示，
+         清空一次就再也不出现。一条都没填过的话，她永远不会再看见它。 -->
+    <div class="field" id="ev-amin-field" style="display:none"><label>统计时长（可选）</label><input type="text" id="ev-amin" placeholder="3h / 1h30 / 90m" autocomplete="off">
+      <div class="ev-gcal-hint">这条以前填过统计时长，所以还显示着 —— 统计里这条按它算。清空它就回到按实际时长算，以后不会再出现。</div>
+    </div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
     <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="日历上照样显示，只是总时长、日均、目标进度都不算它"><input type="checkbox" id="ev-nostat"> ⊘ 不进统计</label>
@@ -7133,6 +7139,7 @@ margin-left: -22px;
     "这本书的文件丢了，建议删掉重新导入":"This book's file is gone — delete it and import it again",
     "这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）":"This book is already fully translated ✓ (stored on this device — pages open instantly, nothing gets re-translated)",
     "这条":"this one",
+    "这条以前填过统计时长，所以还显示着 —— 统计里这条按它算。清空它就回到按实际时长算，以后不会再出现。":"This entry has a stats duration set, which is why the box is still here — the stats count it by that number. Clear it and the entry goes back to its real length, and the box won't come back.",
     "这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高":"This entry counts towards several things: on save the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
     "这条周期记账停了 · 已经记进去的不动":"Recurring entry paused · what's already logged stays",
     "这条的时间会平分给上面这几件事，总时长不变":"This entry's time is split evenly between the things above — the total stays the same.",
@@ -11929,6 +11936,7 @@ margin-left: -22px;
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-nostat").checked=!!(obj&&obj.nostat);
     document.getElementById("ev-amin").value=(obj&&+obj.amin>0)?fmtDur(+obj.amin):"";
+    document.getElementById("ev-amin-field").style.display=(obj&&+obj.amin>0)?"":"none";
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
     refreshGcalRow();
     (function(){

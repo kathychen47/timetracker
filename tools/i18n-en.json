@@ -1872,6 +1872,7 @@
 "这本书的文件丢了，建议删掉重新导入": "This book's file is gone — delete it and import it again",
 "这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）": "This book is already fully translated ✓ (stored on this device — pages open instantly, nothing gets re-translated)",
 "这条": "this one",
+"这条以前填过统计时长，所以还显示着 —— 统计里这条按它算。清空它就回到按实际时长算，以后不会再出现。": "This entry has a stats duration set, which is why the box is still here — the stats count it by that number. Clear it and the entry goes back to its real length, and the box won't come back.",
 "这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高": "This entry counts towards several things: on save the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
 "这条周期记账停了 · 已经记进去的不动": "Recurring entry paused · what's already logged stays",
 "这条的时间会平分给上面这几件事，总时长不变": "This entry's time is split evenly between the things above — the total stays the same.",
