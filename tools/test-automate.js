@@ -26,7 +26,7 @@ function ln(pat) {
   throw new Error("找不到：" + pat);
 }
 var CODE = [
-  src.slice(ln("function acWord(lo,w){"), ln("    return kept;}") + 1).join(NL),
+  src.slice(ln("function acWord(lo,w,from0){"), ln("    return res;}") + 1).join(NL),
   src.slice(ln("function autoMatesSync(title,arr){"), ln("    return {first:hits[0]||null,changed:changed};}") + 1).join(NL)
 ].join(NL);
 
@@ -66,8 +66,8 @@ T("她举的那个例子", function () {
 
 T("顺序跟着句子走，不是跟着分类表的顺序", function () {
   // 分类表里 DATA401 排在 STAT462 前面，但句子里 STAT462 在后
-  ok(sig(C.autoCatHits("DATA401 then STAT462")) === "uco/d401 + uco/s462", "先 D 后 S");
-  ok(sig(C.autoCatHits("STAT462 then DATA401")) === "uco/s462 + uco/d401", "先 S 后 D");
+  ok(sig(C.autoCatHits("DATA401 and STAT462")) === "uco/d401 + uco/s462", "先 D 后 S");
+  ok(sig(C.autoCatHits("STAT462 and DATA401")) === "uco/s462 + uco/d401", "先 S 后 D");
 });
 
 T("只提了一件 → 不铺第二行", function () {
@@ -95,7 +95,7 @@ T("英文/数字卡词边界", function () {
 });
 
 T("中文不需要空格也认得出", function () {
-  ok(sig(C.autoCatHits("今天背单词加生活琐事")) === "eng + life", "中文关键词：" + sig(C.autoCatHits("今天背单词加生活琐事")));
+  ok(sig(C.autoCatHits("今天背单词和生活琐事")) === "eng + life", "中文关键词：" + sig(C.autoCatHits("今天背单词和生活琐事")));
 });
 
 T("什么都没提到 → 空", function () {
@@ -104,10 +104,11 @@ T("什么都没提到 → 空", function () {
 });
 
 T("最多铺到 4 件", function () {
-  var h = C.autoCatHits("STAT462 DATA401 AI-20 Prep Hill Labs training");
+  var T5 = "STAT462、DATA401、AI-20、Prep、Hill Labs";
+  var h = C.autoCatHits(T5);
   ok(h.length >= 5, "先认出 " + h.length + " 件");
   var arr = [];
-  C.autoMatesSync("STAT462 DATA401 AI-20 Prep Hill Labs training", arr);
+  C.autoMatesSync(T5, arr);
   ok(arr.length === 3, "主任务 1 件 + 并行 3 件 = 4，实际并行 " + arr.length);
 });
 
@@ -139,6 +140,27 @@ T("autoMatesSync：已经手工加过同一个分类就不重复铺", function (
   C.autoMatesSync("check STAT462 and DATA401", arr);
   ok(arr.length === 1, "不重复，实际 " + arr.length + " 行");
   ok(!arr[0].auto, "原来那行还是手工的");
+});
+
+T("中间没「和」就不算两件 —— 避免把数字惄悄刧成一半", function () {
+  // Prep / training / Others 本身就是普通英文词，光靠「出现了」分不清。
+  // 认错了比没认出来贵得多（您默地切一刀，还不提示），所以宁可严。
+  ok(C.autoCatHits("prep the STAT462 slides").length === 1, "prep the STAT462 slides 只算一件");
+  ok(C.autoCatHits("training session with Hill Labs").length === 1, "with 不是连接词");
+  ok(C.autoCatHits("写 PhD 的 Others 部分").length === 1, "「的」不是连接词");
+  ok(C.autoCatHits("STAT462 DATA401").length === 1, "光用空格隔开也不算");
+  // 这几个算
+  ["and", "+", "、", "，", ",", "和", "与", "跟", "以及", "还有", "顺便", "同时"].forEach(function (j) {
+    ok(C.autoCatHits("STAT462 " + j + " DATA401").length === 2, "「" + j + "」该算连接词");
+  });
+});
+
+T("中间多打了空格 / 连字符也认得出", function () {
+  ok(sig(C.autoCatHits("STAT 462 and DATA 401")) === "uco/s462 + uco/d401", "STAT 462 中间空格：" + sig(C.autoCatHits("STAT 462 and DATA 401")));
+  ok(sig(C.autoCatHits("做一下 AI 20 的材料")) === "uco/ai20", "AI 20 → AI-20");
+  ok(sig(C.autoCatHits("stat-462 的作业")) === "uco/s462", "stat-462 带连字符");
+  // 挤完了也要卡词边界，不能乱拉邻居
+  ok(C.autoCatHits("xSTAT 462").length === 0, "前面粘着字母的还是不算");
 });
 
 console.log("");

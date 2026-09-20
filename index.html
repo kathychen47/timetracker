@@ -8190,25 +8190,58 @@ margin-left: -22px;
   //
   // 跟 autoCatMatch 还有一处不同：这里**分类自己的名字就是关键词**。
   // 她的小类就叫 STAT462 / DATA401，还要她再去配一遍关键词是白费功夫。
-  function acWord(lo,w){                       // 词边界：DATA401 不该被 DATA4011 命中，STAT46 也不该命中 STAT462
+  function acWord(lo,w,from0){                 // 词边界：DATA401 不该被 DATA4011 命中，STAT46 也不该命中 STAT462
     w=String(w||"").toLowerCase().trim();
     if(w.length<2)return -1;
-    var ascii=/[a-z0-9]/,from=0,
+    var ascii=/[a-z0-9]/,from=from0||0,
         headA=ascii.test(w.charAt(0)),tailA=ascii.test(w.charAt(w.length-1));
     for(;;){
       var i=lo.indexOf(w,from);if(i<0)return -1;
       // 中文没有空格，所以只对英文/数字卡词边界
       if((!headA||!ascii.test(lo.charAt(i-1)))&&(!tailA||!ascii.test(lo.charAt(i+w.length))))return i;
       from=i+1;}}
+  // 「STAT 462」「AI 20」这种中间多打了空格/连字符的写法也得认得出来。
+  // 做法：把空格、连字符、点挤掉再找一次，同时留一张「挤掉后第 i 个字符原来在第几位」的对照表。
+  // 词边界还是回原句上判断 —— 不然 "stat462anddata401" 挤成一条，哪儿都不是边界了。
+  function acSquash(t){
+    var o="",map=[];
+    for(var i=0;i<t.length;i++){var c=t.charAt(i);
+      if(c===" "||c==="\t"||c==="-"||c==="_"||c==="."||c==="\u00b7")continue;
+      o+=c;map.push(i);}
+    return {s:o,map:map};}
+  function acFind(lo,sq,w){                    // → {at,end}，找不到给 null
+    var i=acWord(lo,w);
+    if(i>=0)return {at:i,end:i+String(w).toLowerCase().trim().length};
+    var n=String(w||"").toLowerCase().replace(/[\s\-_.\u00b7]/g,"");
+    if(n.length<3)return null;                 // 挤完太短的不认，噪音太大
+    var ascii=/[a-z0-9]/,from=0,
+        headA=ascii.test(n.charAt(0)),tailA=ascii.test(n.charAt(n.length-1));
+    for(;;){
+      var j=sq.s.indexOf(n,from);if(j<0)return null;
+      var a0=sq.map[j],b0=sq.map[j+n.length-1];
+      if((!headA||!ascii.test(a0>0?lo.charAt(a0-1):""))&&(!tailA||!ascii.test(lo.charAt(b0+1))))
+        return {at:a0,end:b0+1};
+      from=j+1;}}
+  // 两件事中间得有个「和」，才算真是两件事。
+  // 不然「prep the STAT462 slides」会被当成 Prep + STAT462 两件 —— 其实只有一件：给 STAT462 备课。
+  // Prep / training / Others / Life 这些小类名本身就是普通英文词，光靠「出现了」根本分不清。
+  // 认错了比没认出来贵得多（她的数字被悄悄劈成一半，而且不会有任何提示），所以宁可严：
+  // 没有连接词就只当一件事，她自己点「＋」两秒钟的事。
+  function acJoined(gap){
+    var g=String(gap||"").toLowerCase();
+    if(/[,、;；+&\/\uff0c\uff06\uff0b]/.test(g))return true;
+    if(/[和与跟]|以及|还有|顺便|同时|另外|加上|两个|两门|都要/.test(g))return true;
+    return /(^|[^a-z])(and|plus)([^a-z]|$)/.test(g);}
   function autoCatHits(title){
     var lo=String(title||"").toLowerCase(),out=[];
     if(!lo)return out;
+    var sq=acSquash(lo);
     var add=function(ck,sk,nm,words){
-      var at=-1,len=0;
+      var best=null,len=0;
       words.forEach(function(w){
-        var i=acWord(lo,w);if(i<0)return;
-        if(at<0||i<at||(i===at&&String(w).length>len)){at=i;len=String(w).trim().length;}});
-      if(at>=0)out.push({at:at,len:len,cat:ck,sub:sk||null,nm:nm});};
+        var r=acFind(lo,sq,w);if(!r)return;
+        if(!best||r.at<best.at||(r.at===best.at&&String(w).length>len)){best=r;len=String(w).trim().length;}});
+      if(best)out.push({at:best.at,end:best.end,len:len,cat:ck,sub:sk||null,nm:nm});};
     cats.forEach(function(c){
       (c.subs||[]).forEach(function(x){add(c.key,x.key,x.name,[x.name].concat(x.kw||[]));});
       add(c.key,null,c.name,[c.name].concat(c.kw||[]));});
@@ -8216,10 +8249,15 @@ margin-left: -22px;
     // 留着的话时间会被分给「同一个大类、没有小类」的一份，等于白白切一刀。
     var hasSub={};out.forEach(function(h){if(h.sub)hasSub[h.cat]=1;});
     out=out.filter(function(h){return h.sub||!hasSub[h.cat];});
-    out.sort(function(a,b){return a.at-b.at||b.len-a.len;});
+    out.sort(function(a,b){return a.at-b.at||b.end-a.end;});
     var kept=[],end=-1;                        // 位置套在一起的只留长的那个
-    out.forEach(function(h){if(h.at>=end){kept.push(h);end=h.at+h.len;}});
-    return kept;}
+    out.forEach(function(h){if(h.at>=end){kept.push(h);end=h.end;}});
+    var res=[];                                // 中间没有「和」的，不算第二件事
+    kept.forEach(function(h){
+      if(!res.length){res.push(h);return;}
+      var p=res[res.length-1];
+      if(acJoined(lo.slice(p.end,h.at)))res.push(h);});
+    return res;}
 
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
