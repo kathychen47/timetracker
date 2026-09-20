@@ -29,3 +29,16 @@ tools/i18n-frag.txt
 tools/i18n-split.txt
 tools/i18n-long*.json
 tools/i18n-glossary.txt
+
+# Claude 的本地配置和会话日志。日志里有大量个人上下文，而这个仓库是公开的（GitHub Pages）——
+# 它跟着 OneDrive 在设备间同步就够了，不进 git。
+.claude/
+
+# 一次性的脚手架：跑 tools/i18n-gap.js / i18n-chunk.js 现生成，没有任何代码读它们
+tools/i18n-gap.txt
+tools/i18n-gap-frag.txt
+tools/i18n-long.txt
+tools/i18n-patch.json
+
+# 蓝牙体重秤的探针页，当初调试用的一次性文件
+tools/ble-scale-probe.html
