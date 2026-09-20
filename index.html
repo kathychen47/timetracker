@@ -12180,6 +12180,10 @@ margin-left: -22px;
       // 故意不带 arch —— 保存过一次就是「认领」，从此归她管，不再被 Google 刷新。
       if(old.guid)obj.guid=old.guid;if(old.gots)obj.gots=old.gots;if(old.gts)obj.gts=old.gts;
       if(old.gup)obj.gup=old.gup;if(old.gtzo!==undefined)obj.gtzo=old.gtzo;if(old.gro)obj.gro=1;
+      // 技能步骤的归属也得跟着走。掉了的话技能页上那一步会凭空少一截时间，
+      // 而且她只是改了个结束时间 —— 界面上没有任何地方提示这条跟某一步是绑着的。
+      if(old.stepId)obj.stepId=old.stepId;
+      if(+old.stepMin>0)obj.stepMin=+old.stepMin;      // 平分过的：那一步只算主任务那一份
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
     else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};events.push(obj);}
@@ -24360,6 +24364,14 @@ margin-left: -22px;
       if(!e.key)return;                                        // 整个 clear()：不管
       if(e.newValue===e.oldValue)return;                       // 值没变（重读时又原样写回来的）：别互相惊动
       if(e.key==="tt_pomorun"){try{onPomoRunChanged();}catch(_e){}return;}
+      if(e.key==="tt_pomomates"){                              // 另一个网页改了「同时还在做的事」
+        // 计时本身早就跨网页同步了，就这几行没跟上 ——
+        // 于是 A 页加的并行项 B 页看不见，在 B 页结束就不会平分。
+        // pMates 必须还是同一个数组（mateUI 持着它），所以原地换内容。
+        try{var mm=load("tt_pomomates",[])||[];
+          pMates.length=0;mm.forEach(function(x){pMates.push(x);});
+          renderMates();}catch(_e){}
+        return;}
       if(e.key==="tt_pomoping"){                               // 新开的网页在问"这次计时还有人管吗"
         try{if(!pFollow){var pr=load("tt_pomorun",null);
           if(pr&&pr.owner===TABID){pr.at=Date.now();save("tt_pomorun",pr);}}}catch(_e){}
