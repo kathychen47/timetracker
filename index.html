@@ -13905,6 +13905,21 @@ margin-left: -22px;
       .then(function(res){
         if(res&&(res.status===201||res.status===204||res.ok)){
           save("tt_grt_"+uid,true);grtDiag({ok:true});return;}
+        // 409 = 这个 user_id 已经有一行了，说明上面那条 DELETE 被 RLS 挡下了
+        // （这张表只给了 INSERT，没给 DELETE；PostgREST 滤成 0 行也照样回 204）。
+        // 行既然在，改它就是了 —— PATCH 只需要 UPDATE 策略，不需要 SELECT。
+        // 不修的后果：每次重新授权都「拿到了 token 但存不进去」，
+        // 1 小时后照样掉线 —— 她说的「经常 google 登出」就是这来的。
+        if(res&&res.status===409){
+          return fetch(base+"?user_id=eq."+encodeURIComponent(uid),{method:"PATCH",headers:H,
+            body:JSON.stringify({refresh_token:rt,updated_at:new Date().toISOString()})})
+            .then(function(r2){
+              if(r2&&(r2.ok||r2.status===204)){
+                save("tt_grt_"+uid,true);grtDiag({ok:true,via:"patch"});return;}
+              return r2.text().then(function(t2){
+                var m2=t2;try{m2=JSON.parse(t2).message||t2;}catch(e){}
+                grtDiag({ok:false,why:"db",msg:"HTTP "+r2.status+" "+String(m2).slice(0,160)+
+                  "（这行已经在了，但改不动 —— gcal_tokens 还差一条 UPDATE 策略）"});});});}
         return res.text().then(function(t){
           var m=t;try{m=JSON.parse(t).message||t;}catch(e){}
           grtDiag({ok:false,why:"db",msg:"HTTP "+res.status+" "+String(m).slice(0,160)});});})
