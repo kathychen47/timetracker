@@ -1908,6 +1908,8 @@
   .pomo-mate.chips .pm-h{display:flex;gap:7px;align-items:center}
   .pomo-mate.chips .pm-h input[type=text]{flex:1 1 auto;min-width:0;text-align:left}
   .pomo-mate.chips .pm-cats{margin-top:8px}
+  /* 虚线 = 按任务名自动认出来的（和上面自动归类的下拉框同一个意思）*/
+  .pomo-mate.auto{border-style:dashed;border-color:var(--primary)}
   .cats{display:flex;flex-wrap:wrap;gap:7px}
   .cat-chip{display:flex;align-items:center;gap:6px;padding:6px 11px;border-radius:99px;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);font-size:12.5px;color:var(--text)}
   .cat-chip i{width:9px;height:9px;border-radius:50%;background:var(--c)}
@@ -6270,6 +6272,7 @@ margin-left: -22px;
     "按 FSRS 记忆模型安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3）。新词当场按 1 分钟 → 10 分钟过两遍再进入长间隔；忘掉的词进重学，但不会退回「新词」占掉你的新词额度。":"Reviews are scheduled by the FSRS memory model: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3). A new word is shown twice on the spot, 1 minute then 10 minutes apart, before it moves to longer gaps; a word you forget goes into relearning rather than reverting to “new” and eating your daily new-word quota.",
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
     "按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。":"Reviews are scheduled on the SM-2 forgetting curve: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3) and the interval stretches or shrinks to match.",
+    "按任务名自动认出来的，可以改、也可以✕ 去掉":"Picked up from the task name — you can change it, or ✕ to drop it",
     "按住快捷键":"Hold a hotkey",
     "按关键词归并":"By keyword",
     "按原书位置摆放译文":"Put the translation where it sits in the book",
@@ -8179,7 +8182,44 @@ margin-left: -22px;
       for(var b=0;b<pk.length;b++){if(pk[b]&&t.indexOf(String(pk[b]).toLowerCase())>=0)return{cat:cats[a].key,sub:null};}}
     return null;
   }
-  function autoCat(title){return autoCatMatch(title)||{cat:"focus",sub:null};}
+  function autoCat(title){return autoCatMatch(title)||autoCatHits(title)[0]||{cat:"focus",sub:null};}
+  // 一句话里同时提到了好几件事：「check course content for STAT462 and DATA401」
+  // 该同时认出 STAT462 和 DATA401 两个小类。autoCatMatch 只回第一个命中的，
+  // 这里把全部命中按它们在标题里出现的先后列出来 —— 第一件当主任务，
+  // 其余的自动铺成「同时还在做的事」，时间平分。
+  //
+  // 跟 autoCatMatch 还有一处不同：这里**分类自己的名字就是关键词**。
+  // 她的小类就叫 STAT462 / DATA401，还要她再去配一遍关键词是白费功夫。
+  function acWord(lo,w){                       // 词边界：DATA401 不该被 DATA4011 命中，STAT46 也不该命中 STAT462
+    w=String(w||"").toLowerCase().trim();
+    if(w.length<2)return -1;
+    var ascii=/[a-z0-9]/,from=0,
+        headA=ascii.test(w.charAt(0)),tailA=ascii.test(w.charAt(w.length-1));
+    for(;;){
+      var i=lo.indexOf(w,from);if(i<0)return -1;
+      // 中文没有空格，所以只对英文/数字卡词边界
+      if((!headA||!ascii.test(lo.charAt(i-1)))&&(!tailA||!ascii.test(lo.charAt(i+w.length))))return i;
+      from=i+1;}}
+  function autoCatHits(title){
+    var lo=String(title||"").toLowerCase(),out=[];
+    if(!lo)return out;
+    var add=function(ck,sk,nm,words){
+      var at=-1,len=0;
+      words.forEach(function(w){
+        var i=acWord(lo,w);if(i<0)return;
+        if(at<0||i<at||(i===at&&String(w).length>len)){at=i;len=String(w).trim().length;}});
+      if(at>=0)out.push({at:at,len:len,cat:ck,sub:sk||null,nm:nm});};
+    cats.forEach(function(c){
+      (c.subs||[]).forEach(function(x){add(c.key,x.key,x.name,[x.name].concat(x.kw||[]));});
+      add(c.key,null,c.name,[c.name].concat(c.kw||[]));});
+    // 同一个大类既命中了小类、又命中了大类本身 → 只留小类那条。
+    // 留着的话时间会被分给「同一个大类、没有小类」的一份，等于白白切一刀。
+    var hasSub={};out.forEach(function(h){if(h.sub)hasSub[h.cat]=1;});
+    out=out.filter(function(h){return h.sub||!hasSub[h.cat];});
+    out.sort(function(a,b){return a.at-b.at||b.len-a.len;});
+    var kept=[],end=-1;                        // 位置套在一起的只留长的那个
+    out.forEach(function(h){if(h.at>=end){kept.push(h);end=h.at+h.len;}});
+    return kept;}
 
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
@@ -10608,7 +10648,9 @@ margin-left: -22px;
   function hrs(min){return min>=60?((Math.round(min/6)/10)+"h"):(Math.round(min)+"m");}
   function stepMin(st){                              // 这一步实际花了多久
     var m=+st.act||0;
-    events.forEach(function(e){if(e.stepId===st.id)m+=evNetMin(e);});
+    // 这条要是同时算给了别的事（时间平分），那一步只该拿主任务那一份。
+    // 不然统计里那一步只占一半、技能页上却记满额 —— 同一个数在两处对不上。
+    events.forEach(function(e){if(e.stepId===st.id)m+=((+e.stepMin>0)?+e.stepMin:evNetMin(e));});
     return m;}
   function skillSum(sk){
     var est=0,act=0,done=0;
@@ -11739,7 +11781,10 @@ margin-left: -22px;
     if(e.target.closest('[data-add="sub"]')){openAddPanel("sub");return;}
     var ch=e.target.closest(".cat-chip");if(ch&&ch.getAttribute("data-sub")){var sk=ch.getAttribute("data-sub");editSegs=null;renderEvSegs();
       evTitleSync(function(){selSub=(selSub===sk?null:sk);catManual=true;renderSubs();});}});
-  fTitle.addEventListener("input",function(){if(!catManual){var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();}});
+  fTitle.addEventListener("input",function(){
+    if(catManual)return;
+    if(autoMatesSync(fTitle.value,evMates).changed)renderEvMates();
+    var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();});
   (function(){var eb=document.getElementById("ev-segs");if(!eb)return;
     eb.addEventListener("change",function(e){
       var sel=e.target.closest("[data-segi]");if(!sel||!editSegs)return;
@@ -12118,12 +12163,13 @@ margin-left: -22px;
           return '<div class="cat-chip sub-chip'+((m.sub||"")===x.key?" on":"")+'" data-msub="'+x.key+'" style="--c:'+pc+'"><i></i>'+esc(x.name)+'</div>';}).join("")+'</div>'):"");}
     function draw(){
       box.innerHTML=arr.map(function(m,i){
-        return '<div class="pomo-mate'+(chips?" chips":"")+'" data-i="'+i+'">'+
+        return '<div class="pomo-mate'+(chips?" chips":"")+(m.auto?" auto":"")+'" data-i="'+i+'"'+
+          (m.auto?' title="按任务名自动认出来的，可以改、也可以✕ 去掉"':'')+'>'+
           (chips?rowChips(m):rowSel(m))+'</div>';}).join("")+
         (arr.length?('<div class="pomo-mate-note">'+noteText+'</div>'):"");
       if(add){add.textContent=arr.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";
         add.style.display=(arr.length>=4)?"none":"";}}
-    function touched(){if(onChange)onChange();}
+    function touched(){arr.forEach(function(m){if(m)m.auto=false;});if(onChange)onChange();}
     box.addEventListener("input",function(e){
       var row=e.target.closest(".pomo-mate");if(!row)return;
       var i=+row.getAttribute("data-i");
@@ -12149,6 +12195,18 @@ margin-left: -22px;
       arr.push({t:"",cat:(defCat?defCat():"")||"",sub:null});touched();draw();
       var el=box.querySelector(".pomo-mate:last-of-type .pm-t");if(el)el.focus();});
     return draw;}
+  // 标题里提到了好几件事 → 把第 2、3… 件自动铺进「同时还在做的事」。
+  // 只动自己铺的那几行（m.auto）：她手工加的、改过的一律不碰。
+  // 她一旦在这一块上动过手（改名字/换分类/删一行），touched() 会把所有 auto 标记清掉，
+  // 从此这块就归她管了 —— 跟主分类「你自己动过就不再自动改」是同一条规矩。
+  function autoMatesSync(title,arr){
+    var hits=autoCatHits(title),changed=false;
+    for(var i=arr.length-1;i>=0;i--)if(arr[i]&&arr[i].auto){arr.splice(i,1);changed=true;}
+    hits.slice(1,4).forEach(function(h){
+      if(arr.some(function(m){return m&&m.cat===h.cat&&(m.sub||null)===(h.sub||null);}))return;
+      if(arr.length>=4)return;
+      arr.push({t:h.nm||"",cat:h.cat,sub:h.sub||null,auto:true});changed=true;});
+    return {first:hits[0]||null,changed:changed};}
   var pMates=load("tt_pomomates",[])||[];
   function saveMates(){save("tt_pomomates",pMates);}
   function clearMates(){if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
@@ -12164,9 +12222,12 @@ margin-left: -22px;
     pomoCat.title=tip;pomoSub.title=tip;}
   function autoPomoCat(){
     var t=(pomoTask.value||"").trim();
-    if(!t){pomoManual=false;markPomoAuto(false);return;}   // 清空任务名 → 自动识别重新生效
+    if(!t){pomoManual=false;markPomoAuto(false);          // 清空任务名 → 自动识别重新生效
+      if(autoMatesSync("",pMates).changed){saveMates();renderMates();}return;}
     if(pomoManual||t.length<2)return;
-    var a=autoCatMatch(t);
+    var ms=autoMatesSync(t,pMates);                        // 一句话里提到好几件事 → 其余的自动铺上
+    if(ms.changed){saveMates();renderMates();}
+    var a=ms.first||autoCatMatch(t);
     if(!a){markPomoAuto(false);return;}
     if(pomoCat.value!==a.cat){pomoCat.value=a.cat;fillPomoSubs();}
     pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
@@ -12393,6 +12454,9 @@ margin-left: -22px;
     var pf=document.getElementById("pomo-par");
     var ev={id:uid(),date:fmt(end),start:pad(start.getHours())+":"+pad(start.getMinutes()),end:pad(end.getHours())+":"+pad(end.getMinutes()),title:task,cat:pc,sub:ps,done:true,par:!!(pf&&pf.checked),note:note||null};
     if(pomoStep)ev.stepId=pomoStep.st;                     // 这段时间算到那一步头上
+    // 平分过：那一步只算主任务这一份。不能拿 segs[0] 了事 ——
+    // 开头可能是个洞，中途换过任务的话主任务也不只一段。
+    if(pomoStep&&mates.length)ev.stepMin=Math.round(focusSec/(1+mates.length)/60);
     if(segs)ev.segs=segs;
     events=load("tt_events",events)||events;   // 别的网页刚记过东西的话，先把最新那份拿回来，免得整个盖掉
     events.push(ev);
