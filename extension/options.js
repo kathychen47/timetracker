@@ -26,14 +26,32 @@ function count(store) {
 
 const prog = t => document.getElementById("prog").textContent = t;
 
+// 界面语言：先把页面扫一遍，再把下拉对到当前值。
+// 改了直接重加载这一页 —— 选项文字、title 都要重来，重加载最干净也最不容易出错。
+chrome.storage.local.get({ ttLang: "auto" }, v => {
+  TTI18N.init(() => {
+    TTI18N.sweep(document.body);
+    try { document.title = T(document.title); } catch (e) { }
+    const sel = document.getElementById("uilang");
+    if (sel) {
+      sel.value = v.ttLang || "auto";
+      sel.addEventListener("change", e => {
+        chrome.storage.local.set({ ttLang: e.target.value }, () => location.reload());
+      });
+    }
+    refreshCounts(); refreshQueue();
+  });
+});
+
 async function refreshCounts() {
   const a = await count("oald"), c = await count("collins");
+  const no = T("✗ 未导入");
   document.getElementById("counts").innerHTML =
-    `牛津(英→中) ${a ? "<b>✓ " + a.toLocaleString() + "</b>" : "✗ 未导入"} · 柯林斯(中→英) ${c ? "<b>✓ " + c.toLocaleString() + "</b>" : "✗ 未导入"}`;
+    `${T("牛津(英→中) ")}${a ? "<b>✓ " + a.toLocaleString() + "</b>" : no} · ${T("柯林斯(中→英) ")}${c ? "<b>✓ " + c.toLocaleString() + "</b>" : no}`;
 }
 
 async function loadGz(store, blob) {
-  if (typeof DecompressionStream === "undefined") throw new Error("浏览器不支持解压，请更新 Chrome");
+  if (typeof DecompressionStream === "undefined") throw new Error(T("浏览器不支持解压，请更新 Chrome"));
   const d = await db();
   const stream = blob.stream().pipeThrough(new DecompressionStream("gzip")).pipeThrough(new TextDecoderStream());
   const reader = stream.getReader();
@@ -54,7 +72,7 @@ async function loadGz(store, blob) {
       if (t.length < 3) continue;
       batch.push({ k: t[0], disp: t[1], html: t[2] }); n++;
     }
-    if (batch.length >= 3000) { await flush(batch); batch = []; prog(`写入 ${store}：${n.toLocaleString()} 词…`); }
+    if (batch.length >= 3000) { await flush(batch); batch = []; prog(TTI18N.pick("写入 " + store + "：" + n.toLocaleString() + " 词…", "Writing " + store + ": " + n.toLocaleString() + " entries…")); }
   }
   if (buf) { const t = buf.split("\t"); if (t.length >= 3) { batch.push({ k: t[0], disp: t[1], html: t[2] }); n++; } }
   if (batch.length) await flush(batch);
@@ -65,13 +83,15 @@ document.getElementById("file").addEventListener("change", async e => {
   const files = [...e.target.files];
   for (const f of files) {
     const store = /collins|柯林/i.test(f.name) ? "collins" : (/oald|oxford|牛津/i.test(f.name) ? "oald" : null);
-    if (!store) { prog(`认不出文件名：${f.name}（要含 oald 或 collins）`); continue; }
-    prog(`导入 ${f.name} …`);
-    try { const n = await loadGz(store, f); prog(`✓ ${store} 导入 ${n.toLocaleString()} 词`); }
-    catch (err) { prog("导入失败：" + (err && err.message || err)); return; }
+    if (!store) { prog(TTI18N.pick("认不出文件名：" + f.name + "（要含 oald 或 collins）",
+      "Can't tell what this file is: " + f.name + " (the name must contain oald or collins)")); continue; }
+    prog(TTI18N.pick("导入 " + f.name + " …", "Importing " + f.name + " …"));
+    try { const n = await loadGz(store, f); prog(TTI18N.pick("✓ " + store + " 导入 " + n.toLocaleString() + " 词",
+      "✓ " + store + ": " + n.toLocaleString() + " entries imported")); }
+    catch (err) { prog(T("导入失败：") + (err && err.message || err)); return; }
   }
   await refreshCounts();
-  prog("✓ 全部完成，去任意网页选中一个单词试试");
+  prog(T("✓ 全部完成，去任意网页选中一个单词试试"));
   e.target.value = "";
 });
 
@@ -93,12 +113,12 @@ document.getElementById("autoadd").addEventListener("change", e => chrome.storag
 function refreshQueue() {
   chrome.storage.local.get({ ttQueue: [] }, v => {
     const n = v.ttQueue.length;
+    const list = v.ttQueue.slice(-8).map(x => x.disp || x.w).join(TTI18N.pick("、", ", "));
     document.getElementById("queue").textContent = n
-      ? `待并入：${n} 个词（${v.ttQueue.slice(-8).map(x => x.disp || x.w).join("、")}${n > 8 ? " …" : ""}）`
-      : "待并入：无";
+      ? TTI18N.pick("待并入：" + n + " 个词（" + list + (n > 8 ? " …" : "") + "）",
+                    "Waiting to be merged: " + n + " word(s) (" + list + (n > 8 ? " …" : "") + ")")
+      : T("待并入：无");
   });
 }
 
-refreshCounts();
-refreshQueue();
-setInterval(refreshQueue, 2000);
+setInterval(refreshQueue, 2000);   // 首次的两声改到语言读好之后才叫，否则第一眼总是中文

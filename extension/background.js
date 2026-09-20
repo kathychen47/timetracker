@@ -1,3 +1,6 @@
+// 界面语言（右键菜单、图标提示、徒章）。
+// MV3 的 service worker 是普通脚本，用 importScripts 就行。
+importScripts("i18n.js");
 // 划词查词 · Timetracker —— 后台：词典查询 / 翻译 / 生词队列
 const DB_NAME = "ttdict_ext", DB_VER = 1, STORES = ["oald", "collins"];
 let _db = null;
@@ -121,7 +124,7 @@ async function translate(text, tl) {
 }
 
 // 已经开着的 Timetracker 标签页，戳一下让它立刻来取 ——
-// 不然要等她下次刷新那个页面，词看着"已存"却半天不出现。
+// 不然要等她下次刷新那个页面，词看着T("已存")却半天不出现。
 function poke() {
   try {
     chrome.tabs.query({ url: "https://kathychen47.github.io/timetracker/*" }, tabs => {
@@ -162,12 +165,29 @@ chrome.runtime.onMessage.addListener((msg, sender, send) => {
   return true; // 异步响应
 });
 
+// 语言一改，右键菜单和图标提示跟着重画
+try {
+  chrome.storage.onChanged.addListener((ch, area) => {
+    if (area === "local" && ch.ttLang) TTI18N.init(() => { rebuildMenu(); paintAction(); });
+  });
+} catch (e) { }
+function rebuildMenu() {
+  chrome.contextMenus.removeAll(() => {
+    void chrome.runtime.lastError;
+    chrome.contextMenus.create(
+      { id: "tt-lookup", title: TTI18N.pick("用 Timetracker 查词/翻译：“%s”",
+        "Look up / translate “%s” with Timetracker"), contexts: ["selection"] },
+      () => { void chrome.runtime.lastError; });
+  });
+}
+TTI18N.init(() => { paintAction(); });
 chrome.runtime.onInstalled.addListener(() => {
   // 先清干净再建：重新加载扩展时旧菜单项可能还在，重复的 id 会报错
   chrome.contextMenus.removeAll(() => {
     void chrome.runtime.lastError;
     chrome.contextMenus.create(
-      { id: "tt-lookup", title: "用 Timetracker 查词/翻译：“%s”", contexts: ["selection"] },
+      { id: "tt-lookup", title: TTI18N.pick("用 Timetracker 查词/翻译：“%s”",
+        "Look up / translate “%s” with Timetracker"), contexts: ["selection"] },
       () => { void chrome.runtime.lastError; });
   });
   paintAction();
@@ -190,8 +210,10 @@ async function paintAction() {
   chrome.action.setBadgeText({ text: on ? "" : "OFF" });
   chrome.action.setBadgeBackgroundColor({ color: "#9aa1b0" });
   chrome.action.setTitle({
-    title: on ? "划词查词：开着 —— 点一下关掉（右键 → 选项）"
-              : "划词查词：关着 —— 点一下打开（右键 → 选项）"
+    title: on ? TTI18N.pick("划词查词：开着 —— 点一下关掉（右键 → 选项）",
+                            "Look up on selection: ON — click to turn off (right-click → Options)")
+              : TTI18N.pick("划词查词：关着 —— 点一下打开（右键 → 选项）",
+                            "Look up on selection: OFF — click to turn on (right-click → Options)")
   });
 }
 chrome.action.onClicked.addListener(async () => {

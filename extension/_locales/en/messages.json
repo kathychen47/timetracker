@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "Look up on selection · Timetracker"
+  },
+  "extDesc": {
+    "message": "Select a word on any page to see its Oxford/Collins definition right there, select a sentence to translate it, and save new words to your Timetracker word list."
+  },
+  "actionTitle": {
+    "message": "Look up on selection: click to toggle (right-click → Options)"
+  }
+}

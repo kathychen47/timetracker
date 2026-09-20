@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "划词查词 · Timetracker",
+  "name": "__MSG_extName__",
   "version": "1.7.0",
-  "description": "在任意网页选中单词即就地显示牛津/柯林斯释义，选中句子自动翻译，生词存入 Timetracker 生词本。",
+  "description": "__MSG_extDesc__",
   "permissions": [
     "storage",
     "unlimitedStorage",
@@ -17,7 +17,7 @@
   },
   "options_page": "options.html",
   "action": {
-    "default_title": "划词查词：点一下开关（右键 → 选项）"
+    "default_title": "__MSG_actionTitle__"
   },
   "content_scripts": [
     {
@@ -27,6 +27,7 @@
         "file:///*"
       ],
       "js": [
+        "i18n.js",
         "content.js"
       ],
       "run_at": "document_idle",
@@ -54,5 +55,6 @@
         "file:///*"
       ]
     }
-  ]
+  ],
+  "default_locale": "zh_CN"
 }

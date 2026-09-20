@@ -3,6 +3,10 @@
   if (window.__ttDictLoaded) return;
   window.__ttDictLoaded = true;
 
+  try { TTI18N.init(); } catch (e) { }          // 读一下界面语言（卡片是选中之后才画的，来得及）
+  try { chrome.storage.onChanged.addListener(function (ch, area) {
+    if (area === "local" && ch.ttLang) TTI18N.init();
+  }); } catch (e) { }
   let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
 
   // 重新加载扩展之后，早就开着的标签页里还跑着旧的这份脚本，
@@ -12,14 +16,14 @@
   // 所以所有跟后台说话都走这里：通道没了就安静地回一句人看得懂的话。
   function dead() { try { return !(chrome.runtime && chrome.runtime.id); } catch (e) { return true; } }
   function tell(msg, cb) {
-    if (dead()) { cb && cb({ error: "扩展刚更新过 —— 刷新一下这个页面就好" }); return; }
+    if (dead()) { cb && cb({ error: T("扩展刚更新过 —— 刷新一下这个页面就好") }); return; }
     try {
       chrome.runtime.sendMessage(msg, res => {
         const e = chrome.runtime.lastError;
-        cb && cb(e ? { error: "扩展刚更新过 —— 刷新一下这个页面就好" } : res);
+        cb && cb(e ? { error: T("扩展刚更新过 —— 刷新一下这个页面就好") } : res);
       });
     } catch (e) {
-      cb && cb({ error: "扩展刚更新过 —— 刷新一下这个页面就好" });
+      cb && cb({ error: T("扩展刚更新过 —— 刷新一下这个页面就好") });
     }
   }
 
@@ -137,12 +141,12 @@
       <div class="card">
         <div class="hd">
           <span class="w">${esc(text.length > 28 ? text.slice(0, 28) + "…" : text)}</span>
-          <button class="b" data-a="speak" title="朗读">🔊</button>
-          <button class="b" data-a="tr" title="翻译">🌐 译</button>
-          <button class="b" data-a="star" title="加入生词本">★</button>
-          <button class="b" data-a="x" title="关闭">✕</button>
+          <button class="b" data-a="speak" title="${esc(T("朗读"))}">🔊</button>
+          <button class="b" data-a="tr" title="${esc(T("翻译"))}">🌐 ${esc(TTI18N.pick("译","EN"))}</button>
+          <button class="b" data-a="star" title="${esc(T("加入生词本"))}">★</button>
+          <button class="b" data-a="x" title="${esc(T("关闭"))}">✕</button>
         </div>
-        <div class="bd"><div class="muted">查询中…</div></div>
+        <div class="bd"><div class="muted">${esc(T("查询中…"))}</div></div>
       </div>`;
 
     const bd = r.querySelector(".bd");
@@ -199,11 +203,14 @@
       const item = { w: text.trim().toLowerCase(), disp: text.trim(), dict: isCJK(text) ? "collins" : "oald", ts: Date.now() };
       tell({ type: "save", item }, res => {
         const b = r.querySelector('[data-a="star"]');
-        if (b) { b.classList.add("on"); b.textContent = "✓ 已存"; }
+        if (b) { b.classList.add("on"); b.textContent = T("✓ 已存"); }
         if (!loud) return;
         const tip = document.createElement("div");
         tip.className = "muted"; tip.style.marginTop = "6px";
-        tip.textContent = "已存入待同步（共 " + ((res && res.n) || 1) + " 个），下次打开 Timetracker 自动并入生词本。";
+        var _n = (res && res.n) || 1;
+        tip.textContent = TTI18N.pick(
+          "已存入待同步（共 " + _n + " 个），下次打开 Timetracker 自动并入生词本。",
+          "Held for syncing (" + _n + " in all). Next time you open Timetracker they go into your word list automatically.");
         bd.appendChild(tip);
       });
     }
@@ -217,13 +224,15 @@
   // onHit：词典里确实查到了才回调 —— 拼错的、根本不是词的不该被自动收进生词本
   function doLookup(bd, text, onHit) {
     tell({ type: "lookup", text }, res => {
-      if (!res || res.error) { bd.innerHTML = `<div class="muted">出错了：${esc(res && res.error || "未知")}</div>`; return; }
+      if (!res || res.error) { bd.innerHTML = `<div class="muted">${esc(T("出错了："))}${esc(res && res.error || T("未知"))}</div>`; return; }
       if (!res.hits || !res.hits.length) {
-        bd.innerHTML = `<div class="muted">词典里没找到「${esc(text)}」。点上面「🌐 译」翻译，或去设置页导入词典。</div>`;
+        bd.innerHTML = `<div class="muted">${esc(TTI18N.pick(
+          "词典里没找到「" + text + "」。点上面「🌐 译」翻译，或去设置页导入词典。",
+          "The dictionary has no entry for \u201c" + text + "\u201d. Hit 🌐 EN above to translate it, or import the dictionaries on the settings page."))}</div>`;
         return;
       }
       bd.innerHTML = res.hits.map(h =>
-        `<div class="srcname">${h.store === "oald" ? "牛津高阶 · 英汉双解" : "柯林斯 · 中英/近义词"}</div><div class="dict-def">${h.html}</div>`
+        `<div class="srcname">${esc(T(h.store === "oald" ? "牛津高阶 · 英汉双解" : "柯林斯 · 中英/近义词"))}</div><div class="dict-def">${h.html}</div>`
       ).join("");
       // 词典自带的折叠块
       bd.querySelectorAll(".box_title").forEach(t => t.addEventListener("click", () => {
@@ -234,16 +243,16 @@
   }
 
   function doTranslate(bd, text) {
-    bd.innerHTML = `<div class="muted">翻译中…</div>`;
+    bd.innerHTML = `<div class="muted">${esc(T("翻译中…"))}</div>`;
     tell({ type: "translate", text }, res => {
-      if (!res || res.error || !res.text) { bd.innerHTML = `<div class="muted">翻译失败：${esc(res && res.error || "无结果")}</div>`; return; }
+      if (!res || res.error || !res.text) { bd.innerHTML = `<div class="muted">${esc(T("翻译失败："))}${esc(res && res.error || T("无结果"))}</div>`; return; }
       bd.innerHTML = `<div class="tr">${esc(res.text)}<span class="src">${esc(text)}</span></div>`;
     });
   }
 
   function showBubble(text, rect) {
     const r = makeHost(rect.left + scrollX, rect.bottom + scrollY);
-    r.innerHTML = `<style>${BASE_CSS}</style><button class="bubble">📖 查词 / 翻译</button>`;
+    r.innerHTML = `<style>${BASE_CSS}</style><button class="bubble">📖 ${T("查词 / 翻译")}</button>`;
     r.querySelector(".bubble").addEventListener("click", () => {
       const rc = selRect() || rect;
       showCard(text, rc);
