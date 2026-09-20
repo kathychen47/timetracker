@@ -27,7 +27,11 @@ function ln(pat) {
 }
 var CODE = [
   src.slice(ln("function acWord(lo,w,from0){"), ln("    return res;}") + 1).join(NL),
-  src.slice(ln("function autoMatesSync(title,arr){"), ln("    return {first:hits[0]||null,changed:changed};}") + 1).join(NL)
+  // 跟着她学的那份记忆
+  src.slice(ln("  var mateMemo=load(\"tt_matememo\",{})||{};"),
+    ln("    return (e&&e.c)?mateAlive(e.c):null;}") + 1).join(NL),
+  src.slice(ln("function autoMatesSync(title,arr){"),
+    ln("    return {learned:recallMain(title),first:hits[0]||null,changed:changed};}") + 1).join(NL)
 ].join(NL);
 
 // 她真实的那套分类（大类 10 个，UC Online 下面 9 个小类）
@@ -48,7 +52,14 @@ var CATS = [
   { key: "life", name: "Life", kw: ["生活"], subs: [] }
 ];
 
-var ctx = { console: console, Math: Math, String: String, cats: CATS };
+var store = {};
+var ctx = {
+  console: console, Math: Math, String: String, Date: Date, Object: Object, cats: CATS,
+  load: function (k, d) { try { return k in store ? JSON.parse(store[k]) : d; } catch (e) { return d; } },
+  save: function (k, v) { store[k] = JSON.stringify(v); return true; },
+  parentObj: function (k) { for (var i = 0; i < CATS.length; i++) if (CATS[i].key === k) return CATS[i]; return null; },
+  subsOf: function (k) { var p = ctx.parentObj(k); return (p && p.subs) || []; }
+};
 vm.createContext(ctx);
 vm.runInContext(CODE, ctx);
 var C = ctx;
@@ -161,6 +172,61 @@ T("中间多打了空格 / 连字符也认得出", function () {
   ok(sig(C.autoCatHits("stat-462 的作业")) === "uco/s462", "stat-462 带连字符");
   // 挤完了也要卡词边界，不能乱拉邻居
   ok(C.autoCatHits("xSTAT 462").length === 0, "前面粘着字母的还是不算");
+});
+
+T("跟着她学：认不出来的写法，她分过一次就记住", function () {
+  // 只写数字 —— 按名字根本认不出来
+  var T1 = "marking for 462 and 401";
+  ok(C.autoCatHits(T1).length === 0, "一开始认不出来");
+  var arr = [];
+  ok(C.autoMatesSync(T1, arr).changed === false && arr.length === 0, "所以不铺任何行");
+
+  // 她自己分了一次，保存
+  C.rememberMates(T1, "uco", "s462", [{ t: "DATA401", cat: "uco", sub: "d401" }]);
+
+  // 下次再这么写 → 自己填上
+  var arr2 = [];
+  var r = C.autoMatesSync(T1, arr2);
+  ok(r.learned && r.learned.sub === "s462", "主分类也记住了：" + (r.learned && r.learned.sub));
+  ok(arr2.length === 1 && arr2[0].sub === "d401", "并行那行自己填上了");
+  ok(arr2[0].mem === true, "标成「记得的」，提示语不一样");
+  ok(arr2[0].t === "DATA401", "连她打的名字一起记住");
+});
+
+T("跟着她学：换个说法也认得（键看的是代号）", function () {
+  C.rememberMates("edit course page for STAT462 and DATA401", "uco", "s462",
+    [{ t: "DATA401", cat: "uco", sub: "d401" }]);
+  var arr = [];
+  C.autoMatesSync("check course content for STAT462 and DATA401", arr);
+  ok(arr.length === 1 && arr[0].sub === "d401" && arr[0].mem, "换了动词还是认得");
+  // 但只提一门课的不该被带偏
+  ok(!C.recallMates("prep the STAT462 slides"), "只提 STAT462 是另一个键，没记录");
+});
+
+T("跟着她学：她删掉猜错的那行，以后就不再猜了", function () {
+  var T2 = "STAT462 and Prep";
+  ok(C.autoCatHits(T2).length === 2, "本来会分两份");
+  C.rememberMates(T2, "uco", "s462", []);          // 她删了那行、保存
+  var arr = [];
+  var r = C.autoMatesSync(T2, arr);
+  ok(arr.length === 0, "从此不再劈开，实际 " + arr.length + " 行");
+  ok(C.recallMates(T2).length === 0, "空数组也是答案（不是 null）");
+});
+
+T("跟着她学：不带代号的句子只能逐字对上", function () {
+  C.rememberMates("两门课的课件都改一下", "uco", "s462",
+    [{ t: "", cat: "uco", sub: "d401" }]);
+  var arr = [];
+  C.autoMatesSync("两门课的课件都改一下", arr);
+  ok(arr.length === 1 && arr[0].sub === "d401", "原句认得出来");
+  ok(!C.recallMates("三门课的课件都改一下"), "改了字就不算（如实）");
+});
+
+T("键：week 3 / week 4 不该拆成两个键", function () {
+  ok(C.mateKey("week 3 STAT462") === C.mateKey("week 4 STAT462"), "一两位的数字不算代号");
+  ok(C.mateKey("STAT462 and DATA401") === C.mateKey("DATA401 and STAT462"), "词序无关");
+  ok(C.mateKey("STAT462") !== C.mateKey("STAT448-Alice"), "STAT462 和 STAT448 不能撞在一起");
+  ok(C.mateKey("") === "", "空标题没有键");
 });
 
 console.log("");

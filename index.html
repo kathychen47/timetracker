@@ -5648,6 +5648,7 @@ margin-left: -22px;
     "体重":"Weight",
     "体重 / 围度 / 体脂 · 看变化曲线":"Weight / measurements / body fat · watch the trend",
     "体重的输入单位与显示单位可以分开设":"Weight can use different units for input and display",
+    "你上次这么写的时候就是这么分的，可以改、也可以✕ 去掉":"Last time you wrote it this way, this is how you split it — you can change it, or ✕ to drop it",
     "你以前删掉过":"You deleted these before",
     "你取消了":"You cancelled",
     "你取消了共享，这次只录麦克风。":"You cancelled sharing, so this one is mic only.",
@@ -8258,6 +8259,51 @@ margin-left: -22px;
       var p=res[res.length-1];
       if(acJoined(lo.slice(p.end,h.at)))res.push(h);});
     return res;}
+  // ---------- 跟着她学：这句话上次分给了哪几个码 ----------
+  // 光靠名字匹配认不出来的写法（「marking for 462 and 401」「两门课的课件都改一下」），
+  // 她手工分过一次之后就该记住，下次自己填上。
+  //
+  // 键不能用 memoKey() —— 那个把数字全抹掉了（"STAT462" 和 "STAT448" 会撞成同一个 "stat"），
+  // 而这儿要记的偏偏就是课程代号。
+  // 所以：把标题里**带数字的词**挑出来排序当键。好处是换个说法照样认得 ——
+  //   "edit course page for STAT462 and DATA401"
+  //   "check course content for STAT462 and DATA401"   → 同一个键 {data401, stat462}
+  // 而 "prep the STAT462 slides" 是 {stat462}，不会被上面那条带偏。
+  // 一个带数字的词都没有（"两门课的课件都改一下"），就拿整句的实词当键，只能逐字对上。
+  // 「week 3」这种一两位的数字不算代号，扔掉 —— 不然第 3 周学到的东西第 4 周就忘了。
+  var mateMemo=load("tt_matememo",{})||{};
+  var MK_STOP=["the","for","and","a","of","to","with","on","in","my","this","that","is","it","at","by","from"];
+  function mateKey(title){
+    var toks=String(title||"").toLowerCase().match(/[a-z0-9\u4e00-\u9fff]+(?:-[a-z0-9]+)*/g)||[];
+    var num=toks.filter(function(w){return w.length>=3&&/\d/.test(w);});
+    var use=num.length?num:toks.filter(function(w){return w.length>=2&&MK_STOP.indexOf(w)<0;});
+    if(!use.length)return "";
+    var seen={},uniq=[];
+    use.forEach(function(w){if(!seen[w]){seen[w]=1;uniq.push(w);}});
+    return uniq.sort().join(" ");}
+  function mateAlive(x){                        // 分类可能已经被删掉了
+    if(!x||!x.cat||!parentObj(x.cat))return null;
+    var sub=(x.sub&&subsOf(x.cat).some(function(y){return y.key===x.sub;}))?x.sub:null;
+    return {t:(x.t||""),cat:x.cat,sub:sub};}
+  function rememberMates(title,ck,sk,list){
+    var k=mateKey(title);if(!k||!ck)return;
+    mateMemo[k]={c:{cat:ck,sub:sk||null},
+      m:(list||[]).filter(function(m){return m&&m.cat;}).map(function(m){
+        return {t:(m.t||"").trim(),cat:m.cat,sub:m.sub||null};}),ts:Date.now()};
+    var keys=Object.keys(mateMemo);
+    if(keys.length>200){keys.sort(function(a,b){return (mateMemo[a].ts||0)-(mateMemo[b].ts||0);});
+      keys.slice(0,keys.length-200).forEach(function(x){delete mateMemo[x];});}
+    save("tt_matememo",mateMemo);}
+  // 回来的空数组也是答案：「这句话我上次就是**不分**的」。
+  // 所以她删掉猜错的那一行、保存一次，这一句从此就不会再被劈开了。
+  function recallMates(title){
+    var e=mateMemo[mateKey(title)];
+    if(!e||!e.m)return null;
+    var out=[];e.m.forEach(function(x){var v=mateAlive(x);if(v)out.push(v);});
+    return out;}
+  function recallMain(title){
+    var e=mateMemo[mateKey(title)];
+    return (e&&e.c)?mateAlive(e.c):null;}
 
   // ---------- state / data ----------
   var events=load("tt_events",null),todos=load("tt_todos",null),memos=load("tt_memos",null);
@@ -11821,8 +11867,10 @@ margin-left: -22px;
       evTitleSync(function(){selSub=(selSub===sk?null:sk);catManual=true;renderSubs();});}});
   fTitle.addEventListener("input",function(){
     if(catManual)return;
-    if(autoMatesSync(fTitle.value,evMates).changed)renderEvMates();
-    var a=autoCat(fTitle.value);selCat=a.cat;selSub=a.sub;renderParents();renderSubs();});
+    var r=autoMatesSync(fTitle.value,evMates);
+    if(r.changed)renderEvMates();
+    var a=r.learned||autoCat(fTitle.value);            // 学过的最优先，其余照旧
+    selCat=a.cat;selSub=a.sub;renderParents();renderSubs();});
   (function(){var eb=document.getElementById("ev-segs");if(!eb)return;
     eb.addEventListener("change",function(e){
       var sel=e.target.closest("[data-segi]");if(!sel||!editSegs)return;
@@ -12110,6 +12158,8 @@ margin-left: -22px;
     var isNo=document.getElementById("ev-nostat").checked||undefined;
     var aMin=parseDurIn(document.getElementById("ev-amin").value)||undefined;   // 同上：没填就不落字段   // undefined 存的时候会被 JSON 丢掉，不给每条都挂个 false
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
+    // 同上：这句话配了哪几个码，记住
+    if(title&&title!==catLabelOf(selCat,selSub))rememberMates(title,selCat,selSub,liveMates(evMates));
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};
       applyEvMates(obj,title);
@@ -12202,7 +12252,8 @@ margin-left: -22px;
     function draw(){
       box.innerHTML=arr.map(function(m,i){
         return '<div class="pomo-mate'+(chips?" chips":"")+(m.auto?" auto":"")+'" data-i="'+i+'"'+
-          (m.auto?' title="按任务名自动认出来的，可以改、也可以✕ 去掉"':'')+'>'+
+          (m.auto?(' title="'+(m.mem?"你上次这么写的时候就是这么分的，可以改、也可以\u2715 去掉"
+                                     :"按任务名自动认出来的，可以改、也可以\u2715 去掉")+'"'):'')+'>'+
           (chips?rowChips(m):rowSel(m))+'</div>';}).join("")+
         (arr.length?('<div class="pomo-mate-note">'+noteText+'</div>'):"");
       if(add){add.textContent=arr.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";
@@ -12238,13 +12289,15 @@ margin-left: -22px;
   // 她一旦在这一块上动过手（改名字/换分类/删一行），touched() 会把所有 auto 标记清掉，
   // 从此这块就归她管了 —— 跟主分类「你自己动过就不再自动改」是同一条规矩。
   function autoMatesSync(title,arr){
-    var hits=autoCatHits(title),changed=false;
+    var mem=recallMates(title),hits=autoCatHits(title),changed=false;
     for(var i=arr.length-1;i>=0;i--)if(arr[i]&&arr[i].auto){arr.splice(i,1);changed=true;}
-    hits.slice(1,4).forEach(function(h){
+    // 记过的优先：她亲手改过的，比按名字猜出来的准
+    var want=mem||hits.slice(1,4);
+    want.forEach(function(h){
       if(arr.some(function(m){return m&&m.cat===h.cat&&(m.sub||null)===(h.sub||null);}))return;
       if(arr.length>=4)return;
-      arr.push({t:h.nm||"",cat:h.cat,sub:h.sub||null,auto:true});changed=true;});
-    return {first:hits[0]||null,changed:changed};}
+      arr.push({t:h.t||h.nm||"",cat:h.cat,sub:h.sub||null,auto:true,mem:!!mem});changed=true;});
+    return {learned:recallMain(title),first:hits[0]||null,changed:changed};}
   var pMates=load("tt_pomomates",[])||[];
   function saveMates(){save("tt_pomomates",pMates);}
   function clearMates(){if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
@@ -12265,7 +12318,7 @@ margin-left: -22px;
     if(pomoManual||t.length<2)return;
     var ms=autoMatesSync(t,pMates);                        // 一句话里提到好几件事 → 其余的自动铺上
     if(ms.changed){saveMates();renderMates();}
-    var a=ms.first||autoCatMatch(t);
+    var a=ms.learned||autoCatMatch(t)||ms.first;         // 学过的最优先，其余照旧
     if(!a){markPomoAuto(false);return;}
     if(pomoCat.value!==a.cat){pomoCat.value=a.cat;fillPomoSubs();}
     pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
@@ -12469,6 +12522,9 @@ margin-left: -22px;
     // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
     if(segs)segs.forEach(function(s){if(!s.gap&&s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
     else if(pomoManual&&typed)rememberCat(typed,pomoCat.value,pomoSub.value||null);  // 手动归过的，下次同名自动认出来
+    // 这次这句话到底分给了哪几个码 —— 记下来，下次她再这么写就自己填上。
+    // 一个都没分也记（空数组）：「这句话我上次就是不分的」同样是答案。
+    if(typed)rememberMates(typed,pomoCat.value,pomoSub.value||null,mates);
     // 没勾「完成后记入日历」就不落库 —— 这是你自己选的，但一个小时的专注
     // 悄没声地过去了还是会让人以为出了 bug，所以说一句
     if(!pomoToCal.checked){
@@ -13933,7 +13989,7 @@ margin-left: -22px;
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef","tt_matememo"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -14108,7 +14164,7 @@ margin-left: -22px;
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
-    words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
+    words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};mateMemo=load("tt_matememo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
     skills=load("tt_skills",[])||[];if(state.tab==="todo")try{renderSkills();}catch(e){}
     recs=load("tt_recs",[])||[];if(state.tab==="rec")try{recRenderList();}catch(e){}   // 云端拉下来的是文字，音频还在各自的机器上
