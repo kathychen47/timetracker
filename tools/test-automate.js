@@ -30,7 +30,7 @@ var CODE = [
   // 跟着她学的那份记忆
   src.slice(ln("  var mateMemo=load(\"tt_matememo\",{})||{};"),
     ln("    return (e&&e.c)?mateAlive(e.c):null;}") + 1).join(NL),
-  src.slice(ln("function autoMatesSync(title,arr){"),
+  src.slice(ln("function autoMatesSync(title,arr,peek){"),
     ln("    return {learned:recallMain(title),first:hits[0]||null,changed:changed};}") + 1).join(NL)
 ].join(NL);
 
@@ -227,6 +227,20 @@ T("键：week 3 / week 4 不该拆成两个键", function () {
   ok(C.mateKey("STAT462 and DATA401") === C.mateKey("DATA401 and STAT462"), "词序无关");
   ok(C.mateKey("STAT462") !== C.mateKey("STAT448-Alice"), "STAT462 和 STAT448 不能撞在一起");
   ok(C.mateKey("") === "", "空标题没有键");
+});
+
+T("她接手之后就别再往里塞（peek）", function () {
+  // 她把猜的那行改成别的分类，再动一下标题，
+  // 猜的那条不能当成「新的」又塞回来 —— 那等于把她的改动顶掉。
+  var arr = [];
+  C.autoMatesSync("check STAT462 and DATA401", arr);
+  ok(arr.length === 1 && arr[0].sub === "d401", "先自动铺一行");
+  arr[0].cat = "cms"; arr[0].sub = null; arr[0].auto = false;      // 她改了
+  var r = C.autoMatesSync("check STAT462 and DATA401 today", arr, true);
+  ok(arr.length === 1, "peek 下一行都不动，实际 " + arr.length + " 行");
+  ok(arr[0].cat === "cms", "她改过的还是她那个");
+  ok(r.first && r.first.sub === "s462", "主分类照常认");
+  ok(r.changed === false, "没动过就报 false，不该白重画");
 });
 
 console.log("");

@@ -11867,7 +11867,8 @@ margin-left: -22px;
       evTitleSync(function(){selSub=(selSub===sk?null:sk);catManual=true;renderSubs();});}});
   fTitle.addEventListener("input",function(){
     if(catManual)return;
-    var r=autoMatesSync(fTitle.value,evMates);
+    if(!fTitle.value.trim())evMatesManual=false;        // 标题清空 → 自动识别重新生效
+    var r=autoMatesSync(fTitle.value,evMates,evMatesManual);
     if(r.changed)renderEvMates();
     var a=r.learned||autoCat(fTitle.value);            // 学过的最优先，其余照旧
     selCat=a.cat;selSub=a.sub;renderParents();renderSubs();});
@@ -12062,7 +12063,7 @@ margin-left: -22px;
     // 面板里改一下分类（s.cat=…）或者删一段（host.sec+=…）改的就是原事件本身 ——
     // 点「取消」根本退不回去，删段那一路还会让分段秒数之和超过事件时长。
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.map(function(s){return Object.assign({},s);}):null;
-    evMates.length=0;renderEvMates();                 // 每次打开都是干净的一张表
+    evMates.length=0;evMatesManual=false;renderEvMates();   // 每次打开都是干净的一张表
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-nostat").checked=!!(obj&&obj.nostat);
@@ -12085,9 +12086,10 @@ margin-left: -22px;
         :"📅 这条来自 Google 日历，现在归你管：计入统计，Google 那边再改也不覆盖它。你在这儿的修改<b>不会写回 Google</b>。";})();
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
-  var editSegs=null,evMates=[];
+  var editSegs=null,evMates=[],evMatesManual=false;
   var renderEvMates=mateUI(document.getElementById("ev-mates"),document.getElementById("ev-mate-add"),
-    evMates,function(){return selCat||"";},null,"这条的时间会平分给上面这几件事，总时长不变",true);
+    evMates,function(){return selCat||"";},null,"这条的时间会平分给上面这几件事，总时长不变",true,
+    function(){evMatesManual=true;});
   // 保存时把这条的时间平分，存成「段」—— 跟番茄钟那边同一套账。
   // 已经有分段的（番茄钟里换过任务、或者上次就分过）不碰：那种交给上面那个分段面板改，
   // 在这儿再平分一次会把「A 20 分 / B 40 分」抹平成「30 / 30」，等于把她记的东西改掉。
@@ -12158,8 +12160,12 @@ margin-left: -22px;
     var isNo=document.getElementById("ev-nostat").checked||undefined;
     var aMin=parseDurIn(document.getElementById("ev-amin").value)||undefined;   // 同上：没填就不落字段   // undefined 存的时候会被 JSON 丢掉，不给每条都挂个 false
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
-    // 同上：这句话配了哪几个码，记住
-    if(title&&title!==catLabelOf(selCat,selSub))rememberMates(title,selCat,selSub,liveMates(evMates));
+    // 同上：这句话配了哪几个码，记住。
+    // 但**分过段的那条不能记** —— 打开它的时候平分那块是藏起来的（交给分段面板改），
+    // evMates 天生是空的。照着记一遍就成了「这句话 = 不分」，等于把她之前教会的抹掉，
+    // 而且她在界面上看不见发生了什么。
+    if(title&&title!==catLabelOf(selCat,selSub)&&!(editSegs&&editSegs.length>1))
+      rememberMates(title,selCat,selSub,liveMates(evMates));
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};
       applyEvMates(obj,title);
@@ -12229,7 +12235,7 @@ margin-left: -22px;
   // arr 是调用方自己的数组，这里**只在原地改**（push / splice），从不重新赋值 ——
   // 外面那个名字始终指着同一个数组，不会某天拿到一个旧空壳。
   // 满 4 件就把「＋」收起来：4 行明摆在那儿，比弹一句「最多 4 件」清楚。
-  function mateUI(box,add,arr,defCat,onChange,noteText,chips){
+  function mateUI(box,add,arr,defCat,onChange,noteText,chips,onEdit){
     if(!box)return function(){};
     // 两种样子：番茄钟那一侧栏窄，跟它自己的主任务一样用下拉；
     // 事件弹窗里跟上面的大类/小类一样用色块 —— 她要的就是「一眼看出是哪个项目」。
@@ -12258,7 +12264,10 @@ margin-left: -22px;
         (arr.length?('<div class="pomo-mate-note">'+noteText+'</div>'):"");
       if(add){add.textContent=arr.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";
         add.style.display=(arr.length>=4)?"none":"";}}
-    function touched(){arr.forEach(function(m){if(m)m.auto=false;});if(onChange)onChange();}
+    // 她一动这一块就归她管了。只把 auto 记号抹掉还不够 —— 标题再变一个字，
+    // 猜出来的那行会当成「新的」又塞回来，等于把她的改动顶掉。所以还要告诉外面「别再自动了」。
+    function touched(){arr.forEach(function(m){if(m)m.auto=false;});
+      if(onEdit)onEdit();if(onChange)onChange();}
     box.addEventListener("input",function(e){
       var row=e.target.closest(".pomo-mate");if(!row)return;
       var i=+row.getAttribute("data-i");
@@ -12288,21 +12297,24 @@ margin-left: -22px;
   // 只动自己铺的那几行（m.auto）：她手工加的、改过的一律不碰。
   // 她一旦在这一块上动过手（改名字/换分类/删一行），touched() 会把所有 auto 标记清掉，
   // 从此这块就归她管了 —— 跟主分类「你自己动过就不再自动改」是同一条规矩。
-  function autoMatesSync(title,arr){
+  // peek = 只看不动：她已经自己接手这一块了，主分类还照常认，但一行也不许再塞进去
+  function autoMatesSync(title,arr,peek){
     var mem=recallMates(title),hits=autoCatHits(title),changed=false;
-    for(var i=arr.length-1;i>=0;i--)if(arr[i]&&arr[i].auto){arr.splice(i,1);changed=true;}
-    // 记过的优先：她亲手改过的，比按名字猜出来的准
-    var want=mem||hits.slice(1,4);
-    want.forEach(function(h){
-      if(arr.some(function(m){return m&&m.cat===h.cat&&(m.sub||null)===(h.sub||null);}))return;
-      if(arr.length>=4)return;
-      arr.push({t:h.t||h.nm||"",cat:h.cat,sub:h.sub||null,auto:true,mem:!!mem});changed=true;});
+    if(!peek){
+      for(var i=arr.length-1;i>=0;i--)if(arr[i]&&arr[i].auto){arr.splice(i,1);changed=true;}
+      // 记过的优先：她亲手改过的，比按名字猜出来的准
+      var want=mem||hits.slice(1,4);
+      want.forEach(function(h){
+        if(arr.some(function(m){return m&&m.cat===h.cat&&(m.sub||null)===(h.sub||null);}))return;
+        if(arr.length>=4)return;
+        arr.push({t:h.t||h.nm||"",cat:h.cat,sub:h.sub||null,auto:true,mem:!!mem});changed=true;});}
     return {learned:recallMain(title),first:hits[0]||null,changed:changed};}
-  var pMates=load("tt_pomomates",[])||[];
+  var pMates=load("tt_pomomates",[])||[],pMatesManual=false;
   function saveMates(){save("tt_pomomates",pMates);}
-  function clearMates(){if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
+  function clearMates(){pMatesManual=false;if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
   var renderMates=mateUI(document.getElementById("pomo-mates"),document.getElementById("pomo-mate-add"),
-    pMates,function(){return pomoCat.value||"";},saveMates,"结束时这次的时间会平分给上面这几件事，总时长不变");
+    pMates,function(){return pomoCat.value||"";},saveMates,"结束时这次的时间会平分给上面这几件事，总时长不变",
+    false,function(){pMatesManual=true;});
   renderMates();
   // 打任务名 → 自动归类（和新建事件用同一套：先查你以前手动归过的同名/同系列，再按关键词）
   // 你自己动过下拉就不再自动改，直到把任务名清空或重置
@@ -12313,10 +12325,10 @@ margin-left: -22px;
     pomoCat.title=tip;pomoSub.title=tip;}
   function autoPomoCat(){
     var t=(pomoTask.value||"").trim();
-    if(!t){pomoManual=false;markPomoAuto(false);          // 清空任务名 → 自动识别重新生效
+    if(!t){pomoManual=false;pMatesManual=false;markPomoAuto(false);   // 清空任务名 → 自动识别重新生效
       if(autoMatesSync("",pMates).changed){saveMates();renderMates();}return;}
     if(pomoManual||t.length<2)return;
-    var ms=autoMatesSync(t,pMates);                        // 一句话里提到好几件事 → 其余的自动铺上
+    var ms=autoMatesSync(t,pMates,pMatesManual);           // 一句话里提到好几件事 → 其余的自动铺上
     if(ms.changed){saveMates();renderMates();}
     var a=ms.learned||autoCatMatch(t)||ms.first;         // 学过的最优先，其余照旧
     if(!a){markPomoAuto(false);return;}
