@@ -4329,6 +4329,11 @@ margin-left: -22px;
       </div>
       <div class="cat-manage" id="cat-manage"></div>
     </div>
+    <div class="field" id="ev-mates-field">
+      <label>同时还在做别的事（可选 · 时间平分）</label>
+      <div id="ev-mates"></div>
+      <button type="button" class="pomo-mate-add" id="ev-mate-add" title="这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高">＋ 同时还在做别的事（时间平分）</button>
+    </div>
     <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <div class="field" id="ev-amin-field"><label>统计时长（可选）</label><input type="text" id="ev-amin" placeholder="3h / 1h30 / 90m" autocomplete="off"></div>
@@ -5875,6 +5880,7 @@ margin-left: -22px;
     "同一个词只留一个":"Only one copy kept",
     "同一天的几个项目首尾相接排成整块，不重叠也不留空隙":"Lays the day's projects end to end as solid blocks — no overlaps, no gaps",
     "同时加到 Google 日历":"Also add to Google Calendar",
+    "同时还在做别的事（可选 · 时间平分）":"Also doing something else (optional · split the time)",
     "同步中…":"Syncing…",
     "同步超时了（30 秒没回应）—— 再点一次试试":"Sync timed out (no response for 30s) — try again",
     "名字":"Name",
@@ -6424,7 +6430,6 @@ margin-left: -22px;
     "更省事：装浏览器扩展（推荐）":"Easier: install the browser extension (recommended)",
     "最准 · 走 Gemini 额度":"Most accurate · uses your Gemini quota",
     "最多加入":"Add at most",
-    "最多同时算给 4 件事":"One session can count towards at most 4 things",
     "最近 14 天":"Last 14 days",
     "最近 7 天":"Last 7 days",
     "最近一个月":"the past month",
@@ -7110,7 +7115,9 @@ margin-left: -22px;
     "这本书的文件丢了，建议删掉重新导入":"This book's file is gone — delete it and import it again",
     "这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）":"This book is already fully translated ✓ (stored on this device — pages open instantly, nothing gets re-translated)",
     "这条":"this one",
+    "这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高":"This entry counts towards several things: on save the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
     "这条周期记账停了 · 已经记进去的不动":"Recurring entry paused · what's already logged stays",
+    "这条的时间会平分给上面这几件事，总时长不变":"This entry's time is split evenly between the things above — the total stays the same.",
     "这条素材的音频：":"This clip's audio:",
     "这条素材还没有句子。":"This clip has no sentences yet.",
     "这条路不用登录、不占 Supabase 额度：菜谱直接存进你仓库的":"This route needs no sign-in and uses no Supabase quota: recipes go straight into your repo's",
@@ -11899,6 +11906,7 @@ margin-left: -22px;
     // 面板里改一下分类（s.cat=…）或者删一段（host.sec+=…）改的就是原事件本身 ——
     // 点「取消」根本退不回去，删段那一路还会让分段秒数之和超过事件时长。
     editSegs=(obj&&!isG&&evSegs(obj))?obj.segs.map(function(s){return Object.assign({},s);}):null;
+    evMates.length=0;renderEvMates();                 // 每次打开都是干净的一张表
     renderEvSegs(obj);
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-nostat").checked=!!(obj&&obj.nostat);
@@ -11920,11 +11928,24 @@ margin-left: -22px;
         :"📅 这条来自 Google 日历，现在归你管：计入统计，Google 那边再改也不覆盖它。你在这儿的修改<b>不会写回 Google</b>。";})();
     overlay.classList.add("on");setTimeout(function(){fTitle.focus();},30);
   }
-  var editSegs=null;
+  var editSegs=null,evMates=[];
+  var renderEvMates=mateUI(document.getElementById("ev-mates"),document.getElementById("ev-mate-add"),
+    evMates,function(){return selCat||"";},null,"这条的时间会平分给上面这几件事，总时长不变");
+  // 保存时把这条的时间平分，存成「段」—— 跟番茄钟那边同一套账。
+  // 已经有分段的（番茄钟里换过任务、或者上次就分过）不碰：那种交给上面那个分段面板改，
+  // 在这儿再平分一次会把「A 20 分 / B 40 分」抹平成「30 / 30」，等于把她记的东西改掉。
+  function applyEvMates(obj,title){
+    var mv=liveMates(evMates);
+    if(!mv.length||(obj.segs&&obj.segs.length>1))return;
+    var ss=splitEven([{t:title,cat:obj.cat,sub:obj.sub||null,
+      sec:Math.max(1,evMinutes(obj))*60}],mv);
+    if(ss.length>1){obj.segs=ss;if(!obj.note)obj.note=segNote(ss);}}
   function renderEvSegs(obj){
     var f=document.getElementById("ev-segs-field"),box=document.getElementById("ev-segs");
     if(!f||!box)return;
     var st=editSegs?segTimes({start:fStart.value,end:fEnd.value,segs:editSegs}):null;
+    var mf=document.getElementById("ev-mates-field");
+    if(mf)mf.style.display=st?"none":"";               // 已经分好段的交给下面那个面板改，别两个入口打架
     if(!st){f.style.display="none";box.innerHTML="";return;}
     f.style.display="";
     var gp=0;st.forEach(function(s){if(s.gap)gp+=(+s.sec||0);});
@@ -11982,6 +12003,7 @@ margin-left: -22px;
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
     if(adoptGid){                                // 把 Google 事件转成可编辑的本地事件（用 gid 关联，避免重复）
       obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:adoptGid,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};
+      applyEvMates(obj,title);
       events.push(obj);save("tt_events",events);
       gcalEvents=gcalEvents.filter(function(x){return x.id!=="g_"+adoptGid;});
       gcalApply(obj,want);
@@ -11996,6 +12018,7 @@ margin-left: -22px;
       if(editSegs&&editSegs.length>1)obj.segs=editSegs;
       events=events.map(function(e){return e.id===editingId?obj:e;});}
     else{obj={id:uid(),title:title,date:fDate.value,start:fStart.value,end:fEnd.value,cat:selCat,sub:selSub,done:isDone,gid:null,goalId:goalId,noGoal:noGoal,note:note,par:isPar,nostat:isNo,amin:aMin};events.push(obj);}
+    applyEvMates(obj,title);
     save("tt_events",events);
     gcalApply(obj,want);
     closeModal();renderCal();
@@ -12043,42 +12066,49 @@ margin-left: -22px;
   // 不新造概念：直接落在现成的「段」上。段本来就是分账用的（正计时里点「换任务」切出来的），
   // 各段加起来仍等于实际时长 —— 所以统计、目标进度、工时表、导出、日历色块一处都不用改，
   // 而且总时长不会虚高（这跟 🐟 摸鱼恰恰相反：那个是两边都算全额）。
-  var pMates=load("tt_pomomates",[])||[],matesBox=document.getElementById("pomo-mates");
-  function saveMates(){save("tt_pomomates",pMates);}
-  function clearMates(){if(!pMates.length)return;pMates=[];saveMates();renderMates();}
-  function renderMates(){
-    if(!matesBox)return;
-    matesBox.innerHTML=pMates.map(function(m,i){
-      var subs=m.cat?subsByUse(m.cat):[];
-      return '<div class="pomo-mate" data-i="'+i+'">'+
-        '<input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
-        '<select class="pm-cat"><option value="">（选大类）</option>'+
-          catsByUse().map(function(c){return '<option value="'+c.key+'"'+(m.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select>'+
-        '<select class="pm-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+
-          subs.map(function(x){return '<option value="'+x.key+'"'+((m.sub||"")===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'+
-        '<button type="button" class="pm-x" title="不算这件事了">✕</button></div>';}).join("")+
-      (pMates.length?'<div class="pomo-mate-note">结束时这次的时间会平分给上面这几件事，总时长不变</div>':"");
-    var b=document.getElementById("pomo-mate-add");
-    if(b)b.textContent=pMates.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";}
-  if(matesBox){
-    matesBox.addEventListener("input",function(e){
+  // 这一小块界面（一行 = 名字 + 大类 + 小类 + ✕）番茄钟和「新建事件」里各装一份。
+  // arr 是调用方自己的数组，这里**只在原地改**（push / splice），从不重新赋值 ——
+  // 外面那个名字始终指着同一个数组，不会某天拿到一个旧空壳。
+  // 满 4 件就把「＋」收起来：4 行明摆在那儿，比弹一句「最多 4 件」清楚。
+  function mateUI(box,add,arr,defCat,onChange,noteText){
+    if(!box)return function(){};
+    function draw(){
+      box.innerHTML=arr.map(function(m,i){
+        var subs=m.cat?subsByUse(m.cat):[];
+        return '<div class="pomo-mate" data-i="'+i+'">'+
+          '<input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
+          '<select class="pm-cat"><option value="">（选大类）</option>'+
+            catsByUse().map(function(c){return '<option value="'+c.key+'"'+(m.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select>'+
+          '<select class="pm-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+
+            subs.map(function(x){return '<option value="'+x.key+'"'+((m.sub||"")===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'+
+          '<button type="button" class="pm-x" title="不算这件事了">✕</button></div>';}).join("")+
+        (arr.length?('<div class="pomo-mate-note">'+noteText+'</div>'):"");
+      if(add){add.textContent=arr.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";
+        add.style.display=(arr.length>=4)?"none":"";}}
+    function touched(){if(onChange)onChange();}
+    box.addEventListener("input",function(e){
       var row=e.target.closest(".pomo-mate");if(!row)return;
       var i=+row.getAttribute("data-i");
-      if(pMates[i]&&e.target.classList.contains("pm-t")){pMates[i].t=e.target.value;saveMates();}});
-    matesBox.addEventListener("change",function(e){
+      if(arr[i]&&e.target.classList.contains("pm-t")){arr[i].t=e.target.value;touched();}});
+    box.addEventListener("change",function(e){
       var row=e.target.closest(".pomo-mate");if(!row)return;
-      var i=+row.getAttribute("data-i");if(!pMates[i])return;
-      if(e.target.classList.contains("pm-cat")){pMates[i].cat=e.target.value;pMates[i].sub=null;saveMates();renderMates();}
-      else if(e.target.classList.contains("pm-sub")){pMates[i].sub=e.target.value||null;saveMates();}});
-    matesBox.addEventListener("click",function(e){
+      var i=+row.getAttribute("data-i");if(!arr[i])return;
+      if(e.target.classList.contains("pm-cat")){arr[i].cat=e.target.value;arr[i].sub=null;touched();draw();}
+      else if(e.target.classList.contains("pm-sub")){arr[i].sub=e.target.value||null;touched();}});
+    box.addEventListener("click",function(e){
       var x=e.target.closest(".pm-x");if(!x)return;
       var row=x.closest(".pomo-mate");if(!row)return;
-      pMates.splice(+row.getAttribute("data-i"),1);saveMates();renderMates();});}
-  (function(){var b=document.getElementById("pomo-mate-add");if(!b)return;
-    b.addEventListener("click",function(){
-      if(pMates.length>=3){pomoNote("最多同时算给 4 件事");return;}
-      pMates.push({t:"",cat:pomoCat.value||"",sub:null});saveMates();renderMates();
-      var el=matesBox&&matesBox.querySelector(".pomo-mate:last-of-type .pm-t");if(el)el.focus();});})();
+      arr.splice(+row.getAttribute("data-i"),1);touched();draw();});
+    if(add)add.addEventListener("click",function(){
+      if(arr.length>=4)return;
+      arr.push({t:"",cat:(defCat?defCat():"")||"",sub:null});touched();draw();
+      var el=box.querySelector(".pomo-mate:last-of-type .pm-t");if(el)el.focus();});
+    return draw;}
+  var pMates=load("tt_pomomates",[])||[];
+  function saveMates(){save("tt_pomomates",pMates);}
+  function clearMates(){if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
+  var renderMates=mateUI(document.getElementById("pomo-mates"),document.getElementById("pomo-mate-add"),
+    pMates,function(){return pomoCat.value||"";},saveMates,"结束时这次的时间会平分给上面这几件事，总时长不变");
   renderMates();
   // 打任务名 → 自动归类（和新建事件用同一套：先查你以前手动归过的同名/同系列，再按关键词）
   // 你自己动过下拉就不再自动改，直到把任务名清空或重置
@@ -12261,8 +12291,8 @@ margin-left: -22px;
       host.sec=(+host.sec||0)+(+out[i].sec||0);
       out.splice(i,1);}
     return mergeSegs(out);}
-  function liveMates(){                                   // 填了大类的才算数 —— 空行只是还没填完
-    return (pMates||[]).filter(function(m){return m&&m.cat;}).map(function(m){
+  function liveMates(list){                               // 填了大类的才算数 —— 空行只是还没填完
+    return ((list===undefined?pMates:list)||[]).filter(function(m){return m&&m.cat;}).map(function(m){
       return {t:(m.t||"").trim()||catLabelOf(m.cat,m.sub||null),cat:m.cat,sub:m.sub||null};});}
   // 把每一段按 n 等份切开：第一份还是原来那件事，其余的记到并行的那几件头上。
   // 两个要点：

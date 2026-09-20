@@ -1,4 +1,5 @@
-// 一个番茄钟同时算给好几件事，结束时平分 —— 离线测试。
+// 一段时间同时算给好几件事，平分 —— 离线测试。
+// 两个入口都在这儿：番茄钟（结束时分）和「新建事件」弹窗（保存时分）。
 //
 // 她说的：「我想要实现开始一个番茄钟同时为了两个任务，最后记录得时候平分时间就好」。
 //
@@ -10,7 +11,8 @@
 //   ① 切完加起来必须分毫不差 —— 秒数除不尽也不许丢一秒、多一秒；
 //   ② 中途换过任务的，每一段都要切，不是只切最后一段；
 //   ③ 暂停挖出来的「洞」不属于任何一件事，不许被平分；
-//   ④ 一路到统计那头（evMixTo）仍然分毫不差，且总数不会虚高。
+//   ④ 一路到统计那头（evMixTo）仍然分毫不差，且总数不会虚高；
+//   ⑤ 弹窗里对已经分过段的那条不动手 —— 再平分一次就把她记的改掉了。
 //
 // 从 index.html 现抽真代码跑。
 //   用法：node tools/test-pomomate.js
@@ -30,6 +32,10 @@ var CODE = [
   src.slice(ln("var GAPMIN=30,"), ln("function secLabel(sec){") + 1).join(NL),
   // 碎段合并 + liveMates + splitEven
   src.slice(ln("function dropTiny(list){"), ln("function logFocusToCalendar(")).join(NL),
+  // 备注里那几个分钟数（最大余数法）
+  src.slice(ln("function segMinList(list){"), ln("function clearSegs(){")).join(NL),
+  // 「新建事件」弹窗里那一路
+  src.slice(ln("function applyEvMates(obj,title){"), ln("function applyEvMates(obj,title){") + 6).join(NL),
   // 落库里算 segs 的那一段（原样抠出来包成函数，平分就发生在它里面）
   "function calcSegs(focusSec){" +
   src.slice(ln("var typed=(pomoTask.value||\"\").trim();"),
@@ -53,7 +59,8 @@ var ctx = {
   pFollow: false, SOLO: false, pRid: "",
   timerMode: "down", pElapsed: 0, pTotal: 1500, pLeft: 0, pSegs: [], pSegStart: 0, segSig: "",
   pomoTask: { value: "" }, pomoCat: { value: "phd" }, pomoSub: { value: "" },
-  pomoToCal: { checked: true }, pomoManual: false, pMates: []
+  pomoToCal: { checked: true }, pomoManual: false, pMates: [],
+  evMates: [], evMinutes: function (e) { return e.__min; }   // 「新建事件」那一路要的
 };
 vm.createContext(ctx);
 vm.runInContext(CODE, ctx);
@@ -187,7 +194,42 @@ T("小类也跟着走", function () {
   ok(mix[0].min === 30 && mix[1].min === 30, "各 30 分");
 });
 
+T("「新建事件」弹窗里也能平分", function () {
+  // 60 分的一条 + 一件并行的事 → 各 30 分，备注自动写上
+  C.evMates = [{ t: "帮 Y 看数据", cat: "work", sub: null }];
+  var e = { cat: "meeting", sub: null, __min: 60 };
+  C.applyEvMates(e, "组会");
+  ok(e.segs && e.segs.length === 2, "切成两段");
+  ok(sum(e.segs) === 3600, "加起来还是 60 分，实际 " + sum(e.segs) + " 秒");
+  ok(of(e.segs, "meeting") === 1800 && of(e.segs, "work") === 1800, "一人一半");
+  ok(e.note === "组会 30分 · 帮 Y 看数据 30分", "备注写好了：" + e.note);
+
+  // 奇数分钟：备注里那几个数加起来要等于总数（不许 13+13=26）
+  var e2 = { cat: "a", sub: null, __min: 25 };
+  C.applyEvMates(e2, "A");
+  var mm = (e2.note.match(/(\d+)分/g) || []).map(function (x) { return parseInt(x, 10); });
+  ok(mm.length === 2 && mm[0] + mm[1] === 25, "25 分写成 " + mm.join("+") + "，应该正好 25");
+
+  // 已经有分段的不碰 —— 再平分一次会把「A 20 / B 40」抹平成「30 / 30」
+  var e3 = { cat: "a", sub: null, __min: 60, note: null,
+    segs: [{ t: "A", cat: "a", sub: null, sec: 1200 }, { t: "B", cat: "b", sub: null, sec: 2400 }] };
+  C.applyEvMates(e3, "A");
+  ok(e3.segs.length === 2 && e3.segs[0].sec === 1200 && e3.segs[1].sec === 2400, "原有的分段原封不动");
+  ok(!e3.note, "也没给它写备注");
+
+  // 自己写过备注的不覆盖
+  var e4 = { cat: "a", sub: null, __min: 60, note: "我自己写的" };
+  C.applyEvMates(e4, "A");
+  ok(e4.note === "我自己写的", "她写的备注保住原样");
+
+  // 没加并行的事 → 一点不动
+  C.evMates = [];
+  var e5 = { cat: "a", sub: null, __min: 60 };
+  C.applyEvMates(e5, "A");
+  ok(!e5.segs && !e5.note, "没加就什么都不发生");
+});
+
 console.log("");
-console.log("== 番茄钟：一次计时同时算给好几件事 ==");
+console.log("== 一段时间同时算给好几件事（番茄钟 + 新建事件）==");
 console.log("  通过 " + pass + "  失败 " + fail);
 process.exit(fail ? 1 : 0);
