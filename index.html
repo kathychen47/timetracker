@@ -94,9 +94,13 @@
   /* calendar + dashboard layout */
   .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 230px;gap:14px;align-items:start}
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
-  @media (max-width:900px){.cal-layout{grid-template-columns:1fr}.pomo-col{grid-column:auto}}
+  /* 跟上面两条一致用 minmax(0,1fr)。裸的 1fr = minmax(auto,1fr)，auto 会跟着
+     子元素的 min-content 走 —— 周视图里那个 min-width:560px 的网格就能把整列撑开。
+     目前看不出毛病，因为 .cal-main 已经有 min-width:0 兜着；但 .dash 没有，
+     所以别指望那个兜底。（390px 真实视口量过：scrollWidth == clientWidth，不溢出。） */
+  @media (max-width:900px){.cal-layout{grid-template-columns:minmax(0,1fr)}.pomo-col{grid-column:auto}}
   .cal-main{min-width:0}.pomo-col{min-width:0}
-  .dash{display:flex;flex-direction:column;gap:14px}
+  .dash{display:flex;flex-direction:column;gap:14px;min-width:0}   /* 跟 .cal-main / .pomo-col 一样，别让子元素把列撑宽 */
   .dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     box-shadow:var(--shadow);padding:14px}
   [data-foldc]{cursor:pointer;user-select:none}
