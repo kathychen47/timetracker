@@ -60,6 +60,7 @@ var ctx = {
   renderSegs: function () { }, drawLostChip: function () { }, pomoNote: function () { },
   savePomoRun: function () { }, drawPomo: function () { }, markPomoAuto: function () { },
   settings: { pgap: false }, MINSEG: 30,
+  pMates: [],                                  // 「同时还在做别的事」空着 —— 平分那一支单独有 test-pomomate.js
   pFollow: false, SOLO: false, pRid: "",
   timerMode: "up", pElapsed: 0, pTotal: 1500, pLeft: 0, pSegs: [], pSegStart: 0, segSig: "",
   pomoTask: { value: "" }, pomoCat: { value: "phd" }, pomoSub: { value: "" },

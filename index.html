@@ -188,6 +188,17 @@
   .pomo-task-cat{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
   .pomo-task-cat select{padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
   .pomo-task-cat select.auto{border-style:dashed;border-color:var(--primary)}   /* 虚线 = 按任务名自动归的类 */
+  /* 同时还在做的另一件事：结束时把这段时间平分给它们。
+     走的是现成的「段」—— 段是分账用的，加起来仍等于实际时长，不会虚高 */
+  .pomo-mate{display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:6px}
+  .pomo-mate input[type=text]{flex:1 1 110px;min-width:0;padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px;text-align:center}
+  .pomo-mate select{padding:6px 8px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12px;max-width:112px}
+  .pomo-mate .pm-x{border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;line-height:1}
+  .pomo-mate .pm-x:hover{color:var(--primary)}
+  .pomo-mate-note{font-size:11.5px;color:var(--muted);text-align:center;margin-top:6px;line-height:1.6}
+  .pomo-mate-add{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:9px;
+    padding:6px 10px;font-size:12px;cursor:pointer;align-self:center}
+  .pomo-mate-add:hover{color:var(--primary);border-color:var(--primary)}
   .pomo-log{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer}
   .ev-gcal-hint{font-size:11.5px;line-height:1.7;color:var(--muted);margin:5px 0 0 22px}
   .ev-gcal-hint .lnk{background:none;border:none;padding:0;font:inherit;color:var(--primary);
@@ -3727,6 +3738,8 @@ margin-left: -22px;
             <div id="pomo-step-box"></div>
             <div id="pomo-lost-box"></div>
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
+              <div class="pomo-mates" id="pomo-mates"></div>
+              <button type="button" class="pomo-mate-add" id="pomo-mate-add" title="一次计时同时算给好几件事：结束时把这段时间平均分给它们，加起来还是这么多，不会虚高">＋ 同时还在做别的事（时间平分）</button>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
             </div>
@@ -5451,6 +5464,7 @@ margin-left: -22px;
     "一个没落下":"Nothing left out",
     "一圈 60 分，可绕多圈，最多 3 小时":"One loop is 60 min; go round more than once, up to 3 hours",
     "一整句":"a whole sentence",
+    "一次计时同时算给好几件事：结束时把这段时间平均分给它们，加起来还是这么多，不会虚高":"One session can count towards several things: when it ends, the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
     "一笔流水都没拉到过":"has never pulled in a single transaction",
     "一行一条：\nWeibull\nway bull => Weibull\nF M E A => FMEA\n\n只写术语 → 按发音去找；写成「错的 => 对的」→ 原样替换，更准。":"One per line:\nWeibull\nway bull => Weibull\nF M E A => FMEA\n\nJust the term → matched by how it sounds; write it as \"wrong => right\" → replaced verbatim, which is more accurate.",
     "一行一条：&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;只写术语 → 按发音去找；写成「错的 =&gt; 对的」→ 原样替换，更准。":"One per line:&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;Just the term → matched by how it sounds; write it as \"wrong =&gt; right\" → replaced verbatim, which is more accurate.",
@@ -5497,6 +5511,7 @@ margin-left: -22px;
     "不用了":"No thanks",
     "不用单独登录":"no separate sign-in needed",
     "不用背了":"Skipped",
+    "不算这件事了":"Stop counting this one",
     "不计入任何目标":"Doesn't count toward any goal",
     "不计入统计":"don't count in stats",
     "不认识":"Don't know",
@@ -5838,6 +5853,7 @@ margin-left: -22px;
     "句子前后留白（秒）":"Padding around each sentence (sec)",
     "另一个网页在计时":"Another tab is timing",
     "另一个网页在计时 ·":"Another tab is timing ·",
+    "另一件事叫什么？":"What is the other thing called?",
     "只删音频 —— 原文、译文、你的听写和判分全都留着，也还在云端。 确定删掉音频吗？":"Deletes the audio only — the transcript, translation, your dictation and scores all stay, in the cloud too. Delete the audio?",
     "只存在你本机浏览器，不上传、不进代码。别人打开你的网站用的是他们自己填的 key，动不到你的额度。在":"Stored only in your own browser — never uploaded, never in the code. Anyone else opening your site uses their own key, so your quota is untouched. Get one at",
     "只影响统计和番茄钟的「今日」，日历上还是画在真实日期。":" Only affects \"today\" in Stats and Pomodoro — the calendar still draws events on their real date.",
@@ -6408,6 +6424,7 @@ margin-left: -22px;
     "更省事：装浏览器扩展（推荐）":"Easier: install the browser extension (recommended)",
     "最准 · 走 Gemini 额度":"Most accurate · uses your Gemini quota",
     "最多加入":"Add at most",
+    "最多同时算给 4 件事":"One session can count towards at most 4 things",
     "最近 14 天":"Last 14 days",
     "最近 7 天":"Last 7 days",
     "最近一个月":"the past month",
@@ -6767,6 +6784,7 @@ margin-left: -22px;
     "结束后记入日历":"Log to calendar when done",
     "结束方式":"Ends",
     "结束日期要写成 2026-12-31 这种":"The end date has to look like 2026-12-31",
+    "结束时这次的时间会平分给上面这几件事，总时长不变":"When this session ends its time is split evenly between the things above — the total stays the same.",
     "结果顺序 / 显示":"Result order / visibility",
     "结转":"Carry over",
     "给这段加笔记：":"Add a note to this passage:",
@@ -7358,8 +7376,11 @@ margin-left: -22px;
     "（这个浏览器不支持实时转写）":"(this browser doesn't support live transcription)",
     "（这句还没翻译）":"(not translated yet)",
     "（进页面就补记）":"(added when you open the page)",
+    "（选大类）":"(pick a category)",
     "（选小类）":"(Pick a sub-category)",
+    "＋ 再加一件":"＋ One more",
     "＋ 写一条":"＋ New note",
+    "＋ 同时还在做别的事（时间平分）":"＋ Also doing something else (split the time)",
     "＋ 导入书":"＋ Import book",
     "＋ 把当前页加进目录":"＋ Add current page to contents",
     "＋ 新建一个文件夹…":"＋ New folder…",
@@ -12015,6 +12036,50 @@ margin-left: -22px;
     if(!cats.some(function(c){return c.key===r.cat;}))return;
     pomoCat.value=r.cat;fillPomoSubs();
     if(r.sub&&subsOf(r.cat).some(function(s){return s.key===r.sub;}))pomoSub.value=r.sub;}
+  // ---------- 同时做两件事：结束时把这段时间平分 ----------
+  // 她说的：「开始一个番茄钟同时为了两个任务，最后记录得时候平分时间就好」。
+  // 一场会同时算给两个项目、边做 A 边帮 B —— 时间只有这么一份，要分账给两边。
+  //
+  // 不新造概念：直接落在现成的「段」上。段本来就是分账用的（正计时里点「换任务」切出来的），
+  // 各段加起来仍等于实际时长 —— 所以统计、目标进度、工时表、导出、日历色块一处都不用改，
+  // 而且总时长不会虚高（这跟 🐟 摸鱼恰恰相反：那个是两边都算全额）。
+  var pMates=load("tt_pomomates",[])||[],matesBox=document.getElementById("pomo-mates");
+  function saveMates(){save("tt_pomomates",pMates);}
+  function clearMates(){if(!pMates.length)return;pMates=[];saveMates();renderMates();}
+  function renderMates(){
+    if(!matesBox)return;
+    matesBox.innerHTML=pMates.map(function(m,i){
+      var subs=m.cat?subsByUse(m.cat):[];
+      return '<div class="pomo-mate" data-i="'+i+'">'+
+        '<input type="text" class="pm-t" placeholder="另一件事叫什么？" value="'+esc(m.t||"")+'">'+
+        '<select class="pm-cat"><option value="">（选大类）</option>'+
+          catsByUse().map(function(c){return '<option value="'+c.key+'"'+(m.cat===c.key?" selected":"")+'>'+esc(c.name)+'</option>';}).join("")+'</select>'+
+        '<select class="pm-sub"'+(subs.length?"":" disabled")+'><option value="">（无小类）</option>'+
+          subs.map(function(x){return '<option value="'+x.key+'"'+((m.sub||"")===x.key?" selected":"")+'>'+esc(x.name)+'</option>';}).join("")+'</select>'+
+        '<button type="button" class="pm-x" title="不算这件事了">✕</button></div>';}).join("")+
+      (pMates.length?'<div class="pomo-mate-note">结束时这次的时间会平分给上面这几件事，总时长不变</div>':"");
+    var b=document.getElementById("pomo-mate-add");
+    if(b)b.textContent=pMates.length?"＋ 再加一件":"＋ 同时还在做别的事（时间平分）";}
+  if(matesBox){
+    matesBox.addEventListener("input",function(e){
+      var row=e.target.closest(".pomo-mate");if(!row)return;
+      var i=+row.getAttribute("data-i");
+      if(pMates[i]&&e.target.classList.contains("pm-t")){pMates[i].t=e.target.value;saveMates();}});
+    matesBox.addEventListener("change",function(e){
+      var row=e.target.closest(".pomo-mate");if(!row)return;
+      var i=+row.getAttribute("data-i");if(!pMates[i])return;
+      if(e.target.classList.contains("pm-cat")){pMates[i].cat=e.target.value;pMates[i].sub=null;saveMates();renderMates();}
+      else if(e.target.classList.contains("pm-sub")){pMates[i].sub=e.target.value||null;saveMates();}});
+    matesBox.addEventListener("click",function(e){
+      var x=e.target.closest(".pm-x");if(!x)return;
+      var row=x.closest(".pomo-mate");if(!row)return;
+      pMates.splice(+row.getAttribute("data-i"),1);saveMates();renderMates();});}
+  (function(){var b=document.getElementById("pomo-mate-add");if(!b)return;
+    b.addEventListener("click",function(){
+      if(pMates.length>=3){pomoNote("最多同时算给 4 件事");return;}
+      pMates.push({t:"",cat:pomoCat.value||"",sub:null});saveMates();renderMates();
+      var el=matesBox&&matesBox.querySelector(".pomo-mate:last-of-type .pm-t");if(el)el.focus();});})();
+  renderMates();
   // 打任务名 → 自动归类（和新建事件用同一套：先查你以前手动归过的同名/同系列，再按关键词）
   // 你自己动过下拉就不再自动改，直到把任务名清空或重置
   var pomoManual=false;
@@ -12130,7 +12195,21 @@ margin-left: -22px;
     if(!gapOn())out=out.filter(function(x){return !x.gap;});   // 并成一整段：洞不单独成段，mergeSegs 会把两边接起来
     return mergeSegs(out);}
   function secLabel(sec){sec=Math.max(0,Math.round(sec));return sec<60?(sec+trv("秒")):(Math.round(sec/60)+trv("分"));}
-  function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();}
+  // 备注里那几个分钟数：各自四舍五入的话，25 分切两半会写成「13 分 · 13 分」，加起来像 26 分。
+  // 用最大余数法摊一遍 —— 写出来的几个数加起来正好是这条事件的分钟数。
+  function segMinList(list){
+    var tot=0;(list||[]).forEach(function(x){tot+=Math.max(0,+x.sec||0);});
+    if(tot<=0)return (list||[]).map(function(){return 0;});
+    var net=Math.round(tot/60);
+    var a=list.map(function(x){var e=net*Math.max(0,+x.sec||0)/tot;return {m:Math.floor(e),r:e-Math.floor(e)};});
+    var left=net-a.reduce(function(p,x){return p+x.m;},0);
+    a.slice().sort(function(p,q){return q.r-p.r;}).forEach(function(x){if(left>0){x.m++;left--;}});
+    return a.map(function(x){return x.m;});}
+  function segNote(list){
+    var mn=segMinList(list);
+    return list.map(function(x,i){
+      return (x.gap?(trv("暂停")+" "):(x.t+" "))+(mn[i]<1?secLabel(x.sec):(mn[i]+trv("分")));}).join(" · ");}
+  function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();clearMates();}
   function renderSegs(){
     if(!segsBox)return;
     var list=(timerMode==="up")?allSegs():[],multi=list.length>1;
@@ -12182,12 +12261,36 @@ margin-left: -22px;
       host.sec=(+host.sec||0)+(+out[i].sec||0);
       out.splice(i,1);}
     return mergeSegs(out);}
+  function liveMates(){                                   // 填了大类的才算数 —— 空行只是还没填完
+    return (pMates||[]).filter(function(m){return m&&m.cat;}).map(function(m){
+      return {t:(m.t||"").trim()||catLabelOf(m.cat,m.sub||null),cat:m.cat,sub:m.sub||null};});}
+  // 把每一段按 n 等份切开：第一份还是原来那件事，其余的记到并行的那几件头上。
+  // 两个要点：
+  //   ① 用「累计边界」取整，不是各自四舍五入 —— 切完加起来和原来分毫不差。
+  //   ② 并行的那几份挪到最后各合成一条，段落条上就不会出现 A·B·A·B 的碎花。
+  // 洞（暂停）原位不动：它不属于任何一件事，也不该被平分。
+  function splitEven(list,mates){
+    var n=1+mates.length,acc=mates.map(function(){return 0;}),out=[];
+    list.forEach(function(s){
+      if(s.gap){out.push(s);return;}
+      var tot=Math.max(0,+s.sec||0),prev=0,part=[];
+      for(var i=0;i<n;i++){var b=Math.round(tot*(i+1)/n);part.push(b-prev);prev=b;}
+      if(part[0]>0)out.push({t:s.t,cat:s.cat,sub:s.sub||null,sec:part[0]});
+      for(var j=0;j<mates.length;j++)acc[j]+=part[j+1];});
+    mates.forEach(function(m,j){if(acc[j]>0)out.push({t:m.t,cat:m.cat,sub:m.sub||null,sec:acc[j]});});
+    return mergeSegs(out);}
   function logFocusToCalendar(focusSec,endMs){
     var typed=(pomoTask.value||"").trim();
     var segs=(timerMode==="up")?dropTiny(allSegs()):null,gapSec=0,trail=0;
     if(segs){                                              // 停在暂停上就直接收尾 → 末尾不留洞，结束时间往回拨
       while(segs.length&&segs[segs.length-1].gap){trail+=(+segs[segs.length-1].sec||0);segs.pop();}
       segs.forEach(function(s){if(s.gap)gapSec+=(+s.sec||0);});}
+    var mates=liveMates();
+    if(mates.length){                                      // 同时也算给别的事：把这段时间平分。
+      // 倒计时没有段，正计时没换过任务时只有一段 —— 两种都当成「一整段」再切。
+      var base=(segs&&segs.length)?segs:[{t:typed||catLabelOf(pomoCat.value,pomoSub.value||null),
+        cat:pomoCat.value,sub:pomoSub.value||null,sec:focusSec}];
+      segs=splitEven(base,mates);}
     if(segs&&segs.length<2)segs=null;
     // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
     if(segs)segs.forEach(function(s){if(!s.gap&&s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
@@ -12205,7 +12308,7 @@ margin-left: -22px;
       segs.forEach(function(s){if(s.gap)return;var k=(s.cat||"")+"|"+(s.sub||"");by[k]=(by[k]||0)+s.sec;});
       Object.keys(by).forEach(function(k){if(!best||by[k]>by[best])best=k;});
       if(best){pc=best.split("|")[0];ps=best.split("|")[1]||null;}
-      note=segs.map(function(s){return s.gap?("暂停 "+secLabel(s.sec)):(s.t+" "+secLabel(s.sec));}).join(" · ");}
+      note=segNote(segs);}
     var task=catLabelOf(pc,ps);
     var end=new Date((endMs||Date.now())-trail*1000);       // 最后是停着结束的 → 结束时间是"最后一次做事"那会儿
     var start=new Date(end.getTime()-(focusSec+gapSec)*1000);  // 起点回到你真正按下开始的时刻
@@ -12494,7 +12597,7 @@ margin-left: -22px;
     save("tt_pomoseen",{sec:sec,end:now,mode:timerMode,rid:pRid,
       tocal:!!(pomoToCal&&pomoToCal.checked),
       task:(pomoTask.value||""),cat:pomoCat.value||"",sub:pomoSub.value||"",
-      par:!!(document.getElementById("pomo-par")||{}).checked,logged:false});}
+      par:!!(document.getElementById("pomo-par")||{}).checked,mates:liveMates(),logged:false});}
   // 黑匣子只有一格：新的一次计时跑到 60 秒，就把上一条盖掉了。
   // 上一条要是真丢了时间（还没销账），先挪进这个队列，一条一条地问过去，最多留 5 条。
   function lostQ(){var a=load("tt_pomolost",[]);return (a&&a.length)?a:[];}
@@ -12543,6 +12646,10 @@ margin-left: -22px;
         end:pad(e2.getHours())+":"+pad(e2.getMinutes()),
         title:catLabelOf(r.cat,r.sub||null),cat:r.cat,sub:r.sub||null,
         done:true,par:!!r.par,note:(r.task||null)};
+      if(r.mates&&r.mates.length){                        // 当时说好了同时算给别的事 —— 补记也要平分
+        ev.segs=splitEven([{t:(r.task||"").trim()||catLabelOf(r.cat,r.sub||null),
+          cat:r.cat,sub:r.sub||null,sec:+r.sec||0}],r.mates);
+        ev.note=segNote(ev.segs);}
       events=load("tt_events",events)||events;events.push(ev);
       if(!save("tt_events",events)){pomoNote("还是没存住 —— 浏览器存储可能满了");return;}
       dropLost(r);
@@ -12574,7 +12681,7 @@ margin-left: -22px;
   function onComplete(endMs){
     if(!pomoOwned()){pLog("onComplete:不归我管");savePomoSeen(true);startFollow();try{drawLostChip();}catch(e){}return;}
     stopTimer();try{beep();}catch(e){}
-    if(pMode2==="focus"){logDone(pTotal,endMs);pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
+    if(pMode2==="focus"){logDone(pTotal,endMs);clearMates();pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     pRid="";save("tt_pomorun",null);drawPomo();try{drawLostChip();}catch(e){}}
   // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）
