@@ -38,7 +38,24 @@ for (let i = 0; i < lines.length; i++) {
   }
   i = j;
 }
+// 还有一类 acorn / V8 都看不出来的：<script> 块里出现字面的 </script。
+// 它们解析的是我们按行抽出来的那段文本，而浏览器是先按 HTML 分词、
+// 读到 </script 就当场截断 —— JS 本身多完美都没用，页面直接白屏。
+// 要在 JS 里拼一个 script 标签，写成 '<\/scr'+'ipt>' 这种。
+for (let i = 0; i < lines.length; i++) {
+  if (lines[i].trim() !== "<script>") continue;
+  let j = i + 1;
+  while (j < lines.length && lines[j].trim() !== "</script>") j++;
+  for (let k = i + 1; k < j; k++) {
+    if (lines[k].indexOf("</script") < 0) continue;
+    bad++;
+    console.log("");
+    console.log("x index.html 第 " + (k + 1) + " 行：<script> 块里有字面的 </script，浏览器会在这儿把脚本截断");
+    console.log("   " + lines[k].trim().slice(0, 150));
+  }
+  i = j;
+}
 console.log("");
 console.log("== 语法体检 ==");
-console.log(bad ? ("  " + bad + " / " + n + " 段 <script> 解析不了") : ("  " + n + " 段 <script> 都能解析"));
+console.log(bad ? ("  " + bad + " 处毛病") : ("  " + n + " 段 <script> 都能解析，也没有会把自己截断的 </script"));
 process.exit(bad ? 1 : 0);

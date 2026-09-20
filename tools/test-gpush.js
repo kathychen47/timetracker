@@ -137,12 +137,18 @@ T("设置一打开就重新数一遍", function () {
   ok(count("refreshGbf()") >= 3, "定义 + 打开设置 + 连上 Google，实得 " + count("refreshGbf()"));
 });
 
-T("「已完成」勾和它的默认值都接上了", function () {
-  ok(count('id="ev-done"') === 1, "弹窗里那个勾");
-  ok(count('id="set-done-default"') === 1, "设置里的默认开关");
-  ok(count("var doneDefault=load(") === 1 && count('save("tt_donedef"') === 1, "读和写各一处");
-  ok(count("done:isDone") === 3, "新建/编辑/认领 Google 事件三条路都要用它，实得 " + count("done:isDone"));
-  ok(whole.indexOf('"tt_donedef"];') > 0 || whole.indexOf('"tt_donedef",') > 0, "要进云同步，换台设备才一致");
+T("「已完成」勾已经拿掉了，只剩 Google 存档那颗「收进我的记录」", function () {
+  // 她的原话：「不然就取消已完成按键啊，确认完全完成就好了吧？」
+  // 查下来她是对的：那个勾不参与任何计算（evCounts = evRecorded && !evNoStat，
+  // 统计 / 日均 / 目标 / 工时表 / 导出 没一处读 e.done），在自己的记录上纯属装饰。
+  // 真干活的只有 Google 存档事件那一颗：点一下 = 删掉 arch，这条就进统计了。
+  ok(count('id="ev-done"') === 0, "事件弹窗里那一行拿掉了");
+  ok(count('id="set-done-default"') === 0, "设置里那个开关也拿掉了");
+  ok(count("doneDefault") === 0, "跟着它的变量清干净了，实得 " + count("doneDefault"));
+  ok(count('id="cal-undone"') === 0, "日历顶上那条「全打勾」跟着一起撒");
+  ok(count("function claimSVG()") === 1, "只剩「收进我的记录」这颗");
+  ok(whole.indexOf('(e.arch?claimSVG():"")') > 0, "只有从 Google 存下来的才画它");
+  ok(whole.indexOf('{done:true});delete y.arch;') > 0, "点它 = 删掉 arch，这条当场进统计");
 });
 
 // ---------- 还没到的日子先淡着 ----------
@@ -172,5 +178,5 @@ T("日期字符串按位比 == 按时间比（evStarted 里就是这么比的）
   ok("2027-01-01" > "2026-12-31", "跨年也对");
 });
 
-console.log((fail ? "x" : "√") + " 补传筛子 + 默认打勾 + 未来变淡：" + pass + " 过 / " + fail + " 败");
+console.log((fail ? "x" : "√") + " 补传筛子 + 收进我的记录 + 未来变淡：" + pass + " 过 / " + fail + " 败");
 process.exit(fail ? 1 : 0);

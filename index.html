@@ -240,7 +240,10 @@
   .ev .lbl{font-size:9.5px;color:color-mix(in srgb,var(--c) 26%,var(--text));opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ev .chk{position:absolute;right:3px;bottom:3px;width:14px;height:14px;border-radius:4px;border:1.4px solid color-mix(in srgb,var(--c) 55%,var(--muted));background:var(--bg);display:grid;place-items:center;cursor:pointer}
   .ev .chk svg{width:9px;height:9px;color:var(--primary-ink);opacity:0}
-  .ev.done .chk{background:color-mix(in srgb,var(--c) 70%,var(--text));border-color:transparent}
+  .ev .chk.claim{border-style:dashed}
+  .ev .chk.claim svg{opacity:.8;color:color-mix(in srgb,var(--c) 45%,var(--text))}
+  .ev .chk.claim:hover{background:color-mix(in srgb,var(--c) 70%,var(--text));border-style:solid;border-color:transparent}
+  .ev .chk.claim:hover svg{opacity:1;color:var(--bg)}
   .ev.done .chk svg{opacity:1;color:var(--bg)}
   /* 中间暂停过：块从头画到尾，洞那一段是空的。描一圈边，让它读起来还是"一条"而不是两条 */
   .ev.gapped{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--c) 34%,transparent)}
@@ -378,13 +381,6 @@
   #gcal-pend button{border:none;background:#B4720B;color:#fff;border-radius:7px;
     padding:3px 9px;font-size:11.5px;cursor:pointer}
   #gcal-pend button:hover{background:#95600a}
-  /* 过去了却没打勾的，也摆在日历顶上，不用一条一条找 */
-  #cal-undone{display:none;align-items:center;gap:8px;font-size:12px;color:#1F7A4D;
-    background:#E4F6EC;border:1px solid #A8DCC0;border-radius:9px;padding:4px 10px}
-  #cal-undone.on{display:flex}
-  #cal-undone button{border:none;background:#1F7A4D;color:#fff;border-radius:7px;
-    padding:3px 9px;font-size:11.5px;cursor:pointer}
-  #cal-undone button:hover{background:#18613d}
   .legend .li em{font-style:normal;font-size:10.5px;opacity:.6;margin-left:5px;font-variant-numeric:tabular-nums}
   .legend .lg-more{color:var(--muted);border-style:dashed}
   /* 还没到的日子：先淡着摆在那儿，到了当天自动变回正常 ——
@@ -3707,7 +3703,6 @@ margin-left: -22px;
                   <button data-v="month">月</button>
                 </div>
                 <div id="gcal-pend"><span id="gcal-pend-t"></span><button type="button" id="gcal-pend-go">重新授权</button></div>
-                <div id="cal-undone"><span id="cal-undone-t"></span><button type="button" id="cal-undone-go">全打勾</button></div>
                 <button class="btn primary" id="add-btn">+ 事件</button>
               </div>
             </div>
@@ -4322,7 +4317,6 @@ margin-left: -22px;
     <div class="field" id="ev-amin-field"><label>统计时长（可选）</label><input type="text" id="ev-amin" placeholder="3h / 1h30 / 90m" autocomplete="off"></div>
     <div class="field" id="ev-goal-field"><label>计入目标（可选 · 手动把这个事件算进某个目标）</label><select id="ev-goal"></select></div>
     <label class="pomo-log" id="ev-par-row" style="justify-content:flex-start;margin-top:4px" title="允许和同一时间段的其它事件重叠，统计里两边都算"><input type="checkbox" id="ev-par"> 🐟 摸鱼 · 这段时间和别的事重叠</label>
-    <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="就是日历块右下角那个小方块。块太小的时候那个方块会被藏起来、点不到 —— 在这儿勾是一样的"><input type="checkbox" id="ev-done"> ✓ 已完成</label>
     <label class="pomo-log" style="justify-content:flex-start;margin-top:4px" title="日历上照样显示，只是总时长、日均、目标进度都不算它"><input type="checkbox" id="ev-nostat"> ⊘ 不进统计</label>
     <div id="ev-gcal-row" style="display:none;margin-top:4px">
       <label class="pomo-log" style="justify-content:flex-start"><input type="checkbox" id="ev-gcal"> 同时加到我的 Google 日历</label>
@@ -4623,12 +4617,6 @@ margin-left: -22px;
         <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">语言 / Language</div><div class="set-desc">切换界面中文 / English（切换后会刷新一次）。</div></div>
           <select id="set-lang"><option value="zh">中文</option><option value="en">English</option></select>
-        </div>
-      </div>
-      <div class="set-item">
-        <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">新记的事件默认就是「已完成」</div><div class="set-desc">日历块右下角那个小方块默认打上勾。块太小的时候那个方块会整个藏起来、点不到，开着这个就不会漏。要单独改哪一条，在事件弹窗里勾或取消。</div></div>
-          <label class="switch"><input type="checkbox" id="set-done-default"><span class="sw-track"></span></label>
         </div>
       </div>
       <div class="set-sec-h" style="margin-top:22px">📊 统计</div>
@@ -6284,6 +6272,7 @@ margin-left: -22px;
     "收起本子栏":"Hide sidebar",
     "收起没用到的":"Hide the unused ones",
     "收起译文只看原文":"Hide the translation, show the original only",
+    "收进我的记录":"Add to my records",
     "改":"Edit",
     "改名 / 删除":"Rename / delete",
     "改名 / 新建子文件夹 / 删除":"Rename / new subfolder / delete",
@@ -8144,7 +8133,6 @@ margin-left: -22px;
   var gToken=null,gcalEvents=[],gcalDefault=load("tt_gcaldefault",false),gcalCount=load("tt_gcalcount",false);
   // 新事件默认打不打勾。默认开着 —— 短事件的块画得太矮，右下角那个方块整块被藏起来（.ev.mini），
   // 想勾也点不到，于是「漏掉没打勾」的永远是最短的那几条。
-  var doneDefault=load("tt_donedef",true);
   var gcalArchOn=load("tt_gcalarch",true);   // 把「今天之前」的 Google 事件固化成自己的记录（默认开）
   // 除了手动新建，还有几个地方会自动生成事件（番茄钟、目标打卡），各自能不能自动同步到 Google 单独控制
   var gcalAuto=load("tt_gcalauto",null);
@@ -10882,7 +10870,7 @@ margin-left: -22px;
       start:pad(start.getHours())+":"+pad(start.getMinutes()),
       end:pad(end.getHours())+":"+pad(end.getMinutes()),
       title:catLabelOf(pc,ps),note:(pomoTask.value||"").trim()||null,
-      cat:pc,sub:ps,done:doneDefault,live:true,sec:sec,wsec:wsec,par:!!(pf&&pf.checked)};
+      cat:pc,sub:ps,done:true,live:true,sec:sec,wsec:wsec,par:!!(pf&&pf.checked)};
     if(ss&&ss.length>1)e.segs=ss;                          // 换过任务 / 中间停过：色块跟着一起长
     return e;}
   function liveLabel(e){                                   // 块上那行小字：走了多久，其中停了多久
@@ -11008,7 +10996,9 @@ margin-left: -22px;
     var top=(s-HS*60)/60*PH,h=(en-s)/60*PH;if(top<0){h+=top;top=0;}
     if(h<EVMINH)h=EVMINH;                          // 原来是 20px，等于 27 分钟以内全一样高
     return{top:top,h:h};}
-  function chkSVG(){return '<div class="chk" data-chk><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>';}
+  // 从 Google 存下来的那些才有这颗：点一下 = 把这条收进我自己的记录。
+  // 它以前长得跟「已完成」一模一样，所以看起来像同一件事 —— 其实完全是另一回事。
+  function claimSVG(){return '<div class="chk claim" data-chk title="'+esc(trv("\u6536\u8fdb\u6211\u7684\u8bb0\u5f55"))+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></div>';}
   function packLayout(evs){
     // 按真实结束时间判断重叠。原来强行拉到 15 分钟，导致"9:00–9:05"和"9:10–9:40"
     // 明明前后脚，却被当成重叠排成两栏。只给零长度事件垫 1 分钟。
@@ -11034,7 +11024,7 @@ margin-left: -22px;
     var box='top:'+p.top+'px;height:'+hpx.toFixed(1)+'px';
     if(lay&&lay.cols>1){var w=100/lay.cols;box+=';left:calc('+(w*lay.col)+'% + 1px);width:calc('+w+'% - 3px);right:auto';}
     var corner=e.live?'<span class="ltag" title="正计时进行中">⏱</span>'
-      :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':chkSVG());
+      :(e.gcal?'<span class="gtag" title="Google 日历">G</span>':(e.arch?claimSVG():""));
     // 右上角：这条到底进没进 Google。以前完全看不出来，只能自己去 Google 翻，
     // 还容易翻错周（Google 一周从周日起，这边从周一起），翻不到就以为同步坏了。
     var gm="";
@@ -11164,7 +11154,6 @@ margin-left: -22px;
     if(state.view==="day")renderDay();else if(state.view==="month")renderMonth();else renderWeek();
     renderLegend();renderDashboard();
     try{refreshGcalPend();}catch(e){}    // 开页面第一眼就看得到有没有欠着的
-    try{refreshUndone();}catch(e){}      // 过去了还没打勾的，同理
   }
   var legendEl=document.getElementById("legend");
   // 当前这一屏覆盖的日期范围（日/周/月各不同）—— 图例只按"看得见的这段时间"来排
@@ -11247,30 +11236,17 @@ margin-left: -22px;
   document.getElementById("next-btn").addEventListener("click",function(){shift(1);});
   function shift(n){if(state.view==="day")state.cursor=addDays(state.cursor,n);else if(state.view==="week")state.cursor=addDays(state.cursor,n*7);else state.cursor=addMonths(state.cursor,n);renderCal();}
   document.getElementById("add-btn").addEventListener("click",function(){openModal(null,{date:fmt(state.cursor)});});
-  document.getElementById("cal-undone-go").addEventListener("click",async function(){
-    var r=viewRange(),list=undoneIn(r.a,r.b);
-    if(!list.length){refreshUndone();return;}
-    // 更早的还有多少：不连坐标地全勾上，但得让她知道换成「月」可以一下完
-    var older=events.filter(function(e){
-      return e&&!e.done&&!e.arch&&e.date<r.a&&evStarted(e);}).length;
-    if(!await ttConfirm("把这一屏里已经过去、却没打勾的 "+list.length+" 条全都打上勾？"+
-      (older?("（更早还有 "+older+" 条，换成「月」或者翻到那几周再点一次。）"):""),
-      {anchor:this,okText:"全打勾"}))return;
-    var ids={};list.forEach(function(e){ids[e.id]=1;});
-    events=load("tt_events",events)||events;                    // 别的网页刚记过东西的话，先把最新那份拿回来
-    events=events.map(function(x){return ids[x.id]?Object.assign({},x,{done:true}):x;});
-    if(!save("tt_events",events)){ttAlert("没能存住 —— 浏览器存储可能满了");return;}
-    renderCal();});
 
   calBody.addEventListener("click",function(e){
     if(e.target.closest("[data-todoband]")){todoBandCollapsed=!todoBandCollapsed;save("tt_todoband",todoBandCollapsed);renderCal();return;}
     var chk=e.target.closest("[data-chk]");
     if(chk){var evc=chk.closest(".ev");if(evc){var id=evc.getAttribute("data-id");
-      // 打上勾 = 你认领了这条。Object.assign 会原样保留 arch，所以必须显式删掉它 ——
-      // 否则界面上勾是打了，统计里还是不算，看起来就像功能坏了。
+      // 收进我的记录：arch 一删它就进统计了，而且以后 Google 那边再改也不动它。
+      // Object.assign 会原样保留 arch，所以必须显式删；收过之后这颗按钮自己就消失了。
+      events=load("tt_events",events)||events;
       events=events.map(function(x){if(x.id!==id)return x;
-        var y=Object.assign({},x,{done:!x.done});delete y.arch;return y;});
-      save("tt_events",events);renderCal();}return;}
+        var y=Object.assign({},x,{done:true});delete y.arch;return y;});
+      save("tt_events",events);renderCal();try{renderDashboard();}catch(_e){}}return;}
     var tchk=e.target.closest("[data-todocheck]");
     if(tchk){var tc=tchk.closest("[data-todo]");if(tc){var tid=tc.getAttribute("data-todo");todos=todos.map(function(x){return x.id===tid?Object.assign({},x,{done:!x.done}):x;});save("tt_todos",todos);renderCal();renderTodos();}return;}
     var tchip=e.target.closest("[data-todo]");
@@ -11850,18 +11826,6 @@ margin-left: -22px;
     try{if(state.tab==="calendar")renderCal();}catch(e){}    // 琥珀色的 G 变绿，你看得见它真的传上去了
     try{ttAlert("和 Google 日历对齐了 "+todo.length+" 条 ✓");}catch(e){}}
   // 有多少条在排队等着传。0 就整条藏起来 —— 平时不该占地方。
-  // 这一屏里已经发生过、却还没打勾的。
-  // 从 Google 存下来的（arch）不算：给它们打勾 = 把它们拉进统计，
-  // 那是统计页那条「把它们也算上」管的事，别在这儿悴悴改掉一堆数字。
-  function undoneIn(a,b){
-    return events.filter(function(e){
-      return e&&!e.done&&!e.arch&&e.date>=a&&e.date<=b&&evStarted(e);});}
-  function refreshUndone(){
-    var box=document.getElementById("cal-undone");if(!box)return;
-    var r=viewRange(),n=undoneIn(r.a,r.b).length;
-    box.classList.toggle("on",n>0);
-    // 整句拼好再塞进去，让模板那套接 —— 拆成 trv("☐ ")+n+trv(...) 就只能各翻各的
-    if(n>0)document.getElementById("cal-undone-t").textContent="☐ "+n+" 条没打勾";}
   function refreshGcalPend(){
     var box=document.getElementById("gcal-pend");if(!box)return;
     var n=gcalPend();
@@ -11911,7 +11875,6 @@ margin-left: -22px;
     document.getElementById("ev-par").checked=!!(obj&&obj.par);
     document.getElementById("ev-nostat").checked=!!(obj&&obj.nostat);
     document.getElementById("ev-amin").value=(obj&&+obj.amin>0)?fmtDur(+obj.amin):"";
-    document.getElementById("ev-done").checked=obj?!!obj.done:doneDefault;
     document.getElementById("ev-gcal").checked=obj?(isG?true:gcalWanted(obj)):!!((gToken||gcalEver())&&gcalDefault);
     refreshGcalRow();
     (function(){
@@ -11984,7 +11947,8 @@ margin-left: -22px;
     var want=!!document.getElementById("ev-gcal").checked,obj;
     var gv=document.getElementById("ev-goal").value;var goalId=(gv&&gv!=="__none")?gv:null,noGoal=(gv==="__none");var note=(document.getElementById("ev-note").value||"").trim()||null;
     var isPar=!!document.getElementById("ev-par").checked;
-    var isDone=!!document.getElementById("ev-done").checked;
+    // 这里记的都是「发生过的事」，没什么好确认的；改旧条时原样保留它自己的值
+    var isDone=editingId?!!((events.filter(function(x){return x.id===editingId;})[0]||{}).done):true;
     var isNo=document.getElementById("ev-nostat").checked||undefined;
     var aMin=parseDurIn(document.getElementById("ev-amin").value)||undefined;   // 同上：没填就不落字段   // undefined 存的时候会被 JSON 丢掉，不给每条都挂个 false
     if(catManual&&title!==catLabelOf(selCat,selSub))rememberCat(title,selCat,selSub);   // 手动选过分类 → 记住，以后同名/同系列自动归类（自动凑出来的标题不算关键词）
@@ -12992,11 +12956,14 @@ margin-left: -22px;
       '<h1 class="xh">'+esc(title)+'</h1>'+
       '<div class="xm">'+esc(trv("导出于")+" "+dtstr(new Date()))+'</div>'+
       '<div class="xtabs">'+tabs+'</div>'+body+
-      '<script>(function(){var t=document.querySelector(".xtabs"),p=document.querySelectorAll(".xpg");'+
+      // 两个标签都拆开拼。源码里只要出现 script 的结束标签那六个字符，
+      // 浏览器就在那儿把整块脚本截断 —— 注释里也不行，它不看你是不是注释。
+      // 这是「用 JS 生成一个带 script 的页面」的固定写法，tools/parse-check.js 盯着。
+      '<scr'+'ipt>(function(){var t=document.querySelector(".xtabs"),p=document.querySelectorAll(".xpg");'+
       't.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;'+
       'var i=+b.getAttribute("data-i");'+
       't.querySelectorAll("button").forEach(function(x,j){x.classList.toggle("on",j===i);});'+
-      'p.forEach(function(x,j){x.hidden=(j!==i);});});})();<\/script>'+
+      'p.forEach(function(x,j){x.hidden=(j!==i);});});})();<\/scr'+'ipt>'+
       '</body></html>';
     downloadFile(scope+"_"+rr.label+".html",doc,"text/html;charset=utf-8");}
   function buildReportHTML(rows,scope,rl,total,ck,sk){
@@ -13504,7 +13471,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-done-default").checked=!!doneDefault;document.getElementById("set-pgap").checked=!!settings.pgap;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-pgap").checked=!!settings.pgap;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
@@ -13660,7 +13627,6 @@ margin-left: -22px;
     sbUrl=newSbUrl;sbKey=newSbKey;save("tt_sburl",sbUrl);save("tt_sbkey",sbKey);
     gcalCount=document.getElementById("set-gcal-count").checked;save("tt_gcalcount",gcalCount);
     gcalArchOn=document.getElementById("set-gcal-arch").checked;save("tt_gcalarch",gcalArchOn);
-    doneDefault=document.getElementById("set-done-default").checked;save("tt_donedef",doneDefault);
     fetchGcal();
     save("tt_apikey",apiKey);save("tt_aimodel",apiModel);save("tt_aiprovider",aiProvider);save("tt_ollamaurl",ollamaUrl);save("tt_ollamamodel",ollamaModel);save("tt_gcaldefault",gcalDefault);
     if(sbChanged&&sbUrl&&sbKey)initSupabase();
@@ -13849,7 +13815,7 @@ margin-left: -22px;
       var ded=evDedupeArch(events);
       if(events.length<n0||ded!==events){events=ded;save("tt_events",events);}})();
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
-    cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);doneDefault=load("tt_donedef",true);
+    cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
     words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
@@ -14081,8 +14047,7 @@ margin-left: -22px;
   function doAI(o,orig){
     if(o.action==="create_event"){
       var ck=catKeyByName(o.category)||autoCat(o.title||orig).cat;
-      // 跟弹窗里新建走同一个规矩：都是「新记一条」，没道理一个打勾一个不打
-      var ev={id:uid(),date:o.date||fmt(new Date()),start:o.start||"09:00",end:o.end||"10:00",title:o.title||orig,cat:ck,sub:null,done:doneDefault};
+      var ev={id:uid(),date:o.date||fmt(new Date()),start:o.start||"09:00",end:o.end||"10:00",title:o.title||orig,cat:ck,sub:null,done:true};
       events.push(ev);save("tt_events",events);renderCal();
       aiMsg("✅ "+esc(o.reply||"已加入日历")+"<br><span style='color:var(--muted);font-size:12px'>"+ev.date+" "+ev.start+"–"+ev.end+" · "+esc(catName(ck))+" · "+esc(ev.title)+"</span>","ok");
     }else if(o.action==="create_todo"){
