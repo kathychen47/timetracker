@@ -36,6 +36,9 @@
     // 而且两边的 wordJunk 必须逐字相同（tools/test-wordjunk.js 盯着）。
 
     // ---- 设置页 ----
+    "查到的单词自动朗读（不用点 🔊）": "Read looked-up words aloud automatically (no need to hit 🔊)",
+    "选中一个单词、卡片弹出来就念一遍，查不到的词也念。整句翻译不会念 —— 一句话念十几秒太吵，那种还是点卡片上的 🔊。口音固定是英音，跟网站查词页的「英/美」开关是分开的两处。":
+      "Select a single word and the card reads it out as it opens \u2014 including words the dictionary doesn't have. Whole-sentence translations are not read aloud: a sentence takes ten-plus seconds and gets noisy fast, so use the 🔊 button on the card for those. The accent here is fixed to British, separate from the EN/US switch on the website's lookup page.",
     "划词查词 · 设置": "Look up on selection · Settings",
     "划词查词 · Timetracker": "Look up on selection · Timetracker",
     "在任意网页选中单词就地查词，选中句子自动翻译；生词自动进 Timetracker 生词本。":

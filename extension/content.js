@@ -2,12 +2,17 @@
 (() => {
   if (window.__ttDictLoaded) return;
   window.__ttDictLoaded = true;
+  // SCORM 课件（Moodle 那种）整个装在一个 iframe 里 —— 内容脚本原来只跑顶层框架，
+  // 于是在课件正文里划词，根本没有人在听 mouseup。manifest 里 all_frames 改成了 true。
+  // 代价是广告/埋点那种 1×1 的隐藏 iframe 也会跑这份脚本：里面没有正文，也不可能划词，
+  // 白白每个框架读一次 storage。太小的子框架直接不进来。
+  if (window.top !== window && (innerWidth < 160 || innerHeight < 100)) return;
 
   try { TTI18N.init(); } catch (e) { }          // 读一下界面语言（卡片是选中之后才画的，来得及）
   try { chrome.storage.onChanged.addListener(function (ch, area) {
     if (area === "local" && ch.ttLang) TTI18N.init();
   }); } catch (e) { }
-  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
+  let host = null, root = null, cssText = null, lastSel = "", settings = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false, ttAutoSpeak: false };
 
   // 重新加载扩展之后，早就开着的标签页里还跑着旧的这份脚本，
   // 它手上那条通往后台的通道已经作废 —— 再调 chrome.runtime.* 就抛
@@ -32,7 +37,7 @@
   // 都还在弹卡片，得挨个刷新才生效。听 storage 的变化，当场生效。
   try { chrome.storage.onChanged.addListener((ch, area) => {
     if (area !== "local") return;
-    ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme", "ttAutoAdd"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
+    ["ttMode", "ttTargetLang", "ttEnabled", "ttTheme", "ttAutoAdd", "ttAutoSpeak"].forEach(k => { if (ch[k]) settings[k] = ch[k].newValue; });
     if (settings.ttEnabled === false || settings.ttMode === "off") { try { destroy(); } catch (e) {} lastSel = ""; }
   }); } catch (e) {}
 
@@ -151,6 +156,11 @@
 
     const bd = r.querySelector(".bd");
     const isWord = looksLikeWord(text);
+    // 自动朗读：卡片一弹出来就念，不等查词结果。
+    // 不等的理由：查不到的词（人名、变位、专业术语）她一样想听 —— 等命中才念，
+    // 这个功能有一半时候是哑的，用起来像坏了。
+    // 整句翻译不念：一句话念完十几秒，选中一段话就开始朗读会很吵。
+    if (isWord && settings.ttAutoSpeak) speak(text);
 
     r.addEventListener("click", async e => {
       const b = e.target.closest("[data-a]"); if (!b) return;

@@ -96,19 +96,21 @@ document.getElementById("file").addEventListener("change", async e => {
 });
 
 // 设置项
-const S = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false };
+const S = { ttMode: "auto", ttTargetLang: "auto", ttEnabled: true, ttTheme: "page", ttAutoAdd: false, ttAutoSpeak: false };
 chrome.storage.local.get(S, v => {
   document.getElementById("mode").value = v.ttMode;
   document.getElementById("lang").value = v.ttTargetLang;
   document.getElementById("enabled").checked = v.ttEnabled;
   document.getElementById("theme").value = v.ttTheme;
   document.getElementById("autoadd").checked = v.ttAutoAdd;
+  document.getElementById("autospeak").checked = v.ttAutoSpeak;
 });
 document.getElementById("mode").addEventListener("change", e => chrome.storage.local.set({ ttMode: e.target.value }));
 document.getElementById("lang").addEventListener("change", e => chrome.storage.local.set({ ttTargetLang: e.target.value }));
 document.getElementById("enabled").addEventListener("change", e => chrome.storage.local.set({ ttEnabled: e.target.checked }));
 document.getElementById("theme").addEventListener("change", e => chrome.storage.local.set({ ttTheme: e.target.value }));
 document.getElementById("autoadd").addEventListener("change", e => chrome.storage.local.set({ ttAutoAdd: e.target.checked }));
+document.getElementById("autospeak").addEventListener("change", e => chrome.storage.local.set({ ttAutoSpeak: e.target.checked }));
 
 function refreshQueue() {
   chrome.storage.local.get({ ttQueue: [] }, v => {
