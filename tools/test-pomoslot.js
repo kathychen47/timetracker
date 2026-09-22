@@ -86,6 +86,9 @@ function run() { return JSON.parse(w.__store.tt_pomorun || "null") || {}; }
 function slots() { return JSON.parse(w.__store.tt_pomoslots || "[]"); }
 function rows() { return [].slice.call(d.querySelectorAll("#pomo-slots .pomo-slot")); }
 function label(r) { return r.querySelector(".ps-t").textContent; }
+// 分类色块平时是收起来的（她的大类 10 个、小类十几个，全铺出来又高又分不清）——
+// 要换分类得先点那个「换」。
+function openCats() { var b = $("#pomo-slot-pick .psp-chg"); if (b) b.click(); }
 // 各段之和 + 手上这一段，必须正好等于钟上走过的秒数
 function accounted() {
   var r = run(), tot = 0;
@@ -106,6 +109,15 @@ function accounted() {
   ok($("#pomo-slot-pick").classList.contains("on"), "＋ 打开了挑选面板");
   ok(slots().length === 0, "光打开面板不会往里塞东西");
   ok($("#pomo-slot-add").style.display === "none", "面板开着的时候 ＋ 收起来了");
+  // 她的大类 10 个、小类十几个，一上来全铺出来是二十多个色块，又高又分不清大小类
+  ok($("#pomo-slot-pick").querySelectorAll("[data-pcat]").length === 0, "分类色块默认是收起来的");
+  ok(!!$("#pomo-slot-pick .psp-cur"), "只显示一行「现在是哪个分类」");
+  openCats();
+  ok($("#pomo-slot-pick").querySelectorAll("[data-pcat]").length === 3, "点「换」之后大类铺开了，实际 " +
+    $("#pomo-slot-pick").querySelectorAll("[data-pcat]").length);
+  ok(!!$("#pomo-slot-pick .psp-subs"), "小类单独一组（缩进 + 标题），不跟大类混在一块");
+  ok(/大类/.test($("#pomo-slot-pick").textContent) && /小类/.test($("#pomo-slot-pick").textContent),
+    "两组各自有标题（大类 / 小类）—— 小类用的就是大类的深浅色，光看色块分不出谁是谁");
   var recs = [].slice.call($("#pomo-slot-pick").querySelectorAll(".psp-r"));
   ok(recs.length === 3, "「最近用过」列了 3 件，实际 " + recs.length);
   ok(!recs.some(function (r) { return /太久以前了/.test(r.textContent); }), "40 天前那条不算「最近」");
@@ -201,6 +213,7 @@ function accounted() {
   $("#pomo-slot-add").click();
   ok($("#pomo-slot-pick").querySelector(".psp-t").value === "写论文",
     "面板里名字预填的是手上这件，实际 " + JSON.stringify($("#pomo-slot-pick").querySelector(".psp-t").value));
+  openCats();
   $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
   ok($("#pomo-slot-pick").querySelector('[data-pcat="cms"]').classList.contains("on"), "点了色块就选上了");
   $("#pomo-slot-pick").querySelector(".psp-ok").click();
@@ -215,6 +228,7 @@ function accounted() {
   ok($("#pomo-slot-pick").querySelectorAll(".psp-r").length === 0, "改的时候不列「最近用过」");
   var ti = $("#pomo-slot-pick").querySelector(".psp-t");
   ti.value = "改课件第二版"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  openCats();
   $("#pomo-slot-pick").querySelector('[data-psub="s462"]').click();
   $("#pomo-slot-pick").querySelector(".psp-ok").click();
   ok(slots()[0].t === "改课件第二版" && slots()[0].sub === "s462",
@@ -225,6 +239,7 @@ function accounted() {
   $("#pomo-slot-add").click();
   ti = $("#pomo-slot-pick").querySelector(".psp-t");
   ti.value = "写论文"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  openCats();
   $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
   $("#pomo-slot-pick").querySelector(".psp-ok").click();
   ok(slots().length === 3, "一模一样的那件不会被放两遍，实际 " + slots().length);
@@ -238,6 +253,7 @@ function accounted() {
   $("#pomo-slot-add").click();
   var t14 = $("#pomo-slot-pick").querySelector(".psp-t");
   t14.value = ""; t14.dispatchEvent(new w.Event("input", { bubbles: true }));
+  openCats();
   $("#pomo-slot-pick").querySelector('[data-pcat="uco"]').click();
   $("#pomo-slot-pick").querySelector('[data-psub="d401"]').click();
   $("#pomo-slot-pick").querySelector(".psp-ok").click();
@@ -256,6 +272,19 @@ function accounted() {
   ok(/\d/.test(b14), "没名字那行照样数得出自己走了多久，实际 " + JSON.stringify(b14));
   ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
     "到这儿总账还是一秒不差：" + accounted() + " / " + run().elapsed);
+
+  // ---- 15. 正跑着改任务名，得当场写盘 ----
+  // 原来要等到下一次「开始 / 暂停 / 切一刀」才存。中间刷新一下（或者合上电脑），
+  // restorePomoRun0 会把**旧名字**原样填回来 —— 她刚改的那个无声无息地没了，
+  // 最后记进日历的也是旧名字。她的原话：「为啥老是自动给我填上 STAT101 tutorial」。
+  var tn = $("#pomo-task");
+  tn.value = "换成另一件事"; tn.dispatchEvent(new w.Event("input", { bubbles: true }));
+  ok(run().task !== "换成另一件事", "刚敲完还没写（每个键都写盘太浪费）");
+  await wait(700);
+  ok(run().task === "换成另一件事", "半秒内存下来了，实际 " + JSON.stringify(run().task));
+  tn.value = ""; tn.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await wait(700);
+  ok(!run().task, "清空也存得住 —— 否则刷新一下旧名字又回来了，实际 " + JSON.stringify(run().task));
 
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   console.log("");

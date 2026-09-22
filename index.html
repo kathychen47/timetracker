@@ -221,6 +221,18 @@
   .pomo-slot-pick .psp-h{font-size:12px;font-weight:650;text-align:center}
   .pomo-slot-pick .psp-t{padding:7px 9px;border:1px solid var(--border);border-radius:9px;
     background:var(--bg);color:var(--text);font-size:12.5px;text-align:center}
+  /* 分类平时只显示一行「现在是哪个」，点「换」才把色块铺开 ——
+     她的大类有 10 个、小类十几个，一上来全铺出来是 20 多个色块，又高又分不清。 */
+  .pomo-slot-pick .psp-cur{display:flex;align-items:center;gap:7px;padding:7px 9px;
+    border:1px solid var(--border);border-radius:9px;background:var(--bg);font-size:12.5px}
+  .pomo-slot-pick .psp-cur>i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+  .pomo-slot-pick .psp-cur>span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pomo-slot-pick .psp-chg{border:none;background:none;color:var(--primary);cursor:pointer;
+    font-size:12px;padding:0 2px;flex:0 0 auto;text-decoration:underline}
+  .pomo-slot-pick .psp-lb{font-size:11px;color:var(--muted);margin:2px 0 -2px;padding-left:2px}
+  /* 小类跟大类颜色一样（本来就是它的深浅），光看色块分不出谁是谁 —— 靠这一格缩进和虚线框分开 */
+  .pomo-slot-pick .psp-subs{margin-left:10px;padding-left:8px;border-left:2px dashed var(--border)}
+  .pomo-slot-pick .psp-subs .cat-chip{font-size:11.5px}
   .pomo-slot-pick .psp-btns{display:flex;gap:6px;justify-content:center}
   .pomo-slot-pick .psp-btns .btn{padding:6px 14px;font-size:12px}
   .pomo-slot-pick .psp-rh{font-size:11.5px;color:var(--muted);text-align:center;margin:3px 0 4px}
@@ -6345,6 +6357,7 @@ margin-left: -22px;
     "挑一件放进来":"Pick one to add",
     "挡着，再点一下那一类取消":"— click that category again to clear it",
     "挡着，切回「全部账户」就看得到":"is hiding it — switch back to \"All accounts\" and you'll see it",
+    "换":"Change",
     "换个分组":"Change group",
     "换个颜色":"Change color",
     "换单位":"Switch unit",
@@ -12447,7 +12460,15 @@ margin-left: -22px;
     if((pomoSub.value||null)!==(pomoSubPrev||null))switchTask("cat",pomoCat.value,pomoSubPrev);
     pomoSubPrev=pomoSub.value;
     pomoManual=true;markPomoAuto(false);savePomoLast();});
-  pomoTask.addEventListener("input",function(){autoPomoCat();drawPomo();});
+  // 正跑着的时候改任务名，原来要等到下一次「开始 / 暂停 / 切一刀」才写盘。
+  // 中间刷新一下（或者合上电脑、另一个网页接管），restorePomoRun0 会把**旧名字**原样填回来 ——
+  // 她刚改的那个名字无声无息地没了，最后记进日历的也是旧名字。
+  // 打字的时候不能每个键都写盘，所以按 400 毫秒收一次口。
+  var taskSaveT=null;
+  function savePomoRunSoon(){
+    if(taskSaveT)clearTimeout(taskSaveT);
+    taskSaveT=setTimeout(function(){taskSaveT=null;try{savePomoRun();}catch(e){}},400);}
+  pomoTask.addEventListener("input",function(){autoPomoCat();drawPomo();savePomoRunSoon();});
   // 同一个分类下换了件事（比如都算 PhD）→ 改任务名按回车切一刀。
   // 只认回车，不认每次输入 —— 不然打字打一半就切了。
   var pomoTaskPrev=pomoTask.value;
@@ -12617,12 +12638,17 @@ margin-left: -22px;
     pickBox.innerHTML=
       '<div class="psp-h">'+(p.i<0?"挑一件放进来":"改这一件")+'</div>'+
       '<input type="text" class="psp-t" placeholder="叫什么？（不填就用分类名）" value="'+esc(p.t)+'">'+
-      '<div class="cats psp-cats">'+catsByUse().map(function(c){
-        return '<div class="cat-chip sub-chip'+(p.cat===c.key?" on":"")+'" data-pcat="'+c.key+
-          '" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+'</div>'+
-      (subs.length?('<div class="cats psp-cats">'+subs.map(function(x){
-        return '<div class="cat-chip sub-chip'+((p.sub||"")===x.key?" on":"")+'" data-psub="'+x.key+
-          '" style="--c:'+pc+'"><i></i>'+esc(x.name)+'</div>';}).join("")+'</div>'):"")+
+      ((p.open||!p.cat)
+        ? ('<div class="psp-lb">大类</div><div class="cats psp-cats">'+catsByUse().map(function(c){
+            return '<div class="cat-chip sub-chip'+(p.cat===c.key?" on":"")+'" data-pcat="'+c.key+
+              '" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+'</div>'+
+           (subs.length?('<div class="psp-lb">小类</div>'+
+             '<div class="cats psp-cats psp-subs">'+subs.map(function(x){
+               return '<div class="cat-chip sub-chip'+((p.sub||"")===x.key?" on":"")+'" data-psub="'+x.key+
+                 '" style="--c:'+pc+'"><i></i>'+esc(x.name)+'</div>';}).join("")+'</div>'):""))
+        : ('<div class="psp-cur"><i style="background:'+subColor(p.cat,p.sub||null)+'"></i>'+
+           '<span>'+esc(catLabelOf(p.cat,p.sub||null))+'</span>'+
+           '<button type="button" class="psp-chg">换</button></div>'))+
       '<div class="psp-btns"><button type="button" class="btn primary psp-ok">'+
         (p.i<0?"放进去":"改好了")+'</button>'+
         '<button type="button" class="btn psp-c">取消</button></div>'+
@@ -12675,6 +12701,7 @@ margin-left: -22px;
     else if(e.key==="Escape")closePick();});
   if(pickBox)pickBox.addEventListener("click",function(e){
     if(!slotPick)return;
+    if(e.target.closest(".psp-chg")){slotPick.open=1;renderPick();return;}
     var ch=e.target.closest("[data-pcat],[data-psub]");
     if(ch){var ck=ch.getAttribute("data-pcat");
       if(ck!==null){slotPick.cat=ck;slotPick.sub=null;}          // 换大类，小类得重选
@@ -12952,7 +12979,8 @@ margin-left: -22px;
     // 任务名/分类只在那边真的改了才抄过来 —— 每半秒无脑覆盖的话，这边正打字就被抹掉了
     var sig=(r.task||"")+"|"+(r.cat||"")+"|"+(r.sub||"")+"|"+(r.tocal!==false);
     if(sig!==pFollowSig){pFollowSig=sig;
-      pomoTask.value=r.task||"";
+      // 她正在这个框里打字就别抄了 —— 那边随便存一次档，这边刚打的半句话就没了
+      if(document.activeElement!==pomoTask)pomoTask.value=r.task||"";
       if(r.cat&&pomoCat.value!==r.cat){pomoCat.value=r.cat;fillPomoSubs();}
       if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
       pomoToCal.checked=(r.tocal!==false);}
