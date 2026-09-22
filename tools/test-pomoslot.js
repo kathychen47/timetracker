@@ -101,13 +101,26 @@ function accounted() {
   ok(rows().length === 0, "一开始一件都没有");
   ok($("#pomo-slots").classList.contains("on") === false, "空的时候整块是收起来的");
 
-  // ---- 2. 第一次点 ＋：从最近用过的里一口气铺 3 件 ----
+  // ---- 2. ＋ 打开的是一个自己挑的面板，不是替你猜 ----
   $("#pomo-slot-add").click();
-  var sl = slots();
-  ok(sl.length === 3, "第一次点 ＋ 铺了 3 件，实际 " + sl.length);
-  ok(sl[0].t === "改课件" && sl[0].cat === "uco" && sl[0].sub === "d401", "第一件是最近用过的那件");
-  ok(sl[2].t === "回邮件" && sl[2].cat === "cms", "第三件也对：" + JSON.stringify(sl[2]));
-  ok(!sl.some(function (x) { return x.t === "太久以前了"; }), "40 天前那条不算「最近」");
+  ok($("#pomo-slot-pick").classList.contains("on"), "＋ 打开了挑选面板");
+  ok(slots().length === 0, "光打开面板不会往里塞东西");
+  ok($("#pomo-slot-add").style.display === "none", "面板开着的时候 ＋ 收起来了");
+  var recs = [].slice.call($("#pomo-slot-pick").querySelectorAll(".psp-r"));
+  ok(recs.length === 3, "「最近用过」列了 3 件，实际 " + recs.length);
+  ok(!recs.some(function (r) { return /太久以前了/.test(r.textContent); }), "40 天前那条不算「最近」");
+  recs[0].click();                                   // 点一下直接放进去
+  ok(slots().length === 1 && slots()[0].t === "改课件" && slots()[0].sub === "d401",
+    "点最近用过的那行就放进去了：" + JSON.stringify(slots()[0]));
+  ok(!$("#pomo-slot-pick").classList.contains("on"), "放完面板就关了");
+
+  $("#pomo-slot-add").click();
+  recs = [].slice.call($("#pomo-slot-pick").querySelectorAll(".psp-r"));
+  ok(recs.length === 2, "已经放进去的不再列出来，实际还剩 " + recs.length);
+  recs[0].click();
+  $("#pomo-slot-add").click();
+  $("#pomo-slot-pick").querySelector(".psp-r").click();
+  ok(slots().length === 3, "一共放了 3 件，实际 " + slots().length);
   ok(rows().length === 3, "界面上画出了 3 行");
   ok(label(rows()[1]) === "看作业", "第二行的名字对");
 
@@ -182,12 +195,42 @@ function accounted() {
   ok(rows().length === 2, "界面上也只剩 2 行");
   ok(!slots().some(function (x) { return x.t === "回邮件"; }), "去掉的是「回邮件」那件");
 
-  // ---- 11. ＋ 会把手上这件加进来 ----
+  // ---- 11. 自己打名字 + 点色块选分类 ----
   $("#pomo-task").value = "写论文";
   $("#pomo-task").dispatchEvent(new w.Event("input", { bubbles: true }));
   $("#pomo-slot-add").click();
+  ok($("#pomo-slot-pick").querySelector(".psp-t").value === "写论文",
+    "面板里名字预填的是手上这件，实际 " + JSON.stringify($("#pomo-slot-pick").querySelector(".psp-t").value));
+  $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
+  ok($("#pomo-slot-pick").querySelector('[data-pcat="cms"]').classList.contains("on"), "点了色块就选上了");
+  $("#pomo-slot-pick").querySelector(".psp-ok").click();
   var last = slots()[slots().length - 1];
-  ok(slots().length === 3 && last.t === "写论文", "＋ 把手上这件加进来了：" + JSON.stringify(last));
+  ok(slots().length === 3 && last.t === "写论文" && last.cat === "cms" && !last.sub,
+    "按自己挑的放进去了：" + JSON.stringify(last));
+
+  // ---- 12. ✎ 改一件已经在里面的 ----
+  rows()[0].querySelector(".ps-e").click();
+  ok($("#pomo-slot-pick").classList.contains("on") &&
+     $("#pomo-slot-pick").querySelector(".psp-t").value === slots()[0].t, "✎ 打开的就是那一件");
+  ok($("#pomo-slot-pick").querySelectorAll(".psp-r").length === 0, "改的时候不列「最近用过」");
+  var ti = $("#pomo-slot-pick").querySelector(".psp-t");
+  ti.value = "改课件第二版"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  $("#pomo-slot-pick").querySelector('[data-psub="s462"]').click();
+  $("#pomo-slot-pick").querySelector(".psp-ok").click();
+  ok(slots()[0].t === "改课件第二版" && slots()[0].sub === "s462",
+    "改到位了：" + JSON.stringify(slots()[0]));
+  ok(slots().length === 3, "改不会多出一件，实际 " + slots().length);
+
+  // ---- 13. 已经在里面的不让重复放 ----
+  $("#pomo-slot-add").click();
+  ti = $("#pomo-slot-pick").querySelector(".psp-t");
+  ti.value = "写论文"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
+  $("#pomo-slot-pick").querySelector(".psp-ok").click();
+  ok(slots().length === 3, "一模一样的那件不会被放两遍，实际 " + slots().length);
+  $("#pomo-slot-pick").querySelector(".psp-c").click();
+  ok(!$("#pomo-slot-pick").classList.contains("on"), "取消把面板关上了");
+  ok($("#pomo-slot-add").style.display !== "none", "面板关了，＋ 又回来了");
 
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   console.log("");
