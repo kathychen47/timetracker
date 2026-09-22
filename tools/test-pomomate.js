@@ -126,15 +126,18 @@ T("小到切不动：1 秒就不分了", function () {
   ok(r.segs === null, "1 秒不分段");
 });
 
-T("中途换过任务：每一段都切，不是只切最后一段", function () {
-  // 正计时：先做 A 20 分，再做 B 40 分；全程还同时在做 M
+T("只分「同时做着的那一截」，不回头劈前面单独做过的段", function () {
+  // 正计时：先单独做 A 20 分，然后按着 Ctrl 把 M 也点亮，接下来 40 分是 B 和 M 同时在做。
+  // 旧模型是「同时做」一旦勾上就把整次计时都劈开，于是 A 也被砍成一半 ——
+  // 可 A 那 20 分钟里 M 根本还没上场。现在改成「结算每一小截的时候就分好」，
+  // 前面单独做的段原封不动。
   var r = run({ mode: "up", focusSec: 3600, elapsed: 3600, cat: "b", task: "B",
     segs: [{ t: "A", cat: "a", sub: null, sec: 1200 }], segStart: 1200,
     mates: [{ t: "M", cat: "m", sub: null }] });
   ok(sum(r.segs) === 3600, "总秒数不变，实际 " + sum(r.segs));
-  ok(of(r.segs, "a") === 600, "A 的 20 分切一半 = 600 秒，实际 " + of(r.segs, "a"));
+  ok(of(r.segs, "a") === 1200, "A 是单独做的，20 分全算它的，实际 " + of(r.segs, "a"));
   ok(of(r.segs, "b") === 1200, "B 的 40 分切一半 = 1200 秒，实际 " + of(r.segs, "b"));
-  ok(of(r.segs, "m") === 1800, "M 拿两段各一半 = 1800 秒，实际 " + of(r.segs, "m"));
+  ok(of(r.segs, "m") === 1200, "M 只拿它真在场的那 40 分的一半，实际 " + of(r.segs, "m"));
   var mi = r.segs.map(function (s) { return s.cat; }).indexOf("m");
   ok(mi === r.segs.length - 1, "M 合成一条挪到最后，不是 A·M·B·M 的碎花");
   ok(r.segs.filter(function (s) { return s.cat === "m"; }).length === 1, "M 只占一条");
@@ -147,7 +150,7 @@ T("暂停挖出来的洞不许被平分", function () {
   ok(gapsum(r.segs) === 600, "洞还是 600 秒，实际 " + gapsum(r.segs));
   ok(sum(r.segs) === 3600, "干活的秒数还是 3600，实际 " + sum(r.segs));
   ok(!r.segs.some(function (s) { return s.gap && s.cat; }), "洞没被安上分类");
-  ok(of(r.segs, "m") === 1800, "M 还是拿一半，实际 " + of(r.segs, "m"));
+  ok(of(r.segs, "m") === 1200, "M 只拿它在场那一截的一半，实际 " + of(r.segs, "m"));
 });
 
 T("没填大类的那行不算数", function () {

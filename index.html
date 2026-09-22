@@ -92,7 +92,7 @@
   .view{display:none}.view.on{display:block}
 
   /* calendar + dashboard layout */
-  .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 230px;gap:14px;align-items:start}
+  .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 268px;gap:14px;align-items:start}
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
   /* 跟上面两条一致用 minmax(0,1fr)。裸的 1fr = minmax(auto,1fr)，auto 会跟着
      子元素的 min-content 走 —— 周视图里那个 min-width:560px 的网格就能把整列撑开。
@@ -212,36 +212,29 @@
   .pomo-slot>b{flex:0 0 auto;font-size:11.5px;color:var(--muted);font-weight:600}
   .pomo-slot.on>b{color:var(--primary)}
   .pomo-slot .ps-x{border:none;background:none;color:var(--border);cursor:pointer;font-size:12px;padding:0 1px;line-height:1;flex:0 0 auto}
-  .pomo-slot .ps-e{border:none;background:none;color:var(--border);cursor:pointer;font-size:11.5px;padding:0 1px;line-height:1;flex:0 0 auto}
-  .pomo-slot .ps-x:hover,.pomo-slot .ps-e:hover{color:var(--primary)}
+  .pomo-slot .ps-x:hover{color:var(--primary)}
+  /* 左边大类、右边小类，点 ＋ 加成一块牌子 */
+  .pomo-pick{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+  .pomo-pick .pk-cols{display:flex;gap:6px}
+  .pomo-pick .pk-col{flex:1 1 0;min-width:0;max-height:148px;overflow:auto;overscroll-behavior:contain;
+    border:1px solid var(--border);border-radius:10px;background:var(--bg);padding:3px}
+  .pomo-pick .pk-i{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:7px;
+    cursor:pointer;font-size:12px;line-height:1.25}
+  .pomo-pick .pk-i:hover{background:var(--surface-2)}
+  .pomo-pick .pk-i.on{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-weight:650}
+  .pomo-pick .pk-i>i{width:8px;height:8px;border-radius:3px;flex:0 0 auto}
+  /* 这两栏是「挑东西」的地方，名字被截掉就等于挑不了 ——
+     所以放不下就折行（这一栏本来就能上下滚），而不是打点省略。 */
+  .pomo-pick .pk-i>span{flex:1 1 auto;min-width:0;word-break:break-word}
+  .pomo-pick .pk-none{font-size:11.5px;color:var(--muted);padding:8px 7px;line-height:1.5}
+  .pomo-pick .pk-add{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:9px;
+    padding:6px 10px;font-size:12px;cursor:pointer;align-self:center;max-width:100%;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pomo-pick .pk-add:hover:not(:disabled){color:var(--primary);border-color:var(--primary)}
+  .pomo-pick .pk-add:disabled{opacity:.55;cursor:default}
   /* 挑一件放进来 / 改这一件：自己选，不让它猜 */
-  .pomo-slot-pick{display:none}
-  .pomo-slot-pick.on{display:flex;flex-direction:column;gap:7px;margin-top:6px;padding:10px;
     border:1px solid var(--primary);border-radius:11px;background:var(--surface-2)}
-  .pomo-slot-pick .psp-h{font-size:12px;font-weight:650;text-align:center}
-  .pomo-slot-pick .psp-t{padding:7px 9px;border:1px solid var(--border);border-radius:9px;
     background:var(--bg);color:var(--text);font-size:12.5px;text-align:center}
-  /* 分类平时只显示一行「现在是哪个」，点「换」才把色块铺开 ——
-     她的大类有 10 个、小类十几个，一上来全铺出来是 20 多个色块，又高又分不清。 */
-  .pomo-slot-pick .psp-cur{display:flex;align-items:center;gap:7px;padding:7px 9px;
-    border:1px solid var(--border);border-radius:9px;background:var(--bg);font-size:12.5px}
-  .pomo-slot-pick .psp-cur>i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
-  .pomo-slot-pick .psp-cur>span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pomo-slot-pick .psp-chg{border:none;background:none;color:var(--primary);cursor:pointer;
-    font-size:12px;padding:0 2px;flex:0 0 auto;text-decoration:underline}
-  .pomo-slot-pick .psp-lb{font-size:11px;color:var(--muted);margin:2px 0 -2px;padding-left:2px}
-  /* 小类跟大类颜色一样（本来就是它的深浅），光看色块分不出谁是谁 —— 靠这一格缩进和虚线框分开 */
-  .pomo-slot-pick .psp-subs{margin-left:10px;padding-left:8px;border-left:2px dashed var(--border)}
-  .pomo-slot-pick .psp-subs .cat-chip{font-size:11.5px}
-  .pomo-slot-pick .psp-btns{display:flex;gap:6px;justify-content:center}
-  .pomo-slot-pick .psp-btns .btn{padding:6px 14px;font-size:12px}
-  .pomo-slot-pick .psp-rh{font-size:11.5px;color:var(--muted);text-align:center;margin:3px 0 4px}
-  .pomo-slot-pick .psp-r{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;
-    cursor:pointer;font-size:12px;line-height:1.3}
-  .pomo-slot-pick .psp-r:hover{background:var(--bg)}
-  .pomo-slot-pick .psp-r>i{width:8px;height:8px;border-radius:3px;flex:0 0 auto}
-  .pomo-slot-pick .psp-r .pr-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pomo-slot-pick .psp-r>b{font-weight:500;color:var(--muted);font-size:11px;margin-left:8px;flex:0 0 auto;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pomo-log{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer}
   .ev-gcal-hint{font-size:11.5px;line-height:1.7;color:var(--muted);margin:5px 0 0 22px}
   .ev-gcal-hint .lnk{background:none;border:none;padding:0;font:inherit;color:var(--primary);
@@ -2311,6 +2304,10 @@
   .ev-segs .evs-x{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;
     font-size:12px;padding:2px 5px;border-radius:5px;line-height:1}
   .ev-segs .evs-x:hover{background:color-mix(in srgb,var(--danger) 16%,transparent);color:var(--danger)}
+  .ev-segs .evs-nt{flex:1 1 90px;min-width:60px;font-size:11.5px;padding:3px 7px;border-radius:7px;
+    border:1px solid transparent;background:var(--bg);color:var(--text)}
+  .ev-segs .evs-nt::placeholder{color:var(--muted);opacity:.7}
+  .ev-segs .evs-nt:focus{outline:none;border-color:var(--primary)}
   .ev-segs .evs-note{font-size:11px;color:var(--muted);line-height:1.5}
   .rep-segs{font-size:11px;color:var(--muted);margin-top:2px}
   .rep-segs em{font-style:normal;opacity:.8}
@@ -3807,10 +3804,10 @@ margin-left: -22px;
             <div id="pomo-lost-box"></div>
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <div class="pomo-slots" id="pomo-slots"></div>
-              <button type="button" class="pomo-mate-add" id="pomo-slot-add" title="先把这一轮要来回切的几件事放好，之后按一下就切过去。时间按实际各算各的 —— 不是平分">＋ 轮着做（切换）</button>
-              <div class="pomo-slot-pick" id="pomo-slot-pick"></div>
-              <div class="pomo-mates" id="pomo-mates"></div>
-              <button type="button" class="pomo-mate-add" id="pomo-mate-add" title="一次计时同时算给好几件事：结束时把这段时间平均分给它们，加起来还是这么多，不会虚高">＋ 同时做（平分）</button>
+              <div class="pomo-pick" id="pomo-pick">
+                <div class="pk-cols"><div class="pk-col" id="pk-cats"></div><div class="pk-col" id="pk-subs"></div></div>
+                <button type="button" class="pk-add" id="pk-add" title="把左右选中的这一对加成一块牌子">＋ 先选左边</button>
+              </div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
             </div>
@@ -5762,6 +5759,7 @@ margin-left: -22px;
     "先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录":"Go to \"☁️ Cloud sync\", enter your Supabase URL and anon key, save, then sign in",
     "先在 ⚙️设置 → 📖词典 里加载牛津词典":"Load the Oxford dictionary first in ⚙️ Settings → 📖 Dictionary",
     "先在上面连上 Google 日历":"Connect Google Calendar above first",
+    "先在左边点一个大类":"Pick a category on the left first",
     "先填 Supabase 网址和 anon key，保存后再登录":"Enter your Supabase URL and anon key, save, then sign in",
     "先填上面的 API Key 再检测":"Enter the API Key above first",
     "先把 Token 粘进来":"Paste the Token in first",
@@ -5934,6 +5932,7 @@ margin-left: -22px;
     "原方子":"Original",
     "厨房电器":"kitchen appliances",
     "去掉图":"Remove photo",
+    "去掉这块牌子":"Remove this tag",
     "去看书":"Go to Reading",
     "去税务页 ›":"Go to Tax ›",
     "去计划页 →":"Go to Plan →",
@@ -6296,6 +6295,7 @@ margin-left: -22px;
     "把书或笔记拖到左边的文件夹上就能归类，也可以在这儿直接「📝 新建笔记」。":"Drag a book or note onto a folder on the left to file it, or just tap \"📝 New note\" right here.",
     "把它们也算上":"Count them too",
     "把完整计划粘进来（原样保存，不会被改动）：":"Paste the full plan (saved as-is, never changed):",
+    "把左右选中的这一对加成一块牌子":"Turn the pair selected on the left and right into a tag",
     "把当前筛选的笔记导成 Markdown":"Export the notes now filtered as Markdown",
     "把我的菜谱和点单分享出去":"Share my recipes and orders",
     "把所有生词的记忆进度清零（词本身不删）？":"Reset review progress on every word (the words themselves stay)?",
@@ -6341,6 +6341,7 @@ margin-left: -22px;
     "按 FSRS 记忆模型安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3）。新词当场按 1 分钟 → 10 分钟过两遍再进入长间隔；忘掉的词进重学，但不会退回「新词」占掉你的新词额度。":"Reviews are scheduled by the FSRS memory model: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3). A new word is shown twice on the spot, 1 minute then 10 minutes apart, before it moves to longer gaps; a word you forget goes into relearning rather than reverting to “new” and eating your daily new-word quota.",
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
     "按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。":"Reviews are scheduled on the SM-2 forgetting curve: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3) and the interval stretches or shrinks to match.",
+    "按一下切过去 · 按住 Ctrl 点 = 同时做":"Tap to switch · Ctrl-click to work on several at once",
     "按任务名自动认出来的，可以改、也可以✕ 去掉":"Picked up from the task name — you can change it, or ✕ to drop it",
     "按住快捷键":"Hold a hotkey",
     "按关键词归并":"By keyword",
@@ -6530,7 +6531,9 @@ margin-left: -22px;
     "暗":"Dark",
     "更省事：装浏览器扩展（推荐）":"Easier: install the browser extension (recommended)",
     "最准 · 走 Gemini 额度":"Most accurate · uses your Gemini quota",
+    "最多 8 块":"8 tags is the limit",
     "最多加入":"Add at most",
+    "最多同时做 4 件":"4 at once is the limit",
     "最短一段":"Shortest segment",
     "最近 14 天":"Last 14 days",
     "最近 7 天":"Last 7 days",
@@ -6957,6 +6960,7 @@ margin-left: -22px;
     "自适应":"Auto",
     "至少保留一个大类":"Keep at least one category",
     "至少填一项":"Fill in at least one",
+    "至少得留一件":"At least one has to stay selected",
     "节":"section",
     "花园":"garden",
     "英":"UK",
@@ -7160,6 +7164,7 @@ margin-left: -22px;
     "这一格看哪本书":"Which book goes in this pane",
     "这一档下面没有目标。":"Nothing in this group.",
     "这一段你没写出来":"You didn't write this part",
+    "这一段的备注":"note for this segment",
     "这一类":"in this category",
     "这一节读不出来":"Can't read this section",
     "这一页没找到可翻译的文字。":"No translatable text found on this page.",
@@ -7169,6 +7174,7 @@ margin-left: -22px;
     "这个分组没有可背的词。":"No words to study in this group.",
     "这个分组没有词可导出":"No words in this group to export",
     "这个分组还没有词。":"No words in this group yet.",
+    "这个大类没有小类，直接点下面的 ＋":"This category has no sub-categories — just hit ＋ below",
     "这个小类的关键词":"Keywords for this sub-category",
     "这个技能的备注（比如停止条件）：":"Notes for this skill (e.g. when to stop):",
     "这个技能的时间算进哪个大类":"Which category this skill's time counts toward",
@@ -7198,6 +7204,7 @@ margin-left: -22px;
     "这些词生词本里都已经有了。":"All of these words are already in your word list.",
     "这件已经在里面了":"That one is already in the list",
     "这份名单里自己重了":"Repeated inside this list",
+    "这几件在同时做，时间平分":"These are running together — the time is split evenly",
     "这句和下一句本来就是一句话":"This line and the next are really one sentence",
     "这句太短，拆不动。":"This sentence is too short to split.",
     "这句太长，拆成两句":"This line is too long — split it in two",
@@ -7213,6 +7220,8 @@ margin-left: -22px;
     "这台设备上没有音频，传不上去。":"No audio on this device — nothing to upload.",
     "这台设备上自动续期不行（浏览器拦了第三方 Cookie），点右边「重新授权」手动来一次，约管 1 小时":"Auto-renew doesn't work on this device (the browser blocks third-party cookies) — tap \"Re-authorise\" on the right to do it by hand, lasts about 1 hour",
     "这台设备下次打开免登录。":"This device stays signed in next time.",
+    "这块牌子已经有了":"You already have that tag",
+    "这块牌子的分类已经被删掉了，✕ 掉重加一块":"That tag's category has been deleted — ✕ it and add a new one",
     "这天没有事件":"No events this day",
     "这已经是最后一句了，没得可并。":"This is the last sentence — nothing to merge it with.",
     "这张图读不出来":"Can't read this image",
@@ -7496,6 +7505,7 @@ margin-left: -22px;
     "（进页面就补记）":"(added when you open the page)",
     "（选大类）":"(pick a category)",
     "（选小类）":"(Pick a sub-category)",
+    "＋ 先选左边":"＋ Pick one on the left",
     "＋ 再加一件":"＋ One more",
     "＋ 再放一件":"＋ Add another",
     "＋ 再放一件进来":"＋ Add another",
@@ -11246,7 +11256,7 @@ margin-left: -22px;
     var tot=0;ss.forEach(function(s){tot+=(+s.sec||0);});
     var s0=toMin(e.start),m=evMinutes(e),acc=0;
     return ss.map(function(s){var a=s0+m*acc/tot;acc+=(+s.sec||0);var b=s0+m*acc/tot;
-      return {t:s.t||"",gap:!!s.gap,cat:s.cat,sub:s.sub||null,sec:+s.sec||0,min:Math.max(0,Math.round(b-a)),
+      return {t:s.t||"",n:s.n||"",gap:!!s.gap,cat:s.cat,sub:s.sub||null,sec:+s.sec||0,min:Math.max(0,Math.round(b-a)),
         start:mmStr(Math.round(a)),end:mmStr(Math.round(b))};});}
   function segGrad(e){                     // 日历色块：纵向按各段时长分色（上→下 = 时间先后）
     var ss=evSegs(e);if(!ss)return "";
@@ -11965,6 +11975,10 @@ margin-left: -22px;
       s.cat=v[0];s.sub=v[1]||null;s.gap=false;
       if(wasAuto)s.t=catLabelOf(s.cat,s.sub);
       segsEdited();});
+    eb.addEventListener("input",function(e){
+      var n=e.target.closest("[data-segn]");if(!n||!editSegs)return;
+      var s=editSegs[+n.getAttribute("data-segn")];if(!s)return;
+      s.n=e.target.value;});                      // 不重画：一重画光标就被踢出输入框了
     eb.addEventListener("click",function(e){
       var x=e.target.closest("[data-segx]");if(!x||!editSegs)return;
       var i=+x.getAttribute("data-segx"),s=editSegs[i];if(!s)return;
@@ -12196,15 +12210,19 @@ margin-left: -22px;
       if(s.gap)return '<div class="evs gap"><i></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
         '<span class="nm">暂停</span><span class="cg">不计入统计</span><span class="mn">'+secLabel(s.sec)+'</span>'+
         '<button type="button" class="evs-x" data-segx="'+i+'" title="删掉这个暂停，时间并回相邻的段（会算成专注）">✕</button></div>';
+      // 名字要是本来就等于「大类 · 小类」，右边那个下拉已经把同样的话说了一遍 ——
+      // 一行里写两遍同一件事，占掉的正是可以用来写备注的地方。所以只在她真打过名字时才显示。
+      var auto=(!s.t||s.t===catLabelOf(s.cat,s.sub));
       return '<div class="evs"><i style="background:'+subColor(s.cat,s.sub)+'"></i><span class="tm">'+s.start+'–'+s.end+'</span>'+
-        '<span class="nm">'+esc(s.t||"（未命名）")+'</span>'+
+        (auto?"":('<span class="nm">'+esc(s.t)+'</span>'))+
         '<select class="evs-sel" data-segi="'+i+'" title="改这一段的分类">'+segCatOpts(s.cat,s.sub)+'</select>'+
+        '<input type="text" class="evs-nt" data-segn="'+i+'" placeholder="这一段的备注" value="'+esc(s.n||"")+'">'+
         '<span class="mn">'+secLabel(s.sec)+'</span>'+
         '<button type="button" class="evs-x" data-segx="'+i+'" title="删掉这一段，时间并给相邻的段">✕</button></div>';}).join("")+
       '<div class="evs-note">统计里这条按各段实测时长分账'+
       (gp?('，这段区间占 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分，其中<b>暂停 '+Math.round(evMinutes({start:fStart.value,end:fEnd.value})*gp/st.reduce(function(a,s){return a+s.sec;},0))+' 分不算专注</b>')
         :('，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分'))+
-      '（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、或者✕删掉（时间并给相邻的段）；'+
+      '（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、写自己的备注、或者✕删掉（时间并给相邻的段）；'+
       '改最上面那个大类会取消整条的分段。</div>';}
   function segCatOpts(ck,sk){
     var out="";
@@ -12401,13 +12419,11 @@ margin-left: -22px;
         if(arr.length>=4)return;
         arr.push({t:h.t||h.nm||"",cat:h.cat,sub:h.sub||null,auto:true,mem:!!mem});changed=true;});}
     return {learned:recallMain(title),first:hits[0]||null,changed:changed};}
-  var pMates=load("tt_pomomates",[])||[],pMatesManual=false;
+  // 番茄钟这边「同时做哪几件」不再有单独的几行界面 —— 它就是亮着的那几块牌子，
+  // 由「按住 Ctrl 点」写进 pMates。mateUI 还留着，「新建事件」弹窗里那一份照用。
+  var pMates=load("tt_pomomates",[])||[];
   function saveMates(){save("tt_pomomates",pMates);}
-  function clearMates(){pMatesManual=false;if(!pMates.length)return;pMates.length=0;saveMates();renderMates();}
-  var renderMates=mateUI(document.getElementById("pomo-mates"),document.getElementById("pomo-mate-add"),
-    pMates,function(){return pomoCat.value||"";},saveMates,"结束时这次的时间会平分给上面这几件事，总时长不变",
-    false,function(){pMatesManual=true;});
-  renderMates();
+  function clearMates(){if(!pMates.length)return;pMates.length=0;saveMates();try{renderSlots(true);}catch(e){}}
   // 打任务名 → 自动归类（和新建事件用同一套：先查你以前手动归过的同名/同系列，再按关键词）
   // 你自己动过下拉就不再自动改，直到把任务名清空或重置
   var pomoManual=false;
@@ -12417,12 +12433,11 @@ margin-left: -22px;
     pomoCat.title=tip;pomoSub.title=tip;}
   function autoPomoCat(){
     var t=(pomoTask.value||"").trim();
-    if(!t){pomoManual=false;pMatesManual=false;markPomoAuto(false);   // 清空任务名 → 自动识别重新生效
-      if(autoMatesSync("",pMates).changed){saveMates();renderMates();}return;}
+    if(!t){pomoManual=false;markPomoAuto(false);return;}   // 清空任务名 → 自动识别重新生效
     if(pomoManual||t.length<2)return;
-    var ms=autoMatesSync(t,pMates,pMatesManual);           // 一句话里提到好几件事 → 其余的自动铺上
-    if(ms.changed){saveMates();renderMates();}
-    var a=ms.learned||autoCatMatch(t)||ms.first;         // 学过的最优先，其余照旧
+    // 只认主分类。「同时做哪几件」现在完全由她按 Ctrl 点牌子决定 ——
+    // 按名字猜出来的行没有地方显示，也就没有地方让她改掉，不能再往里塞。
+    var a=recallMain(t)||autoCatMatch(t)||(autoCatHits(t)[0]||null);   // 学过的最优先，其余照旧
     if(!a){markPomoAuto(false);return;}
     if(pomoCat.value!==a.cat){pomoCat.value=a.cat;fillPomoSubs();}
     pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
@@ -12491,7 +12506,7 @@ margin-left: -22px;
       fillPomoSubs();
       if(ps&&subsOf(pomoCat.value).some(function(s){return s.key===ps;}))pomoSub.value=ps;
       pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
-      renderSlots(true);                      // 轮换那几件的色点/名字跟着大类改名换色走
+      renderSlots(true);try{renderPick();}catch(_e){}   // 牌子和左右两栏的色点/名字跟着大类改名换色走
     }catch(e){}
     try{
       var gc=gCat.value,gs=gSub.value;
@@ -12521,16 +12536,31 @@ margin-left: -22px;
     if(g>=GAPMIN)pSegs.push({gap:true,t:"暂停",sec:g});return g;}
   var segsBox=document.getElementById("pomo-segs");
   function catLabelOf(ck,sk){var n=catName(ck)||"";var s=sk?subName(ck,sk):"";return (n&&s)?(n+" · "+s):(n||s||trv("专注"));}
-  function curSegLabel(){return (pomoTask.value||"").trim()||catLabelOf(pomoCat.value,pomoSub.value||null);}
   function curSegSec(){return Math.max(0,pElapsed-pSegStart);}
   function mergeSegs(list){var out=[];                       // 连着的同任务同分类合成一段
     list.forEach(function(s){var p=out[out.length-1];
       if(p&&p.gap&&s.gap){p.sec+=s.sec;return;}               // 连着两个洞就是一个洞
-      if(p&&!p.gap&&!s.gap&&p.cat===s.cat&&(p.sub||null)===(s.sub||null)&&p.t===s.t){p.sec+=s.sec;return;}
-      out.push(s.gap?{gap:true,t:"暂停",sec:s.sec}:{t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec});});
+      // 备注不一样的两段不能合 —— 合了就有一条备注凭空消失，而且界面上不会提示
+      if(p&&!p.gap&&!s.gap&&p.cat===s.cat&&(p.sub||null)===(s.sub||null)&&p.t===s.t&&(p.n||"")===(s.n||"")){p.sec+=s.sec;return;}
+      out.push(s.gap?{gap:true,t:"暂停",sec:s.sec}
+        :(s.n?{t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec,n:s.n}:{t:s.t,cat:s.cat,sub:s.sub||null,sec:s.sec}));});
+    return out;}
+  // 现在同时在做的那几件：主任务（上面两个下拉）+ pMates（按住 Ctrl 点牌子加进来的）
+  function curMembers(ck,sk,mates){
+    var t=(pomoTask.value||"").trim();
+    var out=[{t:t||catLabelOf(ck,sk||null),cat:ck,sub:sk||null}];
+    (mates||[]).forEach(function(m){if(m&&m.cat)
+      out.push({t:(m.t||"").trim()||catLabelOf(m.cat,m.sub||null),cat:m.cat,sub:m.sub||null});});
+    return out;}
+  // 手上这一小截，按人头切成几条。用「累计边界」取整而不是各自四舍五入 ——
+  // 切完加起来跟原来分毫不差，所以总时长永远不会虚高。
+  function stretchSegs(sec,mem){
+    var n=mem.length,prev=0,out=[];
+    for(var i=0;i<n;i++){var b=Math.round(sec*(i+1)/n),part=b-prev;prev=b;
+      if(part>0)out.push({t:mem[i].t,cat:mem[i].cat,sub:mem[i].sub||null,sec:part});}
     return out;}
   function allSegs(){var out=pSegs.slice(),sec=curSegSec();
-    if(sec>0)out.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:sec});  // 几秒也照记
+    if(sec>0)out=out.concat(stretchSegs(sec,curMembers(pomoCat.value,pomoSub.value||null,liveMates())));  // 几秒也照记
     var g=curPauseSec();if(gapOn()&&g>=GAPMIN)out.push({gap:true,t:"暂停",sec:g});   // 正在长的那个洞
     if(!gapOn())out=out.filter(function(x){return !x.gap;});   // 并成一整段：洞不单独成段，mergeSegs 会把两边接起来
     return mergeSegs(out);}
@@ -12550,172 +12580,129 @@ margin-left: -22px;
     return list.map(function(x,i){
       return (x.gap?(trv("暂停")+" "):(x.t+" "))+(mn[i]<1?secLabel(x.sec):(mn[i]+trv("分")));}).join(" · ");}
   function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();clearMates();}
-  // ---------- 轮着做的几件事：按一下就切过去 ----------
-  // 她说的：「每次这样切换有点麻烦，有没有更方便的切换方式，比如提前定好要切换的几个任务
-  // 然后就变成了按钮？」原来切一次是「展开大类下拉 → 找 → 点 →（还得改小类）→ 回去改名字」，
-  // 来回切两件事六七下。
+  // ---------- 番茄钟的任务牌子：按一下切过去，按住 Ctrl 点 = 同时做 ----------
+  // 她说的：「左边大类右边小类，再点 ＋ 就会生成色块 PhD/Research，点色块就是计时或切换；
+  //          同时做（平分）那个可以删了，改成按着 Ctrl 再点，这样可以同时选择俩」。
   //
-  // 跟上面那块「同时还在做别的事」是**相反**的两件事，界面上千万别混：
-  //   同时做 = 一份时间平分给几件（60 分 → 30 + 30）；
-  //   轮着做 = 切一刀，各算各的实际时长（20 + 40）。走的就是现成的 switchTask。
-  // 光靠图标区分不住，所以标题写死成「轮着做（按一下切过去）」。
+  // 一块牌子 = 一个「大类 + 小类」，没有名字（名字是上面那个输入框，一次计时一个）。
+  // 存在 tt_pomoslots 里，跟着云同步、跨网页同步。
   //
-  // 每一行右边那个秒数是**这一次计时里这件事已经走了多久**。轮着做的时候光看总时间
-  // 根本不知道哪件被冷落了，这一列才是这个功能真正有用的地方。
+  // 「现在正在做哪几件」**不另存一份状态**：主任务还是 pomoCat/pomoSub，
+  // 同时做的那几件还是 pMates —— 这两样本来就进存档、也跨网页同步，
+  // 所以刷新、接管、换台设备，亮着的牌子自己就回来了。
+  //
+  // 记账落在现成的「段」上：结算一小截的时候，同时做着几件就切成几条（stretchSegs），
+  // 各段之和仍然等于实际时长 —— 统计 / 目标 / 工时表 / 导出 / 日历一处都不用改。
+  // （这跟 🐟 摸鱼恰恰相反：那个是两边都算全额。）
   var pSlots=load("tt_pomoslots",[])||[],slotSig="";
-  var slotsBox=document.getElementById("pomo-slots"),slotAdd=document.getElementById("pomo-slot-add");
+  var slotsBox=document.getElementById("pomo-slots");
+  var pkCats=document.getElementById("pk-cats"),pkSubs=document.getElementById("pk-subs"),
+      pkAdd=document.getElementById("pk-add"),pkCat="",pkSub=null;
   function saveSlots(){save("tt_pomoslots",pSlots);}
-  // 配对用：段落里记的就是这个名字（没打名字时 curSegLabel 用的也是 catLabelOf）。
-  // 动它的话右边那个累计时间会**无声地**对不上，所以这个别改。
-  function slotLabel(s){return ((s&&s.t)||"").trim()||catLabelOf(s.cat,s.sub||null);}
-  // 显示用：侧栏就这么窄，「UC Online · DATA401」会被截成「UC Online · …」——
-  // 恰好把唯一能区分两行的小类切掉了。大类已经由左边那个色点表示，这儿只写小类。
+  function slotKey(s){return s.cat+"\u0000"+(s.sub||"");}
+  function slotHas(x){return pSlots.some(function(p){return p.cat===x.cat&&(p.sub||null)===(x.sub||null);});}
+  // 牌子上写小类就够了 —— 大类由左边那个色点表示，写全了侧栏这么窄会被截断，
+  // 而被截掉的恰恰是唯一能区分两块牌子的部分。
+  // 例外：小类重名（她的 PhD 和 UC Online 底下都有 Others）—— 那种才写全。
   function slotText(s){
-    var t=((s&&s.t)||"").trim();if(t)return t;
-    return (s.sub?subName(s.cat,s.sub):"")||catName(s.cat)||slotLabel(s);}
-  function slotKey(s){return slotLabel(s)+"\u0000"+s.cat+"\u0000"+(s.sub||"");}
-  function slotSame(s){return !!s&&pomoCat.value===s.cat&&(pomoSub.value||null)===(s.sub||null)&&
-    (pomoTask.value||"").trim()===((s.t||"").trim());}
+    var sn=s.sub?subName(s.cat,s.sub):"";
+    if(!sn)return catName(s.cat)||"";
+    var dup=pSlots.some(function(p){return p!==s&&p.sub&&p.cat!==s.cat&&subName(p.cat,p.sub)===sn;});
+    return dup?((catName(s.cat)||"")+" / "+sn):sn;}
+  function sameCS(a,b){return a.cat===b.cat&&(a.sub||null)===(b.sub||null);}
+  function curSet(){                                      // 现在正在做的那几件
+    var out=[{cat:pomoCat.value,sub:pomoSub.value||null}];
+    pMates.forEach(function(m){if(m&&m.cat)out.push({cat:m.cat,sub:m.sub||null});});
+    return out;}
+  function slotOn(s){return curSet().some(function(x){return sameCS(x,s);});}
+  function mateOf(x){return {t:catLabelOf(x.cat,x.sub||null),cat:x.cat,sub:x.sub||null};}
+  // 这一次计时里每块牌子各自走了多久。按「大类+小类」认，不看段上的名字 ——
+  // 牌子没有名字，而段上的名字是她在输入框里随手打的，两边对不上。
   function slotSecs(){
     var m={},list=(timerMode==="up")?allSegs():[];
     list.forEach(function(x){if(x.gap)return;
-      var k=x.t+"\u0000"+x.cat+"\u0000"+(x.sub||"");m[k]=(m[k]||0)+(+x.sec||0);});
+      var k=x.cat+"\u0000"+(x.sub||"");m[k]=(m[k]||0)+(+x.sec||0);});
     return m;}
   function renderSlots(force){
-    if(!slotsBox||!slotAdd)return;
-    var secs=slotSecs();
-    var sig=pSlots.map(function(s){return slotKey(s)+"|"+secLabel(secs[slotKey(s)]||0)+"|"+(slotSame(s)?1:0);}).join(",");
+    if(!slotsBox)return;
+    var secs=slotSecs(),on=pSlots.filter(slotOn).length;
+    var sig=pSlots.map(function(s){return slotText(s)+"|"+slotKey(s)+"|"+
+      secLabel(secs[slotKey(s)]||0)+"|"+(slotOn(s)?1:0);}).join(",");
     if(!force&&sig===slotSig)return; slotSig=sig;   // 秒数没跨过整分就不重绘，免得每半秒闪一下、按都按不中
     slotsBox.classList.toggle("on",!!pSlots.length);
-    slotsBox.innerHTML=!pSlots.length?"":('<div class="pomo-slot-h">轮着做（按一下切过去）</div>'+
+    if(!pSlots.length){slotsBox.innerHTML="";return;}
+    slotsBox.innerHTML='<div class="pomo-slot-h">'+
+      (on>1?"这几件在同时做，时间平分":"按一下切过去 · 按住 Ctrl 点 = 同时做")+'</div>'+
       pSlots.map(function(s,i){
-        var sec=secs[slotKey(s)]||0,full=slotLabel(s)+" · "+catLabelOf(s.cat,s.sub||null);
-        return '<div class="pomo-slot'+(slotSame(s)?" on":"")+'" data-i="'+i+'" title="'+esc(full)+'">'+
+        var sec=secs[slotKey(s)]||0;
+        return '<div class="pomo-slot'+(slotOn(s)?" on":"")+'" data-i="'+i+'" title="'+
+          esc(catLabelOf(s.cat,s.sub||null))+'">'+
           '<i style="background:'+subColor(s.cat,s.sub||null)+'"></i>'+
           '<span class="ps-t">'+esc(slotText(s))+'</span>'+
           '<b>'+(sec>0?secLabel(sec):"")+'</b>'+
-          '<button type="button" class="ps-e" title="改这一件">\u270e</button>'+
-          '<button type="button" class="ps-x" title="从轮换里去掉">\u2715</button></div>';}).join(""));
-    slotAdd.textContent=pSlots.length?"＋ 再放一件":"＋ 轮着做（切换）";
-    slotAdd.style.display=(slotPick||pSlots.length>=6)?"none":"";}
-  // 最近两周真记下来过的「名字 + 大类 + 小类」，新鲜的在前。
-  // 有它，这一块第一次点就已经有东西了 —— 不用先坐下来配置一遍。
-  function recentCombos(n){
-    var cut=dstr(new Date(Date.now()-14*864e5)),seen={},out=[];
-    events.slice().sort(function(a,b){
-      return ((b.date||"")+(b.start||"")).localeCompare((a.date||"")+(a.start||""));}).forEach(function(e){
-      if(out.length>=n||!e||e.demo||!e.cat||(e.date||"")<cut)return;
-      var t=(e.title||"").trim();if(!t)return;
-      if(!cats.some(function(c){return c.key===e.cat;}))return;
-      var k=t+"\u0000"+e.cat+"\u0000"+(e.sub||"");if(seen[k])return;seen[k]=1;
-      out.push({t:t,cat:e.cat,sub:e.sub||null});});
-    return out;}
-  function slotHas(x){return pSlots.some(function(p){
-    return p.cat===x.cat&&(p.sub||null)===(x.sub||null)&&(p.t||"").trim()===((x.t||"").trim());});}
-  // ＋ 点开的是一个**自己挑**的小面板，不是让它替你猜。
-  // 第一版是点一下就照「最近用过」铺 3 件 —— 快，但她说的对：那不叫选，那叫认命。
-  // 现在三条路都在同一块里：
-  //   ① 名字自己打（不填就用分类名）；② 大类 / 小类点色块选；③ 最近用过的点一下直接放进去。
-  // 每一行右边的 ✎ 也开这个面板，只不过是改那一件 —— 原来想改只能 ✕ 掉重放一次。
-  var slotPick=null,pickRec=[];                   // {i:-1 新放一件 / >=0 改第几件, t, cat, sub}
-  var pickBox=document.getElementById("pomo-slot-pick");
-  function openPick(i){
-    var s=(i>=0)?pSlots[i]:null;
-    if(i<0&&pSlots.length>=6)return;
-    slotPick=s?{i:i,t:s.t||"",cat:s.cat,sub:s.sub||null}
-              :{i:-1,t:(pomoTask.value||"").trim(),
-                cat:pomoCat.value||((cats[0]||{}).key||""),sub:pomoSub.value||null};
-    renderPick();
-    var el=pickBox&&pickBox.querySelector(".psp-t");if(el)el.focus();}
-  function closePick(){slotPick=null;renderPick();}
+          '<button type="button" class="ps-x" title="去掉这块牌子">\u2715</button></div>';}).join("");}
+  // 左边大类、右边它的小类，点 ＋ 加成一块牌子
   function renderPick(){
-    if(!pickBox)return;
-    pickBox.classList.toggle("on",!!slotPick);
-    if(!slotPick){pickBox.innerHTML="";pickRec=[];renderSlots(true);return;}
-    var p=slotPick,subs=p.cat?subsByUse(p.cat):[],pc=p.cat?catColor(p.cat):"var(--border)";
-    // 已经在里面的不再列出来 —— 列了点了也没反应，那种按钮最气人
-    pickRec=(p.i<0)?recentCombos(24).filter(function(r){return !slotHas(r);}).slice(0,5):[];
-    pickBox.innerHTML=
-      '<div class="psp-h">'+(p.i<0?"挑一件放进来":"改这一件")+'</div>'+
-      '<input type="text" class="psp-t" placeholder="叫什么？（不填就用分类名）" value="'+esc(p.t)+'">'+
-      ((p.open||!p.cat)
-        ? ('<div class="psp-lb">大类</div><div class="cats psp-cats">'+catsByUse().map(function(c){
-            return '<div class="cat-chip sub-chip'+(p.cat===c.key?" on":"")+'" data-pcat="'+c.key+
-              '" style="--c:'+c.color+'"><i></i>'+esc(c.name)+'</div>';}).join("")+'</div>'+
-           (subs.length?('<div class="psp-lb">小类</div>'+
-             '<div class="cats psp-cats psp-subs">'+subs.map(function(x){
-               return '<div class="cat-chip sub-chip'+((p.sub||"")===x.key?" on":"")+'" data-psub="'+x.key+
-                 '" style="--c:'+pc+'"><i></i>'+esc(x.name)+'</div>';}).join("")+'</div>'):""))
-        : ('<div class="psp-cur"><i style="background:'+subColor(p.cat,p.sub||null)+'"></i>'+
-           '<span>'+esc(catLabelOf(p.cat,p.sub||null))+'</span>'+
-           '<button type="button" class="psp-chg">换</button></div>'))+
-      '<div class="psp-btns"><button type="button" class="btn primary psp-ok">'+
-        (p.i<0?"放进去":"改好了")+'</button>'+
-        '<button type="button" class="btn psp-c">取消</button></div>'+
-      (pickRec.length?('<div class="psp-rec"><div class="psp-rh">最近用过 · 点一下直接放进去</div>'+
-        pickRec.map(function(r,k){
-          return '<div class="psp-r" data-r="'+k+'"><i style="background:'+subColor(r.cat,r.sub||null)+
-            '"></i><span class="pr-t">'+esc(r.t)+'</span><b>'+esc(catLabelOf(r.cat,r.sub||null))+
-            '</b></div>';}).join("")+'</div>'):"");
-    renderSlots(true);}
-  function pickPut(one){
-    if(!one.cat){pomoNote("先点一个大类");return;}
-    var p=slotPick;
-    if(p&&p.i>=0){pSlots[p.i]=one;}
-    else{
-      if(slotHas(one)){pomoNote("这件已经在里面了");return;}
-      if(pSlots.length>=6)return;
-      pSlots.push(one);}
-    saveSlots();closePick();}
-  function addSlot(){openPick(-1);}
-  // 按一下 = 把手上这一段结算掉，然后整个人换到那一件上。
-  // switchTask 必须在改输入框**之前**调 —— 它靠 pomoTask/pomoCat 的当前值给前面那段记账。
-  function gotoSlot(i){
-    var s=pSlots[i];if(!s||!s.cat)return;
-    if(!cats.some(function(c){return c.key===s.cat;})){pomoNote("这一件的分类已经被删掉了，把它 ✕ 掉重放一次");return;}
-    if(pFollow){pomoNote("这次计时在另一个网页里跑着，去那边切、或者先点「接管」");return;}
-    if(slotSame(s)){renderSlots(true);return;}              // 已经在这件上了，别白切一刀
+    if(!pkCats||!pkSubs)return;
+    if(pkCat&&!cats.some(function(c){return c.key===pkCat;})){pkCat="";pkSub=null;}
+    pkCats.innerHTML=catsByUse().map(function(c){
+      return '<div class="pk-i'+(pkCat===c.key?" on":"")+'" data-pkc="'+c.key+'" title="'+esc(c.name)+'">'+
+        '<i style="background:'+c.color+'"></i><span>'+esc(c.name)+'</span></div>';}).join("");
+    var subs=pkCat?subsByUse(pkCat):[];
+    pkSubs.innerHTML=subs.length
+      ? subs.map(function(x){
+          return '<div class="pk-i'+((pkSub||"")===x.key?" on":"")+'" data-pks="'+x.key+'" title="'+esc(x.name)+'">'+
+            '<i style="background:'+subColor(pkCat,x.key)+'"></i><span>'+esc(x.name)+'</span></div>';}).join("")
+      : ('<div class="pk-none">'+(pkCat?"这个大类没有小类，直接点下面的 ＋":"先在左边点一个大类")+'</div>');
+    if(pkAdd){pkAdd.disabled=!pkCat;
+      pkAdd.textContent=pkCat?("＋ "+catLabelOf(pkCat,pkSub||null)):"＋ 先选左边";}}
+  function addSlot(){
+    if(!pkCat){pomoNote("先在左边点一个大类");return;}
+    var one={cat:pkCat,sub:pkSub||null};
+    if(slotHas(one)){pomoNote("这块牌子已经有了");return;}
+    if(pSlots.length>=8){pomoNote("最多 8 块");return;}
+    pSlots.push(one);saveSlots();renderSlots(true);}
+  // 换人马。结算必须发生在**改 pomoCat / pMates 之前** —— 前面那一截属于旧的那套。
+  function setCur(ck,sk,mates){
     if(pTimer&&timerMode==="up")switchTask("slot");
-    pomoTask.value=s.t||"";
-    pomoCat.value=s.cat;fillPomoSubs();
-    pomoSub.value=(s.sub&&subsOf(s.cat).some(function(x){return x.key===s.sub;}))?s.sub:"";
-    // 这三个「变之前的值」得跟着走，否则她下一次真去动下拉时，会拿一个旧值去给这一段记账
-    pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;pomoTaskPrev=pomoTask.value;
-    pomoManual=true;markPomoAuto(false);                    // 按钮按的就是它，别再按名字猜一遍
+    pomoCat.value=ck;fillPomoSubs();
+    pomoSub.value=(sk&&subsOf(ck).some(function(x){return x.key===sk;}))?sk:"";
+    pMates.length=0;(mates||[]).forEach(function(m){pMates.push(m);});
+    saveMates();
+    // 这两个「变之前的值」得跟着走，否则她下一次真去动下拉时，会拿一个旧值去给那一段记账
+    pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
+    pomoManual=true;markPomoAuto(false);                  // 牌子按的就是它，别再按名字猜一遍
     savePomoLast();savePomoRun();renderSlots(true);drawPomo();}
+  function tapSlot(i,add){
+    var s=pSlots[i];if(!s||!s.cat)return;
+    if(!cats.some(function(c){return c.key===s.cat;})){pomoNote("这块牌子的分类已经被删掉了，✕ 掉重加一块");return;}
+    if(pFollow){pomoNote("这次计时在另一个网页里跑着，去那边切、或者先点「接管」");return;}
+    var set=curSet();
+    if(!add){
+      if(set.length===1&&sameCS(set[0],s)){renderSlots(true);return;}   // 已经单独在做这件了，别白切一刀
+      setCur(s.cat,s.sub||null,[]);return;}
+    var idx=-1;set.forEach(function(x,k){if(sameCS(x,s))idx=k;});
+    if(idx>=0){
+      if(set.length<2){pomoNote("至少得留一件");return;}
+      set.splice(idx,1);}
+    else{
+      if(set.length>=4){pomoNote("最多同时做 4 件");return;}
+      set.push({cat:s.cat,sub:s.sub||null});}
+    setCur(set[0].cat,set[0].sub,set.slice(1).map(mateOf));}
   if(slotsBox)slotsBox.addEventListener("click",function(e){
     var row=e.target.closest(".pomo-slot");if(!row)return;
     var i=+row.getAttribute("data-i");
-    if(e.target.closest(".ps-x")){
-      if(slotPick&&slotPick.i===i)slotPick=null;                 // 正在改的那一件被删了
-      else if(slotPick&&slotPick.i>i)slotPick.i--;               // 它前面少了一件，序号要跟着退
-      pSlots.splice(i,1);saveSlots();renderPick();renderSlots(true);return;}
-    if(e.target.closest(".ps-e")){openPick(i);return;}
-    gotoSlot(i);});
-  if(pickBox)pickBox.addEventListener("input",function(e){       // 打字不重画，不然光标会被踢掉
-    if(slotPick&&e.target.classList.contains("psp-t"))slotPick.t=e.target.value;});
-  if(pickBox)pickBox.addEventListener("keydown",function(e){
-    if(!slotPick)return;
-    if(e.key==="Enter"&&e.target.classList.contains("psp-t")){
-      e.preventDefault();pickPut({t:(slotPick.t||"").trim(),cat:slotPick.cat,sub:slotPick.sub||null});}
-    else if(e.key==="Escape")closePick();});
-  if(pickBox)pickBox.addEventListener("click",function(e){
-    if(!slotPick)return;
-    if(e.target.closest(".psp-chg")){slotPick.open=1;renderPick();return;}
-    var ch=e.target.closest("[data-pcat],[data-psub]");
-    if(ch){var ck=ch.getAttribute("data-pcat");
-      if(ck!==null){slotPick.cat=ck;slotPick.sub=null;}          // 换大类，小类得重选
-      else{var sk=ch.getAttribute("data-psub");slotPick.sub=((slotPick.sub||"")===sk)?null:sk;}
-      renderPick();return;}
-    var r=e.target.closest(".psp-r");
-    if(r){var one=pickRec[+r.getAttribute("data-r")];
-      if(one)pickPut({t:one.t||"",cat:one.cat,sub:one.sub||null});return;}
-    if(e.target.closest(".psp-ok")){
-      pickPut({t:(slotPick.t||"").trim(),cat:slotPick.cat,sub:slotPick.sub||null});return;}
-    if(e.target.closest(".psp-c"))closePick();});
-  // 这一排是「预设」，不是计时状态 —— 另一个网页在跑着也照样能加减，
-  // 所以不走 followGuard（真正不让切的判断在 gotoSlot 里）。
-  if(slotAdd)slotAdd.addEventListener("click",addSlot);
+    if(e.target.closest(".ps-x")){pSlots.splice(i,1);saveSlots();renderSlots(true);return;}
+    tapSlot(i,!!(e.ctrlKey||e.metaKey));});
+  if(pkCats)pkCats.addEventListener("click",function(e){
+    var it=e.target.closest("[data-pkc]");if(!it)return;
+    pkCat=it.getAttribute("data-pkc");pkSub=null;renderPick();});
+  if(pkSubs)pkSubs.addEventListener("click",function(e){
+    var it=e.target.closest("[data-pks]");if(!it)return;
+    var k=it.getAttribute("data-pks");pkSub=((pkSub||"")===k)?null:k;renderPick();});
+  if(pkAdd)pkAdd.addEventListener("click",addSlot);
+  pkCat=pomoCat.value||((cats[0]||{}).key||"");pkSub=pomoSub.value||null;
+  renderPick();
   renderSlots(true);
   function renderSegs(){
     if(!segsBox)return;
@@ -12743,9 +12730,10 @@ margin-left: -22px;
     if(!pTimer||timerMode!=="up")return;
     var ck=useCat||pomoCat.value;
     var sk=(typeof useSub==="undefined")?(pomoSub.value||null):(useSub||null);
-    var sec=curSegSec(),lab=(pomoTask.value||"").trim()||catLabelOf(ck,sk);
+    var sec=curSegSec(),mem=curMembers(ck,sk,liveMates());
+    var lab=mem.map(function(x){return x.t;}).join(" + ");
     if(sec>=minSeg()){
-      pSegs.push({t:lab,cat:ck,sub:sk,sec:sec});pSegStart=pElapsed;
+      pSegs.push.apply(pSegs,stretchSegs(sec,mem));pSegStart=pElapsed;
       pomoNote("记下「"+lab+" "+secLabel(sec)+"」，接着做别的");}
     else if(sec>0)
       // 不够「最短一段」就切走 —— 当成点错了。不落段、也不动 pSegStart，
@@ -12799,12 +12787,11 @@ margin-left: -22px;
     if(segs){                                              // 停在暂停上就直接收尾 → 末尾不留洞，结束时间往回拨
       while(segs.length&&segs[segs.length-1].gap){trail+=(+segs[segs.length-1].sec||0);segs.pop();}
       segs.forEach(function(s){if(s.gap)gapSec+=(+s.sec||0);});}
+    // 平分现在发生在「结算每一小截」的时候（stretchSegs），段里已经分好了 ——
+    // 这儿再 splitEven 一遍就会把前面那些单独做的段也劈开。
     var mates=liveMates();
-    if(mates.length){                                      // 同时也算给别的事：把这段时间平分。
-      // 倒计时没有段，正计时没换过任务时只有一段 —— 两种都当成「一整段」再切。
-      var base=(segs&&segs.length)?segs:[{t:typed||catLabelOf(pomoCat.value,pomoSub.value||null),
-        cat:pomoCat.value,sub:pomoSub.value||null,sec:focusSec}];
-      segs=splitEven(base,mates);}
+    if(mates.length&&!(segs&&segs.length)){                // 一次都没切过、又同时做着好几件
+      segs=stretchSegs(focusSec,curMembers(pomoCat.value,pomoSub.value||null,mates));}
     if(segs&&segs.length<2)segs=null;
     // 标题是自动按分类填的（你没打字）就别记进分类记忆，那是循环自证，没信息量
     if(segs)segs.forEach(function(s){if(!s.gap&&s.t&&s.t!==catLabelOf(s.cat,s.sub))rememberCat(s.t,s.cat,s.sub);});
@@ -13046,7 +13033,8 @@ margin-left: -22px;
     if(pTimer){clearInterval(pTimer);pTimer=null;
       if(timerMode==="up"){pBase=pElapsed;                       // 暂停：把已走的时间记下来
         var cs=curSegSec();                                      // 先把手上这一段封口，洞才排得进它后面
-        if(cs>0){pSegs.push({t:curSegLabel(),cat:pomoCat.value,sub:pomoSub.value||null,sec:cs});pSegStart=pElapsed;}
+        if(cs>0){pSegs.push.apply(pSegs,stretchSegs(cs,curMembers(pomoCat.value,pomoSub.value||null,liveMates())));
+          pSegStart=pElapsed;}
         if(pElapsed>0){pPauseAt=Date.now();                      // 洞从这一刻开始往下长
           pPauseT=setInterval(function(){try{liveRefresh();}catch(e){}},1000);}}}
     savePomoSeen(true);                                        // 暂停这一刻的进度，黑匣子先记牢
@@ -24661,7 +24649,7 @@ margin-left: -22px;
         // pMates 必须还是同一个数组（mateUI 持着它），所以原地换内容。
         try{var mm=load("tt_pomomates",[])||[];
           pMates.length=0;mm.forEach(function(x){pMates.push(x);});
-          renderMates();}catch(_e){}
+          renderSlots(true);}catch(_e){}
         return;}
       if(e.key==="tt_pomoslots"){                             // 另一个网页改了「轮着做的几件事」
         try{var sl=load("tt_pomoslots",[])||[];

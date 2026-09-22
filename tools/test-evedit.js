@@ -111,6 +111,31 @@ setTimeout(function () {
     ok(after[k] === undefined, "「" + k + "」该掉：实际 " + JSON.stringify(after[k]));
   });
   ok(after.done === true, "「已经发生过」不该被翻掉");
+  // ---- 每一段可以各写自己的备注 ----
+  // 一行里原来把同一件事写了两遍（名字 + 右边那个分类下拉），
+  // 占掉的正是可以用来写备注的地方。她的原话：
+  // 「不需要显示两次 PhD research，给一个就行，剩下的就可以换成 note」。
+  el = d.querySelector('.ev[data-id="e1"]');
+  ok(!!el, "重新打开那条");
+  if (el) {
+    el.click();
+    var nts = [].slice.call(d.querySelectorAll("#ev-segs .evs-nt"));
+    ok(nts.length === 2, "两段各有一个备注框，实际 " + nts.length);
+    nts[0].value = "读了第三章"; nts[0].dispatchEvent(new w.Event("input", { bubbles: true }));
+    nts[1].value = "跑了 5km"; nts[1].dispatchEvent(new w.Event("input", { bubbles: true }));
+    d.getElementById("ev-save").click();
+    var e2 = JSON.parse(w.__store.tt_events).filter(function (x) { return x.id === "e1"; })[0];
+    ok(e2 && e2.segs && e2.segs.length === 2, "存完还是两段，实际 " + (e2.segs || []).length);
+    ok(e2 && e2.segs[0].n === "读了第三章" && e2.segs[1].n === "跑了 5km",
+      "两条备注各自存下来了：" + JSON.stringify((e2.segs || []).map(function (x) { return x.n; })));
+    ok(e2 && e2.segs[0].sec === 3600 && e2.segs[1].sec === 3600, "写备注不会动秒数");
+    // 名字就是分类名的那种，不再单独写一遍
+    el = d.querySelector('.ev[data-id="e1"]'); if (el) el.click();
+    var segs3 = [].slice.call(d.querySelectorAll("#ev-segs .evs"));
+    ok(segs3.length === 2 && segs3[0].querySelector(".nm"), "真打过名字的那种还是显示名字");
+    d.getElementById("ev-cancel").click();
+  }
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   done();
 }, 2500);

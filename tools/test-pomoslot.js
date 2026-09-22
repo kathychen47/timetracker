@@ -1,13 +1,13 @@
-// 「轮着做的几件事」：按一下就切过去 —— 离线测试（真在 jsdom 里点按钮）。
+// 番茄钟的任务牌子：按一下切过去、按住 Ctrl 点 = 同时做 —— 离线测试（真在 jsdom 里点）。
 //
-// 这个功能最怕的不是按钮画得丑，是**按一下少一截时间**：
-// 切一刀走的是现成的 switchTask，它靠输入框里**当前**的名字/分类给前面那一段记账。
-// 只要顺序写反（先改输入框再切），前面那 20 分钟就会整个记到下一件头上，
+// 这块最怕的不是按钮画得丑，是**按一下少一截时间**：
+// 切一刀走的是 switchTask，它靠输入框里**当前**的名字/分类给前面那一截记账。
+// 只要顺序写反（先改分类再结算），前面那 20 分钟就会整个记到下一件头上，
 // 而且不报错、不变色 —— 段落条上看着还挺像回事。
-// 所以这里每切一刀都核一次：**各段之和 + 手上这一段 == 钟上走过的秒数**。
+// 所以这里每动一次人马都核一遍：**各段之和 + 手上这一截 == 钟上走过的秒数**。
 //
-// 另一半是「最短一段」：它从写死的 30 秒挪进了设置。
-// 挪错了的后果是无声的 —— 短切换被当成点错了，那几秒并给下一件，她不会知道。
+// 第二怕的是「同时做」把不该分的也分了：
+// 前面单独做 A 的那 20 分钟，M 根本还没上场，不能因为后来把 M 点亮了就回头砍 A 一半。
 //
 // 时间是假的：把 window.Date.now 往前拨，真 setInterval 照常跑，
 // 所以每次拨完要等一个 tick（500ms）让 pomoTick 把 pElapsed 追上来。
@@ -20,28 +20,15 @@ catch (e) { console.error("需要 jsdom：npm i jsdom --no-save"); process.exit(
 
 var html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 
-var _n = new Date(), _p = function (x) { return String(x).padStart(2, "0"); };
-function dayAgo(k) {
-  var d = new Date(_n.getTime() - k * 864e5);
-  return d.getFullYear() + "-" + _p(d.getMonth() + 1) + "-" + _p(d.getDate());
-}
-
 var CATS = [
   { key: "uco", name: "UC Online", color: "#2fb39a", kw: [], subs: [
-    { key: "d401", name: "DATA401", kw: [] }, { key: "s462", name: "STAT462", kw: [] }] },
-  { key: "cms", name: "CMS", color: "#e0b93a", kw: [], subs: [] },
-  { key: "life", name: "Life", color: "#8b90a0", kw: [], subs: [] }
+    { key: "d401", name: "DATA401", kw: [] }, { key: "s462", name: "STAT462", kw: [] },
+    { key: "oth", name: "Others", kw: [] }] },
+  { key: "phd", name: "PhD", color: "#e05a47", kw: [], subs: [
+    { key: "res", name: "Research", kw: [] }, { key: "oth2", name: "Others", kw: [] }] },
+  { key: "cms", name: "CMS", color: "#e0b93a", kw: [], subs: [] }
 ];
-// 最近用过的三件（新的在前）—— ＋ 第一次点应该正好把这三件铺进去
-var seed = {
-  tt_lang: "zh", tt_tab: "calendar", tt_cats: CATS,
-  tt_events: [
-    { id: "a", title: "改课件", date: dayAgo(1), start: "09:00", end: "10:00", cat: "uco", sub: "d401", done: true },
-    { id: "b", title: "看作业", date: dayAgo(2), start: "09:00", end: "10:00", cat: "uco", sub: "s462", done: true },
-    { id: "c", title: "回邮件", date: dayAgo(3), start: "09:00", end: "10:00", cat: "cms", sub: null, done: true },
-    { id: "d", title: "太久以前了", date: dayAgo(40), start: "09:00", end: "10:00", cat: "life", sub: null, done: true }
-  ]
-};
+var seed = { tt_lang: "zh", tt_tab: "calendar", tt_cats: CATS, tt_events: [] };
 
 var pass = 0, fail = 0;
 function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
@@ -71,7 +58,7 @@ var dom = new JSDOM(html, {
     w.Date.now = function () { return RD() + w.__adv * 1000; };
     w.fetch = function () { return new Promise(function () { }); };
     w.Element.prototype.scrollIntoView = function () { };
-    w.HTMLMediaElement && (w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); });
+    if (w.HTMLMediaElement) w.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
     w.matchMedia = w.matchMedia || function () {
       return { matches: false, addListener: function () { }, removeListener: function () { },
         addEventListener: function () { }, removeEventListener: function () { } };
@@ -84,211 +71,146 @@ var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); 
 function adv(sec) { w.__adv += sec; return wait(700); }       // 拨完等一个 tick，让 pElapsed 追上
 function run() { return JSON.parse(w.__store.tt_pomorun || "null") || {}; }
 function slots() { return JSON.parse(w.__store.tt_pomoslots || "[]"); }
+function mates() { return JSON.parse(w.__store.tt_pomomates || "[]"); }
 function rows() { return [].slice.call(d.querySelectorAll("#pomo-slots .pomo-slot")); }
 function label(r) { return r.querySelector(".ps-t").textContent; }
-// 分类色块平时是收起来的（她的大类 10 个、小类十几个，全铺出来又高又分不清）——
-// 要换分类得先点那个「换」。
-function openCats() { var b = $("#pomo-slot-pick .psp-chg"); if (b) b.click(); }
-// 各段之和 + 手上这一段，必须正好等于钟上走过的秒数
+function onRows() { return rows().filter(function (r) { return r.classList.contains("on"); }); }
+function tap(i, ctrl) {
+  rows()[i].dispatchEvent(new w.MouseEvent("click", { bubbles: true, ctrlKey: !!ctrl }));
+}
+function pickCat(k) { $('#pk-cats [data-pkc="' + k + '"]').click(); }
+function pickSub(k) { $('#pk-subs [data-pks="' + k + '"]').click(); }
+function add() { $("#pk-add").click(); }
+// 各段之和 + 手上这一截，必须正好等于钟上走过的秒数
 function accounted() {
   var r = run(), tot = 0;
   (r.segs || []).forEach(function (s) { tot += (+s.sec || 0); });
   return tot + Math.max(0, (+r.elapsed || 0) - (+r.segStart || 0));
 }
+function secOf(cat, sub) {
+  var t = 0;
+  (run().segs || []).forEach(function (s) {
+    if (!s.gap && s.cat === cat && (s.sub || null) === (sub || null)) t += (+s.sec || 0);
+  });
+  return t;
+}
 
 (async function () {
   await wait(1200);
 
-  // ---- 1. 列表是空的，只有那个 ＋ ----
-  ok(!!$("#pomo-slots"), "面板上有「轮着做」这一块");
-  ok(rows().length === 0, "一开始一件都没有");
-  ok($("#pomo-slots").classList.contains("on") === false, "空的时候整块是收起来的");
+  // ---- 1. 左右两栏 ----
+  ok(!!$("#pk-cats") && !!$("#pk-subs"), "左右两栏都在");
+  ok(d.querySelectorAll("#pk-cats .pk-i").length === 3, "左边列出了 3 个大类，实际 " +
+    d.querySelectorAll("#pk-cats .pk-i").length);
+  ok(rows().length === 0, "还没有任何牌子");
+  pickCat("phd");
+  ok(d.querySelectorAll("#pk-subs .pk-i").length === 2, "点了 PhD，右边出它的 2 个小类，实际 " +
+    d.querySelectorAll("#pk-subs .pk-i").length);
+  ok($('#pk-cats [data-pkc="phd"]').classList.contains("on"), "选中的大类高亮了");
+  pickCat("uco");
+  ok(d.querySelectorAll("#pk-subs .pk-i").length === 3, "换成 UC Online，右边跟着换成它的小类");
 
-  // ---- 2. ＋ 打开的是一个自己挑的面板，不是替你猜 ----
-  $("#pomo-slot-add").click();
-  ok($("#pomo-slot-pick").classList.contains("on"), "＋ 打开了挑选面板");
-  ok(slots().length === 0, "光打开面板不会往里塞东西");
-  ok($("#pomo-slot-add").style.display === "none", "面板开着的时候 ＋ 收起来了");
-  // 她的大类 10 个、小类十几个，一上来全铺出来是二十多个色块，又高又分不清大小类
-  ok($("#pomo-slot-pick").querySelectorAll("[data-pcat]").length === 0, "分类色块默认是收起来的");
-  ok(!!$("#pomo-slot-pick .psp-cur"), "只显示一行「现在是哪个分类」");
-  openCats();
-  ok($("#pomo-slot-pick").querySelectorAll("[data-pcat]").length === 3, "点「换」之后大类铺开了，实际 " +
-    $("#pomo-slot-pick").querySelectorAll("[data-pcat]").length);
-  ok(!!$("#pomo-slot-pick .psp-subs"), "小类单独一组（缩进 + 标题），不跟大类混在一块");
-  ok(/大类/.test($("#pomo-slot-pick").textContent) && /小类/.test($("#pomo-slot-pick").textContent),
-    "两组各自有标题（大类 / 小类）—— 小类用的就是大类的深浅色，光看色块分不出谁是谁");
-  var recs = [].slice.call($("#pomo-slot-pick").querySelectorAll(".psp-r"));
-  ok(recs.length === 3, "「最近用过」列了 3 件，实际 " + recs.length);
-  ok(!recs.some(function (r) { return /太久以前了/.test(r.textContent); }), "40 天前那条不算「最近」");
-  recs[0].click();                                   // 点一下直接放进去
-  ok(slots().length === 1 && slots()[0].t === "改课件" && slots()[0].sub === "d401",
-    "点最近用过的那行就放进去了：" + JSON.stringify(slots()[0]));
-  ok(!$("#pomo-slot-pick").classList.contains("on"), "放完面板就关了");
+  // ---- 2. ＋ 加牌子 ----
+  pickCat("phd"); pickSub("res"); add();
+  ok(slots().length === 1 && slots()[0].cat === "phd" && slots()[0].sub === "res",
+    "加出一块 PhD/Research：" + JSON.stringify(slots()[0]));
+  add();
+  ok(slots().length === 1, "一模一样的不会加第二块，实际 " + slots().length);
+  pickCat("uco"); pickSub("s462"); add();
+  pickCat("uco"); pickSub("d401"); add();
+  pickCat("cms"); add();                       // 没有小类的大类也能单独成一块
+  ok(slots().length === 4, "一共 4 块，实际 " + slots().length);
+  ok(rows().length === 4, "界面上画出了 4 行");
+  ok(label(rows()[0]) === "Research", "牌子上写小类就够了（大类是左边那个色点），实际 " + label(rows()[0]));
+  ok(label(rows()[3]) === "CMS", "没有小类的写大类名，实际 " + label(rows()[3]));
 
-  $("#pomo-slot-add").click();
-  recs = [].slice.call($("#pomo-slot-pick").querySelectorAll(".psp-r"));
-  ok(recs.length === 2, "已经放进去的不再列出来，实际还剩 " + recs.length);
-  recs[0].click();
-  $("#pomo-slot-add").click();
-  $("#pomo-slot-pick").querySelector(".psp-r").click();
-  ok(slots().length === 3, "一共放了 3 件，实际 " + slots().length);
-  ok(rows().length === 3, "界面上画出了 3 行");
-  ok(label(rows()[1]) === "看作业", "第二行的名字对");
+  // ---- 3. 小类重名的要写全 ----
+  // 她的 PhD 和 UC Online 底下都有 Others —— 只写「Others」两块牌子长得一模一样
+  pickCat("phd"); pickSub("oth2"); add();
+  pickCat("uco"); pickSub("oth"); add();
+  var texts = rows().map(label);
+  ok(texts.indexOf("PhD / Others") >= 0 && texts.indexOf("UC Online / Others") >= 0,
+    "小类重名的两块各自写全：" + JSON.stringify(texts));
+  rows()[5].querySelector(".ps-x").click();    // 收拾干净，后面按下标点
+  rows()[4].querySelector(".ps-x").click();
+  ok(slots().length === 4, "✕ 之后回到 4 块，实际 " + slots().length);
 
-  // ---- 3. 没开始计时的时候按一下 = 只把名字和分类填好 ----
+  // ---- 4. 点牌子 = 切过去 ----
   $('#pomo-mode-seg button[data-tm="up"]').click();
-  rows()[0].click();
-  ok($("#pomo-task").value === "改课件", "填上了名字，实际 " + JSON.stringify($("#pomo-task").value));
-  ok($("#pomo-cat").value === "uco" && $("#pomo-sub").value === "d401", "填上了大类和小类");
-  ok(rows()[0].classList.contains("on"), "当前这件高亮了");
-  ok(!run().segs || !run().segs.length, "还没开始计时 —— 不该切出任何一段");
-
-  // ---- 4. 开始计时，走 120 秒，切到第二件 ----
+  tap(0);
+  ok($("#pomo-cat").value === "phd" && $("#pomo-sub").value === "res", "分类跟着牌子走了");
+  ok(onRows().length === 1 && onRows()[0] === rows()[0], "只有这一块亮着");
   $("#pomo-start").click();
-  await adv(120);
-  rows()[1].click();
-  // tt_pomorun 只在存档点写盘（pomoTick 不写），所以走了多久要切完再读
-  ok(+run().elapsed >= 118, "走了 120 秒，实际 " + run().elapsed);
-  var segs = run().segs || [];
-  ok(segs.length === 1, "切出了一段，实际 " + segs.length + " 段");
-  ok(segs[0] && segs[0].t === "改课件" && segs[0].cat === "uco" && segs[0].sub === "d401",
-    "这一段记在**切之前**那件头上：" + JSON.stringify(segs[0]));
-  ok(segs[0] && Math.abs(segs[0].sec - 120) <= 2, "这一段 120 秒上下，实际 " + (segs[0] || {}).sec);
-  ok($("#pomo-task").value === "看作业" && $("#pomo-sub").value === "s462", "人已经换到第二件上了");
+  await adv(1200);                                   // 单独做 PhD/Research 20 分钟
+  tap(1);                                            // 切到 STAT462
+  ok((run().segs || []).length === 1, "切出一段，实际 " + (run().segs || []).length);
+  ok(Math.abs(secOf("phd", "res") - 1200) <= 2,
+    "那一段 20 分整个记在 PhD/Research 头上，实际 " + secOf("phd", "res"));
   ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
-    "一秒没多一秒没少：记下的 " + accounted() + " / 钟上 " + run().elapsed);
+    "一秒没多一秒没少：" + accounted() + " / " + run().elapsed);
 
-  // ---- 5. 再走 300 秒切回第一件 ----
+  // ---- 5. Ctrl 点 = 同时做，只分这一截 ----
+  tap(2, true);                                      // 再点亮 DATA401
+  ok(onRows().length === 2, "两块同时亮着，实际 " + onRows().length);
+  ok(mates().length === 1, "同时做的那件进了 tt_pomomates，实际 " + mates().length);
+  await adv(2400);                                   // 两件同时做 40 分钟
+  tap(3);                                            // 全部切走到 CMS
+  ok(Math.abs(secOf("phd", "res") - 1200) <= 2,
+    "**前面单独做的那 20 分不许被回头劈一半**，实际 " + secOf("phd", "res"));
+  ok(Math.abs(secOf("uco", "s462") - 1200) <= 3, "STAT462 拿这 40 分的一半，实际 " + secOf("uco", "s462"));
+  ok(Math.abs(secOf("uco", "d401") - 1200) <= 3, "DATA401 拿另一半，实际 " + secOf("uco", "d401"));
+  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
+    "平分完总账还是一秒不差：" + accounted() + " / " + run().elapsed);
+  ok(mates().length === 0, "不按 Ctrl 直接点 = 只做这一件，同时做的清空了");
+
+  // ---- 6. Ctrl 点已经亮着的 = 取消；最后一件取消不掉 ----
+  tap(0, true);
+  ok(onRows().length === 2, "又变成两块，实际 " + onRows().length);
+  tap(3, true);                                      // 把 CMS 取消掉
+  ok(onRows().length === 1 && onRows()[0] === rows()[0], "只剩 PhD/Research 亮着");
+  tap(0, true);                                      // 想把最后一块也取消
+  ok(onRows().length === 1, "至少得留一件，取消不掉，实际 " + onRows().length);
+
+  // ---- 7. 牌子上显示各自走了多久 ----
   await adv(300);
-  rows()[0].click();
-  segs = run().segs || [];
-  ok(segs.length === 2, "又切出一段，实际 " + segs.length + " 段");
-  ok(segs[1] && segs[1].t === "看作业" && Math.abs(segs[1].sec - 300) <= 2,
-    "第二段是「看作业 300 秒」：" + JSON.stringify(segs[1]));
-  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
-    "两刀之后还是一秒不差：记下的 " + accounted() + " / 钟上 " + run().elapsed);
+  tap(1);
+  ok(/\d/.test(rows()[0].querySelector("b").textContent),
+    "PhD/Research 那块显示了它自己的累计时间，实际 " + JSON.stringify(rows()[0].querySelector("b").textContent));
 
-  // ---- 6. 已经在这件上了，再按一下不该白切一刀 ----
-  rows()[0].click();
-  ok((run().segs || []).length === 2, "按当前这件不新增段，实际 " + (run().segs || []).length);
-
-  // ---- 7. 「最短一段」默认 10 秒：5 秒就切走 → 不单独成段，但时间不丢 ----
-  await adv(5);
-  rows()[2].click();
-  ok((run().segs || []).length === 2, "5 秒的那下没成段（默认 10 秒），实际 " + (run().segs || []).length);
-  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
-    "被吞掉的 5 秒还在总数里：记下的 " + accounted() + " / 钟上 " + run().elapsed);
-
-  // ---- 8. 设成「不限」：几秒也算 ----
-  $("#settings-btn").click();                 // 打开设置才会把当前值填进去
+  // ---- 8. 「最短一段」还在，默认 10 秒 ----
+  $("#settings-btn").click();
   var ms = $("#set-minseg");
-  ok(!!ms, "设置里有「最短一段」这一项");
-  ok(ms.value === "10", "默认是 10 秒，实际 " + ms.value);
-  ms.value = "1"; ms.dispatchEvent(new w.Event("change", { bubbles: true }));
+  ok(!!ms && ms.value === "10", "设置里「最短一段」默认 10 秒，实际 " + (ms && ms.value));
   await adv(5);
-  rows()[1].click();
-  segs = run().segs || [];
-  ok(segs.length === 3, "设成「不限」之后，5 秒也记成一段了，实际 " + segs.length + " 段");
-  // 这一段里还含着上一步被吞掉的那 5 秒 —— 不落段的时候 pSegStart 没动，
-  // 那几秒就该滚进接下来这一段。所以这儿是 10 秒上下，不是 5 秒。
-  ok(segs[2] && segs[2].t === "回邮件" && segs[2].sec >= 8 && segs[2].sec <= 15,
-    "那一小段记的是「回邮件」，而且把刚才吞掉的 5 秒也带上了：" + JSON.stringify(segs[2]));
-  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
-    "还是一秒不差：记下的 " + accounted() + " / 钟上 " + run().elapsed);
+  var nseg = (run().segs || []).length;
+  tap(2);
+  ok((run().segs || []).length === nseg, "5 秒的那下没成段（默认 10 秒）");
+  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1, "被吞掉的 5 秒还在总数里");
 
-  // ---- 9. 每一行右边显示这件事在这次计时里走了多久 ----
-  var b0 = rows()[0].querySelector("b").textContent;
-  ok(/\d/.test(b0), "第一行显示了它自己的累计时间，实际 " + JSON.stringify(b0));
-
-  // ---- 10. ✕ 去掉一件，存得住 ----
-  rows()[2].querySelector(".ps-x").click();
-  ok(slots().length === 2, "✕ 之后剩 2 件，实际 " + slots().length);
-  ok(rows().length === 2, "界面上也只剩 2 行");
-  ok(!slots().some(function (x) { return x.t === "回邮件"; }), "去掉的是「回邮件」那件");
-
-  // ---- 11. 自己打名字 + 点色块选分类 ----
-  $("#pomo-task").value = "写论文";
-  $("#pomo-task").dispatchEvent(new w.Event("input", { bubbles: true }));
-  $("#pomo-slot-add").click();
-  ok($("#pomo-slot-pick").querySelector(".psp-t").value === "写论文",
-    "面板里名字预填的是手上这件，实际 " + JSON.stringify($("#pomo-slot-pick").querySelector(".psp-t").value));
-  openCats();
-  $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
-  ok($("#pomo-slot-pick").querySelector('[data-pcat="cms"]').classList.contains("on"), "点了色块就选上了");
-  $("#pomo-slot-pick").querySelector(".psp-ok").click();
-  var last = slots()[slots().length - 1];
-  ok(slots().length === 3 && last.t === "写论文" && last.cat === "cms" && !last.sub,
-    "按自己挑的放进去了：" + JSON.stringify(last));
-
-  // ---- 12. ✎ 改一件已经在里面的 ----
-  rows()[0].querySelector(".ps-e").click();
-  ok($("#pomo-slot-pick").classList.contains("on") &&
-     $("#pomo-slot-pick").querySelector(".psp-t").value === slots()[0].t, "✎ 打开的就是那一件");
-  ok($("#pomo-slot-pick").querySelectorAll(".psp-r").length === 0, "改的时候不列「最近用过」");
-  var ti = $("#pomo-slot-pick").querySelector(".psp-t");
-  ti.value = "改课件第二版"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
-  openCats();
-  $("#pomo-slot-pick").querySelector('[data-psub="s462"]').click();
-  $("#pomo-slot-pick").querySelector(".psp-ok").click();
-  ok(slots()[0].t === "改课件第二版" && slots()[0].sub === "s462",
-    "改到位了：" + JSON.stringify(slots()[0]));
-  ok(slots().length === 3, "改不会多出一件，实际 " + slots().length);
-
-  // ---- 13. 已经在里面的不让重复放 ----
-  $("#pomo-slot-add").click();
-  ti = $("#pomo-slot-pick").querySelector(".psp-t");
-  ti.value = "写论文"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
-  openCats();
-  $("#pomo-slot-pick").querySelector('[data-pcat="cms"]').click();
-  $("#pomo-slot-pick").querySelector(".psp-ok").click();
-  ok(slots().length === 3, "一模一样的那件不会被放两遍，实际 " + slots().length);
-  $("#pomo-slot-pick").querySelector(".psp-c").click();
-  ok(!$("#pomo-slot-pick").classList.contains("on"), "取消把面板关上了");
-  ok($("#pomo-slot-add").style.display !== "none", "面板关了，＋ 又回来了");
-
-  // ---- 14. 没打名字的那种：行上只写小类 ----
-  // 侧栏就这么窄，「UC Online · DATA401」会被截成「UC Online · …」——
-  // 恰好把唯一能区分两行的小类切掉了。大类已经由左边那个色点表示。
-  $("#pomo-slot-add").click();
-  var t14 = $("#pomo-slot-pick").querySelector(".psp-t");
-  t14.value = ""; t14.dispatchEvent(new w.Event("input", { bubbles: true }));
-  openCats();
-  $("#pomo-slot-pick").querySelector('[data-pcat="uco"]').click();
-  $("#pomo-slot-pick").querySelector('[data-psub="d401"]').click();
-  $("#pomo-slot-pick").querySelector(".psp-ok").click();
-  var last14 = slots()[slots().length - 1];
-  ok(last14 && !last14.t && last14.sub === "d401", "放进去的是一件没名字的：" + JSON.stringify(last14));
-  var row14 = rows()[rows().length - 1];
-  ok(label(row14) === "DATA401", "行上只写小类，实际 " + JSON.stringify(label(row14)));
-  ok(/UC Online/.test(row14.getAttribute("title") || ""),
-    "完整的大类·小类留在 title 里：" + row14.getAttribute("title"));
-  // 显示的字变了，但**配对用的名字不能变** ——
-  // 变了的话右边那个累计时间会无声地对不上。
-  row14.click();
-  await adv(90);
-  rows()[0].click();
-  var b14 = rows()[rows().length - 1].querySelector("b").textContent;
-  ok(/\d/.test(b14), "没名字那行照样数得出自己走了多久，实际 " + JSON.stringify(b14));
-  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
-    "到这儿总账还是一秒不差：" + accounted() + " / " + run().elapsed);
-
-  // ---- 15. 正跑着改任务名，得当场写盘 ----
-  // 原来要等到下一次「开始 / 暂停 / 切一刀」才存。中间刷新一下（或者合上电脑），
-  // restorePomoRun0 会把**旧名字**原样填回来 —— 她刚改的那个无声无息地没了，
-  // 最后记进日历的也是旧名字。她的原话：「为啥老是自动给我填上 STAT101 tutorial」。
+  // ---- 9. 正跑着改任务名，得当场写盘 ----
+  // 原来要等到下一次「开始 / 暂停 / 切一刀」才存。中间刷新一下，restorePomoRun0 会把**旧名字**
+  // 原样填回来 —— 她刚改的那个无声无息地没了。她的原话：「为啥老是自动给我填上 STAT101 tutorial」。
   var tn = $("#pomo-task");
   tn.value = "换成另一件事"; tn.dispatchEvent(new w.Event("input", { bubbles: true }));
-  ok(run().task !== "换成另一件事", "刚敲完还没写（每个键都写盘太浪费）");
   await wait(700);
   ok(run().task === "换成另一件事", "半秒内存下来了，实际 " + JSON.stringify(run().task));
   tn.value = ""; tn.dispatchEvent(new w.Event("input", { bubbles: true }));
   await wait(700);
   ok(!run().task, "清空也存得住 —— 否则刷新一下旧名字又回来了，实际 " + JSON.stringify(run().task));
 
+  // ---- 10. ✕ 删牌子，存得住 ----
+  var n0 = slots().length;
+  rows()[n0 - 1].querySelector(".ps-x").click();
+  ok(slots().length === n0 - 1, "✕ 之后少一块，实际 " + slots().length);
+  ok(rows().length === n0 - 1, "界面上也跟着少一行");
+
+  // ---- 11. 旧的「同时做（平分）」那一块界面已经撤了 ----
+  ok(!$("#pomo-mates") && !$("#pomo-mate-add"), "番茄钟里那两行没了（事件弹窗里那份还在）");
+  ok(!!$("#ev-mate-add"), "「新建事件」弹窗里的「同时做」还留着");
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   console.log("");
-  console.log("== 轮着做的几件事：按一下就切，时间一秒不差 ==");
+  console.log("== 任务牌子：按一下切、Ctrl 点同时做，时间一秒不差 ==");
   console.log("  通过 " + pass + "  失败 " + fail);
   process.exit(fail ? 1 : 0);
 })();
