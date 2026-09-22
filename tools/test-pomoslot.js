@@ -232,6 +232,31 @@ function accounted() {
   ok(!$("#pomo-slot-pick").classList.contains("on"), "取消把面板关上了");
   ok($("#pomo-slot-add").style.display !== "none", "面板关了，＋ 又回来了");
 
+  // ---- 14. 没打名字的那种：行上只写小类 ----
+  // 侧栏就这么窄，「UC Online · DATA401」会被截成「UC Online · …」——
+  // 恰好把唯一能区分两行的小类切掉了。大类已经由左边那个色点表示。
+  $("#pomo-slot-add").click();
+  var t14 = $("#pomo-slot-pick").querySelector(".psp-t");
+  t14.value = ""; t14.dispatchEvent(new w.Event("input", { bubbles: true }));
+  $("#pomo-slot-pick").querySelector('[data-pcat="uco"]').click();
+  $("#pomo-slot-pick").querySelector('[data-psub="d401"]').click();
+  $("#pomo-slot-pick").querySelector(".psp-ok").click();
+  var last14 = slots()[slots().length - 1];
+  ok(last14 && !last14.t && last14.sub === "d401", "放进去的是一件没名字的：" + JSON.stringify(last14));
+  var row14 = rows()[rows().length - 1];
+  ok(label(row14) === "DATA401", "行上只写小类，实际 " + JSON.stringify(label(row14)));
+  ok(/UC Online/.test(row14.getAttribute("title") || ""),
+    "完整的大类·小类留在 title 里：" + row14.getAttribute("title"));
+  // 显示的字变了，但**配对用的名字不能变** ——
+  // 变了的话右边那个累计时间会无声地对不上。
+  row14.click();
+  await adv(90);
+  rows()[0].click();
+  var b14 = rows()[rows().length - 1].querySelector("b").textContent;
+  ok(/\d/.test(b14), "没名字那行照样数得出自己走了多久，实际 " + JSON.stringify(b14));
+  ok(Math.abs(accounted() - (+run().elapsed || 0)) <= 1,
+    "到这儿总账还是一秒不差：" + accounted() + " / " + run().elapsed);
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   console.log("");
   console.log("== 轮着做的几件事：按一下就切，时间一秒不差 ==");
