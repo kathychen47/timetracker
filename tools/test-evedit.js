@@ -21,7 +21,10 @@ try { ({ JSDOM, VirtualConsole } = require("jsdom")); }
 catch (e) { console.error("需要 jsdom：npm i jsdom --no-save"); process.exit(2); }
 
 var html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
-var D = "2026-09-20";
+// 日历默认显示的是「这一周」—— 事件必须记在今天，否则页面上压根儿没有它，
+// 这条测试会在写完它的那一周过去之后突然变红（真发生过）。
+var _n = new Date(), _p = function (x) { return String(x).padStart(2, "0"); };
+var D = _n.getFullYear() + "-" + _p(_n.getMonth() + 1) + "-" + _p(_n.getDate());
 
 // 一条什么都带上的事件
 var FULL = {

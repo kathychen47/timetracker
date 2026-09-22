@@ -199,6 +199,20 @@
   .pomo-mate-add{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:9px;
     padding:6px 10px;font-size:12px;cursor:pointer;align-self:center}
   .pomo-mate-add:hover{color:var(--primary);border-color:var(--primary)}
+  /* 轮着做的几件事：按一下切过去。跟上面「同时做（平分）」是相反的两件事 —— 这个是切一刀，各算各的 */
+  .pomo-slots{display:none;flex-direction:column;gap:4px;margin-top:2px}
+  .pomo-slots.on{display:flex}
+  .pomo-slot-h{font-size:11.5px;color:var(--muted);text-align:center;margin-bottom:1px}
+  .pomo-slot{display:flex;align-items:center;gap:7px;padding:7px 9px;border:1px solid var(--border);
+    border-radius:10px;background:var(--bg);cursor:pointer;font-size:12.5px;line-height:1.3}
+  .pomo-slot:hover{border-color:var(--primary)}
+  .pomo-slot.on{border-color:var(--primary);background:var(--surface-2);font-weight:650}
+  .pomo-slot>i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+  .pomo-slot .ps-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+  .pomo-slot>b{flex:0 0 auto;font-size:11.5px;color:var(--muted);font-weight:600}
+  .pomo-slot.on>b{color:var(--primary)}
+  .pomo-slot .ps-x{border:none;background:none;color:var(--border);cursor:pointer;font-size:12px;padding:0 1px;line-height:1;flex:0 0 auto}
+  .pomo-slot .ps-x:hover{color:var(--primary)}
   .pomo-log{display:flex;align-items:center;gap:6px;justify-content:center;font-size:12px;color:var(--muted);cursor:pointer}
   .ev-gcal-hint{font-size:11.5px;line-height:1.7;color:var(--muted);margin:5px 0 0 22px}
   .ev-gcal-hint .lnk{background:none;border:none;padding:0;font:inherit;color:var(--primary);
@@ -3758,6 +3772,8 @@ margin-left: -22px;
             <div id="pomo-step-box"></div>
             <div id="pomo-lost-box"></div>
               <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
+              <div class="pomo-slots" id="pomo-slots"></div>
+              <button type="button" class="pomo-mate-add" id="pomo-slot-add" title="先把这一轮要来回切的几件事放好，之后按一下就切过去。时间按实际各算各的 —— 不是平分">＋ 轮着做的几件事（按一下就切）</button>
               <div class="pomo-mates" id="pomo-mates"></div>
               <button type="button" class="pomo-mate-add" id="pomo-mate-add" title="一次计时同时算给好几件事：结束时把这段时间平均分给它们，加起来还是这么多，不会虚高">＋ 同时还在做别的事（时间平分）</button>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
@@ -4695,6 +4711,17 @@ margin-left: -22px;
           <label class="switch"><input type="checkbox" id="set-pgap"><span class="sw-track"></span></label>
         </div>
       </div>
+      <div class="set-item">
+        <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">最短一段</div>
+            <div class="set-desc">正计时里换任务：这一段不到这么久就切走，就当是点错了，那几秒并给接下来那一段。<b>总时长不变，只是不单独成一条。</b>用「轮着做」那排按钮切得勤的话就选短的。<b>只管之后记的，已经记下的不动。</b></div></div>
+          <select id="set-minseg">
+            <option value="30">30 秒</option>
+            <option value="10" selected>10 秒</option>
+            <option value="1">不限（几秒也算）</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="set-pane" data-pane="cats">
@@ -5283,6 +5310,7 @@ margin-left: -22px;
     "1 分钟":"1 min",
     "1 次":"1 time",
     "1.5 倍句长":"1.5× sentence length",
+    "10 秒":"10s",
     "15 秒":"15s",
     "1年":"1y",
     "2 倍句长":"2× sentence length",
@@ -5551,6 +5579,7 @@ margin-left: -22px;
     "不进统计":"Excluded from stats",
     "不量血糖就选「不显示」，那一页会清爽很多。显示的时候点它标题那行可以收起来，收没收起会记住，下次打开还是你离开时的样子。":"If you don't track blood sugar, pick \"Hide\" and that page gets much cleaner. When shown, click its title row to collapse it — that's remembered, so next time it opens just as you left it.",
     "不限类别":"Any category",
+    "不限（几秒也算）":"No minimum (a few seconds counts)",
     "专业术语、人名、缩写这类，机器翻译只能当草稿":"For jargon, names and abbreviations, machine translation is only a first draft",
     "专业词表：识别器听不出来的词，先教给它":"Jargon list: teach the recognizer the words it can't catch",
     "专注":"Focus",
@@ -5622,6 +5651,7 @@ margin-left: -22px;
     "从云端收回…":"Bringing it back from the cloud…",
     "从哪天开始记？ 这天之前的流水永远不会进账本。":"Start tracking from which date? Transactions before this date never enter the book.",
     "从小红书/网页复制一整段菜谱贴这里":"Paste a whole recipe copied from Xiaohongshu/a web page here",
+    "从轮换里去掉":"Take out of the rotation",
     "从这天起记":"Track from this date",
     "付款方":"Payer",
     "付款方（可选）":"Payer (optional)",
@@ -5704,6 +5734,7 @@ margin-left: -22px;
     "先填上面的 API Key 再检测":"Enter the API Key above first",
     "先把 Token 粘进来":"Paste the Token in first",
     "先把菜谱文字粘进上面的框":"Paste the recipe text into the box above first",
+    "先把这一轮要来回切的几件事放好，之后按一下就切过去。时间按实际各算各的 —— 不是平分":"Line up the few things you'll be switching between this session, then one tap moves you over. Each keeps its own real time — this is not an even split.",
     "先把这个词加入生词本，再写笔记":"Add this word to your word list first, then write a note",
     "先用「📁 导入文件」把词典载入，再点上传。":"Load a dictionary with \"📁 Import file\" first, then upload.",
     "先给新分类起个名字":"Give the new category a name first",
@@ -6127,6 +6158,7 @@ margin-left: -22px;
     "已经是最后一句了 🎉":"That was the last sentence 🎉",
     "已经有别人整理好的文字稿？把音频和文本一起给我，我来对齐":"Already have a transcript someone else made? Give me the audio and the text and I'll align them",
     "已经记进税务了，点一下撤回":"Already counted for tax — click to undo",
+    "已经都在里面了 —— 上面换个任务名或分类，再点一下":"They're all in already — change the task name or category above, then tap again",
     "已结束":"Ended",
     "已解除关联。书库里的书一本没动，本地文件夹里的文件也没动。":"Unlinked. Nothing in the library changed, and nothing in the local folder changed either.",
     "已记入税务":"Logged to Tax",
@@ -6184,6 +6216,7 @@ margin-left: -22px;
     "思考中…":"Thinking…",
     "总收入（税前）":"Total income (pre-tax)",
     "总时长 ÷ 有记录的天数。没记录的日子（还没到的、休息的）不进分母，不然平均值会被摊薄":"Total time ÷ days with records. Days with nothing logged (still to come, days off) stay out of the divisor, or the average gets watered down",
+    "总时长不变，只是不单独成一条。":"The total is unchanged — it just doesn't get an entry of its own.",
     "总结":"summary",
     "总词数":"Total words",
     "总额去向":"Where the money goes",
@@ -6458,6 +6491,7 @@ margin-left: -22px;
     "更省事：装浏览器扩展（推荐）":"Easier: install the browser extension (recommended)",
     "最准 · 走 Gemini 额度":"Most accurate · uses your Gemini quota",
     "最多加入":"Add at most",
+    "最短一段":"Shortest segment",
     "最近 14 天":"Last 14 days",
     "最近 7 天":"Last 7 days",
     "最近一个月":"the past month",
@@ -6551,6 +6585,7 @@ margin-left: -22px;
     "正计时到了 3 小时上限，已按当时的时间结束并记好了 ✓":"Count-up hit the 3-hour limit — ended and logged at that moment ✓",
     "正计时接着走：离开这段时间也算进去了":"Count-up picks up again: the time you were away counts too",
     "正计时进行中":"Count-up running",
+    "正计时里换任务：这一段不到这么久就切走，就当是点错了，那几秒并给接下来那一段。":"Switching tasks while counting up: if you leave a segment sooner than this, it's treated as a misclick and those seconds go to the next segment.",
     "此环境不支持直接下载，请改用「复制文本」":"Downloads aren't supported here — use \"Copy text\" instead",
     "步":"steps",
     "步骤":"Steps",
@@ -6720,6 +6755,7 @@ margin-left: -22px;
     "用 CPU 跑（慢，但最稳）":"Running on the CPU (slow, but rock solid)",
     "用 Google 登录一次，即可":"Sign in with Google once and you get",
     "用 Whisper 重新转一遍（更准，尤其是专业词和口音）":"Transcribe again with Whisper (more accurate, especially on jargon and accents)",
+    "用「轮着做」那排按钮切得勤的话就选短的。":"Pick a short one if you switch a lot using the rotate buttons.",
     "用一句话告诉我…（Enter 发送，Shift+Enter 换行）":"Tell me in one line… (Enter to send, Shift+Enter for a new line)",
     "用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿":"In one line: 62.5 kg this morning, waist 72, thigh 52, a bit puffy",
     "用显卡跑（快 5–10 倍）":"Running on the GPU (5–10× faster)",
@@ -7021,6 +7057,7 @@ margin-left: -22px;
     "转出":"Transfer out",
     "转账":"Transfer",
     "转账/存款，不计入收支合计":"Transfers/savings, not counted in the totals",
+    "轮着做（按一下切过去）":"Rotating between (tap to switch)",
     "软件":"software",
     "软件 / 订阅":"Software / Subscriptions",
     "输入英文或中文查词… (Enter)":"Type English or Chinese to look up… (Enter)",
@@ -7077,6 +7114,7 @@ margin-left: -22px;
     "还没进 Google 的事件":"Events not in Google yet",
     "还没选":"None selected",
     "还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。":"No folder chosen yet, or the permission expired — click \"🗂 Local folder\" and pick it again.",
+    "这一件的分类已经被删掉了，把它 ✕ 掉重放一次":"This one's category has been deleted — ✕ it and add it again",
     "这一整类都不算进总时长 / 日均 / 目标进度。日历上照样显示":"This whole category is left out of total time / daily average / goal progress. Still shown on the calendar",
     "这一格看哪本书":"Which book goes in this pane",
     "这一档下面没有目标。":"Nothing in this group.",
@@ -7153,6 +7191,7 @@ margin-left: -22px;
     "这次会加进生词本":"Will be added to your word list",
     "这次计时在另一个网页里跑着，先去那边结束、或者在番茄钟那点「接管」":"This timer is running in another tab — finish it there, or tap \"Take over\" in Pomodoro",
     "这次计时在另一个网页里跑着，先点「接管」再操作":"This timer is running in another tab — tap \"Take over\" first",
+    "这次计时在另一个网页里跑着，去那边切、或者先点「接管」":"This timer is running in another tab — switch over there, or hit Take over first",
     "这次计时在另一个网页里跑着，这边只跟着看 · 想在这边继续就点「接管」":"This timer is running in another tab; this one is just following · tap \"Take over\" to continue here",
     "这次计时接到这个网页了，另一边只跟着看":"This timer moved to this tab; the other one is just following",
     "这次计时算在另一个网页名下，这边没法结束 —— 点「接管」再试":"This timer belongs to another tab, so it can't be finished here — tap \"Take over\" and try again",
@@ -7415,6 +7454,7 @@ margin-left: -22px;
     "（选大类）":"(pick a category)",
     "（选小类）":"(Pick a sub-category)",
     "＋ 再加一件":"＋ One more",
+    "＋ 再放一件进来":"＋ Add another",
     "＋ 写一条":"＋ New note",
     "＋ 同时还在做别的事（时间平分）":"＋ Also doing something else (split the time)",
     "＋ 导入书":"＋ Import book",
@@ -7429,6 +7469,7 @@ margin-left: -22px;
     "＋ 新文件夹":"＋ New folder",
     "＋ 自定义指标":"＋ Custom metric",
     "＋ 记一笔":"＋ Add entry",
+    "＋ 轮着做的几件事（按一下就切）":"＋ Things to rotate between (one tap switches)",
     "＋小类":"＋ Sub-category",
     "＋词":"＋ Keyword",
     "，一个数折算所有年份。要按每笔自己那天的汇率折，用下面那块。":"— one number covering every year. To convert each entry at its own day's rate, use the block below.",
@@ -7531,8 +7572,6 @@ margin-left: -22px;
     ["待办","^(.+?) 待办 (.+?)$","\u00011 To-dos \u00012"],
     ["待办","^(.+?) 待办$","\u00011 To-dos"],
     ["年","^(.+?)年 (.+?)(.+?)月$","\u00012\u00013/\u00011"],
-    ["把这一屏里已经过去、却没打勾的","^把这一屏里已经过去、却没打勾的 (.+?) 条全都打上勾？(.+?)$","Tick all \u00011 entries on this screen that have already happened but aren't ticked?\u00012"],
-    ["条，换成「月」或者翻到那几周再点一次。）","^（更早还有 (.+?) 条，换成「月」或者翻到那几周再点一次。）$"," (\u00011 more before this range — switch to Month, or page back to those weeks, and click again.)"],
     ["截止","^截止 (.+?)$","Due \u00011"],
     ["开始下一步：","^开始下一步：(.+?)$","Start next step: \u00011"],
     ["▶ 下一步：","^▶ 下一步：(.+?)$","▶ Next step: \u00011"],
@@ -7557,7 +7596,6 @@ margin-left: -22px;
     ["条，没传成","^传上去 (.+?) 条，没传成 (.+?) 条。$","Sent \u00011; \u00012 did not go through."],
     ["传上去","^传上去 (.+?) 条。$","Sent \u00011."],
     ["和 Google 日历对齐了","^和 Google 日历对齐了 (.+?) 条 ✓$","\u00011 entries synced with Google Calendar ✓"],
-    ["条没打勾","^☐ (.+?) 条没打勾$","☐ \u00011 not ticked"],
     ["条还没同步到 Google","^⇡ (.+?) 条还没同步到 Google$","⇡ \u00011 not yet synced to Google"],
     ["之后会自动补传。","^之后会自动补传。(.+?)$","and they'll upload automatically after that.\u00011"],
     ["计入：","^计入：(.+?)$","Counts toward: \u00011"],
@@ -7570,14 +7608,14 @@ margin-left: -22px;
     ["」？会同步删除你 Google 日历里的这个事件。","^删除「(.+?)」？会同步删除你 Google 日历里的这个事件。$","Delete \"\u00011\"? This also deletes the event in your Google Calendar."],
     ["」下新建小类，名称：","^在「(.+?)」下新建小类，名称：$","New sub-category under \"\u00011\", name:"],
     ["」，接着做别的","^记下「(.+?) (.+?)」，接着做别的$","Logged \"\u00011 \u00012\" — on to the next thing"],
-    ["秒，当成点错了，没记成一段","^刚才那下不到 (.+?) 秒，当成点错了，没记成一段$","That was under \u00011s — treated as a misclick, no segment logged"],
+    ["秒，当成点错了，没记成一段（设置里可以调）","^刚才那下不到 (.+?) 秒，当成点错了，没记成一段（设置里可以调）$","That was under \u00011s — treated as a misclick, no segment logged (adjustable in Settings)"],
     ["这次没记进日历（「完成后记入日历」没勾）·","^这次没记进日历（「完成后记入日历」没勾）· (.+?)$","Not logged to the calendar this time (\"Log to calendar when done\" isn't ticked) · \u00011"],
-    ["暂停","^暂停 (.+?)$","Paused \u00011"],
     ["没能存住的专注-","^没能存住的专注-(.+?)-(.+?)(.+?)\\.json$","unsaved-focus-\u00011-\u00012\u00013.json"],
     ["的专注","^这次 (.+?) 的专注$","This \u00011 focus session"],
     ["」吗？（当前这段先结束并记下来）","^现在有计时在跑，要换成「(.+?)」吗？（当前这段先结束并记下来）$","A timer is already running — switch to \"\u00011\"? (The current stretch is ended and logged first)"],
     ["专注","^专注(.+?)$","Focus\u00011"],
     ["补记好了：","^补记好了：(.+?) (.+?)–(.+?)$","Caught up: \u00011 \u00012–\u00013"],
+    ["秒，已并给挨着的那段（总时长没变，设置里可以调）","^有 (.+?) 小段不到 (.+?) 秒，已并给挨着的那段（总时长没变，设置里可以调）$","\u00011 snippet(s) were under \u00012s and got merged into the segment next to them (total time unchanged — adjustable in Settings)"],
     ["，点「开始」接着走","^上次暂停在 (.+?)，点「开始」接着走$","You paused at \u00011 — tap \"Start\" to carry on"],
     ["，点「开始」接着走","^上次暂停时还剩 (.+?)，点「开始」接着走$","\u00011 left when you paused — tap \"Start\" to carry on"],
     ["番茄钟接着走，还剩","^番茄钟接着走，还剩 (.+?) 分钟$","Pomodoro resumed — \u00011 min left"],
@@ -12216,6 +12254,10 @@ margin-left: -22px;
   var pomoTask=document.getElementById("pomo-task"),pomoCat=document.getElementById("pomo-cat"),pomoSub=document.getElementById("pomo-sub"),pomoToCal=document.getElementById("pomo-tocal");
   function pomoCatOptions(){return catsByUse().map(function(c){return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("")+'<option value="__new">＋ 新建大类…</option>';}
   pomoCat.innerHTML=pomoCatOptions();pomoCat.value="focus";
+  // 「专注」这个大类被她删掉的话，上面这行会把 select 设成一个不存在的值 —— 下拉显示空白，
+  // 而且 pomoCat.value 是 ""，于是归类、轮换那几行的高亮、累计时间全都对不上。
+  // refreshCatSelects 里早就有这条退路了，开场这一次漏了。
+  if(!pomoCat.value&&cats[0])pomoCat.value=cats[0].key;
   function fillPomoSubs(){var subs=subsByUse(pomoCat.value),p=parentObj(pomoCat.value);
     pomoSub.innerHTML='<option value="">'+(subs.length?"（选小类）":"（无小类）")+'</option>'+
       subs.map(function(s){return '<option value="'+s.key+'">'+esc(s.name)+'</option>';}).join("")+
@@ -12395,6 +12437,7 @@ margin-left: -22px;
       fillPomoSubs();
       if(ps&&subsOf(pomoCat.value).some(function(s){return s.key===ps;}))pomoSub.value=ps;
       pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
+      renderSlots(true);                      // 轮换那几件的色点/名字跟着大类改名换色走
     }catch(e){}
     try{
       var gc=gCat.value,gs=gSub.value;
@@ -12453,6 +12496,97 @@ margin-left: -22px;
     return list.map(function(x,i){
       return (x.gap?(trv("暂停")+" "):(x.t+" "))+(mn[i]<1?secLabel(x.sec):(mn[i]+trv("分")));}).join(" · ");}
   function clearSegs(){cancelPause();pSegs=[];pSegStart=0;segSig="";renderSegs();clearMates();}
+  // ---------- 轮着做的几件事：按一下就切过去 ----------
+  // 她说的：「每次这样切换有点麻烦，有没有更方便的切换方式，比如提前定好要切换的几个任务
+  // 然后就变成了按钮？」原来切一次是「展开大类下拉 → 找 → 点 →（还得改小类）→ 回去改名字」，
+  // 来回切两件事六七下。
+  //
+  // 跟上面那块「同时还在做别的事」是**相反**的两件事，界面上千万别混：
+  //   同时做 = 一份时间平分给几件（60 分 → 30 + 30）；
+  //   轮着做 = 切一刀，各算各的实际时长（20 + 40）。走的就是现成的 switchTask。
+  // 光靠图标区分不住，所以标题写死成「轮着做（按一下切过去）」。
+  //
+  // 每一行右边那个秒数是**这一次计时里这件事已经走了多久**。轮着做的时候光看总时间
+  // 根本不知道哪件被冷落了，这一列才是这个功能真正有用的地方。
+  var pSlots=load("tt_pomoslots",[])||[],slotSig="";
+  var slotsBox=document.getElementById("pomo-slots"),slotAdd=document.getElementById("pomo-slot-add");
+  function saveSlots(){save("tt_pomoslots",pSlots);}
+  function slotLabel(s){return ((s&&s.t)||"").trim()||catLabelOf(s.cat,s.sub||null);}
+  function slotKey(s){return slotLabel(s)+"\u0000"+s.cat+"\u0000"+(s.sub||"");}
+  function slotSame(s){return !!s&&pomoCat.value===s.cat&&(pomoSub.value||null)===(s.sub||null)&&
+    (pomoTask.value||"").trim()===((s.t||"").trim());}
+  function slotSecs(){
+    var m={},list=(timerMode==="up")?allSegs():[];
+    list.forEach(function(x){if(x.gap)return;
+      var k=x.t+"\u0000"+x.cat+"\u0000"+(x.sub||"");m[k]=(m[k]||0)+(+x.sec||0);});
+    return m;}
+  function renderSlots(force){
+    if(!slotsBox||!slotAdd)return;
+    var secs=slotSecs();
+    var sig=pSlots.map(function(s){return slotKey(s)+"|"+secLabel(secs[slotKey(s)]||0)+"|"+(slotSame(s)?1:0);}).join(",");
+    if(!force&&sig===slotSig)return; slotSig=sig;   // 秒数没跨过整分就不重绘，免得每半秒闪一下、按都按不中
+    slotsBox.classList.toggle("on",!!pSlots.length);
+    slotsBox.innerHTML=!pSlots.length?"":('<div class="pomo-slot-h">轮着做（按一下切过去）</div>'+
+      pSlots.map(function(s,i){
+        var sec=secs[slotKey(s)]||0,full=slotLabel(s)+" · "+catLabelOf(s.cat,s.sub||null);
+        return '<div class="pomo-slot'+(slotSame(s)?" on":"")+'" data-i="'+i+'" title="'+esc(full)+'">'+
+          '<i style="background:'+subColor(s.cat,s.sub||null)+'"></i>'+
+          '<span class="ps-t">'+esc(slotLabel(s))+'</span>'+
+          '<b>'+(sec>0?secLabel(sec):"")+'</b>'+
+          '<button type="button" class="ps-x" title="从轮换里去掉">\u2715</button></div>';}).join(""));
+    slotAdd.textContent=pSlots.length?"＋ 再放一件进来":"＋ 轮着做的几件事（按一下就切）";
+    slotAdd.style.display=(pSlots.length>=6)?"none":"";}
+  // 最近两周真记下来过的「名字 + 大类 + 小类」，新鲜的在前。
+  // 有它，这一块第一次点就已经有东西了 —— 不用先坐下来配置一遍。
+  function recentCombos(n){
+    var cut=dstr(new Date(Date.now()-14*864e5)),seen={},out=[];
+    events.slice().sort(function(a,b){
+      return ((b.date||"")+(b.start||"")).localeCompare((a.date||"")+(a.start||""));}).forEach(function(e){
+      if(out.length>=n||!e||e.demo||!e.cat||(e.date||"")<cut)return;
+      var t=(e.title||"").trim();if(!t)return;
+      if(!cats.some(function(c){return c.key===e.cat;}))return;
+      var k=t+"\u0000"+e.cat+"\u0000"+(e.sub||"");if(seen[k])return;seen[k]=1;
+      out.push({t:t,cat:e.cat,sub:e.sub||null});});
+    return out;}
+  function slotHas(x){return pSlots.some(function(p){
+    return p.cat===x.cat&&(p.sub||null)===(x.sub||null)&&(p.t||"").trim()===((x.t||"").trim());});}
+  // ＋ 的规矩：先拿手上这件（上面输入框里的名字 + 大类 + 小类）。
+  // 手上没名字、或者这件已经在里面了，就从最近用过的里挑没放进去的 ——
+  // 而且**第一次点一口气铺 3 件**，之后一次加一件。不喜欢的按 ✕ 去掉就是了。
+  function addSlot(){
+    if(pSlots.length>=6)return;
+    var cur={t:(pomoTask.value||"").trim(),cat:pomoCat.value,sub:pomoSub.value||null},picked=[];
+    if(cur.cat&&cur.t&&!slotHas(cur))picked.push(cur);
+    if(!picked.length){var want=pSlots.length?1:3;
+      recentCombos(20).forEach(function(r){if(picked.length>=want||slotHas(r))return;picked.push(r);});}
+    if(!picked.length&&cur.cat&&!slotHas(cur))picked.push(cur);   // 一条历史都没有：那就放手上这个分类
+    if(!picked.length){pomoNote("已经都在里面了 —— 上面换个任务名或分类，再点一下");return;}
+    picked.forEach(function(p){if(pSlots.length<6)pSlots.push({t:p.t||"",cat:p.cat,sub:p.sub||null});});
+    saveSlots();renderSlots(true);}
+  // 按一下 = 把手上这一段结算掉，然后整个人换到那一件上。
+  // switchTask 必须在改输入框**之前**调 —— 它靠 pomoTask/pomoCat 的当前值给前面那段记账。
+  function gotoSlot(i){
+    var s=pSlots[i];if(!s||!s.cat)return;
+    if(!cats.some(function(c){return c.key===s.cat;})){pomoNote("这一件的分类已经被删掉了，把它 ✕ 掉重放一次");return;}
+    if(pFollow){pomoNote("这次计时在另一个网页里跑着，去那边切、或者先点「接管」");return;}
+    if(slotSame(s)){renderSlots(true);return;}              // 已经在这件上了，别白切一刀
+    if(pTimer&&timerMode==="up")switchTask("slot");
+    pomoTask.value=s.t||"";
+    pomoCat.value=s.cat;fillPomoSubs();
+    pomoSub.value=(s.sub&&subsOf(s.cat).some(function(x){return x.key===s.sub;}))?s.sub:"";
+    // 这三个「变之前的值」得跟着走，否则她下一次真去动下拉时，会拿一个旧值去给这一段记账
+    pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;pomoTaskPrev=pomoTask.value;
+    pomoManual=true;markPomoAuto(false);                    // 按钮按的就是它，别再按名字猜一遍
+    savePomoLast();savePomoRun();renderSlots(true);drawPomo();}
+  if(slotsBox)slotsBox.addEventListener("click",function(e){
+    var row=e.target.closest(".pomo-slot");if(!row)return;
+    var i=+row.getAttribute("data-i");
+    if(e.target.closest(".ps-x")){pSlots.splice(i,1);saveSlots();renderSlots(true);return;}
+    gotoSlot(i);});
+  // 这一排是「预设」，不是计时状态 —— 另一个网页在跑着也照样能加减，
+  // 所以不走 followGuard（真正不让切的判断在 gotoSlot 里）。
+  if(slotAdd)slotAdd.addEventListener("click",addSlot);
+  renderSlots(true);
   function renderSegs(){
     if(!segsBox)return;
     var list=(timerMode==="up")?allSegs():[],multi=list.length>1;
@@ -12471,30 +12605,37 @@ margin-left: -22px;
   // 切一刀。mode="cat" 是改了分类，"name" 是改了任务名。
   // useCat/useSub 是"变之前"的分类 —— change 事件触发时下拉已经是新值了，
   // 要结算的那一段属于旧值，不传的话会把前面那段整个记成新分类。
-  var MINSEG=30;
+  // 「最短一段」原来写死 30 秒。有了上面那排「轮着做」的按钮，来回切变得很容易 ——
+  // 30 秒会开始吃掉她真实的短切换，所以挪进设置：30 秒 / 10 秒（默认）/ 不限。
+  // 注意这里是函数不是常量：设置改完当场生效，不用刷新。
+  function minSeg(){var v=+settings.minseg;return (v===30||v===10||v===1)?v:10;}
   function switchTask(mode,useCat,useSub){
     if(!pTimer||timerMode!=="up")return;
     var ck=useCat||pomoCat.value;
     var sk=(typeof useSub==="undefined")?(pomoSub.value||null):(useSub||null);
     var sec=curSegSec(),lab=(pomoTask.value||"").trim()||catLabelOf(ck,sk);
-    if(sec>=MINSEG){
+    if(sec>=minSeg()){
       pSegs.push({t:lab,cat:ck,sub:sk,sec:sec});pSegStart=pElapsed;
       pomoNote("记下「"+lab+" "+secLabel(sec)+"」，接着做别的");}
     else if(sec>0)
-      // 不到 30 秒就切走 —— 当成点错了。不落段、也不动 pSegStart，
+      // 不够「最短一段」就切走 —— 当成点错了。不落段、也不动 pSegStart，
       // 这几秒直接算进接下来那一段，记录里不会留一条十几秒的噪音。
-      pomoNote("刚才那下不到 "+MINSEG+" 秒，当成点错了，没记成一段");
+      pomoNote("刚才那下不到 "+minSeg()+" 秒，当成点错了，没记成一段（设置里可以调）");
     if(mode==="cat"){pomoTask.value="";markPomoAuto(false);}   // 换了类就是换了事，名字重打
     savePomoRun();renderSegs();drawPomo();}
-  // 结算前再扫一遍：不到 30 秒的段并给相邻的段。
+  // 结算前再扫一遍：不够「最短一段」的并给相邻的段。
   // 最后那一段是被"停止"结束的，走不到上面那条误触判断，只能在这儿收。
+  // 这一步原来是一声不吭的 —— 段落条上明明有「STAT462 8 秒」，一按停止就没了，
+  // 界面上没有任何地方说过它去哪儿了。所以数一下，落库后告诉她。
+  var tinyMerged=0;
   function dropTiny(list){
+    tinyMerged=0;
     if(!list||list.length<2)return list;
     var out=list.slice(),guard=0;
     while(guard++<60){
       var i=-1;
       for(var k=0;k<out.length;k++)
-        if(!out[k].gap&&(+out[k].sec||0)<MINSEG){i=k;break;}
+        if(!out[k].gap&&(+out[k].sec||0)<minSeg()){i=k;break;}
       if(i<0)break;
       var prev=null,next=null;
       for(var x=i-1;x>=0;x--)if(!out[x].gap){prev=out[x];break;}
@@ -12502,7 +12643,7 @@ margin-left: -22px;
       var host=prev||next;
       if(!host)break;                                   // 只剩这一个真段了，留着
       host.sec=(+host.sec||0)+(+out[i].sec||0);
-      out.splice(i,1);}
+      out.splice(i,1);tinyMerged++;}
     return mergeSegs(out);}
   function liveMates(list){                               // 填了大类的才算数 —— 空行只是还没填完
     return ((list===undefined?pMates:list)||[]).filter(function(m){return m&&m.cat;}).map(function(m){
@@ -12628,7 +12769,7 @@ margin-left: -22px;
     var idleDial=(!pFollow&&timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(!pFollow&&timerMode==="down"&&!pTimer)?"grab":"default";
     if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
-    renderSegs();
+    renderSegs();try{renderSlots();}catch(e){}
     if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
       if(!noting)pomoHint.textContent=hintText();
       pomoHint.style.visibility=(noting||pFollow||idleDial||(timerMode==="up"&&!pTimer&&!pElapsed))?"visible":"hidden";}
@@ -12920,7 +13061,9 @@ margin-left: -22px;
     var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
     if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
     pLog("finishUp:落库");
-    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);}
+    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);
+      // dropTiny 刚才可能悄悄并掉了几小段 —— 段落条上看得见的东西没了，总得说一声
+      if(tinyMerged>0)pomoNote("有 "+tinyMerged+" 小段不到 "+minSeg()+" 秒，已并给挨着的那段（总时长没变，设置里可以调）");}
     else if(pElapsed>0){pLog("finishUp:不到1分钟丢弃");pomoNote("不到 1 分钟，没记进日历");}
     pElapsed=0;pBase=0;pRid="";clearSegs();save("tt_pomorun",null);
     pomoStep=null;save("tt_pomostep",null);try{drawStepChip();}catch(e){}   // 这一步的这一段结束了
@@ -13015,6 +13158,9 @@ margin-left: -22px;
     drawPomo();}
   setFocus.addEventListener("change",function(){settings.focus=+setFocus.value||25;save("tt_settings",settings);if(!pTimer&&timerMode==="down"&&pMode2==="focus")resetPomo();});
   setBreak.addEventListener("change",function(){settings.brk=+setBreak.value||5;save("tt_settings",settings);});
+  document.getElementById("set-minseg").addEventListener("change",function(){
+    settings.minseg=+this.value||10;save("tt_settings",settings);
+    try{renderSegs();}catch(e){}});
   document.getElementById("set-pgap").addEventListener("change",function(){
     settings.pgap=this.checked;save("tt_settings",settings);
     try{renderSegs();}catch(e){}try{renderCal();}catch(e){}});   // 正跑着也能改：段落条和日历上那块当场重画
@@ -13834,7 +13980,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-pgap").checked=!!settings.pgap;try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-pgap").checked=!!settings.pgap;document.getElementById("set-minseg").value=String(minSeg());try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
@@ -14005,7 +14151,7 @@ margin-left: -22px;
   var pulledOnce=false;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
-  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef","tt_matememo"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
+  var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef","tt_matememo","tt_pomoslots"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -14180,7 +14326,9 @@ margin-left: -22px;
     todos=load("tt_todos",[])||[];memos=load("tt_memos",[])||[];goals=load("tt_goals",[])||[];
     cats=load("tt_cats",cats)||cats;pstats=load("tt_pstats",{})||{};settings=load("tt_settings",settings)||settings;gcalDefault=load("tt_gcaldefault",false);
     var _ga=load("tt_gcalauto",null);if(_ga&&typeof _ga==="object")gcalAuto=_ga;
-    words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};mateMemo=load("tt_matememo",{})||{};taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
+    words=load("tt_words",[])||[];wbTrash=load("tt_wbtrash",{})||{};catMemo=load("tt_catmemo",{})||{};mateMemo=load("tt_matememo",{})||{};
+    // pSlots 必须还是同一个数组（渲染和点击都持着它），所以原地换内容
+    try{var _sl=load("tt_pomoslots",[])||[];pSlots.length=0;_sl.forEach(function(x){pSlots.push(x);});renderSlots(true);}catch(e){}taxRecs=load("tt_taxrec",[])||[];taxRates=load("tt_taxrates",{})||{};
     recipes=load("tt_recipes",[])||[];orders=load("tt_orders",[])||[];shareOn=load("tt_shareon",false);if(state.tab==="food")renderFood();
     skills=load("tt_skills",[])||[];if(state.tab==="todo")try{renderSkills();}catch(e){}
     recs=load("tt_recs",[])||[];if(state.tab==="rec")try{recRenderList();}catch(e){}   // 云端拉下来的是文字，音频还在各自的机器上
@@ -24371,6 +24519,11 @@ margin-left: -22px;
         try{var mm=load("tt_pomomates",[])||[];
           pMates.length=0;mm.forEach(function(x){pMates.push(x);});
           renderMates();}catch(_e){}
+        return;}
+      if(e.key==="tt_pomoslots"){                             // 另一个网页改了「轮着做的几件事」
+        try{var sl=load("tt_pomoslots",[])||[];
+          pSlots.length=0;sl.forEach(function(x){pSlots.push(x);});
+          renderSlots(true);}catch(_e){}
         return;}
       if(e.key==="tt_pomoping"){                               // 新开的网页在问"这次计时还有人管吗"
         try{if(!pFollow){var pr=load("tt_pomorun",null);

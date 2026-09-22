@@ -30,6 +30,8 @@ var CODE = [
   src.slice(ln("function evSegs(e){"), ln("function evMinFor(e,ck,sk){")).join(NL),
   // 段 + 洞 + mergeSegs
   src.slice(ln("var GAPMIN=30,"), ln("function secLabel(sec){") + 1).join(NL),
+  // 「最短一段」现在是设置项，dropTiny 靠它 —— 原样抠出来，别在测试里另写一份
+  src.slice(ln("function minSeg(){"), ln("function minSeg(){") + 1).join(NL),
   // 碎段合并 + liveMates + splitEven
   src.slice(ln("function dropTiny(list){"), ln("function logFocusToCalendar(")).join(NL),
   // 备注里那几个分钟数（最大余数法）
@@ -55,7 +57,7 @@ var ctx = {
   clearMates: function () { }, renderMates: function () { },
   evNetMin: function (e) { return e.__min; },      // 统计用的「实际做了多久」，这里直接给
   evRecMin: function (e) { return e.__min; },
-  settings: { pgap: false }, MINSEG: 30, GAPMIN: 30,
+  settings: { pgap: false, minseg: 30 }, GAPMIN: 30,
   pFollow: false, SOLO: false, pRid: "",
   timerMode: "down", pElapsed: 0, pTotal: 1500, pLeft: 0, pSegs: [], pSegStart: 0, segSig: "",
   pomoTask: { value: "" }, pomoCat: { value: "phd" }, pomoSub: { value: "" },

@@ -32,6 +32,8 @@ function ln(pat) {
 var CODE = [
   // 段 + 洞 + 「并成一整段」的开关
   src.slice(ln("var GAPMIN=30,"), ln("function secLabel(sec){") + 1).join(NL),
+  // 「最短一段」现在是设置项，dropTiny 靠它 —— 原样抠出来，别在测试里另写一份
+  src.slice(ln("function minSeg(){"), ln("function minSeg(){") + 1).join(NL),
   // 结算前把碎段并掉
   src.slice(ln("function dropTiny(list){"), ln("function logFocusToCalendar(")).join(NL),
   // 落库时算 segs / 洞的总秒数 / 末尾那个洞（原样抠出来包成一个函数）
@@ -59,7 +61,7 @@ var ctx = {
   catName: function (k) { return k; }, subName: function (c, s) { return s; },
   renderSegs: function () { }, drawLostChip: function () { }, pomoNote: function () { },
   savePomoRun: function () { }, drawPomo: function () { }, markPomoAuto: function () { },
-  settings: { pgap: false }, MINSEG: 30,
+  settings: { pgap: false, minseg: 30 },
   pMates: [],                                  // 「同时还在做别的事」空着 —— 平分那一支单独有 test-pomomate.js
   pFollow: false, SOLO: false, pRid: "",
   timerMode: "up", pElapsed: 0, pTotal: 1500, pLeft: 0, pSegs: [], pSegStart: 0, segSig: "",
