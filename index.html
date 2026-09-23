@@ -285,15 +285,10 @@
     animation:catIdle 1.6s steps(2) infinite}
   /* 站着（没在计时）：第 0 行两帧，慢慢摇 */
   @keyframes catIdle{from{background-position-x:0%}to{background-position-x:66.666%}}
-  /* 走路（计时中）：第 1 行两帧 + 沿着这条带子来回走 */
-  .pomo-kitty.run{background-position-y:33.333%;
-    animation:catIdle .42s steps(2) infinite, catWalk 22s linear infinite}
-  @keyframes catWalk{
-    0%{left:0;transform:scaleX(-1)}
-    48%{left:calc(100% - 64px);transform:scaleX(-1)}
-    50%{left:calc(100% - 64px);transform:scaleX(1)}
-    98%{left:0;transform:scaleX(1)}
-    100%{left:0;transform:scaleX(1)}}
+  /* 走路：只负责换帧，**位置和朝向交给 JS** ——
+     原来位置是 CSS 关键帧管的，那样它只会从头走到尾再走回来，
+     中间想停下来站一会儿、趴一下都做不到（关键帧一旦开始就必须跑完）。 */
+  .pomo-kitty.run{background-position-y:33.333%;animation:catIdle .42s steps(2) infinite}
   /* 趴着睡（暂停 / 跟着看别的网页）：第 2、3 行第 3 格来回，像在呼吸 */
   .pomo-kitty.rest{background-position-x:66.666%;
     animation:catRest 2.4s steps(2) infinite}
@@ -13035,12 +13030,48 @@ margin-left: -22px;
   // 那只猫：跑着就走，停着就趴下睡，记完一次蹦一下。
   // 只看状态、不碰数字 —— 它坏了顶多是不动，绝不该影响计时或落库，所以调用处一律包在 try 里。
   var catEl=document.getElementById("pomo-kitty"),catHopT=null;
+  // 计时跑着的时候它不是一直走：走一阵 → 停下来站会儿 → 偶尔干脆趴下歇一下 → 再起来走。
+  // 位置和朝向都在这儿算，CSS 只管换帧。
+  //   catAct  walk = 在走 · stand = 站着 · lie = 趴着歇
+  //   catX    离左边多少像素；catDir +1 往右、-1 往左（原图猫是朝左的，往右要翻过来）
+  //   catTill 这个动作演到什么时候（时间戳）
+  var catAct="stand",catX=0,catDir=1,catTill=0,catT=null;
+  function catLane(){var l=catEl&&catEl.parentNode;return l?Math.max(0,l.clientWidth-64):0;}
+  function catPose(){
+    if(!catEl)return;
+    catEl.classList.toggle("run",catAct==="walk");
+    catEl.classList.toggle("rest",catAct==="lie");
+    catEl.style.left=Math.round(catX)+"px";
+    catEl.style.transform=(catDir>0)?"scaleX(-1)":"scaleX(1)";}
+  function catNext(now){
+    // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器
+    if(catAct==="walk"){
+      if(Math.random()<.25){catAct="lie";catTill=now+6000+Math.random()*9000;}
+      else{catAct="stand";catTill=now+2500+Math.random()*5000;}
+    }else{
+      catAct="walk";catTill=now+7000+Math.random()*13000;
+      if(Math.random()<.35)catDir=-catDir;}}
+  function catTick(){
+    if(!catEl)return;
+    var now=Date.now(),w=catLane();
+    if(now>=catTill)catNext(now);
+    if(catAct==="walk"){
+      catX+=catDir*1.6;
+      if(catX<=0){catX=0;catDir=1;}                    // 撞墙就转身
+      else if(catX>=w){catX=w;catDir=-1;}}
+    else if(catX>w)catX=w;                             // 侧栏被拉窄了，别站到框外面
+    catPose();}
+  function catRun(on){
+    if(on){if(!catT)catT=setInterval(catTick,120);}
+    else if(catT){clearInterval(catT);catT=null;}}
   function drawCat(){
     if(!catEl)return;
-    var walking=!!pTimer&&!pFollow;
+    var live=!!pTimer&&!pFollow;
     var resting=pFollow||(!pTimer&&((timerMode==="up")?pElapsed>0:(pLeft>0&&pLeft<pTotal)));
-    catEl.classList.toggle("run",walking);
-    catEl.classList.toggle("rest",!walking&&resting);}
+    catRun(live);
+    if(live){if(!catTill)catNext(Date.now());catPose();return;}
+    // 没在计时：停表就趴下睡，从没走过就站着；顺便把它送回左边
+    catAct=resting?"lie":"stand";catTill=0;catX=0;catDir=1;catPose();}
   function catHop(){
     if(!catEl)return;
     catEl.classList.remove("hop");void catEl.offsetWidth;catEl.classList.add("hop");
