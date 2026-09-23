@@ -184,7 +184,7 @@
   .pomo-side-h{font-size:12px;font-weight:640;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
   .pomo-mode-seg{align-self:center}
   .pomo-task{display:flex;flex-direction:column;gap:9px}
-  .pomo-task input[type=text]{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:13.5px;text-align:center}
+  .pomo-task input[type=text]{padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);font-size:12.5px;text-align:center}
   .pomo-task-cat{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}
   .pomo-task-cat select{padding:7px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
   .pomo-task-cat select.auto{border-style:dashed;border-color:var(--primary)}   /* 虚线 = 按任务名自动归的类 */
@@ -208,15 +208,22 @@
   .pomo-slot:hover{border-color:var(--primary)}
   .pomo-slot.on{border-color:var(--primary);background:var(--surface-2);font-weight:650}
   .pomo-slot>i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
-  .pomo-slot .ps-t{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left}
+  /* 名字放不下就折行，不打点省略 —— 被截掉的那一截往往正是能区分两块牌子的部分
+     （「UC Online - DATA401/STAT462」一截就只剩「UC Online - DATA4…」）。 */
+  .pomo-slot .ps-t{flex:1 1 auto;min-width:0;text-align:left;word-break:break-word}
   .pomo-slot>b{flex:0 0 auto;font-size:11.5px;color:var(--muted);font-weight:600}
   .pomo-slot.on>b{color:var(--primary)}
   .pomo-slot .ps-x{border:none;background:none;color:var(--border);cursor:pointer;font-size:12px;padding:0 1px;line-height:1;flex:0 0 auto}
   .pomo-slot .ps-x:hover{color:var(--primary)}
   /* 建牌子那一行：一个同色小方块 + 大类 + 小类 + ＋ */
   .pomo-pick{display:flex;align-items:center;gap:5px;margin-top:3px}
+  /* 色点在框里面：外面这个 span 当框，里面的 select 自己不画边 */
+  .pomo-pick .pk-sel{flex:1 1 0;min-width:0;display:flex;align-items:center;gap:5px;padding:0 4px 0 7px;
+    border:1px solid var(--border);border-radius:9px;background:var(--bg)}
   .pomo-pick .pk-dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto;background:var(--border)}
-  .pomo-pick select{flex:1 1 0;min-width:0;padding:6px 4px;border:1px solid var(--border);border-radius:9px;
+  .pomo-pick .pk-sel>select{flex:1 1 auto;min-width:0;border:none;background:none;padding:6px 0;
+    color:var(--text);font-size:12px}
+  .pomo-pick>select{flex:1 1 0;min-width:0;padding:6px 4px;border:1px solid var(--border);border-radius:9px;
     background:var(--bg);color:var(--text);font-size:12px}
   .pomo-pick select:disabled{opacity:.55}
   .pomo-pick .pk-add{flex:0 0 auto;border:1px dashed var(--border);background:none;color:var(--muted);
@@ -3797,13 +3804,12 @@ margin-left: -22px;
               <div class="pomo-task-cat" style="display:none"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <div class="pomo-slots" id="pomo-slots"></div>
               <div class="pomo-pick" id="pomo-pick">
-                <i class="pk-dot" id="pk-dot"></i>
-                <select id="pk-cat" title="新牌子的大类"></select>
+                <span class="pk-sel"><i class="pk-dot" id="pk-dot"></i><select id="pk-cat" title="新牌子的大类"></select></span>
                 <select id="pk-sub" title="新牌子的小类"></select>
                 <button type="button" class="pk-add" id="pk-add" title="把选好的这一对加成一块牌子">＋</button>
               </div>
-              <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
-              <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
+              <label class="pomo-log" style="display:none"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
+              <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼</label>
             </div>
             <div class="ring" id="ring"><div class="ring-knob-rot"><span class="ring-knob"></span></div><div class="in"><div>
               <div class="time" id="pomo-time">25:00</div>
@@ -7378,6 +7384,7 @@ margin-left: -22px;
     "🎯 目标打卡 +1":"🎯 Goal check-in +1",
     "🏠 我的文件（最外层）":"🏠 My files (top level)",
     "🏷️ 分类":"🏷️ Categories",
+    "🐟 摸鱼":"🐟 Slacking",
     "🐟 摸鱼 · 这段时间和别的事重叠":"🐟 Multitasking · overlaps with another event",
     "🐟 摸鱼（时间可重复计算）":"🐟 Slacking (time can double-count)",
     "👁 预览":"👁 Preview",
@@ -12611,7 +12618,7 @@ margin-left: -22px;
   // 而且她底下有两个都叫 Others 的小类。
   function slotText(s){
     var cn=catName(s.cat)||"",sn=s.sub?subName(s.cat,s.sub):"";
-    return sn?(cn+"/"+sn):cn;}
+    return sn?(cn+" - "+sn):cn;}
   function sameCS(a,b){return a.cat===b.cat&&(a.sub||null)===(b.sub||null);}
   function curSet(){                                      // 现在正在做的那几件
     var out=[{cat:pomoCat.value,sub:pomoSub.value||null}];
@@ -12978,7 +12985,7 @@ margin-left: -22px;
       if(document.activeElement!==pomoTask)pomoTask.value=r.task||"";
       if(r.cat&&pomoCat.value!==r.cat){pomoCat.value=r.cat;fillPomoSubs();}
       if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
-      pomoToCal.checked=(r.tocal!==false);}
+      pomoToCal.checked=true;}                          // 这个勾已经撤掉了，永远算勾着
     pSegs=(r.segs&&r.segs.length)?r.segs.slice():[];pSegStart=+r.segStart||0;
     if(timerMode==="up")pElapsed=r.run?Math.min(UPMAX,(+r.base||0)+Math.max(0,Math.round((Date.now()-(+r.startAt||Date.now()))/1000))):(+r.elapsed||+r.base||0);
     else pLeft=r.run?Math.max(0,Math.round(((+r.endAt||0)-Date.now())/1000)):Math.max(0,+r.left||0);
@@ -13232,7 +13239,7 @@ margin-left: -22px;
     if(r.task)pomoTask.value=r.task;
     if(r.cat){pomoCat.value=r.cat;fillPomoSubs();pomoManual=true;}   // 还在跑的这次用它自己的分类，别被自动识别改掉
     if(r.sub){try{pomoSub.value=r.sub;}catch(e){}}
-    pomoToCal.checked=(r.tocal!==false);
+    pomoToCal.checked=true;                             // 同上：旧存档里记着 false 也不让它把这次弄丢
     pSegs=(r.segs&&r.segs.length)?r.segs.slice():[];pSegStart=+r.segStart||0;segSig="";  // 换任务切出来的段一起恢复
     if(timerMode==="up"){
       pBase=+r.base||0;pStartAt=+r.startAt||Date.now();

@@ -124,7 +124,7 @@ function secOf(cat, sub) {
   pickCat("cms"); add();                       // 没有小类的大类也能单独成一块
   ok(slots().length === 4, "一共 4 块，实际 " + slots().length);
   ok(rows().length === 4, "界面上画出了 4 行");
-  ok(label(rows()[0]) === "PhD/Research", "牌子上大类小类都写，实际 " + label(rows()[0]));
+  ok(label(rows()[0]) === "PhD - Research", "牌子上大类小类都写，实际 " + label(rows()[0]));
   ok(label(rows()[3]) === "CMS", "没有小类的写大类名，实际 " + label(rows()[3]));
 
   // ---- 3. 小类重名不再是问题 ----
@@ -132,7 +132,7 @@ function secOf(cat, sub) {
   pickCat("phd"); pickSub("oth2"); add();
   pickCat("uco"); pickSub("oth"); add();
   var texts = rows().map(label);
-  ok(texts.indexOf("PhD/Others") >= 0 && texts.indexOf("UC Online/Others") >= 0,
+  ok(texts.indexOf("PhD - Others") >= 0 && texts.indexOf("UC Online - Others") >= 0,
     "两块 Others 各写各的：" + JSON.stringify(texts));
   rows()[5].querySelector(".ps-x").click();    // 收拾干净，后面按下标点
   rows()[4].querySelector(".ps-x").click();
@@ -225,9 +225,9 @@ function secOf(cat, sub) {
     "正跑着打字没把分类换掉，实际 " + $("#pomo-cat").value + "/" + $("#pomo-sub").value);
   ok((run().segs || []).length === nseg2, "也没悄悄切出一段");
   var hinted = rows().filter(function (r) { return r.classList.contains("hint"); });
-  ok(hinted.length === 1 && label(hinted[0]) === "UC Online/STAT462",
+  ok(hinted.length === 1 && label(hinted[0]) === "UC Online - STAT462",
     "只在那块牌子上画了一圈虚线：" + JSON.stringify(hinted.map(label)));
-  ok(onRows().length === 1 && label(onRows()[0]) === "PhD/Research", "亮着的还是原来那块");
+  ok(onRows().length === 1 && label(onRows()[0]) === "PhD - Research", "亮着的还是原来那块");
   ti.value = ""; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
   await wait(150);
   ok(rows().filter(function (r) { return r.classList.contains("hint"); }).length === 0,
@@ -251,7 +251,7 @@ function secOf(cat, sub) {
 function slotName(x) {
   var c = CATS.filter(function (y) { return y.key === x.cat; })[0] || {};
   var sn = (c.subs || []).filter(function (y) { return y.key === x.sub; })[0];
-  return sn ? (c.name + "/" + sn.name) : c.name;
+  return sn ? (c.name + " - " + sn.name) : c.name;
 }
 function reloadCheck(before) {
   return new Promise(function (done) {
