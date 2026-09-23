@@ -92,7 +92,7 @@
   .view{display:none}.view.on{display:block}
 
   /* calendar + dashboard layout */
-  .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 268px;gap:14px;align-items:start}
+  .cal-layout{display:grid;grid-template-columns:262px minmax(0,1fr) 330px;gap:14px;align-items:start}
   @media (max-width:1160px){.cal-layout{grid-template-columns:260px minmax(0,1fr)}.pomo-col{grid-column:1 / -1}}
   /* 跟上面两条一致用 minmax(0,1fr)。裸的 1fr = minmax(auto,1fr)，auto 会跟着
      子元素的 min-content 走 —— 周视图里那个 min-width:560px 的网格就能把整列撑开。
@@ -208,9 +208,10 @@
   .pomo-slot:hover{border-color:var(--primary)}
   .pomo-slot.on{border-color:var(--primary);background:var(--surface-2);font-weight:650}
   .pomo-slot>i{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
-  /* 名字放不下就折行，不打点省略 —— 被截掉的那一截往往正是能区分两块牌子的部分
-     （「UC Online - DATA401/STAT462」一截就只剩「UC Online - DATA4…」）。 */
-  .pomo-slot .ps-t{flex:1 1 auto;min-width:0;text-align:left;word-break:break-word}
+  /* 一行铺开，不折行（她说的）。整栏加宽到 330 就是为了让最长的那个也放得下；
+     真有放不下的再打点省略，全名在鼠标悬停的提示里。 */
+  .pomo-slot .ps-t{flex:1 1 auto;min-width:0;text-align:left;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pomo-slot>b{flex:0 0 auto;font-size:11.5px;color:var(--muted);font-weight:600}
   .pomo-slot.on>b{color:var(--primary)}
   .pomo-slot .ps-x{border:none;background:none;color:var(--border);cursor:pointer;font-size:12px;padding:0 1px;line-height:1;flex:0 0 auto}
@@ -226,9 +227,14 @@
   .pomo-pick>select{flex:1 1 0;min-width:0;padding:6px 4px;border:1px solid var(--border);border-radius:9px;
     background:var(--bg);color:var(--text);font-size:12px}
   .pomo-pick select:disabled{opacity:.55}
-  .pomo-pick .pk-add{flex:0 0 auto;border:1px dashed var(--border);background:none;color:var(--muted);
-    border-radius:9px;padding:5px 9px;font-size:13px;line-height:1.2;cursor:pointer}
-  .pomo-pick .pk-add:hover{color:var(--primary);border-color:var(--primary)}
+  .pomo-pick .pk-add,.pomo-pick .pk-x{flex:0 0 auto;border:1px solid var(--border);background:none;
+    color:var(--muted);border-radius:9px;padding:5px 8px;font-size:12px;line-height:1.2;cursor:pointer}
+  .pomo-pick .pk-add{color:var(--primary);border-color:color-mix(in srgb,var(--primary) 45%,var(--border))}
+  .pomo-pick .pk-add:hover,.pomo-pick .pk-x:hover{border-color:var(--primary);color:var(--primary)}
+  /* 平时只露一个 ＋，点了才把两个下拉放出来 */
+  .pk-open{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:9px;
+    padding:4px 14px;font-size:13px;line-height:1.3;cursor:pointer;align-self:center;margin-top:3px}
+  .pk-open:hover{color:var(--primary);border-color:var(--primary)}
   /* 虚线 = 「按任务名看像是这块」。正跑着的时候只提示，绝不替她切过去 */
   .pomo-slot.hint{border-style:dashed;border-color:var(--primary)}
   /* 挑一件放进来 / 改这一件：自己选，不让它猜 */
@@ -240,6 +246,9 @@
     font-weight:650;text-decoration:underline;cursor:pointer}
   .ev-gcal-hint b{color:var(--primary)}
   .pomo-log input{width:14px;height:14px;accent-color:var(--primary)}
+  /* 番茄钟那一栏里的「🐟 摸鱼」单独调小 —— .pomo-log 还给事件弹窗用着，别一起动 */
+  .pomo-task .pomo-log{font-size:11px}
+  .pomo-task .pomo-log input{width:12px;height:12px}
   .ring{width:168px;height:168px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;position:relative;
     background:conic-gradient(var(--cat-focus) calc(var(--p,0)*1%), var(--surface-2) 0)}
   .ring.brk{background:conic-gradient(var(--cat-sport) calc(var(--p,0)*1%), var(--surface-2) 0)}
@@ -3803,10 +3812,12 @@ margin-left: -22px;
             <div id="pomo-lost-box"></div>
               <div class="pomo-task-cat" style="display:none"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <div class="pomo-slots" id="pomo-slots"></div>
-              <div class="pomo-pick" id="pomo-pick">
+              <button type="button" class="pk-open" id="pk-open" title="加一块牌子">＋</button>
+              <div class="pomo-pick" id="pomo-pick" style="display:none">
                 <span class="pk-sel"><i class="pk-dot" id="pk-dot"></i><select id="pk-cat" title="新牌子的大类"></select></span>
                 <select id="pk-sub" title="新牌子的小类"></select>
-                <button type="button" class="pk-add" id="pk-add" title="把选好的这一对加成一块牌子">＋</button>
+                <button type="button" class="pk-add" id="pk-add" title="加成一块牌子">✓</button>
+                <button type="button" class="pk-x" id="pk-cancel" title="不加了">✕</button>
               </div>
               <label class="pomo-log" style="display:none"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼</label>
@@ -5586,6 +5597,7 @@ margin-left: -22px;
     "不停":"Never pause",
     "不像单词，已剔除":"Not word-like, dropped",
     "不到 1 分钟，没记进日历":"Under 1 minute — not logged to the calendar",
+    "不加了":"Never mind",
     "不取整":"Exact",
     "不含 GST":"No GST",
     "不在这台设备":"Not on this device",
@@ -5895,10 +5907,12 @@ margin-left: -22px;
     "副屏":"Second pane",
     "加一个时段标签（比如：运动后 / 加餐后）":"Add a time tag (e.g. After workout / After snack)",
     "加一个自己的时段":"Add your own time tag",
+    "加一块牌子":"Add a tag",
     "加一条":"Add one",
     "加入生词本":"Add to word list",
     "加入词库":"Add to word list",
     "加到分组":"Add to group",
+    "加成一块牌子":"Add it as a tag",
     "加标签":"Add tags",
     "加油":"petrol",
     "加笔记":"Add note",
@@ -12679,7 +12693,7 @@ margin-left: -22px;
     var one={cat:pkCat.value,sub:pkSub.value||null};
     if(slotHas(one)){pomoNote("这块牌子已经有了");return;}
     if(pSlots.length>=8){pomoNote("最多 8 块");return;}
-    pSlots.push(one);saveSlots();renderSlots(true);}
+    pSlots.push(one);saveSlots();renderSlots(true);showPick(false);}
   // 换人马。结算必须发生在**改 pomoCat / pMates 之前** —— 前面那一截属于旧的那套。
   function setCur(ck,sk,mates){
     if(pTimer&&timerMode==="up")switchTask("slot");
@@ -12713,6 +12727,15 @@ margin-left: -22px;
     var i=+row.getAttribute("data-i");
     if(e.target.closest(".ps-x")){pSlots.splice(i,1);saveSlots();renderSlots(true);return;}
     tapSlot(i,!!(e.ctrlKey||e.metaKey));});
+  // 平时收起来，点 ＋ 才出来（她说的）
+  var pkBox=document.getElementById("pomo-pick"),pkOpen=document.getElementById("pk-open"),
+      pkCancel=document.getElementById("pk-cancel");
+  function showPick(on){
+    if(pkBox)pkBox.style.display=on?"":"none";
+    if(pkOpen)pkOpen.style.display=on?"none":"";
+    if(on&&pkCat)try{pkCat.focus();}catch(e){}}
+  if(pkOpen)pkOpen.addEventListener("click",function(){showPick(true);});
+  if(pkCancel)pkCancel.addEventListener("click",function(){showPick(false);});
   if(pkCat)pkCat.addEventListener("change",function(){pkSub.value="";renderPickSub();});
   if(pkSub)pkSub.addEventListener("change",renderPickSub);
   if(pkAdd)pkAdd.addEventListener("click",addSlot);

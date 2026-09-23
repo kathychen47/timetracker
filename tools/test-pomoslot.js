@@ -81,9 +81,11 @@ function onRows() { return rows().filter(function (r) { return r.classList.conta
 function tap(i, ctrl) {
   rows()[i].dispatchEvent(new w.MouseEvent("click", { bubbles: true, ctrlKey: !!ctrl }));
 }
-function pickCat(k) { var e = $("#pk-cat"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
-function pickSub(k) { var e = $("#pk-sub"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
-function add() { $("#pk-add").click(); }
+// 建牌子那一行平时是收起来的，要先点 ＋
+function openBuilder() { if ($("#pk-open").style.display !== "none") $("#pk-open").click(); }
+function pickCat(k) { openBuilder(); var e = $("#pk-cat"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
+function pickSub(k) { openBuilder(); var e = $("#pk-sub"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
+function add() { openBuilder(); $("#pk-add").click(); }
 // 各段之和 + 手上这一截，必须正好等于钟上走过的秒数
 function accounted() {
   var r = run(), tot = 0;
@@ -102,7 +104,12 @@ function secOf(cat, sub) {
   await wait(1200);
 
   // ---- 1. 左右两栏 ----
-  ok(!!$("#pk-cat") && !!$("#pk-sub") && !!$("#pk-add"), "建牌子那一行（大类/小类/＋）都在");
+  ok(!!$("#pk-open") && $("#pomo-pick").style.display === "none", "平时只露一个 ＋，两个下拉收着");
+  $("#pk-open").click();
+  ok($("#pomo-pick").style.display !== "none" && $("#pk-open").style.display === "none",
+    "点 ＋ 之后两个下拉出来了，＋ 自己收了");
+  ok(!!$("#pk-cat") && !!$("#pk-sub") && !!$("#pk-add") && !!$("#pk-cancel"),
+    "大类/小类/✓/✕ 都在");
   ok(d.querySelectorAll("#pk-cat option").length === 3, "大类下拉里 3 个，实际 " +
     d.querySelectorAll("#pk-cat option").length);
   ok(rows().length === 0, "还没有任何牌子");
@@ -116,7 +123,11 @@ function secOf(cat, sub) {
   // ---- 2. ＋ 加牌子 ----
   pickCat("phd"); pickSub("res"); add();
   ok(slots().length === 1 && slots()[0].cat === "phd" && slots()[0].sub === "res",
-    "加出一块 PhD/Research：" + JSON.stringify(slots()[0]));
+    "加出一块 PhD - Research：" + JSON.stringify(slots()[0]));
+  ok($("#pomo-pick").style.display === "none", "加完就收回去了");
+  $("#pk-open").click(); $("#pk-cancel").click();
+  ok($("#pomo-pick").style.display === "none", "✕ 也能收回去（不加）");
+  ok(slots().length === 1, "✕ 不会多加一块");
   add();
   ok(slots().length === 1, "一模一样的不会加第二块，实际 " + slots().length);
   pickCat("uco"); pickSub("s462"); add();
