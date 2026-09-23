@@ -36,23 +36,26 @@ function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
 var errs = [];
 var vc = new VirtualConsole();
 vc.on("jsdomError", function (e) { errs.push(String(e.message || "").split("\n")[0].slice(0, 160)); });
+var STORE = {};
+Object.keys(seed).forEach(function (k) { STORE[k] = JSON.stringify(seed[k]); });
+function lsFor(w, store) {
+  Object.defineProperty(w, "localStorage", {
+    value: {
+      get length() { return Object.keys(store).length; },
+      key: function (i) { return Object.keys(store)[i]; },
+      getItem: function (k) { return k in store ? store[k] : null; },
+      setItem: function (k, v) { store[k] = String(v); },
+      removeItem: function (k) { delete store[k]; },
+      clear: function () { for (var k in store) delete store[k]; }
+    }, configurable: true
+  });
+  w.__store = store;
+}
 var dom = new JSDOM(html, {
   runScripts: "dangerously", pretendToBeVisual: true,
   url: "https://kathychen47.github.io/timetracker/", virtualConsole: vc,
   beforeParse: function (w) {
-    var store = {};
-    Object.keys(seed).forEach(function (k) { store[k] = JSON.stringify(seed[k]); });
-    Object.defineProperty(w, "localStorage", {
-      value: {
-        get length() { return Object.keys(store).length; },
-        key: function (i) { return Object.keys(store)[i]; },
-        getItem: function (k) { return k in store ? store[k] : null; },
-        setItem: function (k, v) { store[k] = String(v); },
-        removeItem: function (k) { delete store[k]; },
-        clear: function () { for (var k in store) delete store[k]; }
-      }, configurable: true
-    });
-    w.__store = store;
+    lsFor(w, STORE);
     w.__adv = 0;                                   // 把钟往前拨几秒
     var RD = w.Date.now.bind(w.Date);
     w.Date.now = function () { return RD() + w.__adv * 1000; };
@@ -78,8 +81,8 @@ function onRows() { return rows().filter(function (r) { return r.classList.conta
 function tap(i, ctrl) {
   rows()[i].dispatchEvent(new w.MouseEvent("click", { bubbles: true, ctrlKey: !!ctrl }));
 }
-function pickCat(k) { $('#pk-cats [data-pkc="' + k + '"]').click(); }
-function pickSub(k) { $('#pk-subs [data-pks="' + k + '"]').click(); }
+function pickCat(k) { var e = $("#pk-cat"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
+function pickSub(k) { var e = $("#pk-sub"); e.value = k; e.dispatchEvent(new w.Event("change", { bubbles: true })); }
 function add() { $("#pk-add").click(); }
 // 各段之和 + 手上这一截，必须正好等于钟上走过的秒数
 function accounted() {
@@ -99,16 +102,16 @@ function secOf(cat, sub) {
   await wait(1200);
 
   // ---- 1. 左右两栏 ----
-  ok(!!$("#pk-cats") && !!$("#pk-subs"), "左右两栏都在");
-  ok(d.querySelectorAll("#pk-cats .pk-i").length === 3, "左边列出了 3 个大类，实际 " +
-    d.querySelectorAll("#pk-cats .pk-i").length);
+  ok(!!$("#pk-cat") && !!$("#pk-sub") && !!$("#pk-add"), "建牌子那一行（大类/小类/＋）都在");
+  ok(d.querySelectorAll("#pk-cat option").length === 3, "大类下拉里 3 个，实际 " +
+    d.querySelectorAll("#pk-cat option").length);
   ok(rows().length === 0, "还没有任何牌子");
   pickCat("phd");
-  ok(d.querySelectorAll("#pk-subs .pk-i").length === 2, "点了 PhD，右边出它的 2 个小类，实际 " +
-    d.querySelectorAll("#pk-subs .pk-i").length);
-  ok($('#pk-cats [data-pkc="phd"]').classList.contains("on"), "选中的大类高亮了");
+  ok((d.querySelectorAll("#pk-sub option").length - 1) === 2, "选了 PhD，小类下拉出它的 2 个，实际 " +
+    (d.querySelectorAll("#pk-sub option").length - 1));
+  ok($("#pk-cat").value === "phd", "左边那个下拉选中了 PhD");
   pickCat("uco");
-  ok(d.querySelectorAll("#pk-subs .pk-i").length === 3, "换成 UC Online，右边跟着换成它的小类");
+  ok((d.querySelectorAll("#pk-sub option").length - 1) === 3, "换成 UC Online，小类下拉跟着换");
 
   // ---- 2. ＋ 加牌子 ----
   pickCat("phd"); pickSub("res"); add();
@@ -121,16 +124,16 @@ function secOf(cat, sub) {
   pickCat("cms"); add();                       // 没有小类的大类也能单独成一块
   ok(slots().length === 4, "一共 4 块，实际 " + slots().length);
   ok(rows().length === 4, "界面上画出了 4 行");
-  ok(label(rows()[0]) === "Research", "牌子上写小类就够了（大类是左边那个色点），实际 " + label(rows()[0]));
+  ok(label(rows()[0]) === "PhD/Research", "牌子上大类小类都写，实际 " + label(rows()[0]));
   ok(label(rows()[3]) === "CMS", "没有小类的写大类名，实际 " + label(rows()[3]));
 
-  // ---- 3. 小类重名的要写全 ----
-  // 她的 PhD 和 UC Online 底下都有 Others —— 只写「Others」两块牌子长得一模一样
+  // ---- 3. 小类重名不再是问题 ----
+  // 她的 PhD 和 UC Online 底下都有 Others，写全之后各是各的
   pickCat("phd"); pickSub("oth2"); add();
   pickCat("uco"); pickSub("oth"); add();
   var texts = rows().map(label);
-  ok(texts.indexOf("PhD / Others") >= 0 && texts.indexOf("UC Online / Others") >= 0,
-    "小类重名的两块各自写全：" + JSON.stringify(texts));
+  ok(texts.indexOf("PhD/Others") >= 0 && texts.indexOf("UC Online/Others") >= 0,
+    "两块 Others 各写各的：" + JSON.stringify(texts));
   rows()[5].querySelector(".ps-x").click();    // 收拾干净，后面按下标点
   rows()[4].querySelector(".ps-x").click();
   ok(slots().length === 4, "✕ 之后回到 4 块，实际 " + slots().length);
@@ -208,9 +211,84 @@ function secOf(cat, sub) {
   ok(!$("#pomo-mates") && !$("#pomo-mate-add"), "番茄钟里那两行没了（事件弹窗里那份还在）");
   ok(!!$("#ev-mate-add"), "「新建事件」弹窗里的「同时做」还留着");
 
+  // ---- 12. 正跑着打任务名：**一个字都不该换**，只画一圈虚线 ----
+  // 原来 autoPomoCat 是直接给 pomoCat.value 赋值的 —— 不走「切一刀」那条路，
+  // 于是中途回去改一下任务名，手上这一截已经走的时间会整个记到新分类头上。
+  // 她问出来的：「自动点亮的缺点是如果番茄钟已经在运行了，会导致切任务吗？」
+  tap(0);                                            // 回到 PhD/Research
+  var catBefore = $("#pomo-cat").value, subBefore = $("#pomo-sub").value;
+  var nseg2 = (run().segs || []).length;
+  var ti = $("#pomo-task");
+  ti.value = "STAT462 的作业"; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await wait(150);
+  ok($("#pomo-cat").value === catBefore && $("#pomo-sub").value === subBefore,
+    "正跑着打字没把分类换掉，实际 " + $("#pomo-cat").value + "/" + $("#pomo-sub").value);
+  ok((run().segs || []).length === nseg2, "也没悄悄切出一段");
+  var hinted = rows().filter(function (r) { return r.classList.contains("hint"); });
+  ok(hinted.length === 1 && label(hinted[0]) === "UC Online/STAT462",
+    "只在那块牌子上画了一圈虚线：" + JSON.stringify(hinted.map(label)));
+  ok(onRows().length === 1 && label(onRows()[0]) === "PhD/Research", "亮着的还是原来那块");
+  ti.value = ""; ti.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await wait(150);
+  ok(rows().filter(function (r) { return r.classList.contains("hint"); }).length === 0,
+    "名字清空，虚线也没了");
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
+
+  // ---- 13. 刷新一下：牌子还在吗？----
+  // 她问的：「你确认成刷新不会删掉就好」。
+  // 看代码是一回事，真的重新加载一遍是另一回事 ——
+  // 这里真的再开一个 jsdom，用**同一份 localStorage**，就像按了 F5。
+  await reloadCheck({ slots: slots(), cat: $("#pomo-cat").value, sub: $("#pomo-sub").value,
+    segs: (run().segs || []).length });
+
   console.log("");
   console.log("== 任务牌子：按一下切、Ctrl 点同时做，时间一秒不差 ==");
   console.log("  通过 " + pass + "  失败 " + fail);
   process.exit(fail ? 1 : 0);
 })();
+
+function slotName(x) {
+  var c = CATS.filter(function (y) { return y.key === x.cat; })[0] || {};
+  var sn = (c.subs || []).filter(function (y) { return y.key === x.sub; })[0];
+  return sn ? (c.name + "/" + sn.name) : c.name;
+}
+function reloadCheck(before) {
+  return new Promise(function (done) {
+    var e2 = [];
+    var vc2 = new VirtualConsole();
+    vc2.on("jsdomError", function (e) { e2.push(String(e.message || "").split("\n")[0].slice(0, 160)); });
+    var d2 = new JSDOM(html, {
+      runScripts: "dangerously", pretendToBeVisual: true,
+      url: "https://kathychen47.github.io/timetracker/", virtualConsole: vc2,
+      beforeParse: function (w2) {
+        lsFor(w2, STORE);                       // 同一份 localStorage —— 这就是「刷新」
+        w2.fetch = function () { return new Promise(function () { }); };
+        w2.Element.prototype.scrollIntoView = function () { };
+        if (w2.HTMLMediaElement) w2.HTMLMediaElement.prototype.play = function () { return Promise.resolve(); };
+        w2.matchMedia = w2.matchMedia || function () {
+          return { matches: false, addListener: function () { }, removeListener: function () { },
+            addEventListener: function () { }, removeEventListener: function () { } };
+        };
+      }
+    });
+    setTimeout(function () {
+      var w2 = d2.window, dd = w2.document;
+      var rr = [].slice.call(dd.querySelectorAll("#pomo-slots .pomo-slot"));
+      ok(rr.length === before.slots.length,
+        "刷新之后牌子还是 " + before.slots.length + " 块，实际 " + rr.length);
+      ok(rr.map(function (r) { return r.querySelector(".ps-t").textContent; }).join("|") ===
+         before.slots.map(slotName).join("|"), "每块牌子的名字也原样回来了");
+      ok(dd.getElementById("pomo-cat").value === before.cat &&
+         dd.getElementById("pomo-sub").value === before.sub,
+        "刷新前在做哪一类，刷新后还是它");
+      ok(rr.filter(function (r) { return r.classList.contains("on"); }).length >= 1,
+        "亮着的牌子自己回来了");
+      var run2 = JSON.parse(w2.__store.tt_pomorun || "null") || {};
+      ok((run2.segs || []).length === before.segs,
+        "已经切出来的那几段一条没少，实际 " + (run2.segs || []).length);
+      ok(e2.length === 0, "刷新那一遍没报错：" + e2.join(" | "));
+      done();
+    }, 1800);
+  });
+}

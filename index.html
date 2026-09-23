@@ -213,25 +213,17 @@
   .pomo-slot.on>b{color:var(--primary)}
   .pomo-slot .ps-x{border:none;background:none;color:var(--border);cursor:pointer;font-size:12px;padding:0 1px;line-height:1;flex:0 0 auto}
   .pomo-slot .ps-x:hover{color:var(--primary)}
-  /* 左边大类、右边小类，点 ＋ 加成一块牌子 */
-  .pomo-pick{display:flex;flex-direction:column;gap:6px;margin-top:2px}
-  .pomo-pick .pk-cols{display:flex;gap:6px}
-  .pomo-pick .pk-col{flex:1 1 0;min-width:0;max-height:148px;overflow:auto;overscroll-behavior:contain;
-    border:1px solid var(--border);border-radius:10px;background:var(--bg);padding:3px}
-  .pomo-pick .pk-i{display:flex;align-items:center;gap:6px;padding:5px 7px;border-radius:7px;
-    cursor:pointer;font-size:12px;line-height:1.25}
-  .pomo-pick .pk-i:hover{background:var(--surface-2)}
-  .pomo-pick .pk-i.on{background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-weight:650}
-  .pomo-pick .pk-i>i{width:8px;height:8px;border-radius:3px;flex:0 0 auto}
-  /* 这两栏是「挑东西」的地方，名字被截掉就等于挑不了 ——
-     所以放不下就折行（这一栏本来就能上下滚），而不是打点省略。 */
-  .pomo-pick .pk-i>span{flex:1 1 auto;min-width:0;word-break:break-word}
-  .pomo-pick .pk-none{font-size:11.5px;color:var(--muted);padding:8px 7px;line-height:1.5}
-  .pomo-pick .pk-add{border:1px dashed var(--border);background:none;color:var(--muted);border-radius:9px;
-    padding:6px 10px;font-size:12px;cursor:pointer;align-self:center;max-width:100%;
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pomo-pick .pk-add:hover:not(:disabled){color:var(--primary);border-color:var(--primary)}
-  .pomo-pick .pk-add:disabled{opacity:.55;cursor:default}
+  /* 建牌子那一行：一个同色小方块 + 大类 + 小类 + ＋ */
+  .pomo-pick{display:flex;align-items:center;gap:5px;margin-top:3px}
+  .pomo-pick .pk-dot{width:9px;height:9px;border-radius:3px;flex:0 0 auto;background:var(--border)}
+  .pomo-pick select{flex:1 1 0;min-width:0;padding:6px 4px;border:1px solid var(--border);border-radius:9px;
+    background:var(--bg);color:var(--text);font-size:12px}
+  .pomo-pick select:disabled{opacity:.55}
+  .pomo-pick .pk-add{flex:0 0 auto;border:1px dashed var(--border);background:none;color:var(--muted);
+    border-radius:9px;padding:5px 9px;font-size:13px;line-height:1.2;cursor:pointer}
+  .pomo-pick .pk-add:hover{color:var(--primary);border-color:var(--primary)}
+  /* 虚线 = 「按任务名看像是这块」。正跑着的时候只提示，绝不替她切过去 */
+  .pomo-slot.hint{border-style:dashed;border-color:var(--primary)}
   /* 挑一件放进来 / 改这一件：自己选，不让它猜 */
     border:1px solid var(--primary);border-radius:11px;background:var(--surface-2)}
     background:var(--bg);color:var(--text);font-size:12.5px;text-align:center}
@@ -3802,11 +3794,13 @@ margin-left: -22px;
               <input type="text" id="pomo-task" placeholder="这次专注做什么？（记进日历备注）">
             <div id="pomo-step-box"></div>
             <div id="pomo-lost-box"></div>
-              <div class="pomo-task-cat"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
+              <div class="pomo-task-cat" style="display:none"><select id="pomo-cat"></select><select id="pomo-sub"></select></div>
               <div class="pomo-slots" id="pomo-slots"></div>
               <div class="pomo-pick" id="pomo-pick">
-                <div class="pk-cols"><div class="pk-col" id="pk-cats"></div><div class="pk-col" id="pk-subs"></div></div>
-                <button type="button" class="pk-add" id="pk-add" title="把左右选中的这一对加成一块牌子">＋ 先选左边</button>
+                <i class="pk-dot" id="pk-dot"></i>
+                <select id="pk-cat" title="新牌子的大类"></select>
+                <select id="pk-sub" title="新牌子的小类"></select>
+                <button type="button" class="pk-add" id="pk-add" title="把选好的这一对加成一块牌子">＋</button>
               </div>
               <label class="pomo-log"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
               <label class="pomo-log" title="这段时间允许和日历上已有的事情重叠，两边都算"><input type="checkbox" id="pomo-par"> 🐟 摸鱼（时间可重复计算）</label>
@@ -5772,6 +5766,7 @@ margin-left: -22px;
     "先自动导一份 JSON 到下载文件夹":"automatically save a JSON copy to your Downloads folder first",
     "先记下，GST 待定":"Log it now, decide GST later",
     "先连上 Google 日历再补传。":"Connect Google Calendar before backfilling.",
+    "先选一个大类":"Pick a category first",
     "先选个文件，或者把 JSON 粘进来":"Pick a file first, or paste the JSON in",
     "先选至少一个等级":"Pick at least one level",
     "先选音频（第①步）。":"Pick an audio file first (step ①).",
@@ -6311,6 +6306,7 @@ margin-left: -22px;
     "把这段贴到 Supabase → SQL Editor 运行一次（建私有桶 + 只授权你自己），然后回来点「⬆️ 上传到云端」：":"Run this once in Supabase → SQL Editor (creates a private bucket, grants only you), then come back and hit “⬆️ Upload to cloud”:",
     "把这笔从税务记录里撤回？":"Pull this entry out of your tax records?",
     "把这笔算进税务页的收入":"Count this as income on the Tax page",
+    "把选好的这一对加成一块牌子":"Turn the pair you picked into a tag",
     "投保":"insure",
     "投资":"Investment",
     "折算了":"for conversion",
@@ -6342,6 +6338,7 @@ margin-left: -22px;
     "按 SM-2 记忆曲线安排复习：评「忘记/模糊/认识/太简单」，间隔自动拉长或缩短。":"Reviews are scheduled by the SM-2 curve: rate a word \"Forgot/Fuzzy/Know it/Too easy\" and the interval stretches or shrinks automatically.",
     "按 SM-2 记忆曲线安排复习：评「认识 / 模糊 / 不认识」（键盘 1 / 2 / 3），间隔自动拉长或缩短。":"Reviews are scheduled on the SM-2 forgetting curve: rate each card Know / Unsure / Don't know (keys 1 / 2 / 3) and the interval stretches or shrinks to match.",
     "按一下切过去 · 按住 Ctrl 点 = 同时做":"Tap to switch · Ctrl-click to work on several at once",
+    "按任务名看像是这块 —— 点一下就切过去":"Looks like this one, going by the task name — tap it to switch over",
     "按任务名自动认出来的，可以改、也可以✕ 去掉":"Picked up from the task name — you can change it, or ✕ to drop it",
     "按住快捷键":"Hold a hotkey",
     "按关键词归并":"By keyword",
@@ -6470,6 +6467,8 @@ margin-left: -22px;
     "新文件夹叫什么？":"What's the new folder called?",
     "新文件夹叫什么？（比如：方法论 / 灵感） 书架里也会出现同一个。":"What's the new folder called? (e.g. Method / Ideas) The same one shows up on the shelf.",
     "新来源":"New source",
+    "新牌子的大类":"Category for the new tag",
+    "新牌子的小类":"Sub-category for the new tag",
     "新素材的音频存哪":"Where to keep audio for new clips",
     "新菜谱":"New recipe",
     "新西兰 · 收入 / PAYE / ACC / GST":"New Zealand · Income / PAYE / ACC / GST",
@@ -7456,6 +7455,7 @@ margin-left: -22px;
     "（不分类）":"(No category)",
     "（不归类）":"(No category)",
     "（不要进去选文件）":"(don't go inside and pick a file)",
+    "（不选小类）":"(no sub-category)",
     "（不限）":"(Any)",
     "（不限，所有 NZD 进账都能记）":"(Any account — every NZD payment in can be logged)",
     "（两者一起，不用分别登录）。":"(both at once — no separate sign-in).",
@@ -12428,20 +12428,25 @@ margin-left: -22px;
   // 你自己动过下拉就不再自动改，直到把任务名清空或重置
   var pomoManual=false;
   function markPomoAuto(on){
-    pomoCat.classList.toggle("auto",!!on);pomoSub.classList.toggle("auto",!!(on&&pomoSub.value));
-    var tip=on?"根据任务名自动归的类，可以自己改":"没认出这个任务名 —— 你自己选一次并点开始，下次就会自动归到这类（也可以在 设置 › 分类 里给它加关键词）";
-    pomoCat.title=tip;pomoSub.title=tip;}
+    pomoCat.classList.toggle("auto",!!on);pomoSub.classList.toggle("auto",!!(on&&pomoSub.value));}
   function autoPomoCat(){
     var t=(pomoTask.value||"").trim();
-    if(!t){pomoManual=false;markPomoAuto(false);return;}   // 清空任务名 → 自动识别重新生效
-    if(pomoManual||t.length<2)return;
-    // 只认主分类。「同时做哪几件」现在完全由她按 Ctrl 点牌子决定 ——
-    // 按名字猜出来的行没有地方显示，也就没有地方让她改掉，不能再往里塞。
+    if(!t){pomoManual=false;markPomoAuto(false);setHint(null);return;}   // 清空任务名 → 自动识别重新生效
+    if(t.length<2){setHint(null);return;}
+    // 只认主分类。「同时做哪几件」完全由她按 Ctrl 点牌子决定。
     var a=recallMain(t)||autoCatMatch(t)||(autoCatHits(t)[0]||null);   // 学过的最优先，其余照旧
-    if(!a){markPomoAuto(false);return;}
+    if(!a){markPomoAuto(false);setHint(null);return;}
+    // **正跑着的时候一个字都不改**；她自己点过牌子了也不改。
+    // 这一行原来是直接给 pomoCat.value 赋值的 —— 不走「切一刀」那条路，
+    // 于是中途回去改一下任务名，手上这一截已经走的时间会整个记到新分类头上，
+    // 不切段、不提示，界面上唯一的变化是那个下拉换了个词。这是她问出来的。
+    // 现在只在那块牌子上画一圈虚线：像是这块，点一下就切过去，切不切她定。
+    if(pTimer||pomoManual){setHint(a);return;}
+    setHint(null);
     if(pomoCat.value!==a.cat){pomoCat.value=a.cat;fillPomoSubs();}
     pomoSub.value=(a.sub&&subsOf(a.cat).some(function(s){return s.key===a.sub;}))?a.sub:"";
-    markPomoAuto(true);}
+    pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
+    markPomoAuto(true);try{renderSlots(true);}catch(e){}}
   fillPomoSubs();applyPomoLast();
   // 下拉最后一项是「＋ 新建…」，选中它就地建分类，不用跑去设置里
   var pomoCatPrev=pomoCat.value,pomoSubPrev=pomoSub.value;
@@ -12596,25 +12601,30 @@ margin-left: -22px;
   // （这跟 🐟 摸鱼恰恰相反：那个是两边都算全额。）
   var pSlots=load("tt_pomoslots",[])||[],slotSig="";
   var slotsBox=document.getElementById("pomo-slots");
-  var pkCats=document.getElementById("pk-cats"),pkSubs=document.getElementById("pk-subs"),
-      pkAdd=document.getElementById("pk-add"),pkCat="",pkSub=null;
+  var pkCat=document.getElementById("pk-cat"),pkSub=document.getElementById("pk-sub"),
+      pkAdd=document.getElementById("pk-add"),pkDot=document.getElementById("pk-dot");
   function saveSlots(){save("tt_pomoslots",pSlots);}
   function slotKey(s){return s.cat+"\u0000"+(s.sub||"");}
   function slotHas(x){return pSlots.some(function(p){return p.cat===x.cat&&(p.sub||null)===(x.sub||null);});}
-  // 牌子上写小类就够了 —— 大类由左边那个色点表示，写全了侧栏这么窄会被截断，
-  // 而被截掉的恰恰是唯一能区分两块牌子的部分。
-  // 例外：小类重名（她的 PhD 和 UC Online 底下都有 Others）—— 那种才写全。
+  // 牌子上大类小类都写：「PhD/Research」。
+  // 先前只写小类是错的 —— 左边那个色点只能区分颜色，读不出名字，
+  // 而且她底下有两个都叫 Others 的小类。
   function slotText(s){
-    var sn=s.sub?subName(s.cat,s.sub):"";
-    if(!sn)return catName(s.cat)||"";
-    var dup=pSlots.some(function(p){return p!==s&&p.sub&&p.cat!==s.cat&&subName(p.cat,p.sub)===sn;});
-    return dup?((catName(s.cat)||"")+" / "+sn):sn;}
+    var cn=catName(s.cat)||"",sn=s.sub?subName(s.cat,s.sub):"";
+    return sn?(cn+"/"+sn):cn;}
   function sameCS(a,b){return a.cat===b.cat&&(a.sub||null)===(b.sub||null);}
   function curSet(){                                      // 现在正在做的那几件
     var out=[{cat:pomoCat.value,sub:pomoSub.value||null}];
     pMates.forEach(function(m){if(m&&m.cat)out.push({cat:m.cat,sub:m.sub||null});});
     return out;}
   function slotOn(s){return curSet().some(function(x){return sameCS(x,s);});}
+  // 按任务名猜出来的那一块：只画一圈虚线，不替她切过去（见 autoPomoCat）
+  var pHint=null;
+  function setHint(x){
+    if(!x&&!pHint)return;
+    if(x&&pHint&&sameCS(x,pHint))return;
+    pHint=x?{cat:x.cat,sub:x.sub||null}:null;try{renderSlots(true);}catch(e){}}
+  function slotHint(s){return !!pHint&&sameCS(pHint,s)&&!slotOn(s);}
   function mateOf(x){return {t:catLabelOf(x.cat,x.sub||null),cat:x.cat,sub:x.sub||null};}
   // 这一次计时里每块牌子各自走了多久。按「大类+小类」认，不看段上的名字 ——
   // 牌子没有名字，而段上的名字是她在输入框里随手打的，两边对不上。
@@ -12627,7 +12637,7 @@ margin-left: -22px;
     if(!slotsBox)return;
     var secs=slotSecs(),on=pSlots.filter(slotOn).length;
     var sig=pSlots.map(function(s){return slotText(s)+"|"+slotKey(s)+"|"+
-      secLabel(secs[slotKey(s)]||0)+"|"+(slotOn(s)?1:0);}).join(",");
+      secLabel(secs[slotKey(s)]||0)+"|"+(slotOn(s)?1:0)+"|"+(slotHint(s)?1:0);}).join(",");
     if(!force&&sig===slotSig)return; slotSig=sig;   // 秒数没跨过整分就不重绘，免得每半秒闪一下、按都按不中
     slotsBox.classList.toggle("on",!!pSlots.length);
     if(!pSlots.length){slotsBox.innerHTML="";return;}
@@ -12635,30 +12645,31 @@ margin-left: -22px;
       (on>1?"这几件在同时做，时间平分":"按一下切过去 · 按住 Ctrl 点 = 同时做")+'</div>'+
       pSlots.map(function(s,i){
         var sec=secs[slotKey(s)]||0;
-        return '<div class="pomo-slot'+(slotOn(s)?" on":"")+'" data-i="'+i+'" title="'+
-          esc(catLabelOf(s.cat,s.sub||null))+'">'+
+        return '<div class="pomo-slot'+(slotOn(s)?" on":"")+(slotHint(s)?" hint":"")+'" data-i="'+i+'" title="'+
+          esc(slotHint(s)?"按任务名看像是这块 —— 点一下就切过去":catLabelOf(s.cat,s.sub||null))+'">'+
           '<i style="background:'+subColor(s.cat,s.sub||null)+'"></i>'+
           '<span class="ps-t">'+esc(slotText(s))+'</span>'+
           '<b>'+(sec>0?secLabel(sec):"")+'</b>'+
           '<button type="button" class="ps-x" title="去掉这块牌子">\u2715</button></div>';}).join("");}
-  // 左边大类、右边它的小类，点 ＋ 加成一块牌子
+  // 建牌子那一行：[小方块][大类 ▾][小类 ▾][＋]
   function renderPick(){
-    if(!pkCats||!pkSubs)return;
-    if(pkCat&&!cats.some(function(c){return c.key===pkCat;})){pkCat="";pkSub=null;}
-    pkCats.innerHTML=catsByUse().map(function(c){
-      return '<div class="pk-i'+(pkCat===c.key?" on":"")+'" data-pkc="'+c.key+'" title="'+esc(c.name)+'">'+
-        '<i style="background:'+c.color+'"></i><span>'+esc(c.name)+'</span></div>';}).join("");
-    var subs=pkCat?subsByUse(pkCat):[];
-    pkSubs.innerHTML=subs.length
-      ? subs.map(function(x){
-          return '<div class="pk-i'+((pkSub||"")===x.key?" on":"")+'" data-pks="'+x.key+'" title="'+esc(x.name)+'">'+
-            '<i style="background:'+subColor(pkCat,x.key)+'"></i><span>'+esc(x.name)+'</span></div>';}).join("")
-      : ('<div class="pk-none">'+(pkCat?"这个大类没有小类，直接点下面的 ＋":"先在左边点一个大类")+'</div>');
-    if(pkAdd){pkAdd.disabled=!pkCat;
-      pkAdd.textContent=pkCat?("＋ "+catLabelOf(pkCat,pkSub||null)):"＋ 先选左边";}}
+    if(!pkCat||!pkSub)return;
+    var cur=pkCat.value;
+    pkCat.innerHTML=catsByUse().map(function(c){
+      return '<option value="'+c.key+'">'+esc(c.name)+'</option>';}).join("");
+    if(cur&&cats.some(function(c){return c.key===cur;}))pkCat.value=cur;
+    renderPickSub();}
+  function renderPickSub(){
+    if(!pkCat||!pkSub)return;
+    var subs=subsByUse(pkCat.value),cur=pkSub.value;
+    pkSub.innerHTML='<option value="">'+(subs.length?"（不选小类）":"（无小类）")+'</option>'+
+      subs.map(function(x){return '<option value="'+x.key+'">'+esc(x.name)+'</option>';}).join("");
+    if(cur&&subs.some(function(x){return x.key===cur;}))pkSub.value=cur;
+    pkSub.disabled=!subs.length;
+    if(pkDot)pkDot.style.background=subColor(pkCat.value,pkSub.value||null);}
   function addSlot(){
-    if(!pkCat){pomoNote("先在左边点一个大类");return;}
-    var one={cat:pkCat,sub:pkSub||null};
+    if(!pkCat||!pkCat.value){pomoNote("先选一个大类");return;}
+    var one={cat:pkCat.value,sub:pkSub.value||null};
     if(slotHas(one)){pomoNote("这块牌子已经有了");return;}
     if(pSlots.length>=8){pomoNote("最多 8 块");return;}
     pSlots.push(one);saveSlots();renderSlots(true);}
@@ -12671,7 +12682,8 @@ margin-left: -22px;
     saveMates();
     // 这两个「变之前的值」得跟着走，否则她下一次真去动下拉时，会拿一个旧值去给那一段记账
     pomoCatPrev=pomoCat.value;pomoSubPrev=pomoSub.value;
-    pomoManual=true;markPomoAuto(false);                  // 牌子按的就是它，别再按名字猜一遍
+    pomoManual=true;markPomoAuto(false);pHint=null;       // 牌子按的就是它，别再按名字猜一遍
+    try{autoPomoCat();}catch(e){}                         // 换完再看一眼：名字像不像别的牌子
     savePomoLast();savePomoRun();renderSlots(true);drawPomo();}
   function tapSlot(i,add){
     var s=pSlots[i];if(!s||!s.cat)return;
@@ -12694,15 +12706,11 @@ margin-left: -22px;
     var i=+row.getAttribute("data-i");
     if(e.target.closest(".ps-x")){pSlots.splice(i,1);saveSlots();renderSlots(true);return;}
     tapSlot(i,!!(e.ctrlKey||e.metaKey));});
-  if(pkCats)pkCats.addEventListener("click",function(e){
-    var it=e.target.closest("[data-pkc]");if(!it)return;
-    pkCat=it.getAttribute("data-pkc");pkSub=null;renderPick();});
-  if(pkSubs)pkSubs.addEventListener("click",function(e){
-    var it=e.target.closest("[data-pks]");if(!it)return;
-    var k=it.getAttribute("data-pks");pkSub=((pkSub||"")===k)?null:k;renderPick();});
+  if(pkCat)pkCat.addEventListener("change",function(){pkSub.value="";renderPickSub();});
+  if(pkSub)pkSub.addEventListener("change",renderPickSub);
   if(pkAdd)pkAdd.addEventListener("click",addSlot);
-  pkCat=pomoCat.value||((cats[0]||{}).key||"");pkSub=pomoSub.value||null;
-  renderPick();
+  if(pkCat){pkCat.value=pomoCat.value||"";renderPick();
+    if(pomoSub.value){try{pkSub.value=pomoSub.value;renderPickSub();}catch(_e){}}}
   renderSlots(true);
   function renderSegs(){
     if(!segsBox)return;
