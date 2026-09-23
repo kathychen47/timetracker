@@ -1589,6 +1589,7 @@
 "给这道菜起个名字吧": "Give this dish a name",
 "统计时长另算": "Stats duration set separately",
 "统计时长（可选）": "Stats duration (optional)",
+"统计里这条按各段实测时长分账，加起来还是这段区间的总时长（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、写自己的备注、或者 ✕ 删掉（时间并给相邻的段）；改最上面那个大类会取消整条的分段。暂停挖出来的洞不算专注。": "In the stats this entry is split by each segment's real length, and they still add up to the full span (a segment under a minute counts as 0 but stays in the record). You can change a segment's category, give it its own note, or ✕ it away (its time goes to the segment next to it); changing the category at the top drops the split altogether. Pause gaps don't count as focus.",
 "继续": "Continue",
 "续保": "renewal",
 "维修保养": "service & repairs",

@@ -2316,7 +2316,11 @@
     border:1px solid transparent;background:var(--bg);color:var(--text)}
   .ev-segs .evs-nt::placeholder{color:var(--muted);opacity:.7}
   .ev-segs .evs-nt:focus{outline:none;border-color:var(--primary)}
-  .ev-segs .evs-note{font-size:11px;color:var(--muted);line-height:1.5}
+  /* 长说明收进这个问号里 —— 平铺在底下会把整块撑高，而那些话多数时候不用看 */
+  .qm{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;
+    border:1px solid var(--border);border-radius:50%;background:none;color:var(--muted);
+    font-size:10.5px;line-height:1;cursor:help;padding:0;margin-left:5px;vertical-align:middle;flex:none}
+  .qm:hover{color:var(--primary);border-color:var(--primary)}
   .rep-segs{font-size:11px;color:var(--muted);margin-top:2px}
   .rep-segs em{font-style:normal;opacity:.8}
 
@@ -4410,7 +4414,7 @@ margin-left: -22px;
       <div id="ev-mates"></div>
       <button type="button" class="pomo-mate-add" id="ev-mate-add" title="这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高">＋ 同时做（平分）</button>
     </div>
-    <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）</label><div class="ev-segs" id="ev-segs"></div></div>
+    <div class="field" id="ev-segs-field" style="display:none"><label>这段时间的分段（正计时里换任务记下来的）<button type="button" class="qm" id="ev-segs-q">?</button></label><div class="ev-segs" id="ev-segs"></div></div>
     <div class="field"><label>备注 / note（可选）</label><textarea id="ev-note" rows="2" placeholder="写点具体内容…（会一起同步到 Google 日历）"></textarea></div>
     <!-- 「统计时长」她说不需要了，默认不再露面。
          但它不是摆设：evNetMin() 真按它算统计。以前填过的那几条要是就这么藏了，
@@ -6924,6 +6928,7 @@ margin-left: -22px;
     "给这道菜起个名字吧":"Give this dish a name",
     "统计时长另算":"Stats duration set separately",
     "统计时长（可选）":"Stats duration (optional)",
+    "统计里这条按各段实测时长分账，加起来还是这段区间的总时长（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、写自己的备注、或者 ✕ 删掉（时间并给相邻的段）；改最上面那个大类会取消整条的分段。暂停挖出来的洞不算专注。":"In the stats this entry is split by each segment's real length, and they still add up to the full span (a segment under a minute counts as 0 but stays in the record). You can change a segment's category, give it its own note, or ✕ it away (its time goes to the segment next to it); changing the category at the top drops the split altogether. Pause gaps don't count as focus.",
     "继续":"Continue",
     "续保":"renewal",
     "维修保养":"service & repairs",
@@ -12240,11 +12245,15 @@ margin-left: -22px;
         '<input type="text" class="evs-nt" data-segn="'+i+'" placeholder="这一段的备注" value="'+esc(s.n||"")+'">'+
         '<span class="mn">'+secLabel(s.sec)+'</span>'+
         '<button type="button" class="evs-x" data-segx="'+i+'" title="删掉这一段，时间并给相邻的段">✕</button></div>';}).join("")+
-      '<div class="evs-note">统计里这条按各段实测时长分账'+
-      (gp?('，这段区间占 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分，其中<b>暂停 '+Math.round(evMinutes({start:fStart.value,end:fEnd.value})*gp/st.reduce(function(a,s){return a+s.sec;},0))+' 分不算专注</b>')
-        :('，合计仍是 '+evMinutes({start:fStart.value,end:fEnd.value})+' 分'))+
-      '（不满 1 分钟的段在统计里算 0，但记录留着）。每段可以直接改分类、写自己的备注、或者✕删掉（时间并给相邻的段）；'+
-      '改最上面那个大类会取消整条的分段。</div>';}
+      "";
+    // 说明收进问号里，别平铺在底下。
+    // 注意：属性改动 MutationObserver 管不着，所以这儿得自己 trv() 一次；
+    // 也正因为要能整句查词表，这句话写成**固定**的，不塞算出来的分钟数。
+    var q=document.getElementById("ev-segs-q");
+    if(q)q.title=trv(SEGHELP);}
+  var SEGHELP="统计里这条按各段实测时长分账，加起来还是这段区间的总时长（不满 1 分钟的段在统计里算 0，但记录留着）。"+
+    "每段可以直接改分类、写自己的备注、或者 ✕ 删掉（时间并给相邻的段）；改最上面那个大类会取消整条的分段。"+
+    "暂停挖出来的洞不算专注。"
   function segCatOpts(ck,sk){
     var out="";
     cats.forEach(function(c){
