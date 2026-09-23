@@ -271,6 +271,37 @@
   @keyframes fshBub{0%{opacity:.85;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(-3px,-10px) scale(1)}}
   /* 系统里关了动效的就别动 —— 有人一看动画就头晕 */
   @media (prefers-reduced-motion:reduce){.fishy .fsh *{animation:none!important}}
+  /* 番茄钟底下那只猫。
+     素材：32-Bit Cat by mxmaze（CC BY 4.0），4x4 共 16 格、每格 32x32，原图一个像素没动 ——
+     上一版我为了让白猫在浅色界面上显眼，自作主张把它压成四个平涂色块，结果毛的层次全没了。
+     它自带黑色描边，本来就看得清，不需要我重画。
+     放大整 2 倍（64px）：像素图只能整数倍放大，1.5 倍会糊。
+     画面里猫是**朝左**的，所以往右走的时候要 scaleX(-1) 翻过来。 */
+  .pomo-kitty-lane{position:relative;height:56px;margin:2px 0 -4px;overflow:hidden}
+  .pomo-kitty{position:absolute;bottom:-4px;left:0;width:64px;height:64px;
+    background-image:url("data:image/png;base64,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");
+    background-repeat:no-repeat;background-size:400% 400%;
+    background-position:0% 0%;image-rendering:pixelated;
+    animation:catIdle 1.6s steps(2) infinite}
+  /* 站着（没在计时）：第 0 行两帧，慢慢摇 */
+  @keyframes catIdle{from{background-position-x:0%}to{background-position-x:66.666%}}
+  /* 走路（计时中）：第 1 行两帧 + 沿着这条带子来回走 */
+  .pomo-kitty.run{background-position-y:33.333%;
+    animation:catIdle .42s steps(2) infinite, catWalk 22s linear infinite}
+  @keyframes catWalk{
+    0%{left:0;transform:scaleX(-1)}
+    48%{left:calc(100% - 64px);transform:scaleX(-1)}
+    50%{left:calc(100% - 64px);transform:scaleX(1)}
+    98%{left:0;transform:scaleX(1)}
+    100%{left:0;transform:scaleX(1)}}
+  /* 趴着睡（暂停 / 跟着看别的网页）：第 2、3 行第 3 格来回，像在呼吸 */
+  .pomo-kitty.rest{background-position-x:66.666%;
+    animation:catRest 2.4s steps(2) infinite}
+  @keyframes catRest{from{background-position-y:66.666%}to{background-position-y:133.332%}}
+  /* 记完一次，蹦一下 */
+  .pomo-kitty.hop{animation:catIdle 1.6s steps(2) infinite, catHop .6s ease-out}
+  @keyframes catHop{0%{bottom:-4px}35%{bottom:14px}60%{bottom:-4px}75%{bottom:4px}100%{bottom:-4px}}
+  @media (prefers-reduced-motion:reduce){.pomo-kitty{animation:none!important}}
   .ring{width:168px;height:168px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;position:relative;
     background:conic-gradient(var(--cat-focus) calc(var(--p,0)*1%), var(--surface-2) 0)}
   .ring.brk{background:conic-gradient(var(--cat-sport) calc(var(--p,0)*1%), var(--surface-2) 0)}
@@ -3857,6 +3888,7 @@ margin-left: -22px;
               <div class="mode" id="pomo-mode">专注</div>
             </div></div></div>
             <div class="pomo-hint" id="pomo-hint" title="一圈 60 分，可绕多圈，最多 3 小时">拖动圆环设时长 · 一圈 60 分</div>
+            <div class="pomo-kitty-lane" id="pomo-kitty-lane"><i class="pomo-kitty" id="pomo-kitty"></i></div>
             <div class="pomo-segs" id="pomo-segs"></div>
             <div class="pomo-btns">
               <button class="btn primary" id="pomo-start">开始</button>
@@ -4780,6 +4812,9 @@ margin-left: -22px;
             <div class="set-desc">正计时中途按暂停：开着 = 日历块的起止是真实的墙上时间，暂停那段在块里画成一个空洞，统计只算做事的部分；关着（默认）= 整段并成一块实心的，块的长度就是钟上真正走过的时间。<b>只管之后记的，已经记下的不动。</b></div></div>
           <label class="switch"><input type="checkbox" id="set-pgap"><span class="sw-track"></span></label>
         </div>
+      </div>
+      <div class="set-item">
+        <div class="set-desc">番茄钟下面那只猫：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。</div>
       </div>
       <div class="set-item">
         <div class="set-row">
@@ -6861,6 +6896,7 @@ margin-left: -22px;
     "电费":"Power bill",
     "留在生词本里，但不再排复习":"Stays in the word list, but no longer scheduled for review",
     "留空则按大类/小类统计":"Leave blank to count by category/sub-category",
+    "番茄钟下面那只猫：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。":"The cat under the timer: 32-Bit Cat by mxmaze (CC BY 4.0, used unmodified).",
     "疑似连读 / 吞音":"Likely linking / swallowed sounds",
     "登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去":"Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
     "登录过期了，去 设置 → 👤 账号 重新登录一次":"Your session expired — go to Settings → 👤 Account and sign in again",
@@ -12978,7 +13014,7 @@ margin-left: -22px;
     var idleDial=(!pFollow&&timerMode==="down"&&!pTimer&&pMode2==="focus"&&pLeft===pTotal); // 空闲起点：圆环当"表盘"，可拖
     ring.style.cursor=(!pFollow&&timerMode==="down"&&!pTimer)?"grab":"default";
     if(pomoSetBox)pomoSetBox.style.display=(timerMode==="up")?"none":"";  // 正计时用不到「专注(分)/休息(分)」
-    renderSegs();try{renderSlots();}catch(e){}
+    renderSegs();try{renderSlots();}catch(e){}try{drawCat();}catch(e){}
     if(pomoHint){var noting=Date.now()<noteUntil;                         // 正在显示提示语时别被冲掉
       if(!noting)pomoHint.textContent=hintText();
       pomoHint.style.visibility=(noting||pFollow||idleDial)?"visible":"hidden";}
@@ -12996,6 +13032,20 @@ margin-left: -22px;
         ring.style.setProperty("--p",cp.toFixed(1));
       }else{ring.style.background="";var pct=(pTotal>0?(1-pLeft/pTotal)*100:0);ring.style.setProperty("--p",pct.toFixed(1));}}
   }
+  // 那只猫：跑着就走，停着就趴下睡，记完一次蹦一下。
+  // 只看状态、不碰数字 —— 它坏了顶多是不动，绝不该影响计时或落库，所以调用处一律包在 try 里。
+  var catEl=document.getElementById("pomo-kitty"),catHopT=null;
+  function drawCat(){
+    if(!catEl)return;
+    var walking=!!pTimer&&!pFollow;
+    var resting=pFollow||(!pTimer&&((timerMode==="up")?pElapsed>0:(pLeft>0&&pLeft<pTotal)));
+    catEl.classList.toggle("run",walking);
+    catEl.classList.toggle("rest",!walking&&resting);}
+  function catHop(){
+    if(!catEl)return;
+    catEl.classList.remove("hop");void catEl.offsetWidth;catEl.classList.add("hop");
+    if(catHopT)clearTimeout(catHopT);
+    catHopT=setTimeout(function(){catEl.classList.remove("hop");catHopT=null;},700);}
   // 拖动圆环直接设置倒计时时长（不用打字）
   function ringSetFromEvent(e){
     var rect=ring.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
@@ -13272,7 +13322,7 @@ margin-left: -22px;
     var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
     if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
     pLog("finishUp:落库");
-    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);
+    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);try{catHop();}catch(e){}
       // dropTiny 刚才可能悄悄并掉了几小段 —— 段落条上看得见的东西没了，总得说一声
       if(tinyMerged>0)pomoNote("有 "+tinyMerged+" 小段不到 "+minSeg()+" 秒，已并给挨着的那段（总时长没变，设置里可以调）");}
     else if(pElapsed>0){pLog("finishUp:不到1分钟丢弃");pomoNote("不到 1 分钟，没记进日历");}
@@ -13284,7 +13334,7 @@ margin-left: -22px;
   function onComplete(endMs){
     if(!pomoOwned()){pLog("onComplete:不归我管");savePomoSeen(true);startFollow();try{drawLostChip();}catch(e){}return;}
     stopTimer();try{beep();}catch(e){}
-    if(pMode2==="focus"){logDone(pTotal,endMs);clearMates();pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
+    if(pMode2==="focus"){logDone(pTotal,endMs);try{catHop();}catch(e){}clearMates();pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
     else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     pRid="";save("tt_pomorun",null);drawPomo();try{drawLostChip();}catch(e){}}
   // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）

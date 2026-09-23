@@ -258,6 +258,16 @@ function secOf(cat, sub) {
   fb.click();
   ok(fc.checked === false && !fb.classList.contains("on"), "再点一下关回去");
 
+  // ---- 15. 那只猫：只跟着状态走，不碰任何数字 ----
+  var kitty = $("#pomo-kitty");
+  ok(!!kitty && !!$("#pomo-kitty-lane"), "猫和它那条地都在");
+  ok(kitty.id !== "pomo-cat", "id 没跟那个（藏起来的）大类下拉撞车");
+  ok(kitty.classList.contains("run"), "计时跑着 → 在走");
+  $("#pomo-start").click();                                   // 暂停
+  ok(!kitty.classList.contains("run") && kitty.classList.contains("rest"), "暂停 → 趤下睡");
+  $("#pomo-start").click();                                   // 接着跑
+  ok(kitty.classList.contains("run"), "接着跑 → 又走起来了");
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 
   // ---- 13. 刷新一下：牌子还在吗？----
