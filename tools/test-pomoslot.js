@@ -244,6 +244,20 @@ function secOf(cat, sub) {
   ok(rows().filter(function (r) { return r.classList.contains("hint"); }).length === 0,
     "名字清空，虚线也没了");
 
+  // ---- 14. 摸鱼：勾选框撑了，整条鱼就是开关 ----
+  // 真正的状态还在那个藏起来的 checkbox 上 ——
+  // 落库、黑匣子、日历上那块正在长的色块，读的都是它的 .checked。
+  var fb = $("#pomo-par-btn"), fc = $("#pomo-par");
+  ok(!!fb && !!fc, "鱼和那个藏起来的开关都在");
+  ok(!$("#pomo-par-btn input"), "鱼旁边没有勾选框了");
+  ok(fc.checked === false && !fb.classList.contains("on"), "一开始没在摸鱼");
+  fb.click();
+  ok(fc.checked === true && fb.classList.contains("on"), "点一下开关真的翻了");
+  ok(fb.getAttribute("aria-pressed") === "true", "读屏那边也知道它按下了");
+  ok(fb.classList.contains("swim"), "刚点开那一下会游两下");
+  fb.click();
+  ok(fc.checked === false && !fb.classList.contains("on"), "再点一下关回去");
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 
   // ---- 13. 刷新一下：牌子还在吗？----
