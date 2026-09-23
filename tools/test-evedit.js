@@ -136,6 +136,29 @@ setTimeout(function () {
     d.getElementById("ev-cancel").click();
   }
 
+  // ---- 弹窗底下那几行开关 ----
+  // 「⊘ 不进统计」从界面上撤了（她：「可以删了。现在默认进」）。
+  // 但藏起来不等于没有 —— 以前标过的那些事件要是就这么藏了，
+  // 就成了一个看不见、改不掉、却在偷偷压低总时长的东西。
+  // 所以跟「统计时长」一个规矩：只有这一条自己标过才显示。
+  el = d.querySelector('.ev[data-id="e1"]');
+  if (el) {
+    el.click();
+    ok(d.getElementById("ev-nostat").checked === true, "这条本来就标过不进统计");
+    ok(d.getElementById("ev-nostat-row").style.display !== "none",
+      "标过的那条，开关要露出来让她能取消");
+    ok(!!d.querySelector("#ev-par-row .fsh"), "摸鱼那行是那条手画的鱼，不是 emoji");
+    ok(!/重叠/.test(d.getElementById("ev-par-row").textContent),
+      "鱼旁边只写「摸鱼」，解释收进了悬停提示");
+    ok(d.querySelectorAll(".ev-flag").length >= 2, "那几行都括上了 .ev-flag（字小一档）");
+    d.getElementById("ev-cancel").click();
+  }
+  d.getElementById("add-btn").click();
+  ok(d.getElementById("ev-nostat-row").style.display === "none",
+    "新建的一律进统计 —— 那一行不露面");
+  ok(d.getElementById("ev-nostat").checked === false, "新建的没勾上");
+  d.getElementById("ev-cancel").click();
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
   done();
 }, 2500);

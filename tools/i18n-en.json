@@ -1060,6 +1060,7 @@
 "摘要，比如 房租 / iCloud": "Description, e.g. Rent / iCloud",
 "摸鱼": "Slacking",
 "摸鱼 · 与其它事件重叠": "Slacking · overlaps with another event",
+"摸鱼：允许和同一时间段的其它事件重叠，统计里两边都算": "Slacking: this may overlap other events in the same stretch, and both sides count in the stats",
 "摸鱼：这段时间允许和日历上已有的事情重叠，两边都算": "Slacking: this stretch may overlap things already on the calendar, and both sides count",
 "撤不回来。会先自动导出一份备份到下载文件夹。": "Can't be undone. A backup will be exported to your Downloads folder first.",
 "播放 / 停下": "Play / pause",
