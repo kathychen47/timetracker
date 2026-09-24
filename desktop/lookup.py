@@ -36,8 +36,11 @@ CFG = {
     "hot_lookup": "ctrl+alt+d",   # 手动查一下（整句翻译用它）
     "hot_toggle": "ctrl+alt+s",   # 暂停 / 恢复划词
     "hot_quit": "ctrl+alt+q",
+    # 只拦真·终端。VS Code 不在里面 —— 它的集成终端**有选中内容时 Ctrl+C 是复制**，
+    # 而我们只在「拖出了选区」之后才按 Ctrl+C，走不到「中断程序」那条路。
+    # 拦掉整个 code.exe 的代价太大：她大部分读写都在里面。
     "blacklist": ["windowsterminal.exe", "cmd.exe", "powershell.exe", "pwsh.exe",
-                  "conhost.exe", "openconsole.exe", "code.exe", "putty.exe", "mintty.exe"],
+                  "conhost.exe", "openconsole.exe", "putty.exe", "mintty.exe"],
 }
 
 
@@ -359,7 +362,13 @@ def main():
                     log("跳过（黑名单）：%s" % exe)
                 else:
                     sel = clean(grab_selection())
-                    if sel and len(sel) <= 200 and (is_word(sel) or not CFG["words_only"]):
+                    if not sel:
+                        log("拖了一下，但没拿到文字（这个程序可能不支持 Ctrl+C）")
+                    elif len(sel) > 200:
+                        log("选中的太长了（%d 字），没查" % len(sel))
+                    elif CFG["words_only"] and not is_word(sel):
+                        log("「%s」不算一个词 —— 整句请按 %s" % (sel[:30], CFG["hot_lookup"]))
+                    else:
                         popup(sel)
         prev_down = now_down
 
