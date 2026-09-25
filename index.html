@@ -286,32 +286,58 @@
   @keyframes fshBub{0%{opacity:.85;transform:translate(0,0) scale(.5)}100%{opacity:0;transform:translate(-3px,-10px) scale(1)}}
   /* 系统里关了动效的就别动 —— 有人一看动画就头晕 */
   @media (prefers-reduced-motion:reduce){.fishy .fsh *{animation:none!important}}
-  /* 番茄钟底下那只猫。
+  /* 那只猫。
      素材：32-Bit Cat by mxmaze（CC BY 4.0），4x4 共 16 格、每格 32x32，原图一个像素没动 ——
-     上一版我为了让白猫在浅色界面上显眼，自作主张把它压成四个平涂色块，结果毛的层次全没了。
+     上上版我为了让白猫在浅色界面上显眼，自作主张把它压成四个平涂色块，结果毛的层次全没了。
      它自带黑色描边，本来就看得清，不需要我重画。
      放大整 2 倍（64px）：像素图只能整数倍放大，1.5 倍会糊。
-     画面里猫是**朝左**的，所以往右走的时候要 scaleX(-1) 翻过来。 */
-  .pomo-kitty-lane{position:relative;height:56px;margin:2px 0 -4px;overflow:hidden}
-  .pomo-kitty{position:absolute;bottom:-4px;left:0;width:64px;height:64px;
+     画面里猫是**朝左**的，所以往右走的时候要 scaleX(-1) 翻过来。
+
+     分三层是因为 transform 只有一个，位置、动作、翻身挤在一起会互相覆盖：
+       .pomo-kitty 管位置（fixed，满页跑）· .kt-b 管一次性动作（蹦/转/抖）· .kt-s 管贴图和朝向。 */
+  /* 它原来就在这条 56px 的地里来回走。现在满页跑了，这条地只剩一个用处：
+     第一次打开网页时告诉它从哪儿出发（还是番茄钟底下，别让人找不到）。 */
+  .pomo-kitty-lane{height:0;margin:0;overflow:hidden}
+  .pomo-kitty{position:fixed;left:0;top:0;width:64px;height:64px;z-index:150;
+    cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
+    -webkit-tap-highlight-color:transparent}
+  .pomo-kitty.drag{cursor:grabbing;z-index:151}
+  .kt-b{position:absolute;inset:0}
+  .kt-s{position:absolute;inset:0;
     background-image:url("data:image/png;base64,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");
     background-repeat:no-repeat;background-size:400% 400%;
     background-position:0% 0%;image-rendering:pixelated;
     animation:catIdle 1.6s steps(2) infinite}
-  /* 站着（没在计时）：第 0 行两帧，慢慢摇 */
+  /* 站着：第 0 行两帧，慢慢摇 */
   @keyframes catIdle{from{background-position-x:0%}to{background-position-x:66.666%}}
   /* 走路：只负责换帧，**位置和朝向交给 JS** ——
-     原来位置是 CSS 关键帧管的，那样它只会从头走到尾再走回来，
-     中间想停下来站一会儿、趴一下都做不到（关键帧一旦开始就必须跑完）。 */
-  .pomo-kitty.run{background-position-y:33.333%;animation:catIdle .42s steps(2) infinite}
-  /* 趴着睡（暂停 / 跟着看别的网页）：第 2、3 行第 3 格来回，像在呼吸 */
-  .pomo-kitty.rest{background-position-x:66.666%;
+     原来位置是 CSS 关键帧管的，那样它只会从头走到尾再走回来。 */
+  .pomo-kitty.run .kt-s{background-position-y:33.333%;animation:catIdle .42s steps(2) infinite}
+  /* 趴着睡：第 2、3 行第 3 格来回，像在呼吸 */
+  .pomo-kitty.rest .kt-s{background-position-x:66.666%;
     animation:catRest 2.4s steps(2) infinite}
   @keyframes catRest{from{background-position-y:66.666%}to{background-position-y:133.332%}}
-  /* 记完一次，蹦一下 */
-  .pomo-kitty.hop{animation:catIdle 1.6s steps(2) infinite, catHop .6s ease-out}
-  @keyframes catHop{0%{bottom:-4px}35%{bottom:14px}60%{bottom:-4px}75%{bottom:4px}100%{bottom:-4px}}
-  @media (prefers-reduced-motion:reduce){.pomo-kitty{animation:none!important}}
+  /* 一次性的小动作：点它、放下它、或者它自己突然想来一下。
+     三个都是 transform 动画，所以 JS 里挂之前要先把另两个摘干净。 */
+  .pomo-kitty.hop .kt-b{animation:catHop .6s ease-out}
+  @keyframes catHop{0%{transform:translateY(0)}35%{transform:translateY(-18px)}
+    60%{transform:translateY(0)}75%{transform:translateY(-8px)}100%{transform:translateY(0)}}
+  .pomo-kitty.spin .kt-b{animation:catSpin .7s ease-in-out}
+  @keyframes catSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+  .pomo-kitty.shake .kt-b{animation:catShake .5s ease-in-out}
+  @keyframes catShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-13deg)}
+    50%{transform:rotate(11deg)}80%{transform:rotate(-6deg)}}
+  /* 被提着的时候晒晒腿 */
+  .pomo-kitty.drag .kt-b{animation:catHeld .6s ease-in-out infinite}
+  @keyframes catHeld{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+  /* 点它冒出来的那个小泡 */
+  .kt-p{position:absolute;left:50%;top:-2px;font-size:15px;line-height:1;opacity:0;
+    pointer-events:none;transform:translateX(-50%)}
+  .kt-p.go{animation:catPuff .9s ease-out}
+  @keyframes catPuff{0%{opacity:0;transform:translate(-50%,4px) scale(.5)}
+    25%{opacity:1}100%{opacity:0;transform:translate(-50%,-26px) scale(1.1)}}
+  /* 系统里关了动效的：不跑也不动，但还能拖、还能点 */
+  @media (prefers-reduced-motion:reduce){.pomo-kitty,.pomo-kitty *{animation:none!important}}
   .ring{width:168px;height:168px;border-radius:50%;margin:6px auto 0;display:grid;place-items:center;position:relative;
     background:conic-gradient(var(--cat-focus) calc(var(--p,0)*1%), var(--surface-2) 0)}
   .ring.brk{background:conic-gradient(var(--cat-sport) calc(var(--p,0)*1%), var(--surface-2) 0)}
@@ -3898,7 +3924,7 @@ margin-left: -22px;
               <div class="mode" id="pomo-mode">专注</div>
             </div></div></div>
             <div class="pomo-hint" id="pomo-hint" title="一圈 60 分，可绕多圈，最多 3 小时">拖动圆环设时长 · 一圈 60 分</div>
-            <div class="pomo-kitty-lane" id="pomo-kitty-lane"><i class="pomo-kitty" id="pomo-kitty"></i></div>
+            <div class="pomo-kitty-lane" id="pomo-kitty-lane"><i class="pomo-kitty" id="pomo-kitty"><i class="kt-b"><i class="kt-s"></i></i><i class="kt-p"></i></i></div>
             <div class="pomo-segs" id="pomo-segs"></div>
             <div class="pomo-btns">
               <button class="btn primary" id="pomo-start">开始</button>
@@ -4824,7 +4850,7 @@ margin-left: -22px;
         </div>
       </div>
       <div class="set-item">
-        <div class="set-desc">番茄钟下面那只猫：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。</div>
+        <div class="set-desc">页面上溜达的那只猫：点一下它会有反应，也可以拖着换个地方，放下的位置刷新后还在。素材：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。</div>
       </div>
       <div class="set-item">
         <div class="set-row">
@@ -6907,7 +6933,6 @@ margin-left: -22px;
     "电费":"Power bill",
     "留在生词本里，但不再排复习":"Stays in the word list, but no longer scheduled for review",
     "留空则按大类/小类统计":"Leave blank to count by category/sub-category",
-    "番茄钟下面那只猫：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。":"The cat under the timer: 32-Bit Cat by mxmaze (CC BY 4.0, used unmodified).",
     "疑似连读 / 吞音":"Likely linking / swallowed sounds",
     "登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去":"Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
     "登录过期了，去 设置 → 👤 账号 重新登录一次":"Your session expired — go to Settings → 👤 Account and sign in again",
@@ -7429,6 +7454,7 @@ margin-left: -22px;
     "音频已经删了。文字都在，可以只看不听。":"Audio deleted. The text is all here — you can still read it.",
     "音频收到了。把文本贴进②，再点③。":"Got the audio. Paste the text into ②, then hit ③.",
     "页":"Page",
+    "页面上溜达的那只猫：点一下它会有反应，也可以拖着换个地方，放下的位置刷新后还在。素材：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。":"The cat that wanders the page: click it for a reaction, or drag it somewhere else — it stays where you put it after a refresh. Sprite: 32-Bit Cat by mxmaze (CC BY 4.0, used unmodified).",
     "项目":"Project",
     "预估税负":"Estimated tax",
     "预估税负只算你点过「记入税务」的那":"Estimated tax only counts the",
@@ -13057,56 +13083,164 @@ margin-left: -22px;
         ring.style.setProperty("--p",cp.toFixed(1));
       }else{ring.style.background="";var pct=(pTotal>0?(1-pLeft/pTotal)*100:0);ring.style.setProperty("--p",pct.toFixed(1));}}
   }
-  // 那只猫：跑着就走，停着就趴下睡，记完一次蹦一下。
+  // 那只猫：自己在整页上溜达，可以点、可以拖。
   // 只看状态、不碰数字 —— 它坏了顶多是不动，绝不该影响计时或落库，所以调用处一律包在 try 里。
-  var catEl=document.getElementById("pomo-kitty"),catHopT=null;
-  // 计时跑着的时候它不是一直走：走一阵 → 停下来站会儿 → 偶尔干脆趴下歇一下 → 再起来走。
-  // 位置和朝向都在这儿算，CSS 只管换帧。
-  //   catAct  walk = 在走 · stand = 站着 · lie = 趴着歇
-  //   catX    离左边多少像素；catDir +1 往右、-1 往左（原图猫是朝左的，往右要翻过来）
-  //   catTill 这个动作演到什么时候（时间戳）
-  var catAct="stand",catX=0,catDir=1,catTill=0,catT=null;
-  function catLane(){var l=catEl&&catEl.parentNode;return l?Math.max(0,l.clientWidth-64):0;}
+  var catEl=document.getElementById("pomo-kitty");
+  var catB=catEl?catEl.querySelector(".kt-b"):null;
+  var catS=catEl?catEl.querySelector(".kt-s"):null;
+  var catP=catEl?catEl.querySelector(".kt-p"):null;
+  var catHopT=null;
+  // 要满页跑就得先脱离番茄钟那个框：position:fixed 的元素一旦祖先带了 transform，
+  // 就会被拉回去按祖先定位（CSS 里看不出来的坑）。直接挂到 body 上最省事。
+  try{if(catEl&&catEl.parentNode!==document.body)document.body.appendChild(catEl);}catch(_e){}
+
+  //   catAct   walk = 在走 · stand = 站着 · lie = 趴着歇
+  //   catX/catY 左上角在**视口**里的坐标（fixed 定位，跟页面滚到哪儿无关）
+  //   catDir   +1 往右、-1 往左（原图猫是朝左的，往右要翻过来）
+  //   catTill  这个动作演到什么时候（时间戳）
+  //   catTx/Ty 这一趟想走到哪儿
+  var catAct="stand",catX=-1,catY=-1,catDir=1,catTill=0,catTx=0,catTy=0;
+  var catT=null,catIdleT=null,catDrag=null,catSaveT=0,catPokeN=0;
+  var CAT_SZ=64,CAT_SPD=2.4;          // 每 50ms 走 2.4px ≈ 48px/秒，猫散步的速度
+  function catWmax(){return Math.max(0,(window.innerWidth||960)-CAT_SZ);}
+  function catHmax(){return Math.max(0,(window.innerHeight||600)-CAT_SZ);}
+  function catClamp(){
+    if(!(catX>=0))catX=0;if(!(catY>=0))catY=0;
+    if(catX>catWmax())catX=catWmax();
+    if(catY>catHmax())catY=catHmax();}
+  // 系统里关了动效就别满屏跑 —— 有人一看东西动就头晕。拖和点还是能用的。
+  function catCalm(){try{return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches);}catch(e){return false;}}
+  function catAsleep(){return !pTimer||!!pFollow;}
+
+  // 她把猫拖到哪儿，刷新完还得在哪儿。
+  // 存成**占视口的比例**，换个窗口大小就不会把它丢到屏幕外面去。
+  // 不进 CLOUD_KEYS：手机和电脑的窗口根本不是一回事，同步过去只会打架。
+  function catSave(){
+    try{save("tt_catpos",{x:catX/Math.max(1,catWmax()),y:catY/Math.max(1,catHmax())});}catch(e){}}
+  function catRestore(){
+    var p=load("tt_catpos",null);
+    if(p&&typeof p.x==="number"&&typeof p.y==="number"&&isFinite(p.x)&&isFinite(p.y)){
+      catX=p.x*catWmax();catY=p.y*catHmax();catClamp();return true;}
+    return false;}
+  // 第一次打开：从番茄钟底下出发，跟以前一个地方，不用满屏找猫。
+  function catHome(){
+    var r=null;try{r=document.getElementById("pomo-kitty-lane").getBoundingClientRect();}catch(e){}
+    if(r&&r.width>0&&r.top>0){catX=r.left;catY=r.top-CAT_SZ+8;}
+    else{catX=catWmax()*.18;catY=catHmax()*.72;}
+    catClamp();}
+
   function catPose(){
     if(!catEl)return;
-    catEl.classList.toggle("run",catAct==="walk");
-    catEl.classList.toggle("rest",catAct==="lie");
+    var held=!!(catDrag&&catDrag.moved);
+    catEl.classList.toggle("run",catAct==="walk"&&!held);
+    catEl.classList.toggle("rest",catAct==="lie"&&!held);
     catEl.style.left=Math.round(catX)+"px";
-    catEl.style.transform=(catDir>0)?"scaleX(-1)":"scaleX(1)";}
+    catEl.style.top=Math.round(catY)+"px";
+    if(catS)catS.style.transform=(catDir>0)?"scaleX(-1)":"scaleX(1)";}
+
+  // 演一个一次性的小动作。三个都靠 transform，同时挂两个会互相盖掉，所以先清干净。
+  function catPlay(kind,puff){
+    if(!catEl)return;
+    catEl.classList.remove("hop","spin","shake");
+    void catEl.offsetWidth;                                  // 不踩一脚排版，浏览器会当成类名根本没变，动画不重放
+    catEl.classList.add(kind);
+    if(catHopT)clearTimeout(catHopT);
+    catHopT=setTimeout(function(){catEl.classList.remove("hop","spin","shake");catHopT=null;},900);
+    if(puff&&catP){catP.textContent=puff;catP.classList.remove("go");void catP.offsetWidth;catP.classList.add("go");}}
+
+  // 挑下一个去处：多半在附近晖，偶尔才横穿整个屏幕。
+  // 全随机的话它会一直在屏幕两头折返，看着像在巡逻不像猫。
+  function catAim(){
+    var far=Math.random()<.3;
+    var rx=far?Math.random()*catWmax():catX+(Math.random()*2-1)*280;
+    var ry=far?Math.random()*catHmax():catY+(Math.random()*2-1)*170;
+    catTx=Math.min(catWmax(),Math.max(0,rx));
+    catTy=Math.min(catHmax(),Math.max(0,ry));}
+
   function catNext(now){
-    // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器
+    // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器。
+    // 计时跑着的时候它精神，停表了就特别爱趴下 —— 状态还是看得出来的。
     if(catAct==="walk"){
-      if(Math.random()<.25){catAct="lie";catTill=now+6000+Math.random()*9000;}
+      if(Math.random()<(catAsleep()?.5:.22)){catAct="lie";catTill=now+7000+Math.random()*11000;}
       else{catAct="stand";catTill=now+2500+Math.random()*5000;}
     }else{
-      catAct="walk";catTill=now+7000+Math.random()*13000;
-      if(Math.random()<.35)catDir=-catDir;}}
+      catAct="walk";catTill=now+6000+Math.random()*12000;catAim();}}
+
   function catTick(){
-    if(!catEl)return;
-    var now=Date.now(),w=catLane();
+    if(!catEl||catDrag)return;
+    var now=Date.now();
+    catClamp();                                              // 窗口被拉小了别让它站到屏幕外
     if(now>=catTill)catNext(now);
     if(catAct==="walk"){
-      catX+=catDir*1.6;
-      if(catX<=0){catX=0;catDir=1;}                    // 撞墙就转身
-      else if(catX>=w){catX=w;catDir=-1;}}
-    else if(catX>w)catX=w;                             // 侧栏被拉窄了，别站到框外面
+      var dx=catTx-catX,dy=catTy-catY,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<=CAT_SPD){catX=catTx;catY=catTy;catNext(now);}     // 到了，提前换个动作
+      else{
+        catX+=dx/d*CAT_SPD;catY+=dy/d*CAT_SPD;
+        if(Math.abs(dx)>6)catDir=(dx>0)?1:-1;}                // 差一两个像素就翻身的话它会抽筋
+      catClamp();
+      if(now-catSaveT>4000){catSaveT=now;catSave();}}
     catPose();}
+
+  // 随机小动作：站着或趴着的时候隔一阵自己来一下（她：「不仅仅在切换状态的时候触发」）。
+  // 走路时不插嘴 —— 走一半突然转圈很怪。
+  function catIdleTrick(){
+    if(!catEl||catDrag||catAct==="walk")return;
+    if(Math.random()>.32)return;
+    var r=Math.random();
+    catPlay(r<.5?"hop":(r<.8?"shake":"spin"));}
+
   function catRun(on){
-    if(on){if(!catT)catT=setInterval(catTick,120);}
-    else if(catT){clearInterval(catT);catT=null;}}
+    if(on&&catCalm())on=false;
+    if(on){
+      if(!catT)catT=setInterval(catTick,50);
+      if(!catIdleT)catIdleT=setInterval(catIdleTrick,9000);
+    }else{
+      if(catT){clearInterval(catT);catT=null;}
+      if(catIdleT){clearInterval(catIdleT);catIdleT=null;}}}
+
   function drawCat(){
     if(!catEl)return;
-    var live=!!pTimer&&!pFollow;
-    var resting=pFollow||(!pTimer&&((timerMode==="up")?pElapsed>0:(pLeft>0&&pLeft<pTotal)));
-    catRun(live);
-    if(live){if(!catTill)catNext(Date.now());catPose();return;}
-    // 没在计时：停表就趴下睡，从没走过就站着；顺便把它送回左边
-    catAct=resting?"lie":"stand";catTill=0;catX=0;catDir=1;catPose();}
-  function catHop(){
-    if(!catEl)return;
-    catEl.classList.remove("hop");void catEl.offsetWidth;catEl.classList.add("hop");
-    if(catHopT)clearTimeout(catHopT);
-    catHopT=setTimeout(function(){catEl.classList.remove("hop");catHopT=null;},700);}
+    if(catX<0){if(!catRestore())catHome();}                   // 第一次：先找上次摆的位置，没有就回番茄钟底下
+    if(!catTill){catAct=catAsleep()?"lie":"stand";catTill=Date.now()+2500;}
+    catRun(true);catPose();}
+
+  // 点它：蹦 / 转圈 / 抖三选一，连点会换花样，冒个小泡当反馈。
+  // 被摸了就先不走，站着享受一会儿。
+  function catPoke(){
+    var moves=["hop","spin","shake"],puffs=["❤","✨","♪","!"];
+    catPlay(moves[catPokeN++%3],puffs[Math.floor(Math.random()*puffs.length)]);
+    if(catAct==="walk")catAct="stand";
+    catTill=Date.now()+1800+Math.random()*1800;catPose();}
+  // 记完一次，蹦一下
+  function catHop(){catPlay("hop","✨");}
+
+  // 点一下 / 拖着走。用 pointer 事件，鼠标和触屏一套代码。
+  // 按下不立刻算拖动 —— 挪够 4px 才算，不然手一抖就点不成了。
+  if(catEl){
+    catEl.addEventListener("pointerdown",function(e){
+      catDrag={id:e.pointerId,dx:e.clientX-catX,dy:e.clientY-catY,x0:e.clientX,y0:e.clientY,moved:false};
+      try{catEl.setPointerCapture(e.pointerId);}catch(_e){}
+      e.preventDefault();});
+    catEl.addEventListener("pointermove",function(e){
+      if(!catDrag||e.pointerId!==catDrag.id)return;
+      if(!catDrag.moved){
+        if(Math.abs(e.clientX-catDrag.x0)+Math.abs(e.clientY-catDrag.y0)<4)return;
+        catDrag.moved=true;
+        catEl.classList.add("drag");catEl.classList.remove("run","rest","hop","spin","shake");}
+      catX=e.clientX-catDrag.dx;catY=e.clientY-catDrag.dy;catClamp();catPose();});
+    var catUp=function(e){
+      if(!catDrag||(e&&e.pointerId!==undefined&&e.pointerId!==catDrag.id))return;
+      var moved=catDrag.moved;catDrag=null;
+      catEl.classList.remove("drag");
+      if(moved){
+        // 放下了：站原地抖抖毛，然后从这儿接着溜达。位置得马上存，她摆过的东西刷新完要还在。
+        catAct="stand";catTill=Date.now()+1400+Math.random()*1600;
+        catPose();catPlay("shake");catSaveT=Date.now();catSave();
+      }else catPoke();};
+    catEl.addEventListener("pointerup",catUp);
+    catEl.addEventListener("pointercancel",catUp);
+    catEl.addEventListener("dragstart",function(e){e.preventDefault();});
+    window.addEventListener("resize",function(){if(catX<0)return;catClamp();catPose();});}
   // 拖动圆环直接设置倒计时时长（不用打字）
   function ringSetFromEvent(e){
     var rect=ring.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;

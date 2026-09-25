@@ -1497,7 +1497,7 @@
 "电费": "Power bill",
 "留在生词本里，但不再排复习": "Stays in the word list, but no longer scheduled for review",
 "留空则按大类/小类统计": "Leave blank to count by category/sub-category",
-"番茄钟下面那只猫：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。": "The cat under the timer: 32-Bit Cat by mxmaze (CC BY 4.0, used unmodified).",
+"页面上溜达的那只猫：点一下它会有反应，也可以拖着换个地方，放下的位置刷新后还在。素材：32-Bit Cat by mxmaze（CC BY 4.0，原图未作修改）。": "The cat that wanders the page: click it for a reaction, or drag it somewhere else — it stays where you put it after a refresh. Sprite: 32-Bit Cat by mxmaze (CC BY 4.0, used unmodified).",
 "疑似连读 / 吞音": "Likely linking / swallowed sounds",
 "登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去": "Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
 "登录过期了，去 设置 → 👤 账号 重新登录一次": "Your session expired — go to Settings → 👤 Account and sign in again",

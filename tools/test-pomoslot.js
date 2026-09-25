@@ -258,15 +258,47 @@ function secOf(cat, sub) {
   fb.click();
   ok(fc.checked === false && !fb.classList.contains("on"), "再点一下关回去");
 
-  // ---- 15. 那只猫：只跟着状态走，不碰任何数字 ----
+  // ---- 15. 那只猫：满页溜达、能点能拖，但一个数字都不碰 ----
+  // 它现在不再被锁在番茄钟那条地里。最怕的两件事：
+  //   ① 为了满页跑改成了 position:fixed —— 只要还挂在带 transform 的祖先下面，
+  //     它就会被悄悄拉回去按祖先定位，而且**不报错**（跟上次 id 撞车那次一模一样）。
+  //   ② 拖过的位置刷新后得还在（她摆过的东西不能自己跑回去）。
   var kitty = $("#pomo-kitty");
-  ok(!!kitty && !!$("#pomo-kitty-lane"), "猫和它那条地都在");
+  ok(!!kitty && !!$("#pomo-kitty-lane"), "猫和它原来那条地都在");
   ok(kitty.id !== "pomo-cat", "id 没跟那个（藏起来的）大类下拉撞车");
-  ok(kitty.classList.contains("run"), "计时跑着 → 在走");
-  $("#pomo-start").click();                                   // 暂停
-  ok(!kitty.classList.contains("run") && kitty.classList.contains("rest"), "暂停 → 趤下睡");
-  $("#pomo-start").click();                                   // 接着跑
-  ok(kitty.classList.contains("run"), "接着跑 → 又走起来了");
+  ok(kitty.parentNode === d.body, "已经挂到 body 上了（fixed 才不会被祖先的 transform 拉回去）");
+  ok(!!kitty.querySelector(".kt-b") && !!kitty.querySelector(".kt-s"),
+     "位置/动作/贴图 分三层（transform 只有一个，挤一起会互相盖掉）");
+  ok(/^\d+px$/.test(kitty.style.left) && /^\d+px$/.test(kitty.style.top),
+     "坐标是 JS 算的，left/top 都落了值");
+
+  function ptr(type, x, y) {
+    var ev = new w.MouseEvent(type, { clientX: x, clientY: y, bubbles: true, cancelable: true });
+    Object.defineProperty(ev, "pointerId", { value: 7 });
+    kitty.dispatchEvent(ev);
+  }
+  // 点一下（按下、没挪、松开）→ 得有反应
+  var kx = parseInt(kitty.style.left, 10), ky = parseInt(kitty.style.top, 10);
+  ptr("pointerdown", kx + 30, ky + 30); ptr("pointerup", kx + 30, ky + 30);
+  ok(/\b(hop|spin|shake)\b/.test(kitty.className), "点一下它做个动作：" + kitty.className);
+  ok((kitty.querySelector(".kt-p") || {}).textContent, "还冒个小泡当反馈");
+
+  // 拖一把 —— 挪不到 4px 不算拖（手一抖就点不成了）
+  ptr("pointerdown", kx + 30, ky + 30);
+  ptr("pointermove", kx + 32, ky + 30);
+  ok(!kitty.classList.contains("drag"), "挪了 2px：还不算拖");
+  ptr("pointermove", kx + 200, ky + 90);
+  ok(kitty.classList.contains("drag"), "挪够了：这才算拖着它");
+  ptr("pointerup", kx + 200, ky + 90);
+  ok(parseInt(kitty.style.left, 10) === kx + 170 && parseInt(kitty.style.top, 10) === ky + 60,
+     "松手了就停在那儿（拖的是抓住的那一点，不是左上角）");
+  ok(!kitty.classList.contains("drag"), "松手了就不再是拖动状态");
+  var cp = JSON.parse(STORE.tt_catpos || "null");
+  ok(cp && cp.x > 0 && cp.x < 1 && cp.y >= 0 && cp.y < 1,
+     "放下的位置存成了比例（换个窗口大小不会跑到屏幕外）：" + STORE.tt_catpos);
+  var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
+  ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
+     "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
 
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 
