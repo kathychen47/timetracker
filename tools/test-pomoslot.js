@@ -280,7 +280,7 @@ function secOf(cat, sub) {
   // 点一下（按下、没挪、松开）→ 得有反应
   var kx = parseInt(kitty.style.left, 10), ky = parseInt(kitty.style.top, 10);
   ptr("pointerdown", kx + 30, ky + 30); ptr("pointerup", kx + 30, ky + 30);
-  ok(/\b(hop|spin|shake)\b/.test(kitty.className), "点一下它做个动作：" + kitty.className);
+  ok(/\b(hop|stretch|shake)\b/.test(kitty.className) && !/\bspin\b/.test(kitty.className), "点一下它做个动作：" + kitty.className);
   ok((kitty.querySelector(".kt-p") || {}).textContent, "还冒个小泡当反馈");
 
   // 拖一把 —— 挪不到 4px 不算拖（手一抖就点不成了）
