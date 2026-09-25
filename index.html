@@ -13102,8 +13102,18 @@ margin-left: -22px;
   var catAct="stand",catX=-1,catY=-1,catDir=1,catTill=0,catTx=0,catTy=0;
   var catT=null,catIdleT=null,catDrag=null,catSaveT=0,catPokeN=0;
   var CAT_SZ=64,CAT_SPD=2.4;          // 每 50ms 走 2.4px ≈ 48px/秒，猫散步的速度
-  function catWmax(){return Math.max(0,(window.innerWidth||960)-CAT_SZ);}
-  function catHmax(){return Math.max(0,(window.innerHeight||600)-CAT_SZ);}
+  // 全站套了一层 root.style.zoom（applyZoom，屏幕宽就放 1.1、1.2、1.35 倍）。
+  // 猫的 left/top 写在 body 里，会跟着被放大；而 innerWidth / clientX / getBoundingClientRect
+  // 都是**没放大的**那套坐标。两套混着用的后果：她那边 zoom=1.2，
+  // 我以为右边界是 1856，实际画出来是 1856x1.2=2227 —— **猫就这么走出窗口了**。
+  // rail 那儿早就是这么除的（innerHeight/z），我当时没看见。
+  function catZoom(){
+    var z=0;
+    try{z=parseFloat(getComputedStyle(document.documentElement).zoom);}catch(e){}
+    if(!(z>0)){try{z=parseFloat(document.documentElement.style.zoom);}catch(e2){}}
+    return (z>0)?z:1;}
+  function catWmax(){return Math.max(0,(window.innerWidth||960)/catZoom()-CAT_SZ);}
+  function catHmax(){return Math.max(0,(window.innerHeight||600)/catZoom()-CAT_SZ);}
   function catClamp(){
     if(!(catX>=0))catX=0;if(!(catY>=0))catY=0;
     if(catX>catWmax())catX=catWmax();
@@ -13124,8 +13134,8 @@ margin-left: -22px;
     return false;}
   // 第一次打开：从番茄钟底下出发，跟以前一个地方，不用满屏找猫。
   function catHome(){
-    var r=null;try{r=document.getElementById("pomo-kitty-lane").getBoundingClientRect();}catch(e){}
-    if(r&&r.width>0&&r.top>0){catX=r.left;catY=r.top-CAT_SZ+8;}
+    var r=null,z=catZoom();try{r=document.getElementById("pomo-kitty-lane").getBoundingClientRect();}catch(e){}
+    if(r&&r.width>0&&r.top>0){catX=r.left/z;catY=r.top/z-CAT_SZ+8;}
     else{catX=catWmax()*.18;catY=catHmax()*.72;}
     catClamp();}
 
@@ -13166,10 +13176,24 @@ margin-left: -22px;
     }else{
       catAct="walk";catTill=now+6000+Math.random()*12000;catAim();}}
 
+  // 兜底：不管缩放、滚动条、边框怎么算，最后按**浏览器真的画在哪儿**再拦一道。
+  // 她碰上过一次「小猫跑到窗口外面走掉了」—— 算出来的数不能单独信，
+  // 这儿每秒核一次，发现出框就拉回来（getBoundingClientRect 会逼排版，不能每帧调）。
+  var catFenceN=0;
+  function catFence(){
+    if(!catEl)return;
+    var r=null;try{r=catEl.getBoundingClientRect();}catch(e){return;}
+    if(!r||!r.width)return;
+    var z=catZoom(),ox=0,oy=0,W=window.innerWidth||960,H=window.innerHeight||600;
+    if(r.left<0)ox=-r.left;else if(r.right>W)ox=W-r.right;
+    if(r.top<0)oy=-r.top;else if(r.bottom>H)oy=H-r.bottom;
+    if(ox||oy){catX+=ox/z;catY+=oy/z;catAim();catPose();}   // 拉回来之后重新挑个去处，不然它会往外顶
+  }
   function catTick(){
     if(!catEl||catDrag)return;
     var now=Date.now();
     catClamp();                                              // 窗口被拉小了别让它站到屏幕外
+    if(++catFenceN%20===0)catFence();                        // 20 个 tick = 1 秒
     if(now>=catTill)catNext(now);
     if(catAct==="walk"){
       var dx=catTx-catX,dy=catTy-catY,d=Math.sqrt(dx*dx+dy*dy);
@@ -13218,7 +13242,8 @@ margin-left: -22px;
   // 按下不立刻算拖动 —— 挪够 4px 才算，不然手一抖就点不成了。
   if(catEl){
     catEl.addEventListener("pointerdown",function(e){
-      catDrag={id:e.pointerId,dx:e.clientX-catX,dy:e.clientY-catY,x0:e.clientX,y0:e.clientY,moved:false};
+      var z=catZoom();
+      catDrag={id:e.pointerId,dx:e.clientX/z-catX,dy:e.clientY/z-catY,x0:e.clientX,y0:e.clientY,moved:false};
       try{catEl.setPointerCapture(e.pointerId);}catch(_e){}
       e.preventDefault();});
     catEl.addEventListener("pointermove",function(e){
@@ -13227,7 +13252,8 @@ margin-left: -22px;
         if(Math.abs(e.clientX-catDrag.x0)+Math.abs(e.clientY-catDrag.y0)<4)return;
         catDrag.moved=true;
         catEl.classList.add("drag");catEl.classList.remove("run","rest","hop","spin","shake");}
-      catX=e.clientX-catDrag.dx;catY=e.clientY-catDrag.dy;catClamp();catPose();});
+      var z=catZoom();
+      catX=e.clientX/z-catDrag.dx;catY=e.clientY/z-catDrag.dy;catClamp();catPose();});
     var catUp=function(e){
       if(!catDrag||(e&&e.pointerId!==undefined&&e.pointerId!==catDrag.id))return;
       var moved=catDrag.moved;catDrag=null;

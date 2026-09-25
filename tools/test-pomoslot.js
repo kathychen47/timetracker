@@ -296,6 +296,22 @@ function secOf(cat, sub) {
   var cp = JSON.parse(STORE.tt_catpos || "null");
   ok(cp && cp.x > 0 && cp.x < 1 && cp.y >= 0 && cp.y < 1,
      "放下的位置存成了比例（换个窗口大小不会跑到屏幕外）：" + STORE.tt_catpos);
+  // 全站套了一层 root.style.zoom（applyZoom：屏幕宽就放 1.1 / 1.2 / 1.35 倍）。
+  // 猫的 left/top 写在 body 里，会跟着被放大；而 innerWidth / clientX
+  // 都是**没放大的**那套坐标。两套混着用 → 它从窗口右边走出去了（她真碰到了）。
+  // 这儿把除法钉住：缩放 1.4 时，往右使劲拖也只能到 innerWidth/1.4-64。
+  var Z = 1.4;
+  d.documentElement.style.zoom = String(Z);
+  ptr("pointerdown", 300, 300);
+  ptr("pointermove", 9000, 9000);
+  ptr("pointerup", 9000, 9000);
+  var wantX = Math.round(w.innerWidth / Z - 64), wantY = Math.round(w.innerHeight / Z - 64);
+  ok(parseInt(kitty.style.left, 10) === wantX && parseInt(kitty.style.top, 10) === wantY,
+     "缩放 " + Z + " 下的右下角是 " + wantX + "," + wantY +
+     "，实际 " + parseInt(kitty.style.left, 10) + "," + parseInt(kitty.style.top, 10));
+  ok(parseInt(kitty.style.left, 10) * Z <= w.innerWidth - 64 + 1,
+     "乘回缩放以后还在窗口里（这才是真正画出来的位置）");
+  d.documentElement.style.zoom = "";
   var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
      "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
