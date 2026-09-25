@@ -378,8 +378,10 @@ function secOf(cat, sub) {
   var PW = parseInt(kitty.style.width, 10), PH = parseInt(kitty.style.height, 10);
   ok(PW > 0 && PH > 0, "宠物的尺寸是 JS 下发的：" + PW + "x" + PH);
   var wantX = Math.round(w.innerWidth / Z - PW - PAD), wantY = Math.round(w.innerHeight / Z - PH - PAD);
-  // 坐标会先扣到整个**物理**像素（防闪），所以容一个像素的误差
-  ok(Math.abs(parseFloat(kitty.style.left) - wantX) <= 1 && Math.abs(parseFloat(kitty.style.top) - wantY) <= 1,
+  // 坐标会先扣到**它自己的像素格子**上（防闪），而且靠边那一侧是往下取的，
+  // 所以允许差一个格子（缩放 1.4 时一格 = 2.14px），但**只能在边界里侧**。
+  ok(wantX - parseFloat(kitty.style.left) >= 0 && wantX - parseFloat(kitty.style.left) <= 3 &&
+     wantY - parseFloat(kitty.style.top) >= 0 && wantY - parseFloat(kitty.style.top) <= 3,
      "缩放 " + Z + " 下的右下角是 " + wantX + "," + wantY +
      "，实际 " + parseInt(kitty.style.left, 10) + "," + parseInt(kitty.style.top, 10));
   ok(PAD >= 4 && (parseFloat(kitty.style.left) + PW + PAD) * Z <= w.innerWidth + 1,
@@ -388,6 +390,32 @@ function secOf(cat, sub) {
   var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
      "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
+
+  // ---- 走路的步子得是整数个源像素 ----
+  // 她说了三次「闪」。真正的原因是步子一大一小：2px、2.67px、2px、2.67px……
+  // 一个源像素 = 2 个 CSS 像素，所以那是「走一格、再走一格零三分之一」——
+  // 整只的像素网格每帧跟上一帧错开不同的量，看上去就是在抖。
+  // 采样会跳帧（每 55ms 采一次、它每 50ms 走一步），所以判定是：
+  // **所有步长都是最小步长的整数倍**。2 和 2.67 过不了这一关。
+  var rr0 = w.Math.random;
+  w.Math.random = function () { return 0.9; };   // 0.9 > .22 → 歇完就走，不趴下
+  w.__adv += 40;
+  await wait(250);          // 等上一节改过的缩放落定，不然第一步是跨两个格子量出来的
+  var lx = null, steps = [];
+  for (var q = 0; q < 36; q++) {
+    var nx = parseFloat(kitty.style.left);
+    if (lx !== null && Math.abs(nx - lx) > 0.01) steps.push(Math.abs(nx - lx));
+    lx = nx;
+    await wait(55);
+  }
+  w.Math.random = rr0;
+  if (steps.length >= 3) {
+    var unit = Math.min.apply(null, steps), off = 0;
+    steps.forEach(function (v) { var m = v / unit; if (Math.abs(m - Math.round(m)) > 0.06) off++; });
+    ok(off === 0, "走路每一步都是整数个源像素（她：「猫还在闪」）：" +
+      off + "/" + steps.length + " 步对不上格子，步长 " +
+      steps.slice(0, 8).map(function (v) { return v.toFixed(2); }).join(","));
+  }
 
   // ---- 趴着的时候：不该滑走，也不该反复趴下又起来 ----
   // 两条都是她看出来的，而且两条都**不报任何错**：

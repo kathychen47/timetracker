@@ -13167,7 +13167,6 @@ margin-left: -22px;
   // 就会被拉回去按祖先定位（CSS 里看不出来的坑）。直接挂到 body 上最省事。
   try{if(catEl&&catEl.parentNode!==document.body)document.body.appendChild(catEl);}catch(_e){}
 
-  var CAT_SPD=2.4;                    // 每 50ms 走 2.4px ≈ 48px/秒，散步的速度
   var CAT_PAD=8;                      // 距四边至少留这么宽，不贴着边走
 
   var PETS=[
@@ -13337,7 +13336,18 @@ margin-left: -22px;
   // 一个源像素就占 2.4 个物理点 —— 有的得占 2 个、有的得占 3 个，
   // 而**哪些占 2 哪些占 3，取决于它当前的小数位置**。它一走动，每帧都重新分一次 ——
   // 看上去就是整只在闪。把坐标先扣到**整个物理像素**再写回去，分法就固定了。
-  function snap(v){var k=catPx();return Math.round(v*k)/k;}
+  // 她：「猫还在闪，之前没安狗之前没问题的」—— 她说对了，而且我前两次都没找到点上。
+  // 拓了一份轨迹才看清楚：它走路的每一步是 2px、2.67px、2px、2.67px……
+  // 一个源像素在屏幕上是 2 个 CSS 像素，所以这是「走一个像素、再走一个零三分之一像素」——
+  // 整只猫的像素网格跟上一帧错开一点点，每帧错的量还不一样。那就是她看到的「闪」。
+  // 上一版我只对齐到「整个物理像素」，那仍然可以落在半个源像素上。
+  // 像素图必须踩在**自己的格子**上走：取整到 petScale 的整数倍。
+  // （petScale 本身已经保证乘上缩放后是整数个物理点，所以两层对齐同时成立。）
+  // max 那一侧得往下取 —— 要是四舍五入翻出了边界，围栏会把它拉回来，下一帧又翻出去，打起来没完。
+  function snap(v,p,max){
+    var u=petScale(p),r=Math.round(v/u)*u;
+    if(r>max)r=Math.floor(max/u)*u;
+    return (r>0)?r:0;}
   function pWmax(p){var v=catView();return Math.max(0,v.W/v.z-petW(p)-CAT_PAD);}
   function pHmax(p){var v=catView();return Math.max(0,v.H/v.z-petH(p)-CAT_PAD);}
   function pClamp(p){
@@ -13371,8 +13381,8 @@ margin-left: -22px;
   function pPose(p){
     if(!p.el)return;
     pSize(p);
-    p.el.style.left=pxs(snap(p.x));
-    p.el.style.top=pxs(snap(p.y));
+    p.el.style.left=pxs(snap(p.x,p,pWmax(p)));
+    p.el.style.top=pxs(snap(p.y,p,pHmax(p)));
     // face 是原图朝哪边：朝向跟走的方向一致就不翻，不一致才翻
     if(p.s)p.s.style.transform=(p.dir===p.P.face)?"scaleX(1)":"scaleX(-1)";
     petState(p);}
@@ -13441,10 +13451,13 @@ margin-left: -22px;
     // 所以挪窝的条件不是「想走」，是**手上真在放走/跑的帧**。
     var afoot=!p.anim||p.anim.name==="walk"||p.anim.name==="run";
     if(p.act==="walk"&&afoot){
+      // 每帧恰好走**一个源像素**（=petScale 个 CSS 像素）。
+      // 原来是写死的 2.4px，跟像素格子对不上，取整之后步子就一大一小。
+      var spd=petScale(p);
       var dx=p.tx-p.x,dy=p.ty-p.y,d=Math.sqrt(dx*dx+dy*dy);
-      if(d<=CAT_SPD){p.x=p.tx;p.y=p.ty;pNext(p,now);}       // 到了，提前换个动作
+      if(d<=spd){p.x=p.tx;p.y=p.ty;pNext(p,now);}           // 到了，提前换个动作
       else{
-        p.x+=dx/d*CAT_SPD;p.y+=dy/d*CAT_SPD;
+        p.x+=dx/d*spd;p.y+=dy/d*spd;
         if(Math.abs(dx)>6)p.dir=(dx>0)?1:-1;}               // 差一两个像素就翻身的话它会抽筋
       pClamp(p);
       if(now-p.saveT>4000){p.saveT=now;posSave(p);}}
