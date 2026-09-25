@@ -389,6 +389,40 @@ function secOf(cat, sub) {
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
      "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
 
+  // ---- 趴着的时候：不该滑走，也不该反复趴下又起来 ----
+  // 两条都是她看出来的，而且两条都**不报任何错**：
+  //   ①「狗的经常不停的趴下又起来」—— 趴下演完接到 sleep，下一帧两个条件都不匹配，
+  //     掉到最后那句把「站着→趴平」当循环放。
+  //   ②「趴在地上的情况下还在移动」—— 想走了就开始挪坐标，可腿还没站起来。
+  // 把 Math.random 固定成 0.01（一到换动作就趴下），再拨钟逼它换状态，采样两秒。
+  var realRandom = w.Math.random;
+  w.Math.random = function () { return 0.01; };
+  w.__adv += 40;
+  var PHh = parseInt(kitty.style.height, 10) || 46;
+  var seq = [], xs = [];
+  for (var t = 0; t < 64; t++) {
+    if (t === 18 || t === 38) w.__adv += 40;     // 中途再拨一次：逼它从趴着起身
+    var bp = (spr.style.backgroundPosition || "0px 0px").split(" ");
+    var rw = Math.round(-parseFloat(bp[1]) / PHh);
+    if (!seq.length || seq[seq.length - 1] !== rw) seq.push(rw);
+    xs.push([rw, Math.round(parseFloat(kitty.style.left))]);
+    await wait(55);
+  }
+  w.Math.random = realRandom;
+  var slid = 0, lastX = null;
+  xs.forEach(function (e) {
+    if (e[0] === 4 || e[0] === 5) { if (lastX !== null && e[1] !== lastX) slid++; lastX = e[1]; }
+    else lastX = null;
+  });
+  ok(slid === 0, "趴着/起身的时候一步都没挪（她：「趴在地上还在移动」）：挪了 " + slid + " 次");
+  // 趴下（第 4 行）是段 770ms 的**过渡**，演完就该接到睡着（第 5 行）。
+  // 坏的那版永远到不了第 5 行 —— 它把这段过渡当循环放，所以一直在趴下、弹回站着、再趴下。
+  ok(seq.indexOf(5) >= 0,
+     "趴下之后会真的睡着，而不是一直重播「趴下」那一段：" + seq.join(","));
+  ok(seq.join(",").indexOf("5,4,5") < 0,
+     "也没有「睡着→又从头趴一遍→再睡着」：" + seq.join(","));
+  ok(seq.length > 2, "这几秒里它确实趴下又起来了（不是白测的）：" + seq.join(","));
+
   // 换宠物 / 多选（她：「不能多选嘛」）。
   // 最怕的是「一个都不选」跟「没设过」混为一谈 —— 那样她关掉全部、刷新一下金毛又回来了。
   var pick = $("#set-pets");

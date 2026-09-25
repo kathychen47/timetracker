@@ -13269,13 +13269,20 @@ margin-left: -22px;
     if(p.anim&&p.anim.once&&!p.anim.done)return;
     if(p.drag&&p.drag.moved){setAnim(p,"stand");return;}
     var want=(p.act==="walk")?"walk":((p.act==="lie")?"lie":"stand");
-    var now=p.anim&&p.anim.name;
-    if(p.P.lieIn&&(now==="lie"||now==="sleep")&&want!=="lie"){
+    var cur=p.anim&&p.anim.name;
+    var down=(cur==="lie"||cur==="sleep");                 // 现在是躺着的（正在趴下或已经睡着）
+    if(want==="lie"){
+      // **已经躺好了就什么都别做。**她：「狗的经常不停的趴下又起来」——
+      // 就是漏了这一句：趴下演完会接到 sleep，下一帧再进来时 cur 已经是 sleep，
+      // 原来那两个条件都不匹配，就掉到最后一句 setAnim(p,"lie") —— 而那句**没带 once**，
+      // 于是把「站着 → 趴平」这段过渡当成循环放：趴下、弹回站着、再趴下…… 770ms 一轮。
+      if(down)return;
+      if(p.P.lieIn)setAnim(p,"lie",{once:true,then:function(){if(p.P.a.sleep)setAnim(p,"sleep");}});
+      else setAnim(p,"lie");                               // 那只猫的趴着是个两帧的呼吸循环，不是过渡
+      return;}
+    if(p.P.lieIn&&down){                                   // 要起来：把「趴下」倒着放一遍
       p.rise=true;
       setAnim(p,"lie",{force:true,once:true,rev:true,then:function(){p.rise=false;setAnim(p,want,{force:true});}});
-      return;}
-    if(want==="lie"&&p.P.lieIn&&now!=="lie"&&now!=="sleep"){
-      setAnim(p,"lie",{once:true,then:function(){if(p.P.a.sleep)setAnim(p,"sleep");}});
       return;}
     setAnim(p,want);}
 
@@ -13301,15 +13308,36 @@ margin-left: -22px;
     return {z:z,W:W,H:H};}
   function catCalm(){try{return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches);}catch(e){return false;}}
   function catAsleep(){return !pTimer||!!pFollow;}
-  function petW(p){return p.P.w*p.P.sc;}
-  function petH(p){return p.P.h*p.P.sc;}
-  function pxs(v){return (Math.round(v*1000)/1000)+"px";}
+  // 她说了两次「还在闪」。上一版我只把坐标扣到了整像素，**分母取错了**：
+  // 一个 CSS 像素到屏幕上是几个点，除了全站的 zoom，还要乘 devicePixelRatio
+  // （系统显示缩放，她的笔记本很可能是 1.25 或 1.5）。只除 zoom 等于没对齐。
+  //
+  // 而且光对齐位置不够：**放大倍数本身也得是整数**。2 × 1.2 = 2.4 倍时，
+  // 一个源像素有的占 2 个点、有的占 3 个，猫身上的线条粗细不一 —— 一动就闪。
+  // 所以这儿反过来算：先定下「落到屏幕上要是几倍」（取整），再除回去得到 CSS 里的倍数。
+  // 代价是 CSS 尺寸变成小数（比如 53.333px），但落到屏幕上是整整齐齐的物理点。
+  function catPx(){
+    var r=1;try{r=window.devicePixelRatio||1;}catch(e){}
+    if(!(r>0))r=1;
+    return catZoom()*r;}
+  function petScale(p){var k=catPx();return Math.max(1,Math.round(p.P.sc*k))/k;}
+  function petW(p){return p.P.w*petScale(p);}
+  function petH(p){return p.P.h*petScale(p);}
+  function pxs(v){return (Math.round(v*100000)/100000)+"px";}
+  // 缩放变了（改窗口大小、拖到另一块屏）就重新下发尺寸，没变就什么都不写
+  function pSize(p){
+    var sc=petScale(p);
+    if(p._sc===sc)return;
+    p._sc=sc;
+    p.el.style.width=pxs(p.P.w*sc);p.el.style.height=pxs(p.P.h*sc);
+    if(p.s)p.s.style.backgroundSize=pxs(p.P.cols*p.P.w*sc)+" "+pxs(p.P.rows*p.P.h*sc);
+    petDraw(p);}
   // 她：「现在小猫还闪是咋回事」。
   // 像素图是 nearest-neighbour 放大的：全站套的 zoom 是 1.2 倍，再乘上 2 倍，
   // 一个源像素就占 2.4 个物理点 —— 有的得占 2 个、有的得占 3 个，
   // 而**哪些占 2 哪些占 3，取决于它当前的小数位置**。它一走动，每帧都重新分一次 ——
   // 看上去就是整只在闪。把坐标先扣到**整个物理像素**再写回去，分法就固定了。
-  function snap(v,z){return Math.round(v*z)/z;}
+  function snap(v){var k=catPx();return Math.round(v*k)/k;}
   function pWmax(p){var v=catView();return Math.max(0,v.W/v.z-petW(p)-CAT_PAD);}
   function pHmax(p){var v=catView();return Math.max(0,v.H/v.z-petH(p)-CAT_PAD);}
   function pClamp(p){
@@ -13342,9 +13370,9 @@ margin-left: -22px;
 
   function pPose(p){
     if(!p.el)return;
-    var z=catZoom();
-    p.el.style.left=pxs(snap(p.x,z));
-    p.el.style.top=pxs(snap(p.y,z));
+    pSize(p);
+    p.el.style.left=pxs(snap(p.x));
+    p.el.style.top=pxs(snap(p.y));
     // face 是原图朝哪边：朝向跟走的方向一致就不翻，不一致才翻
     if(p.s)p.s.style.transform=(p.dir===p.P.face)?"scaleX(1)":"scaleX(-1)";
     petState(p);}
@@ -13371,17 +13399,20 @@ margin-left: -22px;
   // 挑下一个去处：多半在附近晖，偶尔才横穿整个屏幕。
   // 全随机的话它会一直在屏幕两头折返，看着像在巡逻不像动物。
   function pAim(p){
-    var far=Math.random()<.3;
-    var rx=far?Math.random()*pWmax(p):p.x+(Math.random()*2-1)*280;
-    var ry=far?Math.random()*pHmax(p):p.y+(Math.random()*2-1)*170;
-    p.tx=Math.min(pWmax(p),Math.max(0,rx));
-    p.ty=Math.min(pHmax(p),Math.max(0,ry));}
+    // 目的地太近的话它一两帧就走到了，紧接着又挑下一个动作 ——
+    // 看起来就是刚站起来又趴回去。至少得走上 60px，挑不到就将就最后一个。
+    var W=pWmax(p),H=pHmax(p),far=Math.random()<.3;
+    for(var k=0;k<6;k++){
+      var rx=far?Math.random()*W:p.x+(Math.random()*2-1)*280;
+      var ry=far?Math.random()*H:p.y+(Math.random()*2-1)*170;
+      rx=Math.min(W,Math.max(0,rx));ry=Math.min(H,Math.max(0,ry));
+      if(k===5||Math.abs(rx-p.x)+Math.abs(ry-p.y)>=60){p.tx=rx;p.ty=ry;return;}}}
 
   function pNext(p,now){
     // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器，
     // 而且养好几只的时候它们不会整齐划一地同时起步。
     if(p.act==="walk"){
-      if(Math.random()<(catAsleep()?.5:.22)){p.act="lie";p.till=now+7000+Math.random()*11000;}
+      if(Math.random()<(catAsleep()?.5:.22)){p.act="lie";p.till=now+11000+Math.random()*14000;}
       else{p.act="stand";p.till=now+2500+Math.random()*5000;}
     }else{
       p.act="walk";p.till=now+6000+Math.random()*12000;pAim(p);}}
@@ -13404,7 +13435,12 @@ margin-left: -22px;
     pClamp(p);                                             // 窗口被拉小了别让它站到屏幕外
     pFence(p);                                             // 再按真实画出来的位置校一遍
     if(now>=p.till)pNext(p,now);
-    if(p.act==="walk"){
+    // 她：「趴在地上的情况下还在移动，请考虑真实场景」。
+    // 想走了不等于腿已经在动：「趴下」是段 770ms 的一次性过渡，演到一半被
+    // pNext 把状态改成「走」，以前就直接开始挪坐标了 —— 一只趴平的狗横着滑过屏幕。
+    // 所以挪窝的条件不是「想走」，是**手上真在放走/跑的帧**。
+    var afoot=!p.anim||p.anim.name==="walk"||p.anim.name==="run";
+    if(p.act==="walk"&&afoot){
       var dx=p.tx-p.x,dy=p.ty-p.y,d=Math.sqrt(dx*dx+dy*dy);
       if(d<=CAT_SPD){p.x=p.tx;p.y=p.ty;pNext(p,now);}       // 到了，提前换个动作
       else{
@@ -13418,7 +13454,7 @@ margin-left: -22px;
   // 连点会换花样，冒个小泡当反馈。被摸了就先不走，站着享受一会儿。
   function pPoke(p){
     var puffs=["\u2764","\u2728","\u266a","!"],pf=puffs[Math.floor(Math.random()*puffs.length)];
-    if(p.act==="walk")p.act="stand";
+    p.act="stand";                                       // 被摸了就起来，别摸完又躺回去
     p.till=Date.now()+1800+Math.random()*1800;
     if(p.P.poke&&p.P.poke.length){pOnce(p,p.P.poke[p.pokeN++%p.P.poke.length],pf);pPose(p);return;}
     var moves=["hop","shake","stretch"];
@@ -13442,10 +13478,8 @@ margin-left: -22px;
     if(p.k!==key){p.k=key;p.x=-1;p.y=-1;p.anim=null;p.rise=false;}   // 换品种：去读**这一种**上次摆的位置
     p.P=petFind(key)||PETS[0];
     p.el.style.display="";
-    p.el.style.width=pxs(petW(p));p.el.style.height=pxs(petH(p));
-    if(p.s){
-      p.s.style.backgroundImage='url("'+p.P.src+'")';
-      p.s.style.backgroundSize=pxs(p.P.cols*petW(p))+" "+pxs(p.P.rows*petH(p));}
+    p._sc=null;pSize(p);
+    if(p.s)p.s.style.backgroundImage='url("'+p.P.src+'")';
     if(p.x<0){if(!posRestore(p))pHome(p,idx);}
     else pClamp(p);
     if(!p.till){p.act=catAsleep()?"lie":"stand";p.till=Date.now()+2500+idx*900;}
@@ -13476,7 +13510,9 @@ margin-left: -22px;
   function petsIdleTrick(){
     if(!pets.length)return;
     var p=pets[Math.floor(Math.random()*pets.length)];
-    if(!p||p.drag||p.act==="walk"||p.rise)return;
+    // 只在**站着**的时候来一下。挠痒/舔毛/伸懒腰那几帧都是站着或坐着的，
+    // 趴着的时候插一个进来，就是“趴着趴着突然弹起来挠一下又躺回去”。
+    if(!p||p.drag||p.act!=="stand"||p.rise)return;
     if(Math.random()>.32)return;
     if(p.P.poke&&p.P.poke.length){
       pOnce(p,p.P.poke[Math.floor(Math.random()*p.P.poke.length)]);return;}
