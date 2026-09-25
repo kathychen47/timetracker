@@ -74,6 +74,7 @@ var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); 
 function adv(sec) { w.__adv += sec; return wait(700); }       // 拨完等一个 tick，让 pElapsed 追上
 function run() { return JSON.parse(w.__store.tt_pomorun || "null") || {}; }
 function slots() { return JSON.parse(w.__store.tt_pomoslots || "[]"); }
+function slotKeyOf(x) { return x.cat + "/" + (x.sub || ""); }
 function mates() { return JSON.parse(w.__store.tt_pomomates || "[]"); }
 function rows() { return [].slice.call(d.querySelectorAll("#pomo-slots .pomo-slot")); }
 function label(r) { return r.querySelector(".ps-t").textContent; }
@@ -217,6 +218,61 @@ function secOf(cat, sub) {
   rows()[n0 - 1].querySelector(".ps-x").click();
   ok(slots().length === n0 - 1, "✕ 之后少一块，实际 " + slots().length);
   ok(rows().length === n0 - 1, "界面上也跟着少一行");
+
+  // ---- 10b. 拖着排顺序（她：「这里要可以拖动顺序」）----
+  // 重点不在「能不能拖」，在**拖和点共用同一块牌子**：
+  // 点一下是切任务（会真的给前面那一截记账），要是拖完那一下也算点击，
+  // 她每排一次序就会莫名切走一次。另外 pSlots 得还是同一个数组。
+  // jsdom 里 getBoundingClientRect 全是 0，所以这儿按它在兄弟里的位置造一套坐标。
+  var ROWH = 40;
+  var realRect = w.Element.prototype.getBoundingClientRect;
+  w.Element.prototype.getBoundingClientRect = function () {
+    if (this.classList && this.classList.contains("pomo-slot")) {
+      var sib = Array.prototype.slice.call(this.parentNode.querySelectorAll(".pomo-slot"));
+      var k = sib.indexOf(this);
+      return { top: k * ROWH, height: ROWH - 4, bottom: k * ROWH + ROWH - 4, left: 0, right: 300, width: 300 };
+    }
+    return realRect.apply(this, arguments);
+  };
+  function slotPtr(type, el, y) {
+    var ev = new w.MouseEvent(type, { clientY: y, clientX: 40, bubbles: true, cancelable: true });
+    Object.defineProperty(ev, "pointerId", { value: 3 });
+    Object.defineProperty(ev, "button", { value: 0 });
+    (el || $("#pomo-slots")).dispatchEvent(ev);
+  }
+  var beforeOrder = slots().map(slotKeyOf);
+  var curBefore = $("#pomo-cat").value + "/" + $("#pomo-sub").value;
+  var firstRow = rows()[0];
+  slotPtr("pointerdown", firstRow, 10);
+  slotPtr("pointermove", firstRow, 16);          // 挪 6px：这才算开始拖
+  ok(firstRow.classList.contains("dragging"), "挪够了就进拖动状态");
+  slotPtr("pointermove", firstRow, 2 * ROWH + 30);   // 跨过第三行的中线
+  slotPtr("pointerup", firstRow, 2 * ROWH + 30);
+  var afterOrder = slots().map(slotKeyOf);
+  ok(afterOrder.length === beforeOrder.length, "牌子一块都没丢：" + afterOrder.length);
+  ok(afterOrder.join(",") !== beforeOrder.join(","), "顺序真的变了");
+  ok(afterOrder.indexOf(beforeOrder[0]) > 0, "原来第一块被拖到后面去了：" + afterOrder.join(" "));
+  ok(beforeOrder.every(function (k) { return afterOrder.indexOf(k) >= 0; }), "只是换了位，没凭空多出或者少掉");
+  ok($("#pomo-cat").value + "/" + $("#pomo-sub").value === curBefore,
+     "拖完没把任务切走 —— 排序不该动到记账（现在：" + $("#pomo-cat").value + "/" + $("#pomo-sub").value + "）");
+  // 拖完紧接着那一下 click 得被吞掉
+  rows()[0].dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+  ok($("#pomo-cat").value + "/" + $("#pomo-sub").value === curBefore, "松手那一下的 click 被吞掉了");
+  // 没挪动的括没拖：还得能正常点
+  slotPtr("pointerdown", rows()[0], 10);
+  slotPtr("pointerup", rows()[0], 11);
+  ok(!rows()[0].classList.contains("dragging"), "没挪动就不是拖");
+  // 再拖回去。一是试一遍往回走，二是后面几节认的是位置（tap(0) = 第一块 PhD/Research），
+  // 排序测试不该把公共现场给改了。
+  var back = rows()[afterOrder.indexOf(beforeOrder[0])];
+  slotPtr("pointerdown", back, 2 * ROWH + 10);
+  slotPtr("pointermove", back, 2 * ROWH + 4);
+  slotPtr("pointermove", back, -20);
+  slotPtr("pointerup", back, -20);
+  ok(slots().map(slotKeyOf).join(",") === beforeOrder.join(","),
+     "拖回去顺序也原样回来了：" + slots().map(slotKeyOf).join(" "));
+  w.Element.prototype.getBoundingClientRect = realRect;
+  await wait(400);   // 松手后 350ms 内的 click 是要被吞的，等过这个窗口再往下走
 
   // ---- 11. 旧的「同时做（平分）」那一块界面已经撤了 ----
   ok(!$("#pomo-mates") && !$("#pomo-mate-add"), "番茄钟里那两行没了（事件弹窗里那份还在）");
