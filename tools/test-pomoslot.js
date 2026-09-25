@@ -336,7 +336,13 @@ function secOf(cat, sub) {
   // 点一下（按下、没挪、松开）→ 得有反应
   var kx = parseInt(kitty.style.left, 10), ky = parseInt(kitty.style.top, 10);
   ptr("pointerdown", kx + 30, ky + 30); ptr("pointerup", kx + 30, ky + 30);
-  ok(/\b(hop|stretch|shake)\b/.test(kitty.className) && !/\bspin\b/.test(kitty.className), "点一下它做个动作：" + kitty.className);
+  // 狗的反应是**换帧**（叫/挠痒/舔毛/伸懒腰，第 6-10 行），不再是加个 CSS 类名；
+  // 那只猫的素材里没这些帧，还走 transform 那三个小动作。两条路都算有反应。
+  var spr = kitty.querySelector(".kt-s");
+  var bgY = parseFloat((spr.style.backgroundPosition || "0% 0%").split(" ")[1]);
+  ok(/\b(hop|stretch|shake)\b/.test(kitty.className) || bgY >= 59.9,
+     "点一下它做个动作：" + kitty.className + " / " + spr.style.backgroundPosition);
+  ok(!/\bspin\b/.test(kitty.className), "不转圈（她：「哋还旋转!好奇怪」）");
   ok((kitty.querySelector(".kt-p") || {}).textContent, "还冒个小泡当反馈");
 
   // 拖一把 —— 挪不到 4px 不算拖（手一抖就点不成了）
@@ -362,16 +368,32 @@ function secOf(cat, sub) {
   ptr("pointermove", 9000, 9000);
   ptr("pointerup", 9000, 9000);
   var PAD = +((html.match(/var CAT_PAD=(\d+)/) || [0, 0])[1]);   // 距边还要留一圈
-  var wantX = Math.round(w.innerWidth / Z - 64 - PAD), wantY = Math.round(w.innerHeight / Z - 64 - PAD);
+  // 六种狗尺寸各不相同（秋田 84x51、大丹 124x68），边界得按**当前这只**的大小算
+  var PW = parseInt(kitty.style.width, 10), PH = parseInt(kitty.style.height, 10);
+  ok(PW > 0 && PH > 0, "宠物的尺寸是 JS 下发的：" + PW + "x" + PH);
+  var wantX = Math.round(w.innerWidth / Z - PW - PAD), wantY = Math.round(w.innerHeight / Z - PH - PAD);
   ok(parseInt(kitty.style.left, 10) === wantX && parseInt(kitty.style.top, 10) === wantY,
      "缩放 " + Z + " 下的右下角是 " + wantX + "," + wantY +
      "，实际 " + parseInt(kitty.style.left, 10) + "," + parseInt(kitty.style.top, 10));
-  ok(PAD >= 4 && (parseInt(kitty.style.left, 10) + 64 + PAD) * Z <= w.innerWidth,
+  ok(PAD >= 4 && (parseInt(kitty.style.left, 10) + PW + PAD) * Z <= w.innerWidth,
      "乘回缩放以后还在窗口里，而且距边还剩一圈（这才是真正画出来的位置）");
   d.documentElement.style.zoom = "";
   var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
      "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
+
+  // 换宠物：贴图、格子数、元素尺寸都得跟着换，换完还得在窗口里
+  var petSel = $("#set-pet");
+  ok(!!petSel, "设置里有换宠物的下拉");
+  var src0 = spr.style.backgroundImage, size0 = spr.style.backgroundSize;
+  petSel.value = "great-dane"; petSel.dispatchEvent(new w.Event("change", { bubbles: true }));
+  ok(spr.style.backgroundImage !== src0, "换成大丹之后贴图真的变了");
+  ok(parseInt(kitty.style.width, 10) === 124 && parseInt(kitty.style.height, 10) === 68,
+     "元素尺寸跟着换：" + kitty.style.width + "x" + kitty.style.height);
+  ok(spr.style.backgroundSize === "1000% 1100%", "网格是 10 列 x 11 行：" + spr.style.backgroundSize);
+  ok(JSON.parse(STORE.tt_settings || "{}").pet === "great-dane", "换过的宠物存下来了（刷新不重置）");
+  petSel.value = "golden-retriever"; petSel.dispatchEvent(new w.Event("change", { bubbles: true }));
+  ok(parseInt(kitty.style.width, 10) === 90, "换回金毛");
 
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 
@@ -424,6 +446,17 @@ function reloadCheck(before) {
         "刷新前在做哪一类，刷新后还是它");
       ok(rr.filter(function (r) { return r.classList.contains("on"); }).length >= 1,
         "亮着的牌子自己回来了");
+      // 宠物放下的位置也得原样回来。
+      // 这条是专门钉一个踩过的坑：petMount 里无条件 clamp，把「还没定位」的标记
+      // catX=-1 抹成了 0，于是后面那句 if(catX<0) 永远不成立 ——
+      // 结果就是**每次刷新都从左上角重来**，而且不报任何错。
+      var kp = JSON.parse(w2.__store.tt_catpos || "null");
+      var k2 = dd.getElementById("pomo-kitty");
+      if (kp && kp.x > .02) {
+        ok(parseInt(k2.style.left, 10) > 0,
+          "刷新之后宠物还在她放的地方（不是弹回左上角）：left=" + k2.style.left);
+      }
+      ok(parseInt(k2.style.width, 10) > 0, "刷新之后宠物的贴图和尺寸也重新下发了：" + k2.style.width);
       var run2 = JSON.parse(w2.__store.tt_pomorun || "null") || {};
       ok((run2.segs || []).length === before.segs,
         "已经切出来的那几段一条没少，实际 " + (run2.segs || []).length);
