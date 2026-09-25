@@ -12901,13 +12901,18 @@ margin-left: -22px;
       if(e.button)return;                                  // 只管左键
       var row=e.target.closest&&e.target.closest(".pomo-slot");
       if(!row||e.target.closest(".ps-x"))return;           // ✕ 不算
-      slotDrag={id:e.pointerId,row:row,y0:e.clientY,moved:false};
-      try{slotsBox.setPointerCapture(e.pointerId);}catch(_e){}});
+      // 这里**不能**马上 setPointerCapture。抓了之后 pointerup 的目标就成了整个列表，
+      // 浏览器把 click 派给 pointerdown 和 pointerup 的公共祖先 —— 也就是列表本身，
+      // 于是 e.target.closest(".pomo-slot") 是 null，**每一次点牌子都被忽略了**。
+      // 她：「被固定到了 PhD research 没办法切换其他的」。jsdom 没这个 API，测试没抓到。
+      // 所以等真的开始拖了再抓。
+      slotDrag={id:e.pointerId,row:row,y0:e.clientY,moved:false};});
     slotsBox.addEventListener("pointermove",function(e){
       if(!slotDrag||e.pointerId!==slotDrag.id)return;
       if(!slotDrag.moved){
         if(Math.abs(e.clientY-slotDrag.y0)<5)return;       // 手一抖不算拖
-        slotDrag.moved=true;slotDrag.row.classList.add("dragging");}
+        slotDrag.moved=true;slotDrag.row.classList.add("dragging");
+        try{slotsBox.setPointerCapture(e.pointerId);}catch(_e){}}   // 真开始拖了才抓，拖出列表也跟得住
       // 跨过哪一块的中线就跟它换位。直接挪 DOM，不另外算一套坐标 ——
       // 少一套状态就少一处能跟真实顺序对不上的地方。
       var me=slotDrag.row,y=e.clientY,rows=slotRows();
