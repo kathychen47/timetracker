@@ -13108,6 +13108,7 @@ margin-left: -22px;
   var catAct="stand",catX=-1,catY=-1,catDir=1,catTill=0,catTx=0,catTy=0;
   var catT=null,catIdleT=null,catDrag=null,catSaveT=0,catPokeN=0;
   var CAT_SZ=64,CAT_SPD=2.4;          // 每 50ms 走 2.4px ≈ 48px/秒，猫散步的速度
+  var CAT_PAD=8;                      // 距四边至少留这么宽，不贴着边走
   // 全站套了一层 root.style.zoom（applyZoom，屏幕宽就放 1.1、1.2、1.35 倍）。
   // 猫的 left/top 写在 body 里，会跟着被放大；而 innerWidth / clientX / getBoundingClientRect
   // 都是**没放大的**那套坐标。两套混着用的后果：她那边 zoom=1.2，
@@ -13118,8 +13119,20 @@ margin-left: -22px;
     try{z=parseFloat(getComputedStyle(document.documentElement).zoom);}catch(e){}
     if(!(z>0)){try{z=parseFloat(document.documentElement.style.zoom);}catch(e2){}}
     return (z>0)?z:1;}
-  function catWmax(){return Math.max(0,(window.innerWidth||960)/catZoom()-CAT_SZ);}
-  function catHmax(){return Math.max(0,(window.innerHeight||600)/catZoom()-CAT_SZ);}
+  // 能走的范围。两件事容易漏：
+  //   ① innerWidth **把竖滚动条算在里面**，猫走到最右边会有一截藏在条子底下；
+  //     documentElement.clientWidth 是不含滚动条的那个（它已经是缩放后的单位，所以要乘回 z 才能跟 innerWidth 比）。
+  //   ② 贴着边走就算没出框，看着也像要掉出去了 —— 所以再留 CAT_PAD 一圈边。
+  function catView(){
+    var z=catZoom(),W=window.innerWidth||960,H=window.innerHeight||600;
+    try{
+      var de=document.documentElement,cw=de.clientWidth*z,ch=de.clientHeight*z;
+      if(cw>0&&cw<W)W=cw;
+      if(ch>0&&ch<H)H=ch;
+    }catch(e){}
+    return {z:z,W:W,H:H};}
+  function catWmax(){var v=catView();return Math.max(0,v.W/v.z-CAT_SZ-CAT_PAD);}
+  function catHmax(){var v=catView();return Math.max(0,v.H/v.z-CAT_SZ-CAT_PAD);}
   function catClamp(){
     if(!(catX>=0))catX=0;if(!(catY>=0))catY=0;
     if(catX>catWmax())catX=catWmax();
@@ -13182,24 +13195,25 @@ margin-left: -22px;
     }else{
       catAct="walk";catTill=now+6000+Math.random()*12000;catAim();}}
 
-  // 兜底：不管缩放、滚动条、边框怎么算，最后按**浏览器真的画在哪儿**再拦一道。
-  // 她碰上过一次「小猫跑到窗口外面走掉了」—— 算出来的数不能单独信，
-  // 这儿每秒核一次，发现出框就拉回来（getBoundingClientRect 会逼排版，不能每帧调）。
-  var catFenceN=0;
+  // 兜底围栏：不管缩放、滚动条、边框怎么算，最后按**浏览器真的画在哪儿**再拦一道。
+  // 她两次提到这件事（「跑到窗口外面走掉了」「不要跑出桌面范围」）——
+  // 算出来的数不能单独信：上次就是算错了还一声不哼。
+  // 现在改成**每帧都核**：只量猫自己这一个 fixed 元素，排版本来就是算好的，
+  // 20 次/秒 测下来看不出开销；漏一秒它就能往外走 48px。
   function catFence(){
     if(!catEl)return;
     var r=null;try{r=catEl.getBoundingClientRect();}catch(e){return;}
     if(!r||!r.width)return;
-    var z=catZoom(),ox=0,oy=0,W=window.innerWidth||960,H=window.innerHeight||600;
-    if(r.left<0)ox=-r.left;else if(r.right>W)ox=W-r.right;
-    if(r.top<0)oy=-r.top;else if(r.bottom>H)oy=H-r.bottom;
-    if(ox||oy){catX+=ox/z;catY+=oy/z;catAim();catPose();}   // 拉回来之后重新挑个去处，不然它会往外顶
+    var v=catView(),z=v.z,p=CAT_PAD*z,ox=0,oy=0;
+    if(r.left<p)ox=p-r.left;else if(r.right>v.W-p)ox=v.W-p-r.right;
+    if(r.top<p)oy=p-r.top;else if(r.bottom>v.H-p)oy=v.H-p-r.bottom;
+    if(ox||oy){catX+=ox/z;catY+=oy/z;catAim();catPose();}   // 拉回来之后重新挑个去处，不然它会一直往外顶
   }
   function catTick(){
     if(!catEl||catDrag)return;
     var now=Date.now();
     catClamp();                                              // 窗口被拉小了别让它站到屏幕外
-    if(++catFenceN%20===0)catFence();                        // 20 个 tick = 1 秒
+    catFence();                                              // 再按真实画出来的位置校一遍
     if(now>=catTill)catNext(now);
     if(catAct==="walk"){
       var dx=catTx-catX,dy=catTy-catY,d=Math.sqrt(dx*dx+dy*dy);
@@ -13267,12 +13281,12 @@ margin-left: -22px;
       if(moved){
         // 放下了：站原地抖抖毛，然后从这儿接着溜达。位置得马上存，她摆过的东西刷新完要还在。
         catAct="stand";catTill=Date.now()+1400+Math.random()*1600;
-        catPose();catPlay("shake");catSaveT=Date.now();catSave();
+        catPose();catFence();catPlay("shake");catSaveT=Date.now();catSave();
       }else catPoke();};
     catEl.addEventListener("pointerup",catUp);
     catEl.addEventListener("pointercancel",catUp);
     catEl.addEventListener("dragstart",function(e){e.preventDefault();});
-    window.addEventListener("resize",function(){if(catX<0)return;catClamp();catPose();});}
+    window.addEventListener("resize",function(){if(catX<0)return;catClamp();catPose();catFence();});}
   // 拖动圆环直接设置倒计时时长（不用打字）
   function ringSetFromEvent(e){
     var rect=ring.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;

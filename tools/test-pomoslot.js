@@ -305,12 +305,13 @@ function secOf(cat, sub) {
   ptr("pointerdown", 300, 300);
   ptr("pointermove", 9000, 9000);
   ptr("pointerup", 9000, 9000);
-  var wantX = Math.round(w.innerWidth / Z - 64), wantY = Math.round(w.innerHeight / Z - 64);
+  var PAD = +((html.match(/var CAT_PAD=(\d+)/) || [0, 0])[1]);   // 距边还要留一圈
+  var wantX = Math.round(w.innerWidth / Z - 64 - PAD), wantY = Math.round(w.innerHeight / Z - 64 - PAD);
   ok(parseInt(kitty.style.left, 10) === wantX && parseInt(kitty.style.top, 10) === wantY,
      "缩放 " + Z + " 下的右下角是 " + wantX + "," + wantY +
      "，实际 " + parseInt(kitty.style.left, 10) + "," + parseInt(kitty.style.top, 10));
-  ok(parseInt(kitty.style.left, 10) * Z <= w.innerWidth - 64 + 1,
-     "乘回缩放以后还在窗口里（这才是真正画出来的位置）");
+  ok(PAD >= 4 && (parseInt(kitty.style.left, 10) + 64 + PAD) * Z <= w.innerWidth,
+     "乘回缩放以后还在窗口里，而且距边还剩一圈（这才是真正画出来的位置）");
   d.documentElement.style.zoom = "";
   var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
