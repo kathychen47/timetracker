@@ -325,7 +325,7 @@ function secOf(cat, sub) {
   ok(kitty.parentNode === d.body, "已经挂到 body 上了（fixed 才不会被祖先的 transform 拉回去）");
   ok(!!kitty.querySelector(".kt-b") && !!kitty.querySelector(".kt-s"),
      "位置/动作/贴图 分三层（transform 只有一个，挤一起会互相盖掉）");
-  ok(/^\d+px$/.test(kitty.style.left) && /^\d+px$/.test(kitty.style.top),
+  ok(/^-?[\d.]+px$/.test(kitty.style.left) && /^-?[\d.]+px$/.test(kitty.style.top),
      "坐标是 JS 算的，left/top 都落了值");
 
   function ptr(type, x, y) {
@@ -339,9 +339,12 @@ function secOf(cat, sub) {
   // 狗的反应是**换帧**（叫/挠痒/舔毛/伸懒腰，第 6-10 行），不再是加个 CSS 类名；
   // 那只猫的素材里没这些帧，还走 transform 那三个小动作。两条路都算有反应。
   var spr = kitty.querySelector(".kt-s");
-  var bgY = parseFloat((spr.style.backgroundPosition || "0% 0%").split(" ")[1]);
-  ok(/\b(hop|stretch|shake)\b/.test(kitty.className) || bgY >= 59.9,
-     "点一下它做个动作：" + kitty.className + " / " + spr.style.backgroundPosition);
+  // 贴图用**像素**定位（百分比除不尽会把隔壁那一帧螃进来一条），
+  // 所以这儿把偏移除回行号：叫/挠痒/舔毛/伸懒腰 是第 6-10 行。
+  var PH0 = parseInt(kitty.style.height, 10);
+  var bgRow = -parseFloat((spr.style.backgroundPosition || "0px 0px").split(" ")[1]) / PH0;
+  ok(/\b(hop|stretch|shake)\b/.test(kitty.className) || bgRow >= 5.9,
+     "点一下它做个动作：" + kitty.className + " / 第 " + bgRow + " 行");
   ok(!/\bspin\b/.test(kitty.className), "不转圈（她：「哋还旋转!好奇怪」）");
   ok((kitty.querySelector(".kt-p") || {}).textContent, "还冒个小泡当反馈");
 
@@ -355,7 +358,10 @@ function secOf(cat, sub) {
   ok(parseInt(kitty.style.left, 10) === kx + 170 && parseInt(kitty.style.top, 10) === ky + 60,
      "松手了就停在那儿（拖的是抓住的那一点，不是左上角）");
   ok(!kitty.classList.contains("drag"), "松手了就不再是拖动状态");
-  var cp = JSON.parse(STORE.tt_catpos || "null");
+  // 养好几只了，位置按品种分开记（换回来还是那个位置）
+  var cpAll = JSON.parse(STORE.tt_catpos || "null") || {};
+  var cp = cpAll["golden-retriever"];
+  ok(typeof cpAll.x !== "number", "不再是「只能养一只」那种扁的 {x,y}：" + STORE.tt_catpos);
   ok(cp && cp.x > 0 && cp.x < 1 && cp.y >= 0 && cp.y < 1,
      "放下的位置存成了比例（换个窗口大小不会跑到屏幕外）：" + STORE.tt_catpos);
   // 全站套了一层 root.style.zoom（applyZoom：屏幕宽就放 1.1 / 1.2 / 1.35 倍）。
@@ -372,28 +378,45 @@ function secOf(cat, sub) {
   var PW = parseInt(kitty.style.width, 10), PH = parseInt(kitty.style.height, 10);
   ok(PW > 0 && PH > 0, "宠物的尺寸是 JS 下发的：" + PW + "x" + PH);
   var wantX = Math.round(w.innerWidth / Z - PW - PAD), wantY = Math.round(w.innerHeight / Z - PH - PAD);
-  ok(parseInt(kitty.style.left, 10) === wantX && parseInt(kitty.style.top, 10) === wantY,
+  // 坐标会先扣到整个**物理**像素（防闪），所以容一个像素的误差
+  ok(Math.abs(parseFloat(kitty.style.left) - wantX) <= 1 && Math.abs(parseFloat(kitty.style.top) - wantY) <= 1,
      "缩放 " + Z + " 下的右下角是 " + wantX + "," + wantY +
      "，实际 " + parseInt(kitty.style.left, 10) + "," + parseInt(kitty.style.top, 10));
-  ok(PAD >= 4 && (parseInt(kitty.style.left, 10) + PW + PAD) * Z <= w.innerWidth,
+  ok(PAD >= 4 && (parseFloat(kitty.style.left) + PW + PAD) * Z <= w.innerWidth + 1,
      "乘回缩放以后还在窗口里，而且距边还剩一圈（这才是真正画出来的位置）");
   d.documentElement.style.zoom = "";
   var ckLine = (html.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0];
   ok(ckLine.indexOf("tt_pomoslots") > 0 && ckLine.indexOf("tt_catpos") < 0,
      "猫的位置不上云 —— 手机和电脑的窗口根本不是一回事");
 
-  // 换宠物：贴图、格子数、元素尺寸都得跟着换，换完还得在窗口里
-  var petSel = $("#set-pet");
-  ok(!!petSel, "设置里有换宠物的下拉");
-  var src0 = spr.style.backgroundImage, size0 = spr.style.backgroundSize;
-  petSel.value = "great-dane"; petSel.dispatchEvent(new w.Event("change", { bubbles: true }));
-  ok(spr.style.backgroundImage !== src0, "换成大丹之后贴图真的变了");
-  ok(parseInt(kitty.style.width, 10) === 124 && parseInt(kitty.style.height, 10) === 68,
-     "元素尺寸跟着换：" + kitty.style.width + "x" + kitty.style.height);
-  ok(spr.style.backgroundSize === "1000% 1100%", "网格是 10 列 x 11 行：" + spr.style.backgroundSize);
-  ok(JSON.parse(STORE.tt_settings || "{}").pet === "great-dane", "换过的宠物存下来了（刷新不重置）");
-  petSel.value = "golden-retriever"; petSel.dispatchEvent(new w.Event("change", { bubbles: true }));
-  ok(parseInt(kitty.style.width, 10) === 90, "换回金毛");
+  // 换宠物 / 多选（她：「不能多选嘛」）。
+  // 最怕的是「一个都不选」跟「没设过」混为一谈 —— 那样她关掉全部、刷新一下金毛又回来了。
+  var pick = $("#set-pets");
+  ok(!!pick, "设置里有挑宠物的那排牌子");
+  function chip(k) { return pick.querySelector('button[data-pet="' + k + '"]'); }
+  function live() { return [].slice.call(d.body.querySelectorAll(".pomo-kitty")); }
+  ok(live().length === 1, "一开始就一只：" + live().length);
+  ok(chip("golden-retriever").classList.contains("on"), "金毛那块牌子是亮的");
+
+  chip("great-dane").click();
+  ok(live().length === 2, "再点一只 → 页面上真的有两只了：" + live().length);
+  ok(chip("great-dane").classList.contains("on"), "大丹那块牌子也亮了");
+  var sp = JSON.parse(STORE.tt_settings || "{}").pets;
+  ok(sp && sp.length === 2 && sp.indexOf("great-dane") >= 0, "两只都存下来了：" + JSON.stringify(sp));
+  var second = live()[1];
+  ok(parseInt(second.style.width, 10) === 124 && parseInt(second.style.height, 10) === 68,
+     "第二只是大丹的尺寸：" + second.style.width + "x" + second.style.height);
+  ok(!second.id, "多出来的那只没抢 id（#pomo-kitty 只能有一个）");
+  ok(!!second.querySelector(".kt-s").style.backgroundImage, "第二只的贴图也下发了");
+
+  chip("golden-retriever").click();
+  ok(live().filter(function (e) { return e.style.display !== "none"; }).length === 1,
+     "关掉金毛 → 只剩一只在跑");
+  chip("great-dane").click();
+  ok(live().filter(function (e) { return e.style.display !== "none"; }).length === 0, "全关了 → 一只都不剩");
+  ok(JSON.parse(STORE.tt_settings || "{}").pets.length === 0, "「一只都不要」是存得住的，不会刷新又回来");
+  chip("golden-retriever").click();
+  ok(parseInt(kitty.style.width, 10) === 90 && kitty.style.display !== "none", "换回金毛");
 
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 

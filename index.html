@@ -305,6 +305,14 @@
        .pomo-kitty 管位置（fixed，满页跑）· .kt-b 管一次性动作（蹦/转/抖）· .kt-s 管贴图和朝向。 */
   /* 它原来就在这条 56px 的地里来回走。现在满页跑了，这条地只剩一个用处：
      第一次打开网页时告诉它从哪儿出发（还是番茄钟底下，别让人找不到）。 */
+  /* 设置里挑宠物的那排小牌子：点一下切开/关，能同时亮好几个。
+     没用下拉是因为下拉天生只能选一个（multiple 的那种在浏览器里很难用）。 */
+  .pet-pick{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+  .pet-pick button{border:1px solid var(--border);background:var(--bg);color:var(--muted);
+    border-radius:9px;padding:5px 10px;font-size:12px;line-height:1.3;cursor:pointer}
+  .pet-pick button:hover{border-color:var(--primary)}
+  .pet-pick button.on{border-color:var(--primary);color:var(--primary);font-weight:650;
+    background:color-mix(in srgb,var(--primary) 10%,transparent)}
   .pomo-kitty-lane{height:0;margin:0;overflow:hidden}
   .pomo-kitty{position:fixed;left:0;top:0;width:64px;height:64px;z-index:150;
     cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
@@ -4852,19 +4860,17 @@ margin-left: -22px;
         </div>
       </div>
       <div class="set-item">
-        <div class="set-row">
-          <div class="set-row-txt"><div class="set-row-t">页面上那只宠物</div>
-            <div class="set-desc">点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。<b>两份原图一个像素没改，只是重新排了格子。</b></div></div>
-          <select id="set-pet">
-            <option value="golden-retriever">金毛</option>
-            <option value="akita">秋田</option>
-            <option value="schnauzer">雪纳瑞</option>
-            <option value="siberian-husky">哈士奇</option>
-            <option value="saint-bernard">圣伯纳</option>
-            <option value="great-dane">大丹</option>
-            <option value="cat">猫</option>
-            <option value="none">不要宠物</option>
-          </select>
+        <div class="set-row-txt"><div class="set-row-t">页面上那几只宠物</div>
+          <div class="set-desc">点一下切开关，<b>可以同时养好几只；一个都不选就是不要宠物。</b></div>
+          <div class="set-desc">点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在（每种各记各的）。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。</div></div>
+        <div class="pet-pick" id="set-pets">
+          <button type="button" data-pet="golden-retriever">金毛</button>
+          <button type="button" data-pet="akita">秋田</button>
+          <button type="button" data-pet="schnauzer">雪纳瑞</button>
+          <button type="button" data-pet="siberian-husky">哈士奇</button>
+          <button type="button" data-pet="saint-bernard">圣伯纳</button>
+          <button type="button" data-pet="great-dane">大丹</button>
+          <button type="button" data-pet="cat">猫</button>
         </div>
       </div>
       <div class="set-item">
@@ -5728,7 +5734,6 @@ margin-left: -22px;
     "不用单独登录":"no separate sign-in needed",
     "不用背了":"Skipped",
     "不算这件事了":"Stop counting this one",
-    "不要宠物":"No pet",
     "不计入任何目标":"Doesn't count toward any goal",
     "不计入统计":"don't count in stats",
     "不认识":"Don't know",
@@ -5745,7 +5750,6 @@ margin-left: -22px;
     "专注 · 开发":"Focus · development",
     "专注(分)":"Focus (min)",
     "专注结束后记下来的那条（要番茄钟里「完成后记入日历」也是勾着的）。":"The entry logged when a focus session ends (needs \"Log to calendar when done\" ticked in Pomodoro too).",
-    "两份原图一个像素没改，只是重新排了格子。":"Neither sprite sheet was redrawn or recoloured — only re-tiled.",
     "个月":"months",
     "个税":"Income tax",
     "中→英":"ZH→EN",
@@ -6092,6 +6096,7 @@ margin-left: -22px;
     "只记录":"tracking only",
     "叫什么？（不填就用分类名）":"What's it called? (blank = use the category name)",
     "可不放":"Optional",
+    "可以同时养好几只；一个都不选就是不要宠物。":"You can keep several at once; select none for no pet at all.",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎。":"You can switch translation engine under ⚙️ Settings → 📖 Dictionary.",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎试试。":"Try another translation engine under ⚙️ Settings → 📖 Dictionary.",
     "右边还没选书":"No book picked on the right yet",
@@ -6879,8 +6884,9 @@ margin-left: -22px;
     "点「📄 导入文件」拖一个 CSV / xlsx 进来。":"Tap “📄 Import file” and drop in a CSV / xlsx.",
     "点「🔄 同步」从 Westpac 拉（要先照 supabase/AKAHU.md 配好）。":"Tap “🔄 Sync” to pull from Westpac (set up supabase/AKAHU.md first).",
     "点「＋ 记一笔」自己记一笔。":"Tap “＋ Add entry” to log one yourself.",
+    "点一下切开关，":"Click to toggle. ",
     "点一下只看这个账户":"Click to see only this account",
-    "点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。":"Click it and it reacts (the dogs bark, scratch, lick and stretch); you can also drag it somewhere else, and it stays where you put it after a refresh. Dogs: Pet Dogs Pack by LuizMelo (CC0); cat: 32-Bit Cat by mxmaze (CC BY 4.0). ",
+    "点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在（每种各记各的）。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。":"Click one and it reacts (the dogs bark, scratch, lick and stretch); you can also drag it somewhere else, and each kind remembers where you put it across refreshes. Dogs: Pet Dogs Pack by LuizMelo (CC0); cat: 32-Bit Cat by mxmaze (CC BY 4.0). Neither sheet was redrawn or recoloured.",
     "点一下就能改 · 回车换行 · 点别处保存":"Click to edit · Enter for a new line · click away to save",
     "点一下恢复：重新排进复习":"Click to restore: back into the review rotation",
     "点一下换个分组":"Click to change group",
@@ -7478,7 +7484,7 @@ margin-left: -22px;
     "音频已经删了。文字都在，可以只看不听。":"Audio deleted. The text is all here — you can still read it.",
     "音频收到了。把文本贴进②，再点③。":"Got the audio. Paste the text into ②, then hit ③.",
     "页":"Page",
-    "页面上那只宠物":"The pet on the page",
+    "页面上那几只宠物":"The pets on the page",
     "项目":"Project",
     "预估税负":"Estimated tax",
     "预估税负只算你点过「记入税务」的那":"Estimated tax only counts the",
@@ -13152,37 +13158,18 @@ margin-left: -22px;
         ring.style.setProperty("--p",cp.toFixed(1));
       }else{ring.style.background="";var pct=(pTotal>0?(1-pLeft/pTotal)*100:0);ring.style.setProperty("--p",pct.toFixed(1));}}
   }
-  // 那只猫：自己在整页上溜达，可以点、可以拖。
-  // 只看状态、不碰数字 —— 它坏了顶多是不动，绝不该影响计时或落库，所以调用处一律包在 try 里。
-  var catEl=document.getElementById("pomo-kitty");
-  var catB=catEl?catEl.querySelector(".kt-b"):null;
-  var catS=catEl?catEl.querySelector(".kt-s"):null;
-  var catP=catEl?catEl.querySelector(".kt-p"):null;
-  var catHopT=null;
+  // 宠物们：自己在整页上溜达，可以点、可以拖，而且**可以同时养好几只**（她：「不能多选嘛」）。
+  // 只看状态、不碰数字 —— 它们坏了顶多是不动，绝不该影响计时或落库，所以调用处一律包在 try 里。
+  // 一只宠物 = 一个对象（位置、朝向、在干嘛、演到第几帧都在里面）。
+  // 上一版这些全是模块级的 catX / catAct / petAnim —— 只能养一只。
+  var catEl=document.getElementById("pomo-kitty");     // 第一只用页面里原来那个元素（id 留着）
   // 要满页跑就得先脱离番茄钟那个框：position:fixed 的元素一旦祖先带了 transform，
   // 就会被拉回去按祖先定位（CSS 里看不出来的坑）。直接挂到 body 上最省事。
   try{if(catEl&&catEl.parentNode!==document.body)document.body.appendChild(catEl);}catch(_e){}
 
-  //   catAct   walk = 在走 · stand = 站着 · lie = 趴着歇
-  //   catX/catY 左上角在**视口**里的坐标（fixed 定位，跟页面滚到哪儿无关）
-  //   catDir   +1 往右、-1 往左（原图猫是朝左的，往右要翻过来）
-  //   catTill  这个动作演到什么时候（时间戳）
-  //   catTx/Ty 这一趟想走到哪儿
-  var catAct="stand",catX=-1,catY=-1,catDir=1,catTill=0,catTx=0,catTy=0;
-  var catT=null,catIdleT=null,catDrag=null,catSaveT=0,catPokeN=0;
   var CAT_SPD=2.4;                    // 每 50ms 走 2.4px ≈ 48px/秒，散步的速度
   var CAT_PAD=8;                      // 距四边至少留这么宽，不贴着边走
 
-  // ---------- 宠物素材表 ----------
-  // 每一只：一张网格贴图（cols 列 × rows 行，每格 w×h）+ 一张动作表。
-  //   [行号, 帧数, 每帧毫秒]  或  {f:[[列,行],...], ms:毫秒}
-  // 两种写法是因为猫那张图的帧不连续（它的睡觉是第 3 列的两行）。
-  //
-  // 狗：Pet Dogs Pack by LuizMelo（CC0）。原包是 11 条横幅、每帧 100×100，
-  // 我只做了两件事：**按同一个框裁掉四周空白**、**重新码成网格**。
-  // 一个像素没重画、没重新上色 —— 上次把那只猫压成四个色块，毛色层次全毁了，
-  // 她一眼就看出来了。四周空白每一帧都按**同一个**框裁，对位才不会乱。
-  // face: 原图朝哪边。狗都朝右（+1），那只猫朝左（-1）。
   var PETS=[
     {k:"cat",n:"猫",w:32,h:32,cols:4,rows:4,sc:2,face:-1,
      a:{stand:{f:[[0,0],[2,0]],ms:800},walk:{f:[[0,1],[2,1]],ms:210},
@@ -13220,81 +13207,81 @@ margin-left: -22px;
      poke:["bark","itch","lick","lick2","stretch"],
      src:"data:image/png;base64,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"}];
   function petFind(k){for(var i=0;i<PETS.length;i++)if(PETS[i].k===k)return PETS[i];return null;}
-  function petKey(){var k=settings.pet;return (k&&(k==="none"||petFind(k)))?k:"golden-retriever";}
-  var PET=petFind(petKey())||PETS[0];
+  // 选了哪几只。一个都不选 = 不要宠物。
+  // settings.pets 是个数组；旧版存的是 settings.pet（只能一只），在这儿自动接上。
+  function petKeys(){
+    var v=settings.pets;
+    if(Object.prototype.toString.call(v)==="[object Array]"){
+      var out=[];v.forEach(function(k){if(petFind(k)&&out.indexOf(k)<0)out.push(k);});
+      return out;}
+    var one=settings.pet;
+    if(one==="none")return [];
+    if(one&&petFind(one))return [one];
+    return ["golden-retriever"];}
 
   // ---------- 换帧 ----------
-  // 帧不再由 CSS 关键帧管：11 个动作帧数从 1 到 10 不等，
+  // 帧不由 CSS 关键帧管：11 个动作帧数从 1 到 10 不等，
   // 而且「趴下」是一段**过渡**（站着 → 趴平），得能正着放、倒着放、放完停住。
-  // 这些 CSS 都干不了，交给 JS 反而少一堆 keyframes。
-  var petAnim=null,petRise=false;
   function animF(a){
     if(a.f)return a.f;
     if(!a._f){a._f=[];for(var i=0;i<a[1];i++)a._f.push([i,a[0]]);}
     return a._f;}
   function animMs(a){return (a.ms!==undefined)?a.ms:a[2];}
-  function petDraw(){
-    if(!catS||!petAnim)return;
-    var fr=petAnim.f[petAnim.i]||[0,0];
-    var cx=(PET.cols>1)?(fr[0]/(PET.cols-1)*100):0;
-    var cy=(PET.rows>1)?(fr[1]/(PET.rows-1)*100):0;
-    catS.style.backgroundPosition=cx.toFixed(4)+"% "+cy.toFixed(4)+"%";}
-  function setAnim(name,opt){
-    var a=PET.a[name];
-    if(!a)a=PET.a.stand;
+  // 用**像素**定位，不用百分比。百分比算的是「图比框大出来的那部分」的比例，
+  // 11.1111% 这种除不尽的数落到屏幕上就是小数像素，会把隔壁那一帧螃进来一条。
+  function petDraw(p){
+    if(!p.s||!p.anim)return;
+    var fr=p.anim.f[p.anim.i]||[0,0];
+    p.s.style.backgroundPosition=pxs(-fr[0]*petW(p))+" "+pxs(-fr[1]*petH(p));}
+  function setAnim(p,name,opt){
+    var a=p.P.a[name];
+    if(!a)a=p.P.a.stand;
     if(!a)return;
-    if(petAnim&&petAnim.name===name&&!(opt&&opt.force))return;   // 已经在演这个了，别每帧重头开始
+    if(p.anim&&p.anim.name===name&&!(opt&&opt.force))return;   // 已经在演这个了，别每帧重头开始
     var f=animF(a),rev=!!(opt&&opt.rev);
-    petAnim={name:name,f:f,ms:animMs(a),once:!!(opt&&opt.once),rev:rev,
-             then:(opt&&opt.then)||null,i:rev?f.length-1:0,t:Date.now(),done:false};
-    petDraw();}
-  function petStep(now){
-    if(!petAnim||petAnim.done)return;
-    var n=petAnim.f.length;
-    if(n<=1||!petAnim.ms){if(petAnim.once)petFin();return;}
-    if(now-petAnim.t<petAnim.ms)return;
-    petAnim.t=now;
-    var last=petAnim.rev?(petAnim.i<=0):(petAnim.i>=n-1);
+    p.anim={name:name,f:f,ms:animMs(a),once:!!(opt&&opt.once),rev:rev,
+            then:(opt&&opt.then)||null,i:rev?f.length-1:0,t:Date.now(),done:false};
+    petDraw(p);}
+  function petStep(p,now){
+    if(!p.anim||p.anim.done)return;
+    var n=p.anim.f.length;
+    if(n<=1||!p.anim.ms){if(p.anim.once)petFin(p);return;}
+    if(now-p.anim.t<p.anim.ms)return;
+    p.anim.t=now;
+    var last=p.anim.rev?(p.anim.i<=0):(p.anim.i>=n-1);
     if(last){
-      if(petAnim.once){petFin();return;}
-      petAnim.i=petAnim.rev?n-1:0;
-    }else petAnim.i+=petAnim.rev?-1:1;
-    petDraw();}
-  function petFin(){
-    petAnim.done=true;
-    var f=petAnim.then;petAnim.then=null;
+      if(p.anim.once){petFin(p);return;}
+      p.anim.i=p.anim.rev?n-1:0;
+    }else p.anim.i+=p.anim.rev?-1:1;
+    petDraw(p);}
+  function petFin(p){
+    p.anim.done=true;
+    var f=p.anim.then;p.anim.then=null;
     if(f)f();}
 
   // 跟着状态走。从趴着起身时把「趴下」倒着放一遍 ——
   // 从躺着直接弹成站着很假，而这一句只多五行。
-  function petState(){
-    if(petRise)return;
+  function petState(p){
+    if(p.rise)return;
     // 正在演一次性的小动作（叫一声、挠痒……）就别插嘴。
-    // 漏了这一句的后果：点它 → petOnce 刚换到「叫」，紧接着的 catPose 又把它撑回「站着」，
+    // 漏了这一句的后果：点它 → 刚换到「叫」，紧接着的重绘又把它撑回「站着」，
     // 看上去就是**点了没反应**（不报错）。
-    if(petAnim&&petAnim.once&&!petAnim.done)return;
-    if(catDrag&&catDrag.moved){setAnim("stand");return;}
-    var want=(catAct==="walk")?"walk":((catAct==="lie")?"lie":"stand");
-    var now=petAnim&&petAnim.name;
-    if(PET.lieIn&&(now==="lie"||now==="sleep")&&want!=="lie"){
-      petRise=true;
-      setAnim("lie",{force:true,once:true,rev:true,then:function(){petRise=false;setAnim(want,{force:true});}});
+    if(p.anim&&p.anim.once&&!p.anim.done)return;
+    if(p.drag&&p.drag.moved){setAnim(p,"stand");return;}
+    var want=(p.act==="walk")?"walk":((p.act==="lie")?"lie":"stand");
+    var now=p.anim&&p.anim.name;
+    if(p.P.lieIn&&(now==="lie"||now==="sleep")&&want!=="lie"){
+      p.rise=true;
+      setAnim(p,"lie",{force:true,once:true,rev:true,then:function(){p.rise=false;setAnim(p,want,{force:true});}});
       return;}
-    if(want==="lie"&&PET.lieIn&&now!=="lie"&&now!=="sleep"){
-      setAnim("lie",{once:true,then:function(){if(PET.a.sleep)setAnim("sleep");}});
+    if(want==="lie"&&p.P.lieIn&&now!=="lie"&&now!=="sleep"){
+      setAnim(p,"lie",{once:true,then:function(){if(p.P.a.sleep)setAnim(p,"sleep");}});
       return;}
-    setAnim(want);}
+    setAnim(p,want);}
 
-  function catWmax(){var v=catView();return Math.max(0,v.W/v.z-petW()-CAT_PAD);}
-  function catHmax(){var v=catView();return Math.max(0,v.H/v.z-petH()-CAT_PAD);}
-  function petW(){return PET.w*PET.sc;}
-  function petH(){return PET.h*PET.sc;}
-  function catClamp(){
-    if(!(catX>=0))catX=0;if(!(catY>=0))catY=0;
-    if(catX>catWmax())catX=catWmax();
-    if(catY>catHmax())catY=catHmax();}
+  // ---------- 位置 ----------
   // 全站套了一层 root.style.zoom（applyZoom，屏幕宽就放 1.1、1.2、1.35 倍）。
-  // 它的 left/top 写在 body 里，会跟着被放大；而 innerWidth / clientX / getBoundingClientRect
+  // 它们的 left/top 写在 body 里，会跟着被放大；而 innerWidth / clientX / getBoundingClientRect
   // 都是**没放大的**那套坐标。两套混着用的后果：她那边 zoom=1.2，
   // 我以为右边界是 1856，实际画出来是 1856x1.2=2227 —— **它就这么走出窗口了**。
   function catZoom(){
@@ -13312,186 +13299,245 @@ margin-left: -22px;
       if(ch>0&&ch<H)H=ch;
     }catch(e){}
     return {z:z,W:W,H:H};}
-  // 系统里关了动效就别满屏跑 —— 有人一看东西动就头晕。拖和点还是能用的。
   function catCalm(){try{return !!(window.matchMedia&&window.matchMedia("(prefers-reduced-motion:reduce)").matches);}catch(e){return false;}}
   function catAsleep(){return !pTimer||!!pFollow;}
+  function petW(p){return p.P.w*p.P.sc;}
+  function petH(p){return p.P.h*p.P.sc;}
+  function pxs(v){return (Math.round(v*1000)/1000)+"px";}
+  // 她：「现在小猫还闪是咋回事」。
+  // 像素图是 nearest-neighbour 放大的：全站套的 zoom 是 1.2 倍，再乘上 2 倍，
+  // 一个源像素就占 2.4 个物理点 —— 有的得占 2 个、有的得占 3 个，
+  // 而**哪些占 2 哪些占 3，取决于它当前的小数位置**。它一走动，每帧都重新分一次 ——
+  // 看上去就是整只在闪。把坐标先扣到**整个物理像素**再写回去，分法就固定了。
+  function snap(v,z){return Math.round(v*z)/z;}
+  function pWmax(p){var v=catView();return Math.max(0,v.W/v.z-petW(p)-CAT_PAD);}
+  function pHmax(p){var v=catView();return Math.max(0,v.H/v.z-petH(p)-CAT_PAD);}
+  function pClamp(p){
+    if(!(p.x>=0))p.x=0;if(!(p.y>=0))p.y=0;
+    if(p.x>pWmax(p))p.x=pWmax(p);
+    if(p.y>pHmax(p))p.y=pHmax(p);}
 
-  // 她把它拖到哪儿，刷新完还得在哪儿。存成**占视口的比例**，
-  // 换个窗口大小就不会把它丢到屏幕外面去。不进 CLOUD_KEYS：
-  // 手机和电脑的窗口根本不是一回事，同步过去只会打架。
-  function catSave(){
-    try{save("tt_catpos",{x:catX/Math.max(1,catWmax()),y:catY/Math.max(1,catHmax())});}catch(e){}}
-  function catRestore(){
-    var p=load("tt_catpos",null);
-    if(p&&typeof p.x==="number"&&typeof p.y==="number"&&isFinite(p.x)&&isFinite(p.y)){
-      catX=p.x*catWmax();catY=p.y*catHmax();catClamp();return true;}
+  // 她把哪只拖到哪儿，刷新完还得在哪儿 —— **按品种分开记**，换回来还是那个位置。
+  // 存成占视口的比例，换个窗口大小就不会把它丢到屏幕外面去。
+  // 不进 CLOUD_KEYS：手机和电脑的窗口根本不是一回事。
+  function posAll(){
+    var m=load("tt_catpos",null);
+    if(m&&typeof m.x==="number"){                          // 「只能养一只」那版的格式，接到第一只头上
+      var o={},k=petKeys()[0];if(k)o[k]={x:m.x,y:m.y};return o;}
+    return (m&&typeof m==="object")?m:{};}
+  function posSave(p){
+    try{var m=posAll();m[p.k]={x:p.x/Math.max(1,pWmax(p)),y:p.y/Math.max(1,pHmax(p))};
+      save("tt_catpos",m);}catch(e){}}
+  function posRestore(p){
+    var q=posAll()[p.k];
+    if(q&&typeof q.x==="number"&&typeof q.y==="number"&&isFinite(q.x)&&isFinite(q.y)){
+      p.x=q.x*pWmax(p);p.y=q.y*pHmax(p);pClamp(p);return true;}
     return false;}
-  // 第一次打开：从番茄钟底下出发，不用满屏找它。
-  function catHome(){
+  // 第一次打开：从番茄钟底下出发，不用满屏找。养了好几只就错开一点，别叠成一堆。
+  function pHome(p,idx){
     var r=null,z=catZoom();try{r=document.getElementById("pomo-kitty-lane").getBoundingClientRect();}catch(e){}
-    if(r&&r.width>0&&r.top>0){catX=r.left/z;catY=r.top/z-petH()+8;}
-    else{catX=catWmax()*.18;catY=catHmax()*.72;}
-    catClamp();}
+    if(r&&r.width>0&&r.top>0){p.x=r.left/z+idx*34;p.y=r.top/z-petH(p)+8-idx*6;}
+    else{p.x=pWmax(p)*.18+idx*34;p.y=pHmax(p)*.72-idx*6;}
+    pClamp(p);}
 
-  // 换一只宠物：贴图、格子大小、元素尺寸都要重新下发。
-  function petMount(){
-    if(!catEl)return;
-    var off=(petKey()==="none");
-    catEl.style.display=off?"none":"";
-    if(off){catRun(false);return;}
-    PET=petFind(petKey())||PETS[0];
-    catEl.style.width=petW()+"px";catEl.style.height=petH()+"px";
-    if(catS){
-      catS.style.backgroundImage='url("'+PET.src+'")';
-      catS.style.backgroundSize=(PET.cols*100)+"% "+(PET.rows*100)+"%";}
-    petAnim=null;petRise=false;
-    // 还没落位子的时候别 clamp —— catX 还是 -1（「没定位」的标记），
-    // 在这儿把它抹成 0，下面就再也不会去读她上次拖到哪了，每次刷新都从左上角开始。
-    if(catX>=0)catClamp();}
-
-  function catPose(){
-    if(!catEl)return;
-    catEl.style.left=Math.round(catX)+"px";
-    catEl.style.top=Math.round(catY)+"px";
+  function pPose(p){
+    if(!p.el)return;
+    var z=catZoom();
+    p.el.style.left=pxs(snap(p.x,z));
+    p.el.style.top=pxs(snap(p.y,z));
     // face 是原图朝哪边：朝向跟走的方向一致就不翻，不一致才翻
-    if(catS)catS.style.transform=(catDir===PET.face)?"scaleX(1)":"scaleX(-1)";
-    petState();}
+    if(p.s)p.s.style.transform=(p.dir===p.P.face)?"scaleX(1)":"scaleX(-1)";
+    petState(p);}
 
   // 一次性的小动作。狗有现成的帧（叫/挠痒/舔毛/伸懒腰）就放帧；
   // 那只猫的素材里没有这些，就还用原来那三个 transform 小动作。
-  function catPlay(kind,puff){
-    if(!catEl)return;
-    catEl.classList.remove("hop","stretch","shake");
-    void catEl.offsetWidth;                                  // 不踩一脚排版，浏览器会当成类名根本没变，动画不重放
-    catEl.classList.add(kind);
-    if(catHopT)clearTimeout(catHopT);
-    catHopT=setTimeout(function(){catEl.classList.remove("hop","stretch","shake");catHopT=null;},900);
-    if(puff&&catP){catP.textContent=puff;catP.classList.remove("go");void catP.offsetWidth;catP.classList.add("go");}}
-  function petOnce(name,puff){
-    if(!catEl)return;
-    petRise=false;
-    setAnim(name,{force:true,once:true,then:function(){petAnim=null;petState();}});
-    if(puff&&catP){catP.textContent=puff;catP.classList.remove("go");void catP.offsetWidth;catP.classList.add("go");}}
+  function pPlay(p,kind,puff){
+    if(!p.el)return;
+    p.el.classList.remove("hop","stretch","shake");
+    void p.el.offsetWidth;                                 // 不踩一脚排版，浏览器会当成类名根本没变，动画不重放
+    p.el.classList.add(kind);
+    if(p.hopT)clearTimeout(p.hopT);
+    p.hopT=setTimeout(function(){p.el.classList.remove("hop","stretch","shake");p.hopT=null;},900);
+    pPuff(p,puff);}
+  function pPuff(p,puff){
+    if(!puff||!p.puff)return;
+    p.puff.textContent=puff;p.puff.classList.remove("go");void p.puff.offsetWidth;p.puff.classList.add("go");}
+  function pOnce(p,name,puff){
+    if(!p.el)return;
+    p.rise=false;
+    setAnim(p,name,{force:true,once:true,then:function(){p.anim=null;petState(p);}});
+    pPuff(p,puff);}
 
   // 挑下一个去处：多半在附近晖，偶尔才横穿整个屏幕。
   // 全随机的话它会一直在屏幕两头折返，看着像在巡逻不像动物。
-  function catAim(){
+  function pAim(p){
     var far=Math.random()<.3;
-    var rx=far?Math.random()*catWmax():catX+(Math.random()*2-1)*280;
-    var ry=far?Math.random()*catHmax():catY+(Math.random()*2-1)*170;
-    catTx=Math.min(catWmax(),Math.max(0,rx));
-    catTy=Math.min(catHmax(),Math.max(0,ry));}
+    var rx=far?Math.random()*pWmax(p):p.x+(Math.random()*2-1)*280;
+    var ry=far?Math.random()*pHmax(p):p.y+(Math.random()*2-1)*170;
+    p.tx=Math.min(pWmax(p),Math.max(0,rx));
+    p.ty=Math.min(pHmax(p),Math.max(0,ry));}
 
-  function catNext(now){
-    // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器。
-    // 计时跑着的时候它精神，停表了就特别爱趴下 —— 状态还是看得出来的。
-    if(catAct==="walk"){
-      if(Math.random()<(catAsleep()?.5:.22)){catAct="lie";catTill=now+7000+Math.random()*11000;}
-      else{catAct="stand";catTill=now+2500+Math.random()*5000;}
+  function pNext(p,now){
+    // 停久了就想动，走久了就想歇 —— 时长都带点随机，不然看着像机器，
+    // 而且养好几只的时候它们不会整齐划一地同时起步。
+    if(p.act==="walk"){
+      if(Math.random()<(catAsleep()?.5:.22)){p.act="lie";p.till=now+7000+Math.random()*11000;}
+      else{p.act="stand";p.till=now+2500+Math.random()*5000;}
     }else{
-      catAct="walk";catTill=now+6000+Math.random()*12000;catAim();}}
+      p.act="walk";p.till=now+6000+Math.random()*12000;pAim(p);}}
 
   // 兜底围栏：不管缩放、滚动条、边框怎么算，最后按**浏览器真的画在哪儿**再拦一道。
   // 她两次提到这件事（「跑到窗口外面走掉了」「不要跑出桌面范围」）——
-  // 算出来的数不能单独信：上次就是算错了还一声不哼。每帧都核：
-  // 只量它自己这一个 fixed 元素，排版本来就是算好的；漏一秒它就能往外走 48px。
-  function catFence(){
-    if(!catEl)return;
-    var r=null;try{r=catEl.getBoundingClientRect();}catch(e){return;}
+  // 算出来的数不能单独信：上次就是算错了还一声不哼。
+  function pFence(p){
+    if(!p.el)return;
+    var r=null;try{r=p.el.getBoundingClientRect();}catch(e){return;}
     if(!r||!r.width)return;
-    var v=catView(),z=v.z,p=CAT_PAD*z,ox=0,oy=0;
-    if(r.left<p)ox=p-r.left;else if(r.right>v.W-p)ox=v.W-p-r.right;
-    if(r.top<p)oy=p-r.top;else if(r.bottom>v.H-p)oy=v.H-p-r.bottom;
-    if(ox||oy){catX+=ox/z;catY+=oy/z;catAim();catPose();}   // 拉回来之后重新挑个去处，不然它会一直往外顶
+    var v=catView(),z=v.z,pd=CAT_PAD*z,ox=0,oy=0;
+    if(r.left<pd)ox=pd-r.left;else if(r.right>v.W-pd)ox=v.W-pd-r.right;
+    if(r.top<pd)oy=pd-r.top;else if(r.bottom>v.H-pd)oy=v.H-pd-r.bottom;
+    if(ox||oy){p.x+=ox/z;p.y+=oy/z;pAim(p);pPose(p);}     // 拉回来之后重新挑个去处，不然它会一直往外顶
   }
-  function catTick(){
-    if(!catEl)return;
-    var now=Date.now();
-    petStep(now);                                            // 帧照换 —— 被提着的时候也要动
-    if(catDrag)return;
-    catClamp();                                              // 窗口被拉小了别让它站到屏幕外
-    catFence();                                              // 再按真实画出来的位置校一遍
-    if(now>=catTill)catNext(now);
-    if(catAct==="walk"){
-      var dx=catTx-catX,dy=catTy-catY,d=Math.sqrt(dx*dx+dy*dy);
-      if(d<=CAT_SPD){catX=catTx;catY=catTy;catNext(now);}     // 到了，提前换个动作
+  function pTickOne(p,now){
+    petStep(p,now);                                        // 帧照换 —— 被提着的时候也要动
+    if(p.drag)return;
+    pClamp(p);                                             // 窗口被拉小了别让它站到屏幕外
+    pFence(p);                                             // 再按真实画出来的位置校一遍
+    if(now>=p.till)pNext(p,now);
+    if(p.act==="walk"){
+      var dx=p.tx-p.x,dy=p.ty-p.y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<=CAT_SPD){p.x=p.tx;p.y=p.ty;pNext(p,now);}       // 到了，提前换个动作
       else{
-        catX+=dx/d*CAT_SPD;catY+=dy/d*CAT_SPD;
-        if(Math.abs(dx)>6)catDir=(dx>0)?1:-1;}                // 差一两个像素就翻身的话它会抽筋
-      catClamp();
-      if(now-catSaveT>4000){catSaveT=now;catSave();}}
-    catPose();}
-
-  // 随机小动作：站着或趴着的时候隔一阵自己来一下（她：「不仅仅在切换状态的时候触发」）。
-  // 走路时不插嘴 —— 走一半突然坐下挠痒很怪。
-  function catIdleTrick(){
-    if(!catEl||catDrag||catAct==="walk"||petRise)return;
-    if(Math.random()>.32)return;
-    if(PET.poke&&PET.poke.length){
-      petOnce(PET.poke[Math.floor(Math.random()*PET.poke.length)]);return;}
-    var r=Math.random();
-    catPlay(r<.45?"hop":(r<.75?"shake":"stretch"));}
-
-  function catRun(on){
-    if(on&&(catCalm()||petKey()==="none"))on=false;
-    if(on){
-      if(!catT)catT=setInterval(catTick,50);
-      if(!catIdleT)catIdleT=setInterval(catIdleTrick,9000);
-    }else{
-      if(catT){clearInterval(catT);catT=null;}
-      if(catIdleT){clearInterval(catIdleT);catIdleT=null;}}}
-
-  function drawCat(){
-    if(!catEl)return;
-    if(petKey()==="none"){catEl.style.display="none";catRun(false);return;}
-    if(catS&&!catS.style.backgroundImage)petMount();           // 第一次：把贴图和尺寸下发下去
-    if(catX<0){if(!catRestore())catHome();}                   // 再找上次摆的位置，没有就回番茄钟底下
-    if(!catTill){catAct=catAsleep()?"lie":"stand";catTill=Date.now()+2500;}
-    catRun(true);catPose();}
+        p.x+=dx/d*CAT_SPD;p.y+=dy/d*CAT_SPD;
+        if(Math.abs(dx)>6)p.dir=(dx>0)?1:-1;}               // 差一两个像素就翻身的话它会抽筋
+      pClamp(p);
+      if(now-p.saveT>4000){p.saveT=now;posSave(p);}}
+    pPose(p);}
 
   // 点它：狗就叫一声 / 挠痒 / 舔毛 / 伸懒腰，猫就蹦 / 抖 / 伸懒腰。
   // 连点会换花样，冒个小泡当反馈。被摸了就先不走，站着享受一会儿。
-  function catPoke(){
-    var puffs=["❤","✨","♪","!"],pf=puffs[Math.floor(Math.random()*puffs.length)];
-    if(catAct==="walk")catAct="stand";
-    catTill=Date.now()+1800+Math.random()*1800;
-    if(PET.poke&&PET.poke.length){petOnce(PET.poke[catPokeN++%PET.poke.length],pf);catPose();return;}
+  function pPoke(p){
+    var puffs=["\u2764","\u2728","\u266a","!"],pf=puffs[Math.floor(Math.random()*puffs.length)];
+    if(p.act==="walk")p.act="stand";
+    p.till=Date.now()+1800+Math.random()*1800;
+    if(p.P.poke&&p.P.poke.length){pOnce(p,p.P.poke[p.pokeN++%p.P.poke.length],pf);pPose(p);return;}
     var moves=["hop","shake","stretch"];
-    catPlay(moves[catPokeN++%3],pf);catPose();}
-  // 记完一次：狗叫一声，猫蹦一下
+    pPlay(p,moves[p.pokeN++%3],pf);pPose(p);}
+
+  // ---------- 建和拆 ----------
+  var pets=[],petsSig=null,petT=null,petIdleT=null;
+  function petNewEl(){
+    var el=document.createElement("i");
+    el.className="pomo-kitty";
+    el.innerHTML='<i class="kt-b"><i class="kt-s"></i></i><i class="kt-p"></i>';
+    document.body.appendChild(el);
+    return el;}
+  function mkPet(el){
+    var p={k:"",P:PETS[0],el:el,s:el.querySelector(".kt-s"),puff:el.querySelector(".kt-p"),
+           x:-1,y:-1,dir:1,act:"stand",till:0,tx:0,ty:0,
+           anim:null,rise:false,drag:null,saveT:0,pokeN:0,hopT:null};
+    bindPet(p);
+    return p;}
+  function petSetKind(p,key,idx){
+    if(p.k!==key){p.k=key;p.x=-1;p.y=-1;p.anim=null;p.rise=false;}   // 换品种：去读**这一种**上次摆的位置
+    p.P=petFind(key)||PETS[0];
+    p.el.style.display="";
+    p.el.style.width=pxs(petW(p));p.el.style.height=pxs(petH(p));
+    if(p.s){
+      p.s.style.backgroundImage='url("'+p.P.src+'")';
+      p.s.style.backgroundSize=pxs(p.P.cols*petW(p))+" "+pxs(p.P.rows*petH(p));}
+    if(p.x<0){if(!posRestore(p))pHome(p,idx);}
+    else pClamp(p);
+    if(!p.till){p.act=catAsleep()?"lie":"stand";p.till=Date.now()+2500+idx*900;}
+    petState(p);pPose(p);}
+  function petsBuild(){
+    if(!catEl)return;
+    var keys=petKeys();
+    while(pets.length>keys.length){                        // 收摊：多出来的元素删掉，原来那个只藏起来
+      var g=pets.pop();
+      if(g.hopT)clearTimeout(g.hopT);
+      if(g.el===catEl)g.el.style.display="none";
+      else try{g.el.parentNode.removeChild(g.el);}catch(e){}}
+    for(var i=0;i<keys.length;i++){
+      if(!pets[i])pets.push(mkPet(i===0?catEl:petNewEl()));
+      petSetKind(pets[i],keys[i],i);}
+    if(catEl&&!keys.length)catEl.style.display="none";
+    petsRun(keys.length>0);}
+  function petsSync(){
+    var sg=petKeys().join(",");
+    if(sg===petsSig)return;
+    petsSig=sg;petsBuild();}
+
+  function petsTick(){
+    var now=Date.now();
+    for(var i=0;i<pets.length;i++)pTickOne(pets[i],now);}
+  // 随机小动作：站着或趴着的时候隔一阵自己来一下（她：「不仅仅在切换状态的时候触发」）。
+  // 一次只挑一只 —— 养了五只的话全部同时伸懒腰就像广播体操了。
+  function petsIdleTrick(){
+    if(!pets.length)return;
+    var p=pets[Math.floor(Math.random()*pets.length)];
+    if(!p||p.drag||p.act==="walk"||p.rise)return;
+    if(Math.random()>.32)return;
+    if(p.P.poke&&p.P.poke.length){
+      pOnce(p,p.P.poke[Math.floor(Math.random()*p.P.poke.length)]);return;}
+    var r=Math.random();
+    pPlay(p,r<.45?"hop":(r<.75?"shake":"stretch"));}
+  function petsRun(on){
+    if(on&&catCalm())on=false;
+    if(on){
+      if(!petT)petT=setInterval(petsTick,50);
+      if(!petIdleT)petIdleT=setInterval(petsIdleTrick,9000);
+    }else{
+      if(petT){clearInterval(petT);petT=null;}
+      if(petIdleT){clearInterval(petIdleT);petIdleT=null;}}}
+
+  function drawCat(){
+    if(!catEl)return;
+    petsSync();
+    if(!pets.length)return;
+    for(var i=0;i<pets.length;i++){
+      var p=pets[i];
+      if(p.x<0){if(!posRestore(p))pHome(p,i);}
+      if(!p.till){p.act=catAsleep()?"lie":"stand";p.till=Date.now()+2500;}
+      pPose(p);}
+    petsRun(true);}
+  // 记完一次：狗叫一声，猫蹦一下 —— 在场的都鼓一下掌
   function catHop(){
-    if(PET.a&&PET.a.bark){petOnce("bark","✨");return;}
-    catPlay("hop","✨");}
+    pets.forEach(function(p){
+      if(p.P.a&&p.P.a.bark)pOnce(p,"bark","\u2728");
+      else pPlay(p,"hop","\u2728");});}
 
   // 点一下 / 拖着走。用 pointer 事件，鼠标和触屏一套代码。
   // 按下不立刻算拖动 —— 挪够 4px 才算，不然手一抖就点不成了。
-  if(catEl){
-    catEl.addEventListener("pointerdown",function(e){
+  function bindPet(p){
+    var el=p.el;
+    el.addEventListener("pointerdown",function(e){
       var z=catZoom();
-      catDrag={id:e.pointerId,dx:e.clientX/z-catX,dy:e.clientY/z-catY,x0:e.clientX,y0:e.clientY,moved:false};
-      try{catEl.setPointerCapture(e.pointerId);}catch(_e){}
+      p.drag={id:e.pointerId,dx:e.clientX/z-p.x,dy:e.clientY/z-p.y,x0:e.clientX,y0:e.clientY,moved:false};
+      try{el.setPointerCapture(e.pointerId);}catch(_e){}
       e.preventDefault();});
-    catEl.addEventListener("pointermove",function(e){
-      if(!catDrag||e.pointerId!==catDrag.id)return;
-      if(!catDrag.moved){
-        if(Math.abs(e.clientX-catDrag.x0)+Math.abs(e.clientY-catDrag.y0)<4)return;
-        catDrag.moved=true;
-        catEl.classList.add("drag");catEl.classList.remove("run","rest","hop","stretch","shake");}
+    el.addEventListener("pointermove",function(e){
+      if(!p.drag||e.pointerId!==p.drag.id)return;
+      if(!p.drag.moved){
+        if(Math.abs(e.clientX-p.drag.x0)+Math.abs(e.clientY-p.drag.y0)<4)return;
+        p.drag.moved=true;
+        el.classList.add("drag");el.classList.remove("hop","stretch","shake");}
       var z=catZoom();
-      catX=e.clientX/z-catDrag.dx;catY=e.clientY/z-catDrag.dy;catClamp();catPose();});
-    var catUp=function(e){
-      if(!catDrag||(e&&e.pointerId!==undefined&&e.pointerId!==catDrag.id))return;
-      var moved=catDrag.moved;catDrag=null;
-      catEl.classList.remove("drag");
+      p.x=e.clientX/z-p.drag.dx;p.y=e.clientY/z-p.drag.dy;pClamp(p);pPose(p);});
+    var up=function(e){
+      if(!p.drag||(e&&e.pointerId!==undefined&&e.pointerId!==p.drag.id))return;
+      var moved=p.drag.moved;p.drag=null;
+      el.classList.remove("drag");
       if(moved){
         // 放下了：站原地抖抖毛，然后从这儿接着溜达。位置得马上存，她摆过的东西刷新完要还在。
-        catAct="stand";catTill=Date.now()+1400+Math.random()*1600;
-        catPose();catFence();catPlay("shake");catSaveT=Date.now();catSave();
-      }else catPoke();};
-    catEl.addEventListener("pointerup",catUp);
-    catEl.addEventListener("pointercancel",catUp);
-    catEl.addEventListener("dragstart",function(e){e.preventDefault();});
-    window.addEventListener("resize",function(){if(catX<0)return;catClamp();catPose();catFence();});}
+        p.act="stand";p.till=Date.now()+1400+Math.random()*1600;
+        pPose(p);pFence(p);pPlay(p,"shake");p.saveT=Date.now();posSave(p);
+      }else pPoke(p);};
+    el.addEventListener("pointerup",up);
+    el.addEventListener("pointercancel",up);
+    el.addEventListener("dragstart",function(e){e.preventDefault();});}
+  window.addEventListener("resize",function(){
+    pets.forEach(function(p){if(p.x<0)return;pClamp(p);pPose(p);pFence(p);});});
   // 拖动圆环直接设置倒计时时长（不用打字）
   function ringSetFromEvent(e){
     var rect=ring.getBoundingClientRect(),cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
@@ -13868,9 +13914,20 @@ margin-left: -22px;
   document.getElementById("set-minseg").addEventListener("change",function(){
     settings.minseg=+this.value||10;save("tt_settings",settings);
     try{renderSegs();}catch(e){}});
-  document.getElementById("set-pet").addEventListener("change",function(){
-    settings.pet=this.value;save("tt_settings",settings);
-    try{petMount();catClamp();drawCat();}catch(e){}});
+  // 挑宠物：点一下切开/关。一个都不选 = 不要宠物，所以存的是个数组（可以是空的），
+  // 不能拿「空 = 没设过」当默认值，不然她关完刷新一下金毛又回来了。
+  var petPick=document.getElementById("set-pets");
+  function drawPetPick(){
+    if(!petPick)return;
+    var on=petKeys();
+    [].forEach.call(petPick.querySelectorAll("button[data-pet]"),function(b){
+      b.classList.toggle("on",on.indexOf(b.getAttribute("data-pet"))>=0);});}
+  if(petPick)petPick.addEventListener("click",function(e){
+    var b=e.target.closest("button[data-pet]");if(!b)return;
+    var k=b.getAttribute("data-pet"),cur=petKeys(),i=cur.indexOf(k);
+    if(i>=0)cur.splice(i,1);else cur.push(k);
+    settings.pets=cur;save("tt_settings",settings);
+    drawPetPick();try{petsSync();drawCat();}catch(_e){}});
   document.getElementById("set-pgap").addEventListener("change",function(){
     settings.pgap=this.checked;save("tt_settings",settings);
     try{renderSegs();}catch(e){}try{renderCal();}catch(e){}});   // 正跑着也能改：段落条和日历上那块当场重画
@@ -14690,7 +14747,7 @@ margin-left: -22px;
   var setThemeSeg=document.getElementById("set-theme-seg");
   function syncThemeSeg(){var t=curTheme();setThemeSeg.querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-th")===t);});}
   setThemeSeg.addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;applyTheme(b.getAttribute("data-th"));syncThemeSeg();});
-  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-pgap").checked=!!settings.pgap;try{document.getElementById("set-pet").value=petKey();}catch(_e){}document.getElementById("set-minseg").value=String(minSeg());try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
+  document.getElementById("settings-btn").addEventListener("click",function(){setApiKeyI.value=apiKey;fillModelFields();setProviderSel.value=aiProvider;ollamaUrlI.value=ollamaUrl;ollamaModelI.value=ollamaModel;syncProviderFields();document.getElementById("set-gcal-default").checked=gcalDefault;document.getElementById("set-gcal-count").checked=gcalCount;document.getElementById("set-gcal-arch").checked=!!gcalArchOn;try{refreshArchInfo();}catch(_e){}document.getElementById("set-gcal-pomo").checked=!!gcalAuto.pomo;document.getElementById("set-gcal-goal").checked=!!gcalAuto.goal;document.getElementById("set-sb-url").value=sbUrl;document.getElementById("set-sb-key").value=sbKey;updateSbUI();document.getElementById("set-zoom").value=zoomPref;document.getElementById("set-lang").value=lang;document.getElementById("set-pgap").checked=!!settings.pgap;try{drawPetPick();}catch(_e){}document.getElementById("set-minseg").value=String(minSeg());try{refreshGbf();}catch(_e){}syncThemeSeg();settingsOverlay.classList.add("on");});
   // ---------- 设置：最近常用 ----------
   var recentSet=load("tt_recentset",[])||[];
   function paneOf(el){var p=el.closest?el.closest(".set-pane"):null;return p?p.getAttribute("data-pane"):null;}
