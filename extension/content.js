@@ -100,23 +100,87 @@
     return matchMedia("(prefers-color-scheme: dark)").matches;
   }
 
-  function destroy() { if (host) { host.remove(); host = null; root = null; } }
+  function destroy() {
+    if (ro) { try { ro.disconnect(); } catch (e) { } ro = null; }
+    if (host) { host.remove(); host = null; root = null; }
+  }
 
-  function makeHost(x, y) {
+  // ---- 卡片放哪儿 ----
+  // 以前永远放在选区正下方。选一个词没问题，可她在编辑器里一拉就是一整段，
+  // 选区占满大半屏，正下方只剩一条缝 —— 卡片掉到窗口外面看不全，右边却空着一大片。
+  // 她：「应该是按照划词文字出现的位置自动选择位置摆放，比如这个明显应该放在右侧」。
+  //
+  // 现在按 下 → 上 → 右 → 左 挑第一个**放得下**的。判断用的是卡片**最大**会长多高（56vh），
+  // 这样查词结果异步回来、卡片变高了也还在这一边装得下，不会看着看着突然跳到另一边。
+  // 四边都放不下（选区几乎铺满整屏）：上下挑空间大的那边，把卡片压矮到装得下。
+  // 最后一律再收进窗口里 —— 怎么都不该有一截露在外面。
+  const GAP = 8, EDGE = 8;
+  let anchor = null, side = "below", capH = 0, ro = null;
+  function copyRect(r) {
+    const t = r.top != null ? r.top : (r.bottom != null ? r.bottom : 0);
+    const b = r.bottom != null ? r.bottom : t;
+    const l = r.left != null ? r.left : 0;
+    const rt = r.right != null ? r.right : l;
+    return { top: t, bottom: b, left: l, right: rt };
+  }
+  function chooseSide(r, W, H) {
+    const sp = {
+      below: innerHeight - r.bottom - GAP - EDGE, above: r.top - GAP - EDGE,
+      right: innerWidth - r.right - GAP - EDGE, left: r.left - GAP - EDGE
+    };
+    if (sp.below >= H) return { side: "below", cap: 0 };
+    if (sp.above >= H) return { side: "above", cap: 0 };
+    if (sp.right >= W) return { side: "right", cap: 0 };
+    if (sp.left >= W) return { side: "left", cap: 0 };
+    return sp.below >= sp.above ? { side: "below", cap: Math.max(140, sp.below) }
+                                : { side: "above", cap: Math.max(140, sp.above) };
+  }
+  function boxEl() { return root && (root.querySelector(".card") || root.querySelector(".bubble")); }
+
+  function makeHost(rect, kind) {
     destroy();
     host = document.createElement("div");
     host.style.cssText = "all:initial;position:absolute;z-index:2147483647;left:0;top:0";
     if (pageIsDark()) host.classList.add("dark");
     root = host.attachShadow({ mode: "open" });
     document.documentElement.appendChild(host);
-    place(x, y);
+    anchor = copyRect(rect || {});
+    const W = kind === "bubble" ? 140 : Math.min(420, innerWidth * .92);
+    const H = kind === "bubble" ? 40 : Math.min(innerHeight * .56, 560);
+    const c = chooseSide(anchor, W, H);
+    side = c.side; capH = c.cap;
+    place();
     return root;
   }
 
-  function place(x, y) {
-    if (!host) return;
-    host.style.left = Math.max(8 + scrollX, Math.min(x, scrollX + innerWidth - 440)) + "px";
-    host.style.top = (y + 8) + "px";
+  // 内容画好之后调一次：压高度（如果要），再盯着它的大小 ——
+  // 查词结果、翻译都是异步回来的，卡片会变高；放在上面的要跟着往上挤，否则会压到选区上。
+  function settle() {
+    const el = boxEl();
+    if (!el) return place();
+    if (capH && el.classList.contains("card")) el.style.maxHeight = capH + "px";
+    if (!ro && typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(() => place());
+      try { ro.observe(el); } catch (e) { }
+    }
+    place();
+  }
+
+  function place() {
+    if (!host || !anchor) return;
+    const el = boxEl();
+    const w = (el && el.offsetWidth) || (side === "left" || side === "right" ? Math.min(420, innerWidth * .92) : 140);
+    const h = (el && el.offsetHeight) || 40;
+    const r = anchor;
+    let x, y;
+    if (side === "below") { x = r.left; y = r.bottom + GAP; }
+    else if (side === "above") { x = r.left; y = r.top - GAP - h; }
+    else if (side === "right") { x = r.right + GAP; y = r.top; }
+    else { x = r.left - GAP - w; y = r.top; }
+    x = Math.max(EDGE, Math.min(x, innerWidth - w - EDGE));
+    y = Math.max(EDGE, Math.min(y, innerHeight - h - EDGE));
+    host.style.left = (x + scrollX) + "px";
+    host.style.top = (y + scrollY) + "px";
   }
 
   function selRect() {
@@ -140,7 +204,7 @@
   function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
   async function showCard(text, rect) {
-    const r = makeHost(rect.left + scrollX, rect.bottom + scrollY);
+    const r = makeHost(rect, "card");
     const css = await ensureCSS();
     r.innerHTML = `<style>${BASE_CSS}\n${css}</style>
       <div class="card">
@@ -153,6 +217,7 @@
         </div>
         <div class="bd"><div class="muted">${esc(T("查询中…"))}</div></div>
       </div>`;
+    settle();
 
     const bd = r.querySelector(".bd");
     const isWord = looksLikeWord(text);
@@ -261,8 +326,9 @@
   }
 
   function showBubble(text, rect) {
-    const r = makeHost(rect.left + scrollX, rect.bottom + scrollY);
+    const r = makeHost(rect, "bubble");
     r.innerHTML = `<style>${BASE_CSS}</style><button class="bubble">📖 ${T("查词 / 翻译")}</button>`;
+    settle();
     r.querySelector(".bubble").addEventListener("click", () => {
       const rc = selRect() || rect;
       showCard(text, rc);
@@ -295,7 +361,7 @@
 
   chrome.runtime.onMessage.addListener(msg => {
     if (msg && msg.type === "showFor" && msg.text) {
-      const rect = selRect() || { left: innerWidth / 2 - 210, bottom: 80 };
+      const rect = selRect() || { left: innerWidth / 2 - 210, right: innerWidth / 2 + 210, top: 72, bottom: 80 };
       showCard(msg.text.trim(), rect);
     }
   });
