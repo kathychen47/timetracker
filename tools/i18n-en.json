@@ -640,7 +640,7 @@
 "只记录": "tracking only",
 "叫什么？（不填就用分类名）": "What's it called? (blank = use the category name)",
 "可不放": "Optional",
-"可以同时养好几只；一个都不选就是不要宠物。": "You can keep several at once; select none for no pet at all.",
+"可以同时养好几只；一个都不选就是不要宠物。": "You can keep several at once; select none for no pet at all. ",
 "可到 ⚙️设置 → 📖词典 换个翻译引擎。": "You can switch translation engine under ⚙️ Settings → 📖 Dictionary.",
 "可到 ⚙️设置 → 📖词典 换个翻译引擎试试。": "Try another translation engine under ⚙️ Settings → 📖 Dictionary.",
 "右边还没选书": "No book picked on the right yet",
@@ -2239,5 +2239,7 @@
 "🧾 其他零散": "🧾 Odds & ends",
 "🧾 点一单": "🧾 New order",
 "🧾 点单": "🧾 Orders",
-"🧾 点这道": "🧾 Order this"
+"🧾 点这道": "🧾 Order this",
+"选了的每只下面都有一根滑块，各调各的大小；点右边的百分比恢复原大小。": "Each selected pet gets its own size slider; click the percentage to reset it.",
+"点一下恢复原大小": "Click to reset to original size"
 }

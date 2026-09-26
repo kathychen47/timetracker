@@ -480,6 +480,41 @@ function secOf(cat, sub) {
   chip("golden-retriever").click();
   ok(parseInt(kitty.style.width, 10) === 90 && kitty.style.display !== "none", "换回金毛");
 
+  // 大小：每只一根滑块，各调各的（她：「可以改变小猫小狗等的大小，而且可以分别调节」）
+  var szBox = $("#set-pet-size");
+  function slider(k) { return szBox.querySelector('input[data-psz="' + k + '"]'); }
+  function slide(k, v, type) { var r = slider(k); r.value = v; r.dispatchEvent(new w.Event(type || "input", { bubbles: true })); }
+  ok(!!szBox && szBox.querySelectorAll("input[type=range]").length === 1 && !!slider("golden-retriever"),
+     "选了一只 → 设置里就一根大小滑块，是金毛的");
+  var foot0 = { x: parseFloat(kitty.style.left) + 45, y: parseFloat(kitty.style.top) + 46 };
+  slide("golden-retriever", 150);
+  ok(parseInt(kitty.style.width, 10) === 135 && parseInt(kitty.style.height, 10) === 69,
+     "拖到 150% → 金毛当场变大：" + kitty.style.width + "x" + kitty.style.height);
+  var foot1 = { x: parseFloat(kitty.style.left) + 67.5, y: parseFloat(kitty.style.top) + 69 };
+  ok(Math.abs(foot1.x - foot0.x) <= 3 && Math.abs(foot1.y - foot0.y) <= 3,
+     "变大的时候脚底中点没动（不是从左上角往右下长）：" + JSON.stringify(foot0) + " → " + JSON.stringify(foot1));
+  ok(!(JSON.parse(STORE.tt_settings || "{}").petSize || {})["golden-retriever"], "拖的途中还没存（松手才存）");
+  slide("golden-retriever", 150, "change");
+  ok((JSON.parse(STORE.tt_settings || "{}").petSize || {})["golden-retriever"] === 150, "松手 → 存下来了，刷新还在");
+  ok(szBox.querySelector('[data-psz-v="golden-retriever"]').textContent === "150%", "旁边显示 150%");
+
+  chip("great-dane").click();
+  ok(szBox.querySelectorAll("input[type=range]").length === 2 && !!slider("great-dane"), "再养一只大丹 → 两根滑块");
+  slide("great-dane", 50); slide("great-dane", 50, "change");
+  var dane = live()[1];
+  ok(parseInt(dane.style.width, 10) === 62, "大丹调到 50% → 只有它变小：" + dane.style.width);
+  ok(parseInt(kitty.style.width, 10) === 135, "金毛不受影响，还是 150%：" + kitty.style.width);
+  ok(+slider("golden-retriever").value === 150, "重画滑块时金毛那根也没被弹回 100");
+
+  szBox.querySelector('[data-psz-v="golden-retriever"]').click();
+  ok(parseInt(kitty.style.width, 10) === 90 && !(JSON.parse(STORE.tt_settings || "{}").petSize || {})["golden-retriever"],
+     "点百分比 → 金毛回到原大小，存的那条也清掉了");
+  slide("great-dane", 999, "change");
+  ok((JSON.parse(STORE.tt_settings || "{}").petSize || {})["great-dane"] === 300, "乱给的值会被收进 50%–300%");
+  slide("great-dane", 100, "change");
+  chip("great-dane").click();
+  ok(szBox.querySelectorAll("input[type=range]").length === 1, "关掉大丹 → 它那根滑块也收走了");
+
   ok(errs.length === 0, "跑的过程中没报错：" + errs.join(" | "));
 
   // ---- 13. 刷新一下：牌子还在吗？----

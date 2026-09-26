@@ -313,6 +313,11 @@
   .pet-pick button:hover{border-color:var(--primary)}
   .pet-pick button.on{border-color:var(--primary);color:var(--primary);font-weight:650;
     background:color-mix(in srgb,var(--primary) 10%,transparent)}
+  .pet-size{display:grid;grid-template-columns:auto 1fr 3.4em;gap:6px 10px;align-items:center;margin-top:10px;font-size:12px}
+  .pet-size:empty{display:none}
+  .pet-size .psz-n{color:var(--muted)}
+  .pet-size input[type=range]{width:100%;min-width:0;accent-color:var(--primary);margin:0}
+  .pet-size .psz-v{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted);cursor:pointer}
   .pomo-kitty-lane{height:0;margin:0;overflow:hidden}
   .pomo-kitty{position:fixed;left:0;top:0;width:64px;height:64px;z-index:150;
     cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
@@ -4861,7 +4866,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-row-txt"><div class="set-row-t">页面上那几只宠物</div>
-          <div class="set-desc">点一下切开关，<b>可以同时养好几只；一个都不选就是不要宠物。</b></div>
+          <div class="set-desc">点一下切开关，<b>可以同时养好几只；一个都不选就是不要宠物。</b>选了的每只下面都有一根滑块，各调各的大小；点右边的百分比恢复原大小。</div>
           <div class="set-desc">点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在（每种各记各的）。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。</div></div>
         <div class="pet-pick" id="set-pets">
           <button type="button" data-pet="golden-retriever">金毛</button>
@@ -4872,6 +4877,7 @@ margin-left: -22px;
           <button type="button" data-pet="great-dane">大丹</button>
           <button type="button" data-pet="cat">猫</button>
         </div>
+        <div class="pet-size" id="set-pet-size"></div>
       </div>
       <div class="set-item">
         <div class="set-row">
@@ -6096,7 +6102,7 @@ margin-left: -22px;
     "只记录":"tracking only",
     "叫什么？（不填就用分类名）":"What's it called? (blank = use the category name)",
     "可不放":"Optional",
-    "可以同时养好几只；一个都不选就是不要宠物。":"You can keep several at once; select none for no pet at all.",
+    "可以同时养好几只；一个都不选就是不要宠物。":"You can keep several at once; select none for no pet at all. ",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎。":"You can switch translation engine under ⚙️ Settings → 📖 Dictionary.",
     "可到 ⚙️设置 → 📖词典 换个翻译引擎试试。":"Try another translation engine under ⚙️ Settings → 📖 Dictionary.",
     "右边还没选书":"No book picked on the right yet",
@@ -6888,6 +6894,7 @@ margin-left: -22px;
     "点一下只看这个账户":"Click to see only this account",
     "点一下它会有反应（狗会叫、挠痒、舔毛、伸懒腰），也可以拖着换个地方，放下的位置刷新后还在（每种各记各的）。狗：Pet Dogs Pack by LuizMelo（CC0）；猫：32-Bit Cat by mxmaze（CC BY 4.0）。":"Click one and it reacts (the dogs bark, scratch, lick and stretch); you can also drag it somewhere else, and each kind remembers where you put it across refreshes. Dogs: Pet Dogs Pack by LuizMelo (CC0); cat: 32-Bit Cat by mxmaze (CC BY 4.0). Neither sheet was redrawn or recoloured.",
     "点一下就能改 · 回车换行 · 点别处保存":"Click to edit · Enter for a new line · click away to save",
+    "点一下恢复原大小":"Click to reset to original size",
     "点一下恢复：重新排进复习":"Click to restore: back into the review rotation",
     "点一下换个分组":"Click to change group",
     "点一下换引擎，当场重翻":"Click to switch engine and retranslate right away",
@@ -7423,6 +7430,7 @@ margin-left: -22px;
     "选中整句会自动翻译 · 点一下关掉":"Selecting a sentence translates it automatically · click to turn off",
     "选中整句会自动翻译·点一下关掉":"Selecting a whole sentence translates it automatically · click to turn off",
     "选中文字 → 点 📝 加笔记，":"Select text → tap 📝 to add a note, ",
+    "选了的每只下面都有一根滑块，各调各的大小；点右边的百分比恢复原大小。":"Each selected pet gets its own size slider; click the percentage to reset it.",
     "选择":"Select",
     "选指标":"Pick metrics",
     "选文件（.json / .csv）":"Choose a file (.json / .csv)",
@@ -13331,15 +13339,27 @@ margin-left: -22px;
     var r=1;try{r=window.devicePixelRatio||1;}catch(e){}
     if(!(r>0))r=1;
     return catZoom()*r;}
-  function petScale(p){var k=catPx();return Math.max(1,Math.round(p.P.sc*k))/k;}
+  // 每只各自的大小（她：「可以分别调节」）。settings.petSize = {品种: 百分比}，没设过就是 100。
+  // 乘在 sc 上**之后**再取整到整数个物理点 —— 像素图只能整格放大，不然又要闪。
+  // 所以滑块挪一格，有时候看起来没变：那一格取整后跟上一格是同一个大小。
+  var PET_SZ_MIN=50,PET_SZ_MAX=300;
+  function petPct(k){
+    var m=settings.petSize,v=m&&typeof m==="object"?+m[k]:NaN;
+    return (v>=PET_SZ_MIN&&v<=PET_SZ_MAX)?v:100;}
+  function petScale(p){var k=catPx();return Math.max(1,Math.round(p.P.sc*petPct(p.k)/100*k))/k;}
   function petW(p){return p.P.w*petScale(p);}
   function petH(p){return p.P.h*petScale(p);}
   function pxs(v){return (Math.round(v*100000)/100000)+"px";}
   // 缩放变了（改窗口大小、拖到另一块屏）就重新下发尺寸，没变就什么都不写
   function pSize(p){
-    var sc=petScale(p);
-    if(p._sc===sc)return;
+    var sc=petScale(p),old=p._sc,pct=petPct(p.k),byHer=(p._pct!==undefined&&p._pct!==pct);
+    p._pct=pct;
+    if(old===sc)return;
     p._sc=sc;
+    // 她拖滑块变大变小时**脚底中点不动**：不然往大调，它是从左上角往右下长，看着像被挤走了。
+    // 只管滑块那一种；窗口缩放变了是另一回事，照旧（围栏那套已经管着）。
+    if(byHer&&old&&p.x>=0){
+      p.x-=p.P.w*(sc-old)/2;p.y-=p.P.h*(sc-old);pClamp(p);}
     p.el.style.width=pxs(p.P.w*sc);p.el.style.height=pxs(p.P.h*sc);
     if(p.s)p.s.style.backgroundSize=pxs(p.P.cols*p.P.w*sc)+" "+pxs(p.P.rows*p.P.h*sc);
     petDraw(p);}
@@ -13503,7 +13523,7 @@ margin-left: -22px;
     if(p.k!==key){p.k=key;p.x=-1;p.y=-1;p.anim=null;p.rise=false;}   // 换品种：去读**这一种**上次摆的位置
     p.P=petFind(key)||PETS[0];
     p.el.style.display="";
-    p._sc=null;pSize(p);
+    p._sc=null;p._pct=undefined;pSize(p);
     if(p.s)p.s.style.backgroundImage='url("'+p.P.src+'")';
     if(p.x<0){if(!posRestore(p))pHome(p,idx);}
     else pClamp(p);
@@ -13978,11 +13998,38 @@ margin-left: -22px;
   // 挑宠物：点一下切开/关。一个都不选 = 不要宠物，所以存的是个数组（可以是空的），
   // 不能拿「空 = 没设过」当默认值，不然她关完刷新一下金毛又回来了。
   var petPick=document.getElementById("set-pets");
+  var petSizeBox=document.getElementById("set-pet-size");
   function drawPetPick(){
     if(!petPick)return;
     var on=petKeys();
     [].forEach.call(petPick.querySelectorAll("button[data-pet]"),function(b){
-      b.classList.toggle("on",on.indexOf(b.getAttribute("data-pet"))>=0);});}
+      b.classList.toggle("on",on.indexOf(b.getAttribute("data-pet"))>=0);});
+    drawPetSize(on);}
+  // 选了哪几只，下面就给哪几只各一根大小滑块
+  function drawPetSize(on){
+    if(!petSizeBox)return;
+    petSizeBox.innerHTML=on.map(function(k){
+      var P=petFind(k),v=petPct(k);
+      return '<span class="psz-n">'+esc(trv(P.n))+'</span>'+
+        '<input type="range" data-psz="'+k+'" min="'+PET_SZ_MIN+'" max="'+PET_SZ_MAX+'" step="10" value="'+v+'" aria-label="'+esc(trv(P.n))+'">'+
+        '<span class="psz-v" data-psz-v="'+k+'" title="'+esc(trv("点一下恢复原大小"))+'">'+v+'%</span>';}).join("");}
+  function petSizeSet(k,v,keep){
+    v=Math.max(PET_SZ_MIN,Math.min(PET_SZ_MAX,Math.round(+v)||100));
+    if(!settings.petSize||typeof settings.petSize!=="object")settings.petSize={};
+    if(v===100)delete settings.petSize[k];else settings.petSize[k]=v;
+    if(keep)save("tt_settings",settings);
+    var lab=petSizeBox&&petSizeBox.querySelector('[data-psz-v="'+k+'"]');if(lab)lab.textContent=v+"%";
+    pets.forEach(function(p){if(p.k===k){pPose(p);posSave(p);}});}
+  if(petSizeBox){
+    // 拖的时候当场变，松手才存（不然每挪一下都写一次、云同步也跟着推一次）
+    petSizeBox.addEventListener("input",function(e){
+      var r=e.target.closest("input[data-psz]");if(r)petSizeSet(r.getAttribute("data-psz"),r.value,false);});
+    petSizeBox.addEventListener("change",function(e){
+      var r=e.target.closest("input[data-psz]");if(r)petSizeSet(r.getAttribute("data-psz"),r.value,true);});
+    petSizeBox.addEventListener("click",function(e){
+      var l=e.target.closest("[data-psz-v]");if(!l)return;
+      var k=l.getAttribute("data-psz-v"),r=petSizeBox.querySelector('input[data-psz="'+k+'"]');
+      if(r)r.value=100;petSizeSet(k,100,true);});}
   if(petPick)petPick.addEventListener("click",function(e){
     var b=e.target.closest("button[data-pet]");if(!b)return;
     var k=b.getAttribute("data-pet"),cur=petKeys(),i=cur.indexOf(k);
