@@ -2241,5 +2241,16 @@
 "🧾 点单": "🧾 Orders",
 "🧾 点这道": "🧾 Order this",
 "选了的每只下面都有一根滑块，各调各的大小；点右边的百分比恢复原大小。": "Each selected pet gets its own size slider; click the percentage to reset it.",
-"点一下恢复原大小": "Click to reset to original size"
+"点一下恢复原大小": "Click to reset to original size",
+"＋ 导入星露谷的": "+ Import Stardew",
+"「导入星露谷的」：自己下载星露谷动物的 PNG 贴图（猫、狗、乌龟、牛、猪、羊、山羊、鸵鸟、兔子、恐龙都认得），可以一次选好几张。": "“Import Stardew”: download Stardew Valley animal PNG sprite sheets yourself (cats, dogs, turtles, cows, pigs, sheep, goats, ostriches, rabbits and dinosaurs are recognized); you can pick several at once. ",
+"图只存在这台电脑的浏览器里，不上传、不同步。": "The images stay in this computer's browser only — never uploaded or synced. ",
+"牌子上的 × 是删掉这只。": "The × on a chip removes that pet.",
+"删掉这只": "Remove this pet",
+"删掉这只？": "Remove this pet?",
+"读不出来": "couldn't be read",
+"不是能打开的图片": "not an image that can be opened",
+"认不出是哪种星露谷动物": "not a recognized Stardew animal sprite sheet",
+"星露谷": "Stardew",
+"浏览器存不下了": "browser storage is full"
 }
