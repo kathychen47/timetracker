@@ -754,6 +754,29 @@
   .mn-range .to{color:var(--muted);font-size:13px}
   .mn-range .rng-txt{color:var(--muted);font-size:11.5px;white-space:nowrap;margin-left:2px}
   .mn-status{font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px}
+  .mn-led{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;margin:0 0 10px;padding:8px 12px;
+    border-radius:10px;background:color-mix(in srgb,var(--primary) 8%,transparent);border:1px solid color-mix(in srgb,var(--primary) 25%,transparent)}
+  .mn-led .m{color:var(--muted);font-size:12px}
+  .mn-led .btn{padding:3px 10px;font-size:12px}
+  .led-who{color:var(--primary)!important;font-weight:600}
+  .led-panel p{line-height:1.7;margin:6px 0}
+  .led-note{font-size:12px;color:var(--muted);line-height:1.7}
+  .led-form{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .led-form .tx-in{flex:1 1 180px;min-width:0}
+  .led-m{align-items:center}
+  .mn-rule.led-m .nm{width:auto;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
+  .led-m small{color:var(--muted);margin-left:6px}
+  .led-msg{font-size:12px;color:var(--muted);min-height:16px;margin:6px 0}
+  .led-msg.err{color:var(--danger)}
+  .led-hh{display:flex;align-items:center;gap:10px;margin-top:18px}
+  .led-hh .btn{font-size:12px;padding:3px 10px}
+  .led-hist{font-size:12px;border-top:1px solid var(--border);max-height:50vh;overflow:auto}
+  .led-h{display:grid;grid-template-columns:auto auto 1fr;gap:4px 10px;padding:7px 0;border-bottom:1px solid var(--border);align-items:baseline}
+  .led-h .w{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .led-h .x{overflow-wrap:anywhere}
+  .led-h small{display:block;color:var(--muted)}
+  .led-empty{font-size:12px;color:var(--muted);padding:8px 0}
+  @media (max-width:560px){.led-h{grid-template-columns:auto 1fr}.led-h .x{grid-column:1/-1}}
   .mn-status b{color:var(--text);font-weight:600}
   .mn-status.err{color:#d9534f}
   .mn-bals{display:flex;gap:9px;margin-bottom:14px;overflow-x:auto;padding-bottom:2px}
@@ -4090,8 +4113,10 @@ margin-left: -22px;
           <button class="btn" id="mn-csv">📄 导入文件</button>
           <button class="btn" id="mn-recur">🔁 周期</button>
           <button class="btn" id="mn-rules">⚙️ 设置</button>
+          <button class="btn" id="mn-share">👥 共享</button>
           <input type="file" id="mn-file" accept=".csv,.xlsx,text/csv" multiple hidden>
         </div>
+        <div class="mn-led" id="mn-led" hidden></div>
         <div class="mn-status" id="mn-status"></div>
         <div id="mn-body"></div>
       </div>
@@ -5231,6 +5256,7 @@ margin-left: -22px;
     catch(e){try{lsWarn(k);}catch(_e){}return false;}
     if(lsFull&&k===lsFullKey){lsFull=false;lsFullKey=null;}   // 刚才存不下的那个键现在存进去了 → 解除，恢复上云
     try{markLocal(k);}catch(e){}      // 记一笔「这个键是本机改的」——拉取时靠它别被云端的旧值盖回去
+    if(LED&&!ledApplying&&(LEDGER_KEYS[k]||k==="tt_mncfg"))try{ledPushSoon();}catch(e){}   // 共享账本：只推变了的那几条
     schedulePush(k);return true;}
   function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
   // 这个标签页的身份证。同一个人可能开着好几个网页（分屏副屏、划词小窗、手滑开的第二个），
@@ -5695,6 +5721,7 @@ margin-left: -22px;
     "一笔流水都没拉到过":"has never pulled in a single transaction",
     "一行一条：\nWeibull\nway bull => Weibull\nF M E A => FMEA\n\n只写术语 → 按发音去找；写成「错的 => 对的」→ 原样替换，更准。":"One per line:\nWeibull\nway bull => Weibull\nF M E A => FMEA\n\nJust the term → matched by how it sounds; write it as \"wrong => right\" → replaced verbatim, which is more accurate.",
     "一行一条：&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;只写术语 → 按发音去找；写成「错的 =&gt; 对的」→ 原样替换，更准。":"One per line:&#10;Weibull&#10;way bull =&gt; Weibull&#10;F M E A =&gt; FMEA&#10;&#10;Just the term → matched by how it sounds; write it as \"wrong =&gt; right\" → replaced verbatim, which is more accurate.",
+    "一起共享的：流水、税务记录、分类和规则、周期记账、银行账户。":"Shared: transactions, tax records, categories and rules, recurring entries, bank accounts.",
     "三":"Wed",
     "上一期":"Previous period",
     "上一次同步还没回来，等一下…":"The last sync hasn't come back yet, hang on…",
@@ -5724,6 +5751,7 @@ margin-left: -22px;
     "不会自动命中任何交易":"won't match any transactions on its own",
     "不停":"Never pause",
     "不像单词，已剔除":"Not word-like, dropped",
+    "不再用共享账本":"Stop using the shared ledger",
     "不到 1 分钟，没记进日历":"Under 1 minute — not logged to the calendar",
     "不加了":"Never mind",
     "不取整":"Exact",
@@ -5860,6 +5888,7 @@ margin-left: -22px;
     "你的菜谱库里已经有同名的了":"You already have a recipe with that name",
     "你离开时那个番茄钟已经完成，已按当时的时间记进日历 ✓":"That Pomodoro finished while you were away — logged to the calendar at that time ✓",
     "你自己@gmail.com":"you@gmail.com",
+    "你记的、改的，对方那边也看得到。":"What you add or change shows up on their side too.",
     "你这份":"yours",
     "你选的那个没有带声音 —— 弹窗左下角有个「分享音频 / Share audio」的勾，要勾上。 这次先只录麦克风。":"What you picked has no audio — there's a \"Share audio\" checkbox in the bottom-left of that dialog, tick it. Mic only for this one.",
     "例会":"regular meeting",
@@ -5887,6 +5916,9 @@ margin-left: -22px;
     "停住即出":"Hover to look up",
     "停几秒":"How many seconds",
     "停多久才算说完一句 —— 说话慢或爱停顿就往「整段」调":"How long a pause ends a sentence — for slow or pause-heavy speech, move toward \"Paragraph\"",
+    "停止共享":"Stop sharing",
+    "停止共享以后，对方下一次打开或刷新就看不到这本账了（最多一分钟）。对方之前看到过、截过图的收不回来。":"After you stop sharing, they lose access the next time they open or refresh (within a minute). Anything they already saw or screenshotted can't be taken back.",
+    "停止共享：":"Stopped sharing with:",
     "停着":"Stopped",
     "停车":"parking",
     "健身":"gym",
@@ -5894,6 +5926,7 @@ margin-left: -22px;
     "像分词切出来的碎片":"looks like a fragment from word segmentation",
     "像网址或邮箱":"Looks like a URL or email",
     "允许和同一时间段的其它事件重叠，统计里两边都算":"Allow overlap with other events at the same time; both count in stats",
+    "先不用":"Not now",
     "先到「👥 分享」页填 GitHub Token（那页有一步步的说明）":"Add your GitHub Token on the \"👥 Share\" tab first (it has step-by-step instructions)",
     "先去 ⚙️ 设置里填 Gemini API Key（或把「AI 服务」切成本地 Ollama）":"Add a Gemini API Key in ⚙️ Settings first (or switch \"AI service\" to local Ollama)",
     "先去「☁️ 云同步」页填 Supabase 网址和 anon key，点保存，再登录":"Go to \"☁️ Cloud sync\", enter your Supabase URL and anon key, save, then sign in",
@@ -5934,6 +5967,10 @@ margin-left: -22px;
     "六":"Sat",
     "共":"Total",
     "共 N 次":"N times total",
+    "共享中":"",
+    "共享给你的账本":"'s shared ledger",
+    "共享给你的：你能看全部、能记、能改、能删，每一步都记在下面的历史里。":": you can see everything, add, edit and delete, and every change is recorded in the history below.",
+    "共享账本":"Shared ledger",
     "关掉这一格":"Close this pane",
     "关键词":"Keywords",
     "关键词，比如 cai,yuele":"Keywords, e.g. cai,yuele",
@@ -5944,6 +5981,7 @@ margin-left: -22px;
     "内容":"Task",
     "内容多大框就多大":"The box fits the content",
     "内置指标的名字和单位改不了。不想看见它，点一下取消勾选就行。":"Built-in metrics can't be renamed or given a new unit. To hide one, just untick it.",
+    "再加一个人：Google 邮箱":"Add someone: Google email",
     "再导一批":"Import another batch",
     "再把它拆成一步步，每步填个预计时间。":"then break it into steps and give each one a time estimate.",
     "再来一轮":"One more round",
@@ -6024,6 +6062,7 @@ margin-left: -22px;
     "利息":"interest",
     "别人分享的菜谱不能改，可以先「复制到我的菜谱」":"You can't edit someone else's recipe — try \"Copy to my recipes\" first",
     "别人整理好的稿子没有时间戳。做法：先让 Whisper 转一遍拿到时间，再把你这份文本按词对齐过去——文字以":"Someone else's transcript has no timestamps. How it works: Whisper transcribes once to get the timing, then your text is aligned to it word by word — the wording comes from ",
+    "到 Supabase 后台 → SQL Editor，把仓库里":"In the Supabase dashboard → SQL Editor, paste the whole ",
     "到复习那天，你希望还记得住多大比例。调高 → 间隔变短、每天复习量变大；调低 → 间隔拉长、省时间但忘得多一点。90% 是通用的甜点，拿不准就别动。":"How much you want to still remember on the day a card comes up. Higher means shorter gaps and more reviews per day; lower means longer gaps, less time, and a bit more forgetting. 90% is the usual sweet spot — leave it alone if you are unsure.",
     "到手":"Take-home",
     "到手收入":"Take-home income",
@@ -6037,6 +6076,8 @@ margin-left: -22px;
     "加一个自己的时段":"Add your own time tag",
     "加一块牌子":"Add a tag",
     "加一条":"Add one",
+    "加上":"Add",
+    "加上了 ✓":"Added ✓",
     "加入生词本":"Add to word list",
     "加入词库":"Add to word list",
     "加到分组":"Add to group",
@@ -6068,6 +6109,7 @@ margin-left: -22px;
     "单笔 ≥ 多少算工资":"Counts as salary if ≥",
     "单词":"vocab",
     "卡片大小恢复自动了：内容多大，框就多大":"Card size is back to auto — the box fits the content",
+    "历史记录":"History",
     "原文":"Original",
     "原文 → 你写的":"Original → what you wrote",
     "原文、译文、你的听写和判分一律在云端，删音频不影响它们。":"The original, translation, your dictation and scores all live in the cloud — deleting the audio doesn't touch them.",
@@ -6110,6 +6152,7 @@ margin-left: -22px;
     "吃":"eat",
     "吃饭":"meal",
     "各大类时长（当天）":"Time by category (this day)",
+    "各看各的：币种、汇率、时间范围这类显示设置。":"Not shared: display settings like currency, exchange rates and date range.",
     "合计":"Total",
     "合计 · 全部账户":"Total · All accounts",
     "同一个字母连着好几个，像乱码":"Same letter repeated, looks like gibberish",
@@ -6146,6 +6189,7 @@ margin-left: -22px;
     "周日":"Sun",
     "周期记账":"Recurring entries",
     "周目标复盘":"Weekly goal review",
+    "和别人一起记这本账":"Keep this ledger together with someone",
     "和导师同步：带上一页纸的研究动机 + 两个设计方案。":"Sync with my supervisor: bring a one-pager on the research motivation + two design options.",
     "和左边换一下":"Swap with the left pane",
     "咖啡":"coffee",
@@ -6154,6 +6198,7 @@ margin-left: -22px;
     "哪天为止":"Until when",
     "哪天为止 / 记几次":"End date / how many times",
     "哪种模式下选中文字都能查词":"Select text to look it up in any mode",
+    "商家":"Merchant",
     "商户":"Merchant",
     "喝水":"drink water",
     "四":"Thu",
@@ -6178,6 +6223,7 @@ margin-left: -22px;
     "培训":"training",
     "基金":"Fund",
     "塌得最厉害的句子":"Your worst sentences",
+    "填上对方登录用的 Google 邮箱。对方用这个邮箱登录后，在记账页就能看到并打开这本账：":"Enter the Google email they sign in with. Once they sign in with it, they can open this ledger from the Money page: ",
     "填多久，结束时间自己算：2 / 2h / 1h30 / 90m":"Type how long; the end time is worked out: 2 / 2h / 1h30 / 90m",
     "处理中…":"Processing…",
     "备注":"Note",
@@ -6264,6 +6310,7 @@ margin-left: -22px;
     "家电":"appliances",
     "宽带":"broadband",
     "对":"Correct",
+    "对方的 Google 邮箱":"Their Google email",
     "对齐":"align",
     "导入":"Import",
     "导入菜谱":"Import recipes",
@@ -6371,6 +6418,7 @@ margin-left: -22px;
     "开启后，从 Google 日历同步过来的事件（包括上面存下来的那些）会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。":"When this is on, events synced from Google Calendar (including the ones archived above) are marked done automatically and counted in stats, charts and goal progress (duplicates of local events with the same name are removed).",
     "开启后，每查一个能查到的词就自动收进生词本，方便直接背。查词页、看书划词、笔记本划词都算；词典没收录的（专业术语、人名）也会收，先拿翻译垫着，你可以自己改成真正的解释。":"When this is on, every word you successfully look up is added to your word list, ready to review. Lookups on the dictionary page, in books and in notes all count. Words the dictionary doesn't have (jargon, names) get added too, with a translation standing in until you replace it with a real definition.",
     "开启自动续期":"Enable auto-renew",
+    "开始共享":"Start sharing",
     "开始正计时，时间自动记到这一步":"Start counting up; the time is logged to this step",
     "开始背诵":"Start review",
     "归档":"Archive",
@@ -6401,6 +6449,7 @@ margin-left: -22px;
     "总结":"summary",
     "总词数":"Total words",
     "总额去向":"Where the money goes",
+    "恢复":"Restored",
     "恢复默认":"Restore defaults",
     "想吃什么？（菜谱库里没有的也能点）":"What do you feel like? (it doesn't have to be in your recipes)",
     "想学什么？或者直接把你已经写好的计划整段粘进来。 两种都行：给个主题我来拆，给了计划我就照着整理，步骤和时间原样保留。":"What do you want to learn? Or just paste in a plan you've already written. Either works: give me a topic and I'll break it down; give me a plan and I'll tidy it up, keeping your steps and times exactly as they are.",
@@ -6430,6 +6479,7 @@ margin-left: -22px;
     "打不开本地书库。书都还在，只是这个窗口读不到 —— 关掉别的 Timetracker 标签页刷新一下，或者换个非隐私窗口再试。":"Can't open the local book library. Your books are still there — this window just can't read it. Close any other Timetracker tabs and refresh, or try a non-private window.",
     "打不开本地词典库":"Can't open the local dictionary store",
     "打卡":"check-in",
+    "打开共享账本":"Open shared ledger",
     "打开后，白名单里的邮箱登录这个网站，就能看到你的菜谱和你想吃的菜（他们只能看，不能改）。":"Once it's on, anyone on the allow-list who signs in to this site can see your recipes and what you're craving (view only — they can't change anything).",
     "打开完整应用 ↗":"Open full app ↗",
     "打车":"taxi",
@@ -6452,6 +6502,7 @@ margin-left: -22px;
     "把明显不像单词的挑出来，确认后移到回收站":"Pick out the ones that clearly aren't words; they go to the trash once you confirm",
     "把更早的也存下来":"Archive older ones too",
     "把术语表套到所有已有的录音上":"Apply the glossary to every recording you already have",
+    "把账本共享给你了。":" shared a ledger with you.",
     "把过去的 Google 事件存进我的记录":"Save past Google events into my records",
     "把这本书的笔记导成 Markdown":"Export this book's notes as Markdown",
     "把这段的音频文件存到电脑上（IndexedDB 里拿不出来，只能这样导）":"Save this recording's audio file to your computer (IndexedDB won't hand it over any other way)",
@@ -6475,6 +6526,7 @@ margin-left: -22px;
     "拉取时保住本机刚改还没上云的":"kept local edits not yet uploaded, on pull",
     "拉取时按墓碑剔掉删过的事件":"Dropped deleted events on pull (tombstones)",
     "拉取时捡回本机的事件":"Recovered local events on pull",
+    "拉进共享：":"Shared with:",
     "拖一个 CSV / xlsx 进来。":"to drag in a CSV / xlsx.",
     "拖到浏览器书签栏":"onto your browser's bookmarks bar",
     "拖动圆环设时长 · 一圈 60 分":"Drag the ring · one loop = 60 min",
@@ -6553,6 +6605,7 @@ margin-left: -22px;
     "收起译文只看原文":"Hide the translation, show the original only",
     "收进我的记录":"Add to my records",
     "改":"Edit",
+    "改了":"Edited",
     "改名 / 删除":"Rename / delete",
     "改名 / 新建子文件夹 / 删除":"Rename / new subfolder / delete",
     "改名（留空＝删掉这个文件夹，里面的东西会退回最外层，不会被删）：":"Rename (leave empty = delete this folder; what's inside moves to the top level, nothing is deleted):",
@@ -6580,7 +6633,9 @@ margin-left: -22px;
     "数字变大算进步":"Higher is better",
     "数字变小算进步":"Lower is better",
     "数据库正在升级，被这个网站的其它标签页挡住了。 把其它标签页关掉，刷新一下再点。":"The database is upgrading and other tabs of this site are blocking it. Close the other tabs, refresh, then try again.",
+    "数据库还没建好":"The database isn't set up yet",
     "整个区间":"Whole range",
+    "整个粘进去点 Run，再回来刷新这一页。":" file from the repo, click Run, then come back and refresh this page.",
     "整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。":"Scales everything up or down. If it looks too small on another device, adjust here — it applies right away and this device remembers it (other devices aren't affected).",
     "整句翻译":"Sentence translation",
     "整段没写":"Skipped",
@@ -6610,6 +6665,7 @@ margin-left: -22px;
     "新分组名称，如：雅思核心 / PhD":"New group name, e.g. IELTS Core / PhD",
     "新分组名称：":"New group name:",
     "新分组名，如：雅思":"New group name, e.g. IELTS",
+    "新增":"Added",
     "新建事件弹窗里那个「同时加到我的 Google 日历」默认勾上，不用每次手动勾。":"Ticks \"Also add to my Google Calendar\" in the new-event dialog by default, so you don't have to each time.",
     "新建大类，名称：":"New category, name:",
     "新建待办":"New to-do",
@@ -6767,6 +6823,7 @@ margin-left: -22px;
     "次":"times",
     "次数要填个大于 0 的数":"The count has to be greater than 0",
     "正在停下…":"Stopping…",
+    "正在共享":"Sharing with",
     "正在往回找…":"Searching back…",
     "正在打开 Google 登录…":"Opening Google sign-in…",
     "正在查词，请稍等…":"Looking it up…",
@@ -6939,6 +6996,7 @@ margin-left: -22px;
     "环形":"Donut",
     "现在不自动翻，卡片上有按钮想翻再点 · 点一下打开":"Auto-translate is off; use the button on the card when you want it · click to turn on",
     "现在按真实日期算，零点一过就是新的一天。":"Days follow the real date right now — a new one starts the moment it hits midnight.",
+    "现在没有和任何人共享 —— 账本还开着，只有你自己在用。":"Not shared with anyone right now — the ledger is still on, and only you are using it.",
     "现在没有想吃的，去菜谱库点一道吧":"Nothing on the want list — go order one from your recipes",
     "现在没网":"You're offline",
     "现在：按当天汇率 ✓":"Now: daily rates ✓",
@@ -6986,6 +7044,7 @@ margin-left: -22px;
     "看全部账户":"See all accounts",
     "看病":"doctor visit",
     "看看别人分享了什么":"See what others shared",
+    "看看谁做了啥":"See who did what",
     "睡":"sleep",
     "睡前":"Before bed",
     "知道了":"Got it",
@@ -6995,6 +7054,8 @@ margin-left: -22px;
     "秋田":"Akita",
     "秒":"s",
     "租金":"rental",
+    "称呼（可不填）":"Name (optional)",
+    "称呼，比如 Lance":"Name, e.g. Lance",
     "移到哪个文件夹？":"Move to which folder?",
     "移到哪个文件夹？打名字即可，没有会新建（和书架是同一批文件夹）。 留空＝移出文件夹（变成未归类）":"Move to which folder? Just type a name — a new one is created if it doesn't exist (same folders as the shelf). Leave empty = remove from folder (becomes unfiled)",
     "移除该单词":"Remove this word",
@@ -7100,6 +7161,7 @@ margin-left: -22px;
     "背单词计划（遗忘曲线）":"Vocabulary plan (forgetting curve)",
     "背完自动记入日历（记为「背单词」）":"Log to calendar when done (as \"Vocabulary\")",
     "胸围":"Chest",
+    "能看全部、能记、能改、能删":"they can see everything, add, edit and delete",
     "腰":"waist",
     "腰围":"Waist",
     "臀":"hip",
@@ -7146,6 +7208,7 @@ margin-left: -22px;
     "要先在 ⚙️设置 → ☁️云同步 里用 Google 登录":"Sign in with Google first under ⚙️Settings → ☁️Cloud sync",
     "要先登录":"Sign in first",
     "要先登录才能同步 —— 设置 → 👤 账号 → 用 Google 登录":"Sign in first to sync — Settings → 👤 Account → Sign in with Google",
+    "要先登录：设置 → 👤 账号 → 用 Google 登录。":"Sign in first: Settings → 👤 Account → Sign in with Google.",
     "要干什么？我拆成几条待办 比如：下周三前把实验报告交了":"What needs doing? I'll break it into a few to-dos e.g. Hand in the lab report by next Wednesday",
     "要是扫描件，先点上面「🔍 OCR」识别，再点 ⟳ 重译。":"If it's a scan, tap \"🔍 OCR\" above first, then hit ⟳ to translate again.",
     "要算税的账户":"Account to tax",
@@ -7302,6 +7365,7 @@ margin-left: -22px;
     "还没有菜谱可导出":"No recipes to export",
     "还没有计时数据，背一轮就有了":"No timing data yet — finish one round and it shows up",
     "还没有记录":"Nothing recorded yet",
+    "还没有记录。":"Nothing yet.",
     "还没有记录。做一次番茄钟再回来看。":"No entries yet. Run a Pomodoro and come back.",
     "还没有记录。改过的设置会自动出现在这里。":"Nothing here yet. Settings you change show up automatically.",
     "还没有记录，上面记第一笔吧":"No records yet — add your first one above",
@@ -7389,6 +7453,7 @@ margin-left: -22px;
     "这本书没有内置目录":"This book has no built-in contents",
     "这本书的文件丢了，建议删掉重新导入":"This book's file is gone — delete it and import it again",
     "这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）":"This book is already fully translated ✓ (stored on this device — pages open instantly, nothing gets re-translated)",
+    "这本账是":"This ledger is shared with you by ",
     "这条":"this one",
     "这条以前填过统计时长，所以还显示着 —— 统计里这条按它算。清空它就回到按实际时长算，以后不会再出现。":"This entry has a stats duration set, which is why the box is still here — the stats count it by that number. Clear it and the entry goes back to its real length, and the box won't come back.",
     "这条同时算给好几件事：保存时把这段时间平均分给它们，加起来还是这么多，不会虚高":"This entry counts towards several things: on save the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
@@ -7417,6 +7482,7 @@ margin-left: -22px;
     "连接 Google Calendar":"Connect Google Calendar",
     "连接 Google 日历":"Google Calendar connected",
     "连接已取消或失败":"Connection cancelled or failed",
+    "退出共享":"Leave shared ledger",
     "退出沉浸式（Esc）":"Exit immersive mode (Esc)",
     "退出选择":"Exit selection",
     "退换货":"returns",
@@ -7469,7 +7535,10 @@ margin-left: -22px;
     "金额要填对":"Enter a valid amount",
     "金额（实收）":"Amount (gross)",
     "钓鱼":"fishing",
+    "银行同步只在你这边跑，拉下来的流水对方也看得到。":"Bank sync only runs on your side; the transactions it brings in are visible to them too.",
     "银行同步来的不给删 —— 那是对账的底稿":"Bank-synced entries can't be deleted — that's your reconciliation record",
+    "银行流水由对方那边同步。退出之后你这边回到加入之前自己的记账，对方的账不受影响。":"Bank transactions are synced on their side. If you leave, you go back to your own records from before you joined; theirs aren't affected.",
+    "银行账户":"Bank accounts",
     "银行那边最新的一笔还停在":"The bank's side still has nothing newer than",
     "锻炼":"exercise",
     "阅读":"Reading",
@@ -7547,7 +7616,10 @@ margin-left: -22px;
     "👁 预览":"👁 Preview",
     "👤 账号":"👤 Account",
     "👤 账号 · 登录":"👤 Account · Sign in",
+    "👥 共享":"👥 Share",
     "👥 分享":"👥 Shared",
+    "👥 和":"👥 Sharing with ",
+    "👥 这是":"👥 This is ",
     "👩‍🍳 做过":"👩‍🍳 Cooked",
     "💡 备注":"💡 Notes",
     "💾 保存":"💾 Save",
@@ -7639,6 +7711,7 @@ margin-left: -22px;
     "（已到结束条件）":"(end condition met)",
     "（已申报部分扣税）":"(declared portion taxed)",
     "（或在查词框输入一句话）就会翻译。单词仍走词典。":"(or type a sentence in the look-up box) and it gets translated. Single words still go to the dictionary.",
+    "（所有人都停止共享，账留在你这儿）":"(stops sharing with everyone; the records stay with you)",
     "（改名不影响已有事件，它们跟的是内部 ID）。小类颜色跟着大类自动做深浅。删除大类不会删掉用过它的事件（只会变成默认色）。至少保留一个大类。":"(Renaming doesn't affect existing events — they follow an internal ID.) Sub-category colors are shaded automatically from their category. Deleting a category doesn't delete the events that used it; they just fall back to the default color. Keep at least one category.",
     "（文件本体，只在这台电脑）":"(the files themselves — this computer only)",
     "（无回答）":"(No answer)",
@@ -7697,6 +7770,7 @@ margin-left: -22px;
     "，只有菜谱本身会。":", only the recipes themselves are.",
     "，合并过的句子要重新翻译":", and merged sentences need re-translating",
     "，回头在税务页确认一下":"— confirm it on the Tax page later",
+    "，每一步都有历史记录。你随时可以停止共享。":", and every change is kept in the history. You can stop sharing at any time.",
     "，永不结束":", never ends",
     "，点了报错就还用书签。扩展是":", and if that errors just keep using the bookmarklet. The extension is ",
     "，跟现在的行为一致。想让某一条算进去，在日历上给它打个勾就行（打了勾就归你管，以后 Google 那边再改也不动它）。":", same as it behaves now. To make one count, just tick it on the calendar (once ticked it's yours — later changes on Google won't touch it).",
@@ -15027,6 +15101,416 @@ margin-left: -22px;
   var DEFAULT_SB_URL="https://xypppmvwpbkytzdwbytc.supabase.co",DEFAULT_SB_KEY="sb_publishable_Smoqq0LX_DOrquJs0IysiA_wEPGLoIs";
   var sbUrl=load("tt_sburl","")||DEFAULT_SB_URL,sbKey=load("tt_sbkey","")||DEFAULT_SB_KEY;
   var CLOUD_KEYS=["tt_events","tt_todos","tt_goals","tt_cats","tt_memos","tt_pstats","tt_settings","tt_gcaldefault","tt_aimodel","tt_aiprovider","tt_ollamaurl","tt_ollamamodel","tt_words","tt_dictprefs","tt_wbgroups","tt_catmemo","tt_srshist","tt_taxrec","tt_taxrates","tt_anncolors","tt_gcalcount","tt_gcalauto","tt_notes","tt_recipes","tt_orders","tt_shareon","tt_pomolast","tt_body","tt_bodycfg","tt_wbtrash","tt_popcfg","tt_skills","tt_folders","tt_nbfolders","tt_glu","tt_glucfg","tt_recs","tt_terms","tt_txns","tt_mnrules","tt_mncfg","tt_railorder","tt_ltcfg","tt_evdel","tt_gdel","tt_gcalarch","tt_donedef","tt_matememo","tt_pomoslots"];   // tt_recs 只有文字，音频留本机；tt_terms 是术语表；tt_evdel/tt_gdel 是两张删除墓碑
+  // ==== ledger:begin ====
+  // ---------- 👥 共享账本：和 Lance 一起记账 ----------
+  // 她：「我想要和 Lance 共享这个账单，他可以增加我也可以，他可以看到全部内容……我可以随时终止和他的 share」，
+  //     「最好是有个后台可以显示历史记录，就是谁做了啥」。
+  //
+  // 为什么不直接让他读 states 那行：states 是「每人一行、整盘快照」，
+  // 两个人各记一笔、各推一次，后推的整盘盖掉先推的 —— 必丢一笔。
+  // 所以记账这块单独拿出来：Supabase 里一本账 + 成员 + **一笔一行**（supabase/ledger.sql）。
+  // 谁能读写由数据库的行级安全决定，不靠网页自觉；历史记录由数据库触发器写，网页改不了。
+  //   · 一笔一行：两边各加各的互不覆盖；同一笔两边都改，后改的赢。
+  //   · 删除只打标记（deleted=true）：另一台才知道「这笔是删了」而不是「我这边漏了」，历史里也找得回。
+  //   · 本机照旧存在 tt_txns / tt_taxrec…… 里，记账页、税务页的代码一行不用改。
+  //     另记一份「上次和账本对齐时每条的指纹」（tt_ledshadow），存盘后比一比指纹，
+  //     就知道哪些是新加的、改过的、删掉的，只推这些。
+  // 开着共享账本时，这几个键不再走个人的 states 同步 —— 两条路写同一个键，旧的会把新的盖回去。
+  var LEDGER_KEYS={tt_txns:1,tt_taxrec:1,tt_taxrates:1,tt_mnrules:1};
+  // tt_mncfg 里一半是账本本身（账户、分类、周期账、谁付的钱……），一半是各看各的（币种、汇率、时间范围）。
+  // 只有前一半进账本。
+  var LED_CFG=["accts","cats","learned","owners","payers","payerTax","afterTax","taxAcct","payMin","recur","lastSync","since","impN"];
+  var LED=null;try{LED=JSON.parse(LS.getItem("tt_ledger")||"null");}catch(e){}
+  if(!LED||!LED.id||!LED.role)LED=null;
+  var ledReady=false,ledShadow=null,ledPushT=null,ledPulling=false,ledPushing=false,ledApplying=false,
+      ledInvite=null,ledTimer=null,ledMsg="",ledMembers=null,ledErr="",ledHistRows=null;
+  function ledPut(k,v){try{if(v==null)LS.removeItem(k);else LS.setItem(k,JSON.stringify(v));}catch(e){}}
+  function ledGet(k,d){try{var v=LS.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+  function ledSaveMeta(){ledPut("tt_ledger",LED);}
+  function ledOn(){return !!(LED&&ledReady&&SB&&sbUser);}
+  function ledSh(){if(!ledShadow)ledShadow=ledGet("tt_ledshadow",{})||{};return ledShadow;}
+  function ledShSave(){ledPut("tt_ledshadow",ledShadow||{});}
+  function ledHash(o){
+    var s=JSON.stringify(o===undefined?null:o),h=2166136261;
+    for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+    return (h>>>0).toString(36)+"."+s.length.toString(36);}
+  function ledMe(){return String(sbUser&&sbUser.email||"").toLowerCase();}
+  function ledMyName(){var m=(sbUser&&sbUser.user_metadata)||{};return m.full_name||m.name||ledMe().split("@")[0];}
+  function ledOwnerName(){return (LED&&(LED.ownerName||String(LED.ownerEmail||"").split("@")[0]))||"对方";}
+  function ledName(email){
+    email=String(email||"").toLowerCase();if(!email)return "?";
+    if(LED&&email===LED.ownerEmail)return ledOwnerName();
+    var n=LED&&LED.names&&LED.names[email];
+    return n||email.split("@")[0];}
+  function ledNote(t,err){try{mnStatus(esc(t),err);}catch(e){}}
+
+  // 本机现在的账，拆成一条一条
+  function ledItems(){
+    var m={};
+    (mnTxns||[]).forEach(function(t){if(t&&t.id!=null&&t.id!=="")m["t|"+t.id]={k:"t",id:String(t.id),data:mnTrim(t)};});
+    (taxRecs||[]).forEach(function(r){if(r&&r.id!=null&&r.id!=="")m["x|"+r.id]={k:"x",id:String(r.id),data:r};});
+    m["c|rules"]={k:"c",id:"rules",data:mnRules||{}};
+    m["c|taxrates"]={k:"c",id:"taxrates",data:taxRates||{}};
+    LED_CFG.forEach(function(f){if(mnCfg&&mnCfg[f]!==undefined)m["c|mn."+f]={k:"c",id:"mn."+f,data:mnCfg[f]};});
+    return m;}
+
+  // ---- 推：只推跟上次对齐时不一样的 ----
+  function ledPushSoon(){
+    if(!ledOn()||ledApplying)return;
+    if(ledPushT)clearTimeout(ledPushT);
+    ledPushT=setTimeout(function(){ledPushT=null;ledPush();},1500);}
+  function ledPush(){
+    if(!ledOn())return Promise.resolve(0);
+    if(ledPushing){ledPushSoon();return Promise.resolve(0);}
+    var sh=ledSh(),cur=ledItems(),rows=[],dels=[],hs={},live=0;
+    Object.keys(cur).forEach(function(key){
+      var it=cur[key],h=ledHash(it.data);hs[key]=h;
+      var s=sh[key];
+      if(!s||s[0]!==h)rows.push({ledger_id:LED.id,k:it.k,id:it.id,data:it.data===undefined?null:it.data,deleted:false});});
+    Object.keys(sh).forEach(function(key){
+      if(sh[key][0]==="-")return;live++;
+      if(!cur[key]){var p=key.indexOf("|");
+        dels.push({ledger_id:LED.id,k:key.slice(0,p),id:key.slice(p+1),data:null,deleted:true});}});
+    // 保险丝：本机一下子少了大半本账，多半不是她删的，是本机数据被清掉了（清缓存、换浏览器、出 bug）。
+    // 照推的话 Lance 那边也跟着全没。删除先扣下、喊一声；刷新一下就会从账本里拿回来。
+    if(dels.length>50&&dels.length>live*0.5){
+      ledNote("本机一下子少了 "+dels.length+" 笔（一共 "+live+" 笔），不像是手动删的 —— 这批删除没有同步到共享账本。刷新一下页面会从账本里拿回来。",true);
+      dels=[];}
+    var all=rows.concat(dels);
+    if(!all.length)return Promise.resolve(0);
+    ledPushing=true;var n=0,lid=LED.id;
+    function chunk(i){
+      if(i>=all.length)return Promise.resolve();
+      var part=all.slice(i,i+400);
+      return SB.from("ledger_items").upsert(part,{onConflict:"ledger_id,k,id"}).select("k,id,deleted,updated_at").then(function(r){
+        if(r.error)throw r.error;
+        if(!LED||LED.id!==lid)return;                     // 推到一半退出了共享：别再往影子里记
+        (r.data||[]).forEach(function(x){var key=x.k+"|"+x.id;sh[key]=[x.deleted?"-":(hs[key]||"?"),x.updated_at];});
+        n+=part.length;
+        return chunk(i+400);});}
+    return chunk(0).then(function(){ledPushing=false;if(LED&&LED.id===lid)ledShSave();return n;},
+      function(e){ledPushing=false;if(LED&&LED.id===lid)ledShSave();
+        ledNote("共享账本上传失败："+(e&&e.message||e),true);return n;});}
+
+  // ---- 拉：从上次拉到的时刻往回退两分钟再拉（两个人同时写的时候，数据库时间戳不一定按提交顺序到） ----
+  function ledPull(full){
+    if(!ledOn()||ledPulling)return Promise.resolve(0);
+    ledPulling=true;
+    var lid=LED.id,wipe=!!full||!LED.at;
+    var since=wipe?null:new Date(new Date(LED.at).getTime()-120000).toISOString();
+    var got=[];
+    function page(from){
+      var q=SB.from("ledger_items").select("k,id,data,deleted,created_by,updated_at").eq("ledger_id",lid);
+      if(since)q=q.gt("updated_at",since);
+      return q.order("updated_at",{ascending:true}).range(from,from+999).then(function(r){
+        if(r.error)throw r.error;
+        var d=r.data||[];got=got.concat(d);
+        if(d.length===1000)return page(from+1000);});}
+    return page(0).then(function(){
+      ledPulling=false;
+      if(!LED||LED.id!==lid)return 0;
+      var n=ledApply(got,wipe);
+      got.forEach(function(x){if(!LED.at||x.updated_at>LED.at)LED.at=x.updated_at;});
+      ledSaveMeta();return n;},
+      function(e){ledPulling=false;ledNote("共享账本读取失败："+(e&&e.message||e),true);return 0;});}
+
+  // 把账本里的写进本机。wipe = 整本换掉（刚加入 / 这台头一回）。
+  function ledApply(rows,wipe){
+    if(!LED)return 0;
+    var sh=ledSh();
+    if(wipe){ledShadow=sh={};
+      mnRules={};taxRates={};LED_CFG.forEach(function(f){delete mnCfg[f];});}
+    var txs=wipe?[]:mnTxns.slice(),xs=wipe?[]:taxRecs.slice();
+    var ti={},xi={},gone={},n=0,who=ledGet("tt_ledwho",{})||{};
+    txs.forEach(function(t,i){ti[t.id]=i;});xs.forEach(function(r,i){xi[r.id]=i;});
+    // 本机改了、还没推上去的那一条：先别拿账本里的盖掉，等它推上去（推上去它就是最新的 —— 后改的赢）
+    function dirty(key,obj){var s=sh[key];return !wipe&&!!s&&obj!==undefined&&s[0]!==ledHash(obj);}
+    var owner=String(LED.ownerEmail||"").toLowerCase();
+    rows.forEach(function(r){
+      var key=r.k+"|"+r.id,s=sh[key],h="-";
+      if(!wipe&&s&&s[1]&&r.updated_at<=s[1])return;      // 这一版本机已经有了
+      if(r.k==="t"||r.k==="x"){
+        var arr=r.k==="t"?txs:xs,idx=r.k==="t"?ti:xi,i=idx[r.id];
+        var curObj=(i!==undefined)?(r.k==="t"?mnTrim(arr[i]):arr[i]):undefined;
+        if(dirty(key,curObj))return;
+        if(r.deleted){if(i!==undefined)gone[key]=1;}
+        else{
+          var obj=r.data||{};if(obj.id==null)obj.id=r.id;
+          if(i!==undefined)arr[i]=obj;else{idx[r.id]=arr.length;arr.push(obj);}
+          delete gone[key];
+          h=ledHash(r.k==="t"?mnTrim(obj):obj);}}
+      else if(r.k==="c"){
+        var v=r.deleted?undefined:r.data;
+        if(r.id==="rules"){if(dirty(key,mnRules))return;mnRules=(v&&typeof v==="object")?v:{};h=ledHash(mnRules);}
+        else if(r.id==="taxrates"){if(dirty(key,taxRates))return;taxRates=(v&&typeof v==="object")?v:{};h=ledHash(taxRates);}
+        else if(r.id.indexOf("mn.")===0&&LED_CFG.indexOf(r.id.slice(3))>=0){
+          var f=r.id.slice(3);if(dirty(key,mnCfg[f]))return;
+          if(v===undefined||v===null)delete mnCfg[f];else{mnCfg[f]=v;h=ledHash(v);}}
+        else return;}
+      else return;
+      // 「谁记的」：只标别人记的（主人记的不标，不然 Lance 那边满屏都是她的名字）
+      if(r.created_by&&String(r.created_by).toLowerCase()!==owner)who[key]=String(r.created_by).toLowerCase();else delete who[key];
+      sh[key]=[h,r.updated_at];n++;});
+    if(!n&&!wipe)return 0;
+    txs=txs.filter(function(t){return !gone["t|"+t.id];});
+    xs=xs.filter(function(r){return !gone["x|"+r.id];});
+    ledApplying=true;
+    try{
+      mnTxns=txs;save("tt_txns",mnTxns.map(mnTrim));
+      taxRecs=xs;save("tt_taxrec",taxRecs);
+      save("tt_taxrates",taxRates);save("tt_mnrules",mnRules);save("tt_mncfg",mnCfg);
+    }finally{ledApplying=false;}
+    ledPut("tt_ledwho",who);ledShSave();
+    try{mnCatIdx();}catch(e){}
+    try{if(state.tab==="money")mnRender();else if(state.tab==="tax")renderTax();}catch(e){}
+    return n;}
+
+  // ---- 找账本：登录 / 同步完 / 每分钟看一眼 ----
+  // 也靠这一步发现「被踢掉了」：账本在列表里消失 = 没权限了。
+  function ledCheck(){
+    if(!SB||!sbUser)return Promise.resolve();
+    return SB.from("ledgers").select("id,owner_id,owner_email,owner_name").then(function(r){
+      if(r.error){
+        ledErr=/does not exist|schema cache|relation/i.test(r.error.message||"")?"nosql":(r.error.message||"err");
+        if(LED)ledNote("共享账本连不上："+(r.error.message||""),true);
+        ledBanner();return;}
+      ledErr="";
+      var list=r.data||[];
+      if(LED){
+        var hit=list.filter(function(x){return x.id===LED.id;})[0];
+        if(!hit){ledLeave(LED.role==="member"?"revoked":"gone");return;}
+        if(hit.owner_name&&hit.owner_name!==LED.ownerName){LED.ownerName=hit.owner_name;ledSaveMeta();}
+        ledReady=true;ledTick(true);
+        return ledPull(false).then(function(){if(!ledMembers)ledMembersLoad();ledBanner();});}
+      var mine=list.filter(function(x){return x.owner_id===sbUser.id;})[0];
+      if(mine)return ledJoin(mine,"owner");                  // 我在别的设备上开的：这台也接上
+      var dec=ledGet("tt_leddecline","");
+      ledInvite=list.filter(function(x){return x.owner_id!==sbUser.id&&x.id!==dec;})[0]||null;
+      ledBanner();});}
+  function ledTick(on){
+    if(ledTimer){clearInterval(ledTimer);ledTimer=null;}
+    if(!on)return;
+    ledTimer=setInterval(function(){if(!document.hidden)ledCheck();},60000);}
+
+  // 加入：成员先把自己原来那份存起来，退出（或被踢）时原样放回
+  function ledJoin(L,role){
+    if(role==="member"&&!LS.getItem("tt_ledbak")){
+      var bak={};Object.keys(LEDGER_KEYS).forEach(function(k){bak[k]=LS.getItem(k);});
+      var cf={};LED_CFG.forEach(function(f){if(mnCfg[f]!==undefined)cf[f]=mnCfg[f];});bak.cfg=cf;
+      ledPut("tt_ledbak",bak);}
+    LED={id:L.id,role:role,owner:L.owner_id,ownerEmail:String(L.owner_email||"").toLowerCase(),
+         ownerName:L.owner_name||"",at:null};
+    ledSaveMeta();ledShadow={};ledShSave();ledPut("tt_ledwho",{});
+    ledReady=true;ledInvite=null;ledMsg="";
+    return ledPull(true).then(function(n){
+      ledTick(true);ledMembersLoad();ledBanner();
+      try{schedulePush();}catch(e){}                         // 个人那行里不再带这几个键
+      return n;});}
+  function ledRestore(){
+    var bak=ledGet("tt_ledbak",null)||{};
+    function raw(k,d){try{return bak[k]?JSON.parse(bak[k]):d;}catch(e){return d;}}
+    ledApplying=true;
+    try{
+      mnTxns=raw("tt_txns",[])||[];save("tt_txns",mnTxns);
+      taxRecs=raw("tt_taxrec",[])||[];save("tt_taxrec",taxRecs);
+      taxRates=raw("tt_taxrates",{})||{};save("tt_taxrates",taxRates);
+      mnRules=raw("tt_mnrules",{})||{};save("tt_mnrules",mnRules);
+      LED_CFG.forEach(function(f){delete mnCfg[f];});
+      if(bak.cfg&&typeof bak.cfg==="object")Object.keys(bak.cfg).forEach(function(f){mnCfg[f]=bak.cfg[f];});
+      save("tt_mncfg",mnCfg);
+    }finally{ledApplying=false;}
+    ledPut("tt_ledbak",null);}
+  // 离开共享账本。主人：账都还在本机，回到个人同步。成员：放回加入之前自己的那份。
+  function ledLeave(why){
+    if(!LED)return;
+    var member=LED.role==="member",who=ledOwnerName();
+    ledTick(false);ledReady=false;
+    if(ledPushT){clearTimeout(ledPushT);ledPushT=null;}
+    LED=null;ledShadow=null;ledMembers=null;ledHistRows=null;
+    ledPut("tt_ledger",null);ledPut("tt_ledshadow",null);ledPut("tt_ledwho",null);
+    if(member){
+      ledRestore();
+      ledMsg=(why==="revoked")?(who+" 停止了和你共享账本。你这边已经回到加入之前自己的记账。")
+                             :"已经退出共享账本，回到你自己的记账。";}
+    else ledMsg=(why==="gone")?"共享账本在另一台设备上关掉了。账都还在你这儿，照常记。":"";
+    try{schedulePush();}catch(e){}                            // 这几个键回到个人云同步
+    try{mnCatIdx();}catch(e){}
+    try{if(state.tab==="money")mnRender();else if(state.tab==="tax")renderTax();}catch(e){}
+    ledBanner();ledRedraw();}
+
+  // ---- 主人：开共享、拉人、踢人、关掉 ----
+  function ledEmailOk(e){return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e);}
+  function ledStart(email,name){
+    email=String(email||"").trim().toLowerCase();
+    if(!ledEmailOk(email))return Promise.reject(new Error("邮箱格式不对"));
+    if(email===ledMe())return Promise.reject(new Error("这是你自己的邮箱"));
+    return SB.from("ledgers").insert({owner_id:sbUser.id,owner_email:ledMe(),owner_name:ledMyName()})
+      .select("id,owner_id,owner_email,owner_name").single().then(function(r){
+      if(r.error)throw r.error;var L=r.data;
+      return SB.from("ledger_members").insert({ledger_id:L.id,email:email,name:String(name||"").trim()}).then(function(r2){
+        if(r2.error)throw r2.error;
+        LED={id:L.id,role:"owner",owner:sbUser.id,ownerEmail:ledMe(),ownerName:L.owner_name||"",at:null};
+        ledSaveMeta();ledShadow={};ledShSave();ledPut("tt_ledwho",{});ledReady=true;
+        // 第一次：本机整本推上去。推完拿推回来的时间当「拉到哪儿了」，免得马上又整本拉一遍
+        return ledPush().then(function(n){
+          var sh=ledSh(),mx=null;Object.keys(sh).forEach(function(k){if(!mx||sh[k][1]>mx)mx=sh[k][1];});
+          if(LED){LED.at=mx;ledSaveMeta();}
+          ledTick(true);ledMembersLoad();ledBanner();
+          try{schedulePush();}catch(e){}
+          return n;});});});}
+  function ledAdd(email,name){
+    email=String(email||"").trim().toLowerCase();
+    if(!ledEmailOk(email))return Promise.reject(new Error("邮箱格式不对"));
+    return SB.from("ledger_members").insert({ledger_id:LED.id,email:email,name:String(name||"").trim()}).then(function(r){
+      if(r.error)throw r.error;return ledMembersLoad();});}
+  function ledRemove(email){
+    return SB.from("ledger_members").delete().eq("ledger_id",LED.id).eq("email",email).then(function(r){
+      if(r.error)throw r.error;return ledMembersLoad();});}
+  function ledDisband(){
+    return SB.from("ledgers").delete().eq("id",LED.id).then(function(r){
+      if(r.error)throw r.error;ledLeave("off");});}
+  function ledMembersLoad(){
+    if(!ledOn())return Promise.resolve([]);
+    var lid=LED.id;
+    return SB.from("ledger_members").select("email,name,added_at").eq("ledger_id",lid).then(function(r){
+      if(!LED||LED.id!==lid)return [];
+      ledMembers=r.error?[]:(r.data||[]);
+      var nm={};ledMembers.forEach(function(m){nm[String(m.email).toLowerCase()]=m.name||String(m.email).split("@")[0];});
+      LED.names=nm;ledSaveMeta();
+      ledBanner();ledRedraw();return ledMembers;});}
+
+  // ---- 历史：谁在什么时候加 / 改 / 删了什么 ----
+  var LED_CFGN={rules:"分类规则",taxrates:"税率","mn.accts":"银行账户","mn.cats":"自定义分类","mn.learned":"自动分类记下的商家",
+    "mn.owners":"账户归属","mn.payers":"付款人","mn.payerTax":"自动记税规则","mn.afterTax":"税后到账的账户",
+    "mn.taxAcct":"记税用的账户","mn.payMin":"大额进账门槛","mn.recur":"周期记账","mn.since":"起始日期",
+    "mn.lastSync":"银行同步时间","mn.impN":"导入批次"};
+  var LED_QUIET={"mn.lastSync":1,"mn.impN":1,"mn.learned":1};   // 机器自己写的，放进历史只是噪音
+  function ledHistLoad(){
+    if(!ledOn())return Promise.resolve([]);
+    var lid=LED.id;
+    return SB.from("ledger_log").select("seq,at,who,act,k,id,before,after").eq("ledger_id",lid)
+      .order("seq",{ascending:false}).limit(600).then(function(r){
+      if(r.error)throw r.error;
+      if(!LED||LED.id!==lid)return [];
+      ledHistRows=r.data||[];return ledHistRows;});}
+  function ledTxt(k,o,id){
+    o=o||{};
+    if(k==="t"){var a=+o.amt||0;
+      return (o.d||"")+" · "+(a>0?"+":"")+a.toFixed(2)+" "+(o.cur||"NZD")+" · "+(o.merchant||o.desc||"（无摘要）");}
+    if(k==="x")return (o.date||"")+" · 税务收入 "+(+o.gross||0).toFixed(2)+(o.payer?" · "+o.payer:"");
+    return LED_CFGN[id]||id;}
+  function ledDiff(b,a){
+    b=b||{};a=a||{};var out=[];
+    var catN=function(c){return (MN_CAT[c]&&MN_CAT[c].n)||c||"";};
+    [["d","日期"],["amt","金额"],["cat","分类"],["merchant","商家"],["desc","摘要"],["cur","币种"],["date","日期"],["gross","金额"],["gstIncluded","含 GST"],["payer","付款人"]].forEach(function(p){
+      var x=b[p[0]],y=a[p[0]];if(JSON.stringify(x)===JSON.stringify(y))return;
+      if(p[0]==="cat"){x=catN(x);y=catN(y);}
+      out.push(p[1]+" "+(x===undefined||x===""?"（空）":x)+" → "+(y===undefined||y===""?"（空）":y));});
+    return out.join("；");}
+  function ledHistHtml(){
+    var rows=(ledHistRows||[]).filter(function(r){return !(r.k==="c"&&LED_QUIET[r.id]);});
+    if(!rows.length)return '<div class="led-empty">还没有记录。</div>';
+    // 连着的一大批（第一次整本推上去、银行一次同步进来十几笔）并成一行，不然一屏全是它
+    var grp=[],cur=null;
+    rows.forEach(function(r){
+      var t=new Date(r.at).getTime();
+      if(cur&&cur.who===r.who&&cur.act===r.act&&cur.k===r.k&&r.k!=="c"&&Math.abs(cur.t-t)<120000){cur.list.push(r);cur.t=t;}
+      else{cur={who:r.who,act:r.act,k:r.k,t:t,list:[r]};grp.push(cur);}});
+    var AN={add:"新增",edit:"改了",del:"删掉",undel:"恢复","member+":"拉进共享：","member-":"停止共享："};
+    var KN={t:"笔流水",x:"条税务记录",c:"项设置"};
+    return '<div class="led-hist">'+grp.slice(0,200).map(function(g){
+      var r=g.list[0],d=new Date(r.at);
+      var when=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+      var what;
+      if(r.act==="member+"||r.act==="member-")what=esc(AN[r.act]+" "+(((r.after||r.before||{}).name)||"")+" "+r.id);
+      else if(g.list.length>=5)what=esc((AN[r.act]||r.act)+" "+g.list.length+" "+(KN[r.k]||"条"));
+      else what=g.list.map(function(x){
+        var main=esc((AN[x.act]||x.act)+" "+ledTxt(x.k,x.after||x.before,x.id));
+        var df=(x.act==="edit"&&x.k!=="c")?ledDiff(x.before,x.after):"";
+        return main+(df?'<small>'+esc(df)+'</small>':"");}).join("<br>");
+      return '<div class="led-h"><span class="w">'+esc(when)+'</span><b>'+esc(ledName(r.who))+'</b><span class="x">'+what+'</span></div>';}).join("")+'</div>';}
+
+  // ---- 界面 ----
+  function ledWhoTag(id){
+    if(!LED)return "";
+    var w=(ledGet("tt_ledwho",{})||{})["t|"+id];
+    return w?'<small class="led-who">'+esc(ledName(w))+'</small>':"";}
+  function ledBanner(){
+    var el=document.getElementById("mn-led");if(!el)return;
+    var h="";
+    if(ledMsg)h='<span>'+esc(ledMsg)+'</span><button class="btn" data-led="ok">知道了</button>';
+    else if(!LED&&ledInvite)h='<span>👥 <b>'+esc(ledInvite.owner_name||ledInvite.owner_email||"")+'</b></span><span>把账本共享给你了。</span>'+
+      '<button class="btn primary" data-led="join">打开共享账本</button><button class="btn" data-led="decline">先不用</button>';
+    else if(LED&&LED.role==="member")h='<span>👥 这是 <b>'+esc(ledOwnerName())+'</b> 共享给你的账本</span><span class="m">你记的、改的，对方那边也看得到。</span>';
+    else if(LED&&LED.role==="owner"&&ledMembers&&ledMembers.length)
+      h='<span>👥 和 '+ledMembers.map(function(m){return '<b>'+esc(m.name||m.email)+'</b>';}).join("、")+' 共享中</span>';
+    el.innerHTML=h;el.hidden=!h;}
+  var ledHistOpen=false;
+  function ledHtml(){
+    var h='<div class="panel led-panel">';
+    if(!SB||!sbUser)return h+'<p>要先登录：设置 → 👤 账号 → 用 Google 登录。</p></div>';
+    if(ledErr==="nosql")return h+'<h3>数据库还没建好</h3><p class="led-note">到 Supabase 后台 → SQL Editor，把仓库里 <code>supabase/ledger.sql</code> 整个粘进去点 Run，再回来刷新这一页。</p></div>';
+    if(LED&&LED.role==="member"){
+      h+='<h3>共享账本</h3><p>这本账是 <b>'+esc(ledOwnerName())+'</b> 共享给你的：你能看全部、能记、能改、能删，每一步都记在下面的历史里。</p>'+
+        '<p class="led-note">银行流水由对方那边同步。退出之后你这边回到加入之前自己的记账，对方的账不受影响。</p>'+
+        '<button class="btn" data-led="leave">退出共享</button>';}
+    else if(LED&&LED.role==="owner"){
+      h+='<h3>正在共享</h3>';
+      var ms=ledMembers||[];
+      h+=ms.length?ms.map(function(m){
+        return '<div class="mn-rule led-m"><span class="nm"><b>'+esc(m.name||m.email.split("@")[0])+'</b> <small>'+esc(m.email)+'</small></span>'+
+          '<button class="btn" data-led="rm" data-email="'+esc(m.email)+'">停止共享</button></div>';}).join("")
+        :'<p class="led-note">现在没有和任何人共享 —— 账本还开着，只有你自己在用。</p>';
+      h+='<div class="led-form"><input class="tx-in" type="email" id="led-email" placeholder="再加一个人：Google 邮箱">'+
+        '<input class="tx-in" type="text" id="led-name" placeholder="称呼（可不填）"><button class="btn" data-led="add">加上</button></div>'+
+        '<p class="led-note">停止共享以后，对方下一次打开或刷新就看不到这本账了（最多一分钟）。对方之前看到过、截过图的收不回来。</p>'+
+        '<button class="btn" data-led="off">不再用共享账本</button> <span class="led-note">（所有人都停止共享，账留在你这儿）</span>';}
+    else{
+      h+='<h3>和别人一起记这本账</h3>'+
+        '<p>填上对方登录用的 Google 邮箱。对方用这个邮箱登录后，在记账页就能看到并打开这本账：<b>能看全部、能记、能改、能删</b>，每一步都有历史记录。你随时可以停止共享。</p>'+
+        '<div class="led-form"><input class="tx-in" type="email" id="led-email" placeholder="对方的 Google 邮箱">'+
+        '<input class="tx-in" type="text" id="led-name" placeholder="称呼，比如 Lance"><button class="btn primary" data-led="start">开始共享</button></div>'+
+        '<p class="led-note">一起共享的：流水、税务记录、分类和规则、周期记账、银行账户。<br>各看各的：币种、汇率、时间范围这类显示设置。<br>银行同步只在你这边跑，拉下来的流水对方也看得到。</p>';}
+    h+='<div class="led-msg" id="led-msg"></div>';
+    if(LED){
+      h+='<h3 class="led-hh">历史记录 <button class="btn" data-led="hist">'+(ledHistOpen?"刷新":"看看谁做了啥")+'</button></h3>';
+      if(ledHistOpen)h+=(ledHistRows?ledHistHtml():'<div class="led-empty">读取中…</div>');}
+    return h+'</div>';}
+  function ledRedraw(){
+    try{if(mnRulesWin&&mnWinBtn==="mn-share"){var b=document.getElementById("wbtool-body");if(b)b.innerHTML=ledHtml();}}catch(e){}}
+  function ledSay(t,err){var el=document.getElementById("led-msg");if(el){el.textContent=t||"";el.className="led-msg"+(err?" err":"");}}
+  function ledAct(act,el){
+    var em=function(){var i=document.getElementById("led-email");return i?i.value:"";};
+    var nm=function(){var i=document.getElementById("led-name");return i?i.value:"";};
+    var fail=function(e){ledSay("没成功："+(e&&e.message||e),true);};
+    if(act==="start"){ledSay("正在把账本传上去…（第一次要传全部，稍等）");
+      ledStart(em(),nm()).then(function(n){ledRedraw();ledSay("开始共享了 ✓ 传上去 "+n+" 条。让对方用那个邮箱登录，打开记账页就行。");},fail);}
+    else if(act==="add")ledAdd(em(),nm()).then(function(){ledRedraw();ledSay("加上了 ✓");},fail);
+    else if(act==="rm"){var e=el.getAttribute("data-email");
+      ttConfirm("停止和 "+ledName(e)+" 共享？对方刷新后就看不到这本账了。").then(function(ok){
+        if(ok)ledRemove(e).then(function(){ledSay("已停止和 "+ledName(e)+" 共享。");},fail);});}
+    else if(act==="off")ttConfirm("不再用共享账本？所有人都会停止共享，账都留在你这儿。").then(function(ok){
+        if(ok)ledDisband().catch(fail);});
+    else if(act==="leave")ttConfirm("退出共享账本？你这边回到加入之前自己的记账。").then(function(ok){
+        if(!ok||!LED)return;ledPut("tt_leddecline",LED.id);ledLeave("self");});
+    else if(act==="join"){if(ledInvite)ledJoin(ledInvite,"member").then(function(n){ledNote("已经打开共享账本 ✓ 拿到 "+n+" 条。");});}
+    else if(act==="decline"){if(ledInvite)ledPut("tt_leddecline",ledInvite.id);ledInvite=null;ledBanner();}
+    else if(act==="ok"){ledMsg="";ledBanner();}
+    else if(act==="hist"){ledHistOpen=true;ledRedraw();
+      ledHistLoad().then(function(){ledRedraw();},function(e){ledHistRows=[];ledRedraw();ledSay("历史读不出来："+(e&&e.message||e),true);});}}
+  function ledOpen(){ledHistOpen=false;ledHistRows=null;mnOpenWin("共享账本",ledHtml,"mn-share");
+    if(LED)ledMembersLoad();else ledCheck().then(function(){ledRedraw();});}
+  function ledBind(){
+    var h=function(e){var b=e.target.closest("[data-led]");if(!b)return;e.preventDefault();ledAct(b.getAttribute("data-led"),b);};
+    var wb=document.getElementById("wbtool-body");if(wb)wb.addEventListener("click",h);
+    var bn=document.getElementById("mn-led");if(bn)bn.addEventListener("click",h);
+    var sb=document.getElementById("mn-share");
+    if(sb)sb.addEventListener("click",function(){
+      if(mnRulesWin&&mnWinBtn==="mn-share"){wbtClose();return;}
+      if(mnRulesWin)wbtClose();
+      ledOpen();});
+    document.addEventListener("visibilitychange",function(){if(!document.hidden&&LED)ledCheck();});}
+  // ==== ledger:end ====
   // tt_folders = 书和笔记共用的那棵文件夹树（书架以前那份 tt_rdfolders 从来没进过同步，换台设备就没了）。
   // tt_nbfolders 留着不删：别的设备可能还没升级，等它上来好一起并进 tt_folders。
   function sbStatus(t,isErr){var el=document.getElementById("set-sb-status");if(el){el.textContent=t;el.style.color=isErr?"var(--danger)":"var(--muted)";}}
@@ -15095,7 +15579,7 @@ margin-left: -22px;
     // 痕迹已经记在盘上，applyCloud 会保住这笔改动，pullCloud 末尾那句 schedulePush() 负责把它补推上去。
     if(!SB||!sbUser||!pulledOnce)return;
     if(pushTimer)clearTimeout(pushTimer);pushTimer=setTimeout(pushCloud,1500);}
-  function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
+  function collectBlob(){var blob={};CLOUD_KEYS.forEach(function(k){if(LED&&LEDGER_KEYS[k])return;var v=LS.getItem(k);if(v!=null){try{blob[k]=JSON.parse(v);}catch(e){}}});return blob;}
   // updated_at 是推送那台设备的电脑时钟写的，两台设备差几分钟很正常 —— 宁可多留，不可错删
   var PULL_SKEW=600000;
   // 手机上一次 select+upsert 超过 1.5 秒是常事，那时第二次 pushCloud 会在第一次还没落地时启动：
@@ -15183,7 +15667,13 @@ margin-left: -22px;
     var ctA=cloudAt?new Date(cloudAt).getTime():NaN;if(!isFinite(ctA))ctA=0;
     var kept=[];
     CLOUD_KEYS.forEach(function(k){if(obj[k]!==undefined){
+      // 共享账本开着：这几个键归账本管，个人那行里的是旧的，照抄就把 Lance 刚记的盖回去了
+      if(typeof LED!=="undefined"&&LED&&LEDGER_KEYS[k])return;
       var val=obj[k];
+      if(typeof LED!=="undefined"&&LED&&k==="tt_mncfg"&&val&&typeof val==="object"){
+        var locCfg=null;try{locCfg=JSON.parse(LS.getItem("tt_mncfg")||"null");}catch(e){}
+        locCfg=locCfg||{};
+        LED_CFG.forEach(function(f){if(locCfg[f]!==undefined)val[f]=locCfg[f];else delete val[f];});}
       if(k!=="tt_events"&&touchedAfter(k,ctA-PULL_SKEW)){   // 事件有自己那套（两张墓碑＋evMergeInto），别插手
         var m=cloudKeepLocal(k,val);
         if(m!==undefined){val=m;kept.push(k);}}
@@ -15240,8 +15730,9 @@ margin-left: -22px;
         // 会原封不动地再造一遍 —— 「重新登录会不会重复」踩的就是这条路。
         try{gcalArchive();}catch(e){}
         schedulePush();                     // 拉取时捡回过本机事件的话，得推一次让云端也补上；没捡回就是白推一次，不亏
-        reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}}
-      else{pulledOnce=true;try{gcalArchive();}catch(e){}pushCloud();}   // 云端还没有这一行：这台就是第一台，推上去
+        reconcileNotes();sbStatus("已同步 ✓（"+(function(_d){return pad(_d.getHours())+":"+pad(_d.getMinutes());})(new Date())+"）");try{extReady();}catch(_e){}
+        try{ledCheck();}catch(_e){}}
+      else{pulledOnce=true;try{gcalArchive();}catch(e){}pushCloud();try{ledCheck();}catch(_e){}}   // 云端还没有这一行：这台就是第一台，推上去
     },function(err){pulling=false;sbStatus("同步出错："+String(err),true);});}
   function initSupabase(){
     if(SB)return;
@@ -22757,6 +23248,7 @@ margin-left: -22px;
   var MN_AUTO_GAP=3600000,mnAutoTimer=null,mnAutoTry=0;
   function mnAutoSync(why){
     if(SOLO||mnBusy)return false;
+    if(LED&&LED.role==="member")return false;
     if(!SB||!sbUser)return false;
     if(!mnCfg.since||!mnCfg.lastSync)return false;        // 起始日期没定过 / 从没同步过：那一步得先问你，不能替你默认
     // mnCfg.lastSync 记的是「上次**成功**」—— 只拿它当闸门的话，失败反而变成唯一让闸门永远开着的状态：
@@ -22786,6 +23278,9 @@ margin-left: -22px;
     try{mnAutoSync("visible");}catch(e){}});
   // 起始日期定了就直接从那天要，不用先拉一大堆再在本地扔掉
   function mnSync(){
+    if(LED&&LED.role==="member"){
+      mnStatus("银行流水由 "+esc(ledOwnerName())+" 那边同步 —— 这里拉的是共享账本里最新的。");
+      return ledPull(false).then(function(){});}
     if(mnBusy){mnStatus("上一次同步还没回来，等一下…");return Promise.resolve();}
     if(!SB||!sbUser||!sbUrl){
       mnStatus("要先登录才能同步 —— 设置 → 👤 账号 → 用 Google 登录",true);
@@ -23425,6 +23920,7 @@ margin-left: -22px;
 
   function mnRender(){
     var body=document.getElementById("mn-body");if(!body)return;
+    try{ledBanner();}catch(e){}
     document.getElementById("mn-month").textContent=mnPeriodLabel();
     document.querySelectorAll("#mn-scope button").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-sc")===mnScope);});
@@ -23682,7 +24178,8 @@ margin-left: -22px;
           '<span class="ic">'+c.i+'</span>'+
           '<span class="ds">'+esc(mnAlias(t.merchant||t.desc||"（无摘要）"))+
             (t.merchant&&t.desc?'<small>'+esc(mnAlias(t.desc))+'</small>':"")+
-            (t.src==="manual"?'<small>手记</small>':(t.src==="recur"?'<small>周期</small>':(t.src==="akahu"?"":'<small>导入</small>')))+'</span>'+
+            (t.src==="manual"?'<small>手记</small>':(t.src==="recur"?'<small>周期</small>':(t.src==="akahu"?"":'<small>导入</small>')))+
+            ledWhoTag(t.id)+'</span>'+
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
           // 只有 NZD 的进账才给这个按钮 —— 税务那页算的是新西兰的 PAYE/ACC/GST，
@@ -24321,6 +24818,7 @@ margin-left: -22px;
           (fail.length?('<br><b style="color:#d9534f">读不了：'+esc(fail.join("、"))+'</b>'):""),
           !ok);
         mnRender();});
+      ledBind();
       document.getElementById("mn-rules").addEventListener("click",function(){
         if(mnRulesWin&&mnWinBtn==="mn-rules"){wbtClose();return;}
         if(mnRulesWin)wbtClose();

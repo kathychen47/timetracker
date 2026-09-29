@@ -22,7 +22,8 @@ function run(over){
     state:{tab:"money"},
     setInterval:function(){return 1;},clearInterval:function(){},
     mnSync:function(){synced++;},
-    pLog:function(){}
+    pLog:function(){},
+    LED:null
   };
   Object.keys(over||{}).forEach(function(k){
     if(k==="mnCfg")ctx.mnCfg=Object.assign(ctx.mnCfg,over[k]);
@@ -48,6 +49,8 @@ t("上次同步 10 分钟前 → 不同步（1 小时闸门）",     {mnCfg:{las
 t("刚刚同步过 → 不同步",                          {mnCfg:{lastSync:Date.now()}},         false);
 t("从没同步过 → 不同步（第一次要先问起始日期）",   {mnCfg:{lastSync:0}},                  false);
 t("起始日期没定过 → 不同步",                      {mnCfg:{since:""}},                    false);
+t("共享账本的成员 → 不同步（银行同步只在主人那边跑）", {LED:{id:"L",role:"member"}},          false);
+t("共享账本的主人 → 照常同步",                    {LED:{id:"L",role:"owner"}},           true);
 t("没登录 → 不同步",                              {sbUser:null},                         false);
 t("云同步没初始化 → 不同步",                      {SB:null},                             false);
 t("上一次还在路上 → 不同步",                      {mnBusy:true},                         false);
@@ -69,6 +72,7 @@ cur="失败之后要退避，不能每 10 分钟重打一次";
     state:{tab:"money"},
     setInterval:function(){return 1;},clearInterval:function(){},
     mnSync:function(){sent++;},                                // 模拟：发出去了但失败了（lastSync 不动）
+    LED:null,
     pLog:function(){}};
   vm.createContext(ctx);vm.runInContext(code,ctx);
   ok(ctx.mnAutoSync("tick")===true&&sent===1,"第一次该发出去");
