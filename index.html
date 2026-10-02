@@ -313,6 +313,8 @@
   .pet-pick button:hover{border-color:var(--primary)}
   .pet-pick button.on{border-color:var(--primary);color:var(--primary);font-weight:650;
     background:color-mix(in srgb,var(--primary) 10%,transparent)}
+  .snd-pick{display:flex;gap:6px;align-items:center;flex:none}
+  .snd-pick .btn{padding:5px 10px;font-size:12px;white-space:nowrap}
   .pet-size{display:grid;grid-template-columns:auto 1fr 3.4em;gap:6px 10px;align-items:center;margin-top:10px;font-size:12px}
   .pet-size:empty{display:none}
   .pet-size .psz-n{color:var(--muted)}
@@ -342,6 +344,21 @@
   .pomo-kitty.shake .kt-b{animation:catShake .5s ease-in-out}
   @keyframes catShake{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}
     50%{transform:rotate(7deg)}80%{transform:rotate(-4deg)}}
+  /* 番茄钟结束的庆祝：先扁下去 → 弹起来拉长 → 落地再扁 → 回弹。
+     跳多高按它自己的身高算（百分比），大丹和秋田跳起来比例一样。 */
+  .pomo-kitty.party .kt-b{animation:catParty 1.15s cubic-bezier(.33,.8,.4,1)}
+  @keyframes catParty{0%{transform:translateY(0) scale(1,1)}
+    14%{transform:translateY(0) scale(1.3,.62)}
+    36%{transform:translateY(-62%) scale(.84,1.22)}
+    52%{transform:translateY(-70%) scale(1,1)}
+    70%{transform:translateY(0) scale(1.22,.76)}
+    84%{transform:translateY(0) scale(.95,1.06)}
+    100%{transform:translateY(0) scale(1,1)}}
+  .kt-fx{position:absolute;left:50%;top:18%;line-height:1;pointer-events:none;opacity:0;
+    animation:ktFx 1.05s ease-out both}
+  @keyframes ktFx{0%{opacity:0;transform:translate(-50%,0) scale(.3)}
+    18%{opacity:1}
+    100%{opacity:0;transform:translate(calc(-50% + var(--dx)),var(--dy)) scale(1)}}
   /* 被提着的时候晒晒腿 */
   .pomo-kitty.drag .kt-b{animation:catHeld .6s ease-in-out infinite}
   @keyframes catHeld{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
@@ -4906,6 +4923,22 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-row">
+          <div class="set-row-txt"><div class="set-row-t">番茄钟结束的声音</div>
+            <div class="set-desc">专注结束是完整的一句，休息结束是同一种声音轻一点的版本。页面上的宠物会跟着庆祝：专注结束蹦一下、头顶冒爱心，休息结束伸个懒腰。</div></div>
+          <div class="snd-pick">
+            <select id="set-endsnd">
+              <option value="chime">风铃</option>
+              <option value="marimba">木琴叮咚</option>
+              <option value="bowl">颂钵</option>
+              <option value="musicbox">八音盒</option>
+              <option value="off">不出声</option>
+            </select>
+            <button type="button" class="btn" id="set-endsnd-try">▶ 试听</button>
+          </div>
+        </div>
+      </div>
+      <div class="set-item">
+        <div class="set-row">
           <div class="set-row-txt"><div class="set-row-t">最短一段</div>
             <div class="set-desc">正计时里换任务：这一段不到这么久就切走，就当是点错了，那几秒并给接下来那一段。<b>总时长不变，只是不单独成一条。</b>用「轮着做」那排按钮切得勤的话就选短的。<b>只管之后记的，已经记下的不动。</b></div></div>
           <select id="set-minseg">
@@ -5653,6 +5686,7 @@ margin-left: -22px;
     "④列表里出现「划词查词· Timetracker」就成了，随便找个英文网页选中一个单词试试":"④ Once “划词查词 · Timetracker” shows up in the list you're set — open any English page and select a word to try it",
     "■ 停止":"■ Stop",
     "▦ 封面":"▦ Covers",
+    "▶ 试听":"▶ Preview",
     "▾待办":"▾ To-do",
     "● 开始录音":"● Start recording",
     "☁️ 云同步":"☁️ Cloud sync",
@@ -5752,6 +5786,7 @@ margin-left: -22px;
     "不停":"Never pause",
     "不像单词，已剔除":"Not word-like, dropped",
     "不再用共享账本":"Stop using the shared ledger",
+    "不出声":"Silent",
     "不到 1 分钟，没记进日历":"Under 1 minute — not logged to the calendar",
     "不加了":"Never mind",
     "不取整":"Exact",
@@ -5784,6 +5819,7 @@ margin-left: -22px;
     "专注 · 开发":"Focus · development",
     "专注(分)":"Focus (min)",
     "专注结束后记下来的那条（要番茄钟里「完成后记入日历」也是勾着的）。":"The entry logged when a focus session ends (needs \"Log to calendar when done\" ticked in Pomodoro too).",
+    "专注结束是完整的一句，休息结束是同一种声音轻一点的版本。页面上的宠物会跟着庆祝：专注结束蹦一下、头顶冒爱心，休息结束伸个懒腰。":"Focus ending plays the full phrase; break ending plays a softer version of the same sound. The pets on the page celebrate too: a bounce with hearts when focus ends, a stretch when the break ends.",
     "个月":"months",
     "个税":"Income tax",
     "中→英":"ZH→EN",
@@ -5962,6 +5998,7 @@ margin-left: -22px;
     "全部记录":"All records",
     "全部账户":"All accounts",
     "全都加回来":"Add them all back",
+    "八音盒":"Music box",
     "公交":"bus",
     "公司/学校管理的浏览器（顶上写着 managed by your organization）可能禁止装未打包的扩展":"Browsers managed by a company/school (the ones that say managed by your organization at the top) may block unpacked extensions",
     "六":"Sat",
@@ -6764,6 +6801,7 @@ margin-left: -22px;
     "朗读（快捷键 ↑）":"Say it (shortcut ↑)",
     "期":"due",
     "木材":"timber",
+    "木琴叮咚":"Marimba ding-dong",
     "未估":"No estimate",
     "未保存…":"Unsaved…",
     "未命名":"Untitled",
@@ -7025,6 +7063,7 @@ margin-left: -22px;
     "电费":"Power bill",
     "留在生词本里，但不再排复习":"Stays in the word list, but no longer scheduled for review",
     "留空则按大类/小类统计":"Leave blank to count by category/sub-category",
+    "番茄钟结束的声音":"Sound when a pomodoro ends",
     "疑似连读 / 吞音":"Likely linking / swallowed sounds",
     "登录后你的数据会存到你自己的 Supabase（免费），手机电脑自动同步，且靠行级安全隔离——只有你本人看得到。anon key 是可公开的。去":"Once you sign in, your data is stored in your own Supabase (free), synced automatically between phone and computer, and isolated by row-level security — only you can see it. The anon key is safe to make public. Go to",
     "登录过期了，去 设置 → 👤 账号 重新登录一次":"Your session expired — go to Settings → 👤 Account and sign in again",
@@ -7563,6 +7602,7 @@ margin-left: -22px;
     "页":"Page",
     "页面上那几只宠物":"The pets on the page",
     "项目":"Project",
+    "颂钵":"Singing bowl",
     "预估税负":"Estimated tax",
     "预估税负只算你点过「记入税务」的那":"Estimated tax only counts the",
     "预计":"Estimate",
@@ -7571,6 +7611,7 @@ margin-left: -22px;
     "预计要花多少分钟？（留空＝不估）":"How many minutes will it take? (blank = no estimate)",
     "颜色要写成 #RRGGBB 这样，比如 #5f9bd8。":"Colors look like #RRGGBB, e.g. #5f9bd8.",
     "颜色：填 #RRGGBB，留空就自动换一个没人用的":"Color: enter #RRGGBB, or leave it blank to pick an unused one",
+    "风铃":"Chime",
     "食堂":"canteen",
     "食材（一行一个）":"Ingredients (one per line)",
     "餐":"meal",
@@ -13497,11 +13538,11 @@ margin-left: -22px;
   // 那只猫的素材里没有这些，就还用原来那三个 transform 小动作。
   function pPlay(p,kind,puff){
     if(!p.el)return;
-    p.el.classList.remove("hop","stretch","shake");
+    p.el.classList.remove("hop","stretch","shake","party");
     void p.el.offsetWidth;                                 // 不踩一脚排版，浏览器会当成类名根本没变，动画不重放
     p.el.classList.add(kind);
     if(p.hopT)clearTimeout(p.hopT);
-    p.hopT=setTimeout(function(){p.el.classList.remove("hop","stretch","shake");p.hopT=null;},900);
+    p.hopT=setTimeout(function(){p.el.classList.remove("hop","stretch","shake","party");p.hopT=null;},kind==="party"?1300:900);
     pPuff(p,puff);}
   function pPuff(p,puff){
     if(!puff||!p.puff)return;
@@ -13657,10 +13698,39 @@ margin-left: -22px;
       pPose(p);}
     petsRun(true);}
   // 记完一次：狗叫一声，猫蹦一下 —— 在场的都鼓一下掌
-  function catHop(){
-    pets.forEach(function(p){
-      if(p.P.a&&p.P.a.bark)pOnce(p,"bark","\u2728");
-      else pPlay(p,"hop","\u2728");});}
+  // 番茄钟结束：宠物庆祝。她：「我的桌面小宠物啥的会扁之类的」。
+  // 专注结束 = 先「扁」下去蓄力 → 弹起来拉长 → 落地再扁一下 → 回弹，头顶炸一圈小爱心星星；
+  // 狗落地时再叫一声。好几只的话一只接一只跳，像人浪，不是广播体操。
+  // 休息结束 = 伸个懒腰、冒个太阳 —— 「该干活了」，不用那么热闹。
+  // 庆祝完先站一会儿再说：计时一停它们本来就要趴下睡（catAsleep），刚蹦完就躺平很扫兴。
+  // \u7ea2\u5fc3\u8981\u5e26 \ufe0f\uff1a\u5149\u4e00\u4e2a \u2764 \u5f88\u591a\u5b57\u4f53\u753b\u6210\u9ed1\u767d\u7684\u300c\u6587\u5b57\u7248\u300d\uff0c\u98de\u51fa\u6765\u662f\u4e00\u9897\u9897\u7070\u5fc3
+  var CAT_FX=["\u2764\ufe0f","\u2728","\u2b50","\ud83c\udf89","\ud83d\udc96","\u2728","\ud83d\udc95"];
+  function catHop(kind){
+    var now=Date.now();
+    pets.forEach(function(p,i){
+      if(p.drag)return;
+      p.act="stand";p.till=now+4500+i*400;p.rise=false;
+      if(p.anim&&(p.anim.name==="lie"||p.anim.name==="sleep"))p.anim=null;
+      setTimeout(function(){
+        try{
+          if(kind==="break"){pPlay(p,"stretch","\u2600\ufe0f");return;}
+          pPlay(p,"party");pBurst(p);
+          if(p.P.a&&p.P.a.bark)setTimeout(function(){pOnce(p,"bark");},700);
+        }catch(e){}},i*140);});}
+  // 头顶炸开一圈：每个小符号往不同方向飞，飞的距离、大小都带点随机
+  function pBurst(p){
+    if(!p.el||catCalm())return;
+    var n=7;
+    for(var k=0;k<n;k++){
+      var e=document.createElement("i");e.className="kt-fx";
+      var a=-Math.PI/2+(k-(n-1)/2)*0.42+(Math.random()-.5)*.25,d=34+Math.random()*22;
+      e.style.setProperty("--dx",Math.round(Math.cos(a)*d)+"px");
+      e.style.setProperty("--dy",Math.round(Math.sin(a)*d-6)+"px");
+      e.style.animationDelay=(0.22+Math.random()*.12).toFixed(2)+"s";   // 跟着「弹起来」那一下炸，不是一开始就炸
+      e.style.fontSize=(11+Math.round(Math.random()*6))+"px";
+      e.textContent=CAT_FX[k%CAT_FX.length];
+      p.el.appendChild(e);
+      setTimeout((function(x){return function(){try{x.parentNode.removeChild(x);}catch(_e){}};})(e),1700);}}
 
   // 点一下 / 拖着走。用 pointer 事件，鼠标和触屏一套代码。
   // 按下不立刻算拖动 —— 挪够 4px 才算，不然手一抖就点不成了。
@@ -13969,7 +14039,7 @@ margin-left: -22px;
     var wasPaused=!pTimer&&!!pPauseAt;stopTimer();
     if(wasPaused&&pPauseT){clearInterval(pPauseT);pPauseT=null;}   // 洞别再长了，但先留着 —— 落库时要靠它把结束时间往回拨
     pLog("finishUp:落库");
-    if(pElapsed>=60){try{beep();}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);try{catHop();}catch(e){}
+    if(pElapsed>=60){try{beep("focus");}catch(e){}logDone(Math.min(pElapsed,UPMAX),endMs);try{catHop("focus");}catch(e){}
       // dropTiny 刚才可能悄悄并掉了几小段 —— 段落条上看得见的东西没了，总得说一声
       if(tinyMerged>0)pomoNote("有 "+tinyMerged+" 小段不到 "+minSeg()+" 秒，已并给挨着的那段（总时长没变，设置里可以调）");}
     else if(pElapsed>0){pLog("finishUp:不到1分钟丢弃");pomoNote("不到 1 分钟，没记进日历");}
@@ -13980,9 +14050,9 @@ margin-left: -22px;
     drawPomo();}
   function onComplete(endMs){
     if(!pomoOwned()){pLog("onComplete:不归我管");savePomoSeen(true);startFollow();try{drawLostChip();}catch(e){}return;}
-    stopTimer();try{beep();}catch(e){}
-    if(pMode2==="focus"){logDone(pTotal,endMs);try{catHop();}catch(e){}clearMates();pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
-    else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
+    stopTimer();try{beep(pMode2==="focus"?"focus":"break");}catch(e){}
+    if(pMode2==="focus"){logDone(pTotal,endMs);try{catHop("focus");}catch(e){}clearMates();pMode2="break";pTotal=(+setBreak.value||5)*60;pLeft=pTotal;}
+    else{try{catHop("break");}catch(e){}pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}
     pRid="";save("tt_pomorun",null);drawPomo();try{drawLostChip();}catch(e){}}
   // 打开网页时：上次还在跑的番茄钟接着算（关掉/刷新/睡眠都不丢）
   function restorePomoRun(){
@@ -14110,12 +14180,70 @@ margin-left: -22px;
     if(i>=0)cur.splice(i,1);else cur.push(k);
     settings.pets=cur;save("tt_settings",settings);
     drawPetPick();try{petsSync();drawCat();}catch(_e){}});
+  var endSel=document.getElementById("set-endsnd"),endTry=document.getElementById("set-endsnd-try");
+  function drawEndSnd(){if(endSel)endSel.value=settings.endSound||"chime";}
+  drawEndSnd();
+  if(endSel)endSel.addEventListener("change",function(){
+    settings.endSound=endSel.value;save("tt_settings",settings);
+    try{endSound("focus",endSel.value);}catch(e){}});        // 一换就响一下，不用再去点试听
+  // 试听：专注结束那句 + 隔一秒半再来休息结束那句，再让宠物也演一遍
+  if(endTry)endTry.addEventListener("click",function(){
+    var w=endSel?endSel.value:"chime";
+    try{endSound("focus",w);}catch(e){}
+    try{catHop("focus");}catch(e){}
+    if(w!=="off")setTimeout(function(){try{endSound("break",w);}catch(e){}},w==="bowl"?2600:1700);});
+  var setBtnEl=document.getElementById("settings-btn");
+  if(setBtnEl)setBtnEl.addEventListener("click",drawEndSnd);   // 别的设备改过（云同步拉下来）也能对上
   document.getElementById("set-pgap").addEventListener("change",function(){
     settings.pgap=this.checked;save("tt_settings",settings);
     try{renderSegs();}catch(e){}try{renderCal();}catch(e){}});   // 正跑着也能改：段落条和日历上那块当场重画
   function renderPomoStats(){var k=statToday(),st=pstats[k]||{count:0,min:0};
     document.getElementById("stat-count").textContent=st.count;document.getElementById("stat-min").innerHTML=st.min+'<small> 分</small>';}
-  function beep(){var ctx=new(window.AudioContext||window.webkitAudioContext)();var o=ctx.createOscillator(),g=ctx.createGain();o.connect(g);g.connect(ctx.destination);o.frequency.value=660;g.gain.value=0.08;o.start();setTimeout(function(){o.stop();ctx.close();},350);}
+  // ---------- 番茄钟结束的声音 ----------
+  // 她：「不要 bi 一下，换个更好的」。原来是一个 660Hz 的正弦波响 0.35 秒 —— 就是测试仪器那一声。
+  // 现在全是现场合成的（不用音频文件：没有版权问题、离线也响、页面不变大）：
+  // 一个音 = 几个频率叠在一起 + 先快后慢地衰减。钟和铃的泛音**不是整数倍**（2.76、5.4……），
+  // 「叮」的那种金属感就是这么来的；木琴的泛音在 4 倍上，所以听着是木头。
+  // 专注结束 = 完整的那一句（「完成啦」）；休息结束 = 同一种声音的轻一点、短一点的版本（「该回来了」）。
+  var END_SOUNDS=[["chime","风铃"],["marimba","木琴叮咚"],["bowl","颂钵"],["musicbox","八音盒"],["off","不出声"]];
+  var endAC=null;
+  function endCtx(){
+    var A=window.AudioContext||window.webkitAudioContext;if(!A)return null;
+    if(!endAC||endAC.state==="closed")endAC=new A();
+    if(endAC.state==="suspended")try{endAC.resume();}catch(e){}
+    return endAC;}
+  // 一个音：f 基频，t 起点（秒），dur 衰减多久，vol 音量，parts = [[倍数, 相对音量], …]
+  function endTone(ac,t,f,dur,vol,parts,type){
+    var out=ac.createGain();
+    out.gain.setValueAtTime(0.0001,t);
+    out.gain.exponentialRampToValueAtTime(vol,t+0.012);          // 12ms 起音：再快会「啪」一下
+    out.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    out.connect(ac.destination);
+    (parts||[[1,1]]).forEach(function(p){
+      var o=ac.createOscillator(),g=ac.createGain();
+      o.type=type||"sine";o.frequency.value=f*p[0];g.gain.value=p[1];
+      o.connect(g);g.connect(out);o.start(t);o.stop(t+dur+0.05);});}
+  var BELL=[[1,1],[2.76,.28],[5.4,.09]],WOOD=[[1,1],[4,.16],[10,.04]],BOWL=[[1,1],[2.71,.45],[5.15,.18]],BOX=[[1,1],[3,.1],[6.1,.03]];
+  function endSound(kind,which){
+    which=which||settings.endSound||"chime";
+    if(which==="off")return;
+    var ac=endCtx();if(!ac)return;
+    var t=ac.currentTime+0.03,brk=(kind==="break");
+    if(which==="marimba"){
+      if(brk)endTone(ac,t,1046.5,.5,.12,WOOD);
+      else{endTone(ac,t,1318.5,.55,.14,WOOD);endTone(ac,t+.26,1046.5,.7,.14,WOOD);}}
+    else if(which==="bowl"){
+      endTone(ac,t,220,brk?2.6:4.2,brk?.12:.18,BOWL);
+      endTone(ac,t,221.6,brk?2.6:4.2,brk?.05:.07,[[1,1]]);       // 差 1.6Hz 的第二个音：两个一拍一拍地「嗡」，颂钵就是这个味道
+    }
+    else if(which==="musicbox"){
+      var mel=brk?[[1568,0],[1318.5,.2],[1046.5,.4]]
+                 :[[1046.5,0],[1318.5,.18],[1568,.36],[2093,.54],[1568,.78],[1318.5,.96],[1568,1.14]];
+      mel.forEach(function(n){endTone(ac,t+n[1],n[0],.9,brk?.07:.09,BOX,"triangle");});}
+    else{                                                        // chime 风铃：叮-叮-叮 往上走
+      if(brk){endTone(ac,t,784,1.3,.08,BELL);endTone(ac,t+.2,1046.5,1.5,.08,BELL);}
+      else{endTone(ac,t,1046.5,1.6,.11,BELL);endTone(ac,t+.16,1318.5,1.6,.11,BELL);endTone(ac,t+.32,1568,2.2,.12,BELL);}}}
+  function beep(kind){endSound(kind||"focus");}
 
   // ---------- todos ----------
   var prioColor={high:"var(--cat-focus)",mid:"var(--cat-goal)",low:"var(--cat-life)"},prioName={high:"高",mid:"中",low:"低"};

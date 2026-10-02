@@ -2289,5 +2289,13 @@
 "停止共享：": "Stopped sharing with:",
 "加上了 ✓": "Added ✓",
 "银行账户": "Bank accounts",
-"商家": "Merchant"
+"商家": "Merchant",
+"番茄钟结束的声音": "Sound when a pomodoro ends",
+"专注结束是完整的一句，休息结束是同一种声音轻一点的版本。页面上的宠物会跟着庆祝：专注结束蹦一下、头顶冒爱心，休息结束伸个懒腰。": "Focus ending plays the full phrase; break ending plays a softer version of the same sound. The pets on the page celebrate too: a bounce with hearts when focus ends, a stretch when the break ends.",
+"风铃": "Chime",
+"木琴叮咚": "Marimba ding-dong",
+"颂钵": "Singing bowl",
+"八音盒": "Music box",
+"不出声": "Silent",
+"▶ 试听": "▶ Preview"
 }
