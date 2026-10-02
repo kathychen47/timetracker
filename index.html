@@ -34,15 +34,18 @@
     --cat-focus:#f0a48f;--cat-meeting:#7bb2e2;--cat-sport:#75cca2;--cat-study:#b2a4e2;
     --cat-goal:#f2c47c;--cat-habit:#7cd1db;--cat-life:#9aa1b0;--danger:#ef8b81;--now:#ff6b66;
     --ev-tint:35%;--ev-ink:72%;
-    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -18px rgba(0,0,0,.7);}}
-  :root[data-theme="light"]{
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 34px -18px rgba(0,0,0,.7);color-scheme:dark;}}
+  :root[data-theme="light"]{color-scheme:light;
     --bg:#ffffff;--surface:#f7f8fa;--surface-2:#eef0f4;--border:#e7e9ef;--line:#eef0f5;
     --text:#262a35;--muted:#767d8d;--primary:#6366f1;--primary-soft:#eef0fe;--primary-ink:#ffffff;
     --cat-focus:#ec8b76;--cat-meeting:#5f9bd8;--cat-sport:#5cbd90;--cat-study:#9d8bd8;
     --cat-goal:#eeb85f;--cat-habit:#61c4cf;--cat-life:#9aa1b0;--danger:#e5786e;--now:#ef5350;
     --ev-tint:55%;--ev-ink:32%;
     --shadow:0 1px 2px rgba(30,34,54,.05), 0 12px 30px -16px rgba(30,34,54,.16);}
-  :root[data-theme="dark"]{
+  /* color-scheme：告诉浏览器下拉菜单、日期/时间选择器这些**原生控件**也用深色画。
+     没有它，深色模式下 <select> 弹出来的列表是白底 —— 字却继承了页面的浅色，
+     白底浅灰字几乎看不见，只有高亮的那一项看得清（她：「第一个类别会变白，是 bug 吗」）。 */
+  :root[data-theme="dark"]{color-scheme:dark;
     --bg:#15171c;--surface:#1c1f26;--surface-2:#252932;--border:#2c313b;--line:#23262f;
     --text:#e6e8ef;--muted:#949bab;--primary:#818cf8;--primary-soft:#262a44;--primary-ink:#15171c;
     --cat-focus:#f0a48f;--cat-meeting:#7bb2e2;--cat-sport:#75cca2;--cat-study:#b2a4e2;
@@ -54,6 +57,7 @@
   body{font-family:var(--font);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;
     transition:background .3s,color .3s}
   button,input,select{font-family:inherit}
+  select option{background:var(--surface);color:var(--text)}   /* 双保险：老一点的浏览器不认 color-scheme */
   ::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:var(--surface-2);border-radius:9px}
 
   .app{display:flex;min-height:100vh}
