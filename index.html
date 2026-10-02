@@ -2395,6 +2395,8 @@
   .mnx-tabs{margin:-4px 0 12px}
   .cs-tabs{align-self:flex-start;margin:0 0 -2px}
   .cs-tabs-st{display:inline-flex;margin:0 0 12px}
+  .cs-row{display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px;margin:0 0 12px}
+  .cs-row .rd-sub{font-size:12px;color:var(--muted)}
   /* settings — sidebar + panes */
   .set-modal{max-width:880px}
   .set-shell{display:flex;gap:18px;margin-top:10px;align-items:flex-start}
@@ -3889,8 +3891,7 @@ margin-left: -22px;
     <button data-tab="dict" aria-label="词典/背单词" title="词典 · 背单词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.8"></circle><path d="M15.4 15.4L20.5 20.5"></path><path d="M7.6 8.7h5.8M7.6 12.2h3.4"></path></svg><span class="rl">词典</span></button>
     <button data-tab="money" aria-label="记账" title="记账 · 银行流水"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="2.5"></rect><path d="M2.5 10.5h19"></path><path d="M6 15h3"></path></svg><span class="rl">记账</span></button>
     <button data-tab="food" aria-label="菜谱" title="菜谱 · 点单"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2.5 2.5 0 0 0 5 0V3"></path><path d="M8.5 11v10"></path><path d="M17.5 3c-1.6 1.8-2.5 4-2.5 6.5h5C20 7 19.1 4.8 17.5 3z"></path><path d="M17.5 9.5V21"></path></svg><span class="rl">菜谱</span></button>
-    <button data-tab="rec" aria-label="录音转写" title="录音转写 · 边听边看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
-    <button data-tab="listen" aria-label="精听" title="精听 · 逐句听写对答案"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"></path><rect x="2.5" y="13.5" width="4.5" height="7" rx="2"></rect><rect x="17" y="13.5" width="4.5" height="7" rx="2"></rect><path d="M20 20.5a3 3 0 0 1-3 3h-2"></path></svg><span class="rl">精听</span></button>
+    <button data-tab="rec" aria-label="录音 · 精听" title="录音 · 精听"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2.5" width="6" height="11" rx="3"></rect><path d="M5.5 11a6.5 6.5 0 0 0 13 0"></path><path d="M12 17.5V21"></path><path d="M8.5 21h7"></path></svg><span class="rl">录音</span></button>
     <button data-tab="body" aria-label="身体数据" title="身体数据 · 体重与围度"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5c-1.4-1-8.2-5.6-8.2-11A4.3 4.3 0 0 1 12 7.3a4.3 4.3 0 0 1 8.2 2.2c0 5.4-6.8 10-8.2 11z"></path><path d="M6.6 11.4h2.6l1.5-2.7 1.9 5 1.4-2.3h3.4"></path></svg><span class="rl">身体</span></button>
     <button data-tab="reader" aria-label="看书" title="看书 · 边读边查词"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.8C10.2 5.4 7.6 4.6 3 4.6v13.8c4.6 0 7.2.8 9 2.1 1.8-1.3 4.4-2.1 9-2.1V4.6c-4.6 0-7.2.8-9 2.2z"></path><path d="M12 6.8v13.7"></path></svg><span class="rl">笔记</span></button>
     <div class="grow"></div>
@@ -4178,7 +4179,8 @@ margin-left: -22px;
         </div>
     </section>
     <section class="view" id="view-rec">
-      <div class="page-h">录音转写 <span class="rd-sub">边录边出字 · 回放时逐句对照，点时间戳跳到那一刻</span></div>
+      <div class="cs-row"><div class="seg cs-tabs"><button type="button" data-mt="rec" class="on">录音</button><button type="button" data-mt="listen">精听</button></div>
+        <span class="rd-sub">边录边出字 · 回放时逐句对照，点时间戳跳到那一刻</span></div>
       <!-- 进度条放在两个面板外面：首页导入文件、打开某条重转/翻译，都要看得见 -->
         <div class="rec-wp" id="rec-wp" hidden><span class="rec-wpt" id="rec-wpt"></span>
           <span class="rec-wpb"><i id="rec-wpbar"></i></span></div>
@@ -4234,6 +4236,7 @@ margin-left: -22px;
           <button class="btn" id="rec-back">← 全部录音</button>
           <input class="rec-title" id="rec-title" placeholder="给这段录音起个名字">
           <span class="rec-meta" id="rec-meta"></span>
+          <button class="btn" id="rec-tolisten" title="用这一条去精听，从你正在听的这一句开始">🎧 精听这一段</button>
           <input class="rec-q" id="rec-q" placeholder="🔍 搜句子">
           <select id="rec-speed" title="播放速度">
             <option value="0.75">0.75×</option>
@@ -4261,7 +4264,8 @@ margin-left: -22px;
       </div>
     </section>
     <section class="view" id="view-listen">
-      <div class="page-h">精听 <span class="rd-sub">逐句循环 · 听写 · 自动对答案，错在哪一层看颜色</span></div>
+      <div class="cs-row"><div class="seg cs-tabs"><button type="button" data-mt="rec">录音</button><button type="button" data-mt="listen" class="on">精听</button></div>
+        <span class="rd-sub">逐句循环 · 听写 · 自动对答案，错在哪一层看颜色</span></div>
       <div class="rec-wp" id="lt-wp" hidden><span class="rec-wpt" id="lt-wpt"></span>
         <span class="rec-wpb"><i id="lt-wpbar"></i></span></div>
       <div id="lt-home">
@@ -4296,6 +4300,7 @@ margin-left: -22px;
             <button class="btn" id="lt-back">← 全部素材</button>
             <span class="lt-title" id="lt-t"></span>
             <span class="rec-meta" id="lt-meta"></span>
+            <button class="btn" id="lt-torec" title="回到这一条的转写稿，停在你正在练的这一句">🎙 看原稿</button>
             <button class="btn" id="lt-sumbtn" title="横着看：哪些词老听错、哪些句子塔得最厉害">📊 总结</button>
             <button class="btn" id="lt-setbtn2" title="设置">⚙️</button>
             <span class="wt-note" id="lt-hint2" style="margin:0"></span>
@@ -6251,6 +6256,7 @@ margin-left: -22px;
     "商户":"Merchant",
     "喝水":"drink water",
     "四":"Thu",
+    "回到这一条的转写稿，停在你正在练的这一句":"Back to this recording's transcript, at the sentence you're practising",
     "回复客户邮件":"Reply to client emails",
     "团队会议":"Team meeting",
     "园艺":"gardening",
@@ -6480,6 +6486,7 @@ margin-left: -22px;
     "当时多少秒":"Seconds at the time",
     "当时没勾「同时加到我的 Google 日历」的那些，在这儿一次性补上去。已经在 Google 里的、以及从 Google 存下来的，都会跳过，不会传重。中途可以停，下次接着来。":"The ones where you never ticked “Also add to my Google Calendar” get sent up in one go. Anything already in Google, and anything saved down from Google, is skipped — nothing gets sent twice. You can stop partway and pick up next time.",
     "录音":"Record",
+    "录音 · 精听":"Record · Listen",
     "录音存在本机哪里、占了多少、会不会被浏览器清掉":"Where recordings sit on this device, how much space they take, and whether the browser might clear them",
     "录音转写":"Record & transcribe",
     "录音转写 · 边听边看":"Record & transcribe · read while you listen",
@@ -7069,6 +7076,7 @@ margin-left: -22px;
     "用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿":"In one line: 62.5 kg this morning, waist 72, thigh 52, a bit puffy",
     "用显卡跑（快 5–10 倍）":"Running on the GPU (5–10× faster)",
     "用显卡还是 CPU":"GPU or CPU",
+    "用这一条去精听，从你正在听的这一句开始":"Practise this recording, starting from the sentence you're on",
     "申请常驻":"Make it persistent",
     "电子产品":"electronics",
     "电影":"movies",
@@ -7660,6 +7668,8 @@ margin-left: -22px;
     "🍅 番茄钟":"🍅 Pomodoro",
     "🍅 番茄钟完成":"🍅 Pomodoro finished",
     "🍅 番茄钟日志（出问题时给我看）":"🍅 Pomodoro log (show me this if something breaks)",
+    "🎙 看原稿":"🎙 Transcript",
+    "🎧 精听这一段":"🎧 Practise this",
     "🎧导入音频·自动转写":"🎧 Import audio · auto-transcribe",
     "🎯 目标打卡 +1":"🎯 Goal check-in +1",
     "🏠 我的文件（最外层）":"🏠 My files (top level)",
@@ -8829,7 +8839,7 @@ margin-left: -22px;
       if(wide&&logo&&logo.nextSibling!==wide)rail.insertBefore(wide,logo.nextSibling);
       var order=load("tt_railorder",null);
       if(!order||!order.length)return;
-      order=order.filter(function(k){return k!=="ai-btn"&&k!=="tax"&&k!=="stats"&&k!=="todo";});   // AI 固定在底部；税务并进「记账」了，统计并进「日历」了
+      order=order.filter(function(k){return k!=="ai-btn"&&k!=="tax"&&k!=="stats"&&k!=="todo"&&k!=="listen";});   // AI 固定在底部；税务并进「记账」了，统计并进「日历」了
       var map={};items().forEach(function(b){map[keyOf(b)]=b;});
       order.forEach(function(k){if(map[k])rail.insertBefore(map[k],grow);});
       items().forEach(function(b){if(order.indexOf(keyOf(b))<0)rail.insertBefore(b,grow);});}
@@ -8863,7 +8873,7 @@ margin-left: -22px;
   // 统计跟着「日历」—— 她：「统计是不是可以搬到和日历那一个界面，就像查单词和背单词一样，用一个按键切换？
   // 这样就不需要是一个内容但是单独占一个位置」。统计看的本来就是日历上那些块。
   // 计划（待办 · 目标 · 技能）也并进来了：日历页边栏那三张卡片本来就是它的缩略版。
-  function railKeyOf(tab){return (tab==="notes")?"reader":((tab==="tax")?"money":((tab==="stats"||tab==="todo")?"calendar":tab));}
+  function railKeyOf(tab){return (tab==="notes")?"reader":((tab==="tax")?"money":((tab==="stats"||tab==="todo")?"calendar":((tab==="listen")?"rec":tab)));}
   (function(){var r=document.querySelector(".rail"),b=document.getElementById("rail-wide");
     if(!r||!b)return;
     function paint(on){r.classList.toggle("wide",on);
@@ -8882,6 +8892,7 @@ margin-left: -22px;
   function showTab(tab){
     if(zenOn)toggleZen(false);                            // 先按"当前页签"把状态存好，再切走
     state.tab=tab;save("tt_tab",tab);
+    if(tab==="rec"||tab==="listen")save("tt_reclast",tab);   // 录音 / 精听：记住上次在哪一档
     var lit=railKeyOf(tab);
     document.querySelectorAll(".rail button[data-tab]").forEach(function(x){
       x.classList.toggle("on",x.getAttribute("data-tab")===lit);});
@@ -8902,7 +8913,10 @@ margin-left: -22px;
   }
   document.querySelector(".rail").addEventListener("click",function(e){
     var b=e.target.closest("button[data-tab]");if(!b)return;
-    showTab(b.getAttribute("data-tab"));
+    var t=b.getAttribute("data-tab");
+    // 她：录音和精听并成一个入口，点图标「回到上次那档」—— 上次在精听，回来就还在精听
+    if(t==="rec"){var rl=load("tt_reclast","rec");if(rl==="listen")t="listen";}
+    showTab(t);
   });
 
   // ---------- 🎙 录音转写：边录边出字，回放时逐句对照 ----------
@@ -10634,6 +10648,37 @@ margin-left: -22px;
     document.getElementById("lt-doc").style.display="none";
     document.getElementById("lt-home").style.display="";
     ltRenderList();}
+  // ---- 录音 ⇄ 精听：同一条素材直接跳过去，停在同一个时间点 ----
+  // 她：「可以随时从一个录音界面转去精听？因为本质上精听依赖的就是录音的内容」。
+  // 两页本来读的就是同一份 recs。按**时间**对齐、不按句号：精听打开时会按标点重断一次句，
+  // 两边的第几句不一定是同一句，但「第 83 秒」永远是同一个地方。
+  function lineAt(L,t){var i=0;for(var k=0;k<(L||[]).length;k++)if((+L[k].t||0)<=t+0.01)i=k;return i;}
+  function recToListen(){
+    if(!recCur)return;
+    var id=recCur.id,au=document.getElementById("rec-audio"),t=0;
+    if(au&&au.currentTime>0)t=au.currentTime;
+    else if(recCurLine>=0&&recCur.lines[recCurLine])t=+recCur.lines[recCurLine].t||0;
+    try{au.pause();}catch(e){}
+    save("tt_ltopen","");                                  // 别让 openListen 先去开上次那条
+    showTab("listen");
+    return ltOpen(id).then(function(){
+      if(ltCur&&ltCur.id===id&&t>0)ltGoto(lineAt(ltCur.lines,t),false);});}
+  function listenToRec(){
+    if(!ltCur)return;
+    var id=ltCur.id,l=ltCur.lines&&ltCur.lines[ltIdx],t=l?(+l.t||0):0;
+    ltStop();
+    showTab("rec");
+    return recOpen(id).then(function(){
+      var au=document.getElementById("rec-audio");
+      function seek(){try{au.currentTime=t;}catch(e){}try{recSyncCur();}catch(e){}
+        var el=document.querySelector('#rec-lines .rl[data-li="'+lineAt(recCur&&recCur.lines,t)+'"]');
+        if(el)try{el.scrollIntoView({block:"center"});}catch(e){}}
+      if(!au||!au.getAttribute("src")||au.readyState>=1)seek();
+      else au.addEventListener("loadedmetadata",seek,{once:true});});}
+  (function(){
+    var a=document.getElementById("rec-tolisten"),b=document.getElementById("lt-torec");
+    if(a)a.addEventListener("click",function(){recToListen();});
+    if(b)b.addEventListener("click",function(){listenToRec();});})();
   function openListen(){
     var doc=document.getElementById("lt-doc");
     if(ltCur&&doc&&doc.style.display!=="none"){ltRender();return;}
