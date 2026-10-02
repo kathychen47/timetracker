@@ -13317,7 +13317,7 @@ margin-left: -22px;
     pomoStep={sk:sk.name,t:st.t,st:st.id};save("tt_pomostep",pomoStep);
     var rb=document.querySelector('.rail button[data-tab="calendar"]');if(rb)rb.click();
     if(timerMode!=="up"){                                  // 学东西按正计时来，不倒数
-      var upBtn=document.querySelector('#pomo-mode-seg button[data-tm="up"]');if(upBtn)upBtn.click();}
+      var upBtn=document.querySelector('#pomo-mode-seg button[data-tm="up"]');if(upBtn)switchMode(upBtn,"up");}   // 跑着的上面已经落库了，不再弹「要不要记」
     pomoTask.value=st.t;
     if(sk.cat){pomoCat.value=sk.cat;fillPomoSubs();if(sk.sub)try{pomoSub.value=sk.sub;}catch(e){}pomoManual=true;}
     else{pomoManual=false;autoPomoCat();}                   // 技能没归类就还按名字猜
@@ -14177,15 +14177,37 @@ margin-left: -22px;
     el.textContent=t;el.style.visibility="visible";el.style.color="var(--primary)";
     setTimeout(function(){noteUntil=0;el.style.color="";el.textContent=hintText();drawPomo();},6000);}
   startBtn.addEventListener("click",function(){if(pFollow){takeOver();return;}if(pTimer)stopTimer();else startTimer();});
-  document.getElementById("pomo-reset").addEventListener("click",function(){if(followGuard())return;resetPomo();});
+  document.getElementById("pomo-reset").addEventListener("click",function(){if(followGuard())return;
+    var held=pomoHeldSec();
+    if(held<60){resetPomo();return;}
+    // 重置 = 这段不要了。手上有一分钟以上就问一句 —— 想记下来的话应该点「结束」/「跳过」
+    ttConfirm("重置会把这段（"+secLabel(held)+"）扔掉，不记进日历。\n想记下来的话点「取消」，再点「"+(timerMode==="up"?"结束":"跳过")+"」。",{okText:"扔掉",danger:true}).then(function(ok){if(ok)resetPomo();});});
   skipBtn.addEventListener("click",function(){if(followGuard())return;if(timerMode==="up")finishUp();else{pLeft=0;pEndAt=Date.now();if(pTimer)pomoTick();else onComplete();}});
+  // 手上有没有一段还没落库的时间（正计时走过的 / 倒计时专注里已经过去的）
+  function pomoHeldSec(){return timerMode==="up"?pElapsed:((pMode2==="focus")?Math.max(0,pTotal-pLeft):0);}
+  // 她：「我刚才一个正计时突然没了！！！」—— 正计时跑了 43 分钟，点了一下「倒计时」，
+  // 这里原来是二话不说 stopTimer + 清存档 + 黑匣子销账：时间一秒没记、连黑匣子都没留痕迹。
+  // 现在手上有一分钟以上就先问：记下来再切，还是不切了。永远不再默默扔掉。
   document.getElementById("pomo-mode-seg").addEventListener("click",function(e){
     var b=e.target.closest("button");if(!b)return;var tm=b.getAttribute("data-tm");if(tm===timerMode)return;
     if(followGuard())return;
-    stopTimer();timerMode=tm;this.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
+    var held=pomoHeldSec();
+    if(held>=60){
+      ttConfirm("正在计时的这段（"+secLabel(held)+"）要先结束才能切换。\n先把它记进日历，再切过去？",{okText:"记下并切换"}).then(function(ok){
+        if(!ok)return;
+        pLog("切模式前先落库",{sec:held,to:tm});
+        if(timerMode==="up")finishUp();
+        else{stopTimer();logDone(held,Date.now());}
+        switchMode(b,tm);});
+      return;}
+    switchMode(b,tm);});
+  function switchMode(b,tm){
+    var seg=document.getElementById("pomo-mode-seg"),h=pomoHeldSec();
+    if(h>0)pLog("切模式",{sec:h,to:tm});                     // 黑匣子留个底：以后再「突然没了」能查到是这一步
+    stopTimer();timerMode=tm;seg.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b);});
     skipBtn.textContent=(tm==="up"?"结束":"跳过");
     pBase=0;pRid="";save("tt_pomorun",null);markSeenLogged();clearSegs();savePomoLast();   // 记住这次选的模式，下次打开还是它
-    if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();});
+    if(tm==="up"){pElapsed=0;}else{pMode2="focus";pTotal=(+setFocus.value||25)*60;pLeft=pTotal;}drawPomo();}
   // 打开页面时回到上次用的模式（必须放在 timerMode 声明之后，否则会被 var timerMode="down" 覆盖掉）
   function applyPomoMode(){
     var r=load("tt_pomolast",null);
