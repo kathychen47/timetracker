@@ -155,7 +155,11 @@ drop policy if exists ledgers_read   on public.ledgers;
 drop policy if exists ledgers_new    on public.ledgers;
 drop policy if exists ledgers_owner  on public.ledgers;
 drop policy if exists ledgers_del    on public.ledgers;
-create policy ledgers_read  on public.ledgers for select using (ledger_ok(id));
+-- 读：主人那一条直接按 owner_id 认，**不能只靠 ledger_ok()**。
+-- 「开始共享」是 insert … returning（建完要拿回新账本的 id），返回那一行也得过 select 策略；
+-- 而 ledger_ok() 是 stable 函数，看到的是这条语句开始之前的数据 —— 刚插进去的那本账它看不见，
+-- 结果就是 new row violates row-level security policy for table "ledgers"（她第一次点「开始共享」撞上的）。
+create policy ledgers_read  on public.ledgers for select using (owner_id = auth.uid() or ledger_ok(id));
 create policy ledgers_new   on public.ledgers for insert with check (owner_id = auth.uid());
 create policy ledgers_owner on public.ledgers for update using (owner_id = auth.uid()) with check (owner_id = auth.uid());
 create policy ledgers_del   on public.ledgers for delete using (owner_id = auth.uid());

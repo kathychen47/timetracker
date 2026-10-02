@@ -357,6 +357,9 @@ var STRANGER = { id: "u-x", email: "someone@else.com", name: "X" };
   ok(/if\(LED&&LED\.role==="member"\)return false;/.test(SRC), "成员那边不自动跑银行同步");
   ok(/id="mn-share"/.test(SRC) && /id="mn-led"/.test(SRC), "记账页有「👥 共享」按钮和横幅");
   ok(/ledWhoTag\(t\.id\)/.test(SRC), "流水旁边标谁记的");
+  var SQL = fs.readFileSync(path.join(__dirname, "..", "supabase", "ledger.sql"), "utf8");
+  ok(/create policy ledgers_read\s+on public\.ledgers for select using \(owner_id = auth\.uid\(\) or ledger_ok\(id\)\)/.test(SQL),
+     "ledgers 的读策略直接认 owner_id（不然 insert…returning 读不到刚建的那本，报 new row violates row-level security）");
   ok(!/tt_ledger|tt_ledshadow|tt_ledbak/.test((SRC.match(/var CLOUD_KEYS=\[[^\]]*\]/) || [""])[0]), "账本的本机状态不进个人云同步");
 
   console.log("\n== 共享账本（两个浏览器 + 假 Supabase）==");
