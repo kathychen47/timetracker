@@ -122,6 +122,8 @@ function secOf(cat, sub) {
   ok((d.querySelectorAll("#pk-sub option").length - 1) === 3, "换成 UC Online，小类下拉跟着换");
 
   // ---- 2. ＋ 加牌子 ----
+  // 她：「增加的任务似乎有数量上限，不要上限，想加多少加多少」—— 原来 addSlot 里卡死 8 块
+  ok(!/pSlots\.length>=\d/.test(html), "牌子没有数量上限（原来最多 8 块）");
   pickCat("phd"); pickSub("res"); add();
   ok(slots().length === 1 && slots()[0].cat === "phd" && slots()[0].sub === "res",
     "加出一块 PhD - Research：" + JSON.stringify(slots()[0]));

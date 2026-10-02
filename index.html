@@ -275,6 +275,10 @@
   .fishy{display:flex;align-items:center;gap:6px;border:none;background:none;cursor:pointer;
     font-size:11px;color:var(--muted);padding:3px 8px;border-radius:9px;align-self:center;line-height:1}
   .fishy:hover{color:var(--primary)}
+  .ring-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center}
+  .ring-row>.ring{grid-column:2}
+  .ring-row>.fishy{grid-column:3;justify-self:start;margin:6px 0 0 6px;padding:8px}   /* 只剩一条鱼：点的范围留大一点 */
+  .ring-row>.fishy .fsh{width:30px;height:18px}
   .fishy .fsh{width:27px;height:16px;overflow:visible;flex:none}
   .fishy .fsh .body,.fishy .fsh .tail{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linejoin:round}
   .fishy .fsh .eye{fill:currentColor}
@@ -3970,16 +3974,20 @@ margin-left: -22px;
                 <button type="button" class="pk-x" id="pk-cancel" title="不加了">✕</button>
               </div>
               <label class="pomo-log" style="display:none"><input type="checkbox" id="pomo-tocal" checked> 完成后记入日历</label>
-              <button type="button" class="fishy" id="pomo-par-btn" aria-pressed="false" title="摸鱼：这段时间允许和日历上已有的事情重叠，两边都算">
-                <svg class="fsh" viewBox="0 0 30 18" aria-hidden="true"><circle class="bub" cx="6.5" cy="6" r="1.5"></circle><g class="fsh-g"><path class="body" d="M21 9c0 3.9-4.3 6.8-9.5 6.8S2 12.9 2 9s4.3-6.8 9.5-6.8S21 5.1 21 9z"></path><path class="tail" d="M21 9l7.6-4.7v9.4z"></path><circle class="eye" cx="7.6" cy="7.4" r="1.2"></circle></g></svg>
-                <span>摸鱼</span>
-              </button>
               <input type="checkbox" id="pomo-par" hidden>
             </div>
-            <div class="ring" id="ring"><div class="ring-knob-rot"><span class="ring-knob"></span></div><div class="in"><div>
-              <div class="time" id="pomo-time">25:00</div>
-              <div class="mode" id="pomo-mode">专注</div>
-            </div></div></div>
+            <!-- 她：「摸鱼可以放在中间计时圆环的右侧，圆环还是居中，可以把摸鱼俩字删掉」。
+                 三列：左边空着、中间圆环、右边那条鱼 —— 两边等宽，圆环就一直在正中。 -->
+            <div class="ring-row">
+              <span class="ring-side"></span>
+              <div class="ring" id="ring"><div class="ring-knob-rot"><span class="ring-knob"></span></div><div class="in"><div>
+                <div class="time" id="pomo-time">25:00</div>
+                <div class="mode" id="pomo-mode">专注</div>
+              </div></div></div>
+              <button type="button" class="fishy" id="pomo-par-btn" aria-pressed="false" aria-label="摸鱼" title="摸鱼：这段时间允许和日历上已有的事情重叠，两边都算">
+                <svg class="fsh" viewBox="0 0 30 18" aria-hidden="true"><circle class="bub" cx="6.5" cy="6" r="1.5"></circle><g class="fsh-g"><path class="body" d="M21 9c0 3.9-4.3 6.8-9.5 6.8S2 12.9 2 9s4.3-6.8 9.5-6.8S21 5.1 21 9z"></path><path class="tail" d="M21 9l7.6-4.7v9.4z"></path><circle class="eye" cx="7.6" cy="7.4" r="1.2"></circle></g></svg>
+              </button>
+            </div>
             <div class="pomo-hint" id="pomo-hint" title="一圈 60 分，可绕多圈，最多 3 小时">拖动圆环设时长 · 一圈 60 分</div>
             <div class="pomo-kitty-lane" id="pomo-kitty-lane"><i class="pomo-kitty" id="pomo-kitty"><i class="kt-b"><i class="kt-s"></i></i><i class="kt-p"></i></i></div>
             <div class="pomo-segs" id="pomo-segs"></div>
@@ -6783,7 +6791,6 @@ margin-left: -22px;
     "暗":"Dark",
     "更省事：装浏览器扩展（推荐）":"Easier: install the browser extension (recommended)",
     "最准 · 走 Gemini 额度":"Most accurate · uses your Gemini quota",
-    "最多 8 块":"8 tags is the limit",
     "最多加入":"Add at most",
     "最多同时做 4 件":"4 at once is the limit",
     "最短一段":"Shortest segment",
@@ -12993,7 +13000,7 @@ margin-left: -22px;
     if(!pkCat||!pkCat.value){pomoNote("先选一个大类");return;}
     var one={cat:pkCat.value,sub:pkSub.value||null};
     if(slotHas(one)){pomoNote("这块牌子已经有了");return;}
-    if(pSlots.length>=8){pomoNote("最多 8 块");return;}
+    // 原来最多 8 块。她：「增加的任务似乎有数量上限，不要上限，想加多少加多少」—— 去掉了。
     pSlots.push(one);saveSlots();renderSlots(true);showPick(false);}
   // 换人马。结算必须发生在**改 pomoCat / pMates 之前** —— 前面那一截属于旧的那套。
   function setCur(ck,sk,mates){
