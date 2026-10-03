@@ -38,7 +38,7 @@ var seed = "<script>try{localStorage.clear();" +
   "localStorage.setItem('tt_cats'," + JSON.stringify(JSON.stringify(CATS)) + ");" +
   "localStorage.setItem('tt_pomoslots'," + JSON.stringify(JSON.stringify(SLOTS)) + ");" +
   // 宠物会满屏走，趴到牌子上会把点击吃掉 —— 这里只测牌子，先不养
-  "localStorage.setItem('tt_settings','{\"pets\":[]}');" +
+  "localStorage.setItem('tt_settings','{\"pets\":[\"golden-retriever\"]}');" +
   "var W=[];for(var i=0;i<25;i++)W.push({w:'nw'+i,disp:'newword'+i,ts:1,group:'g2'});for(var r=0;r<5;r++)W.push({w:'rv'+r,disp:'review'+r,ts:1,group:'g2',reps:3,s:5,d:6,iv:5,due:Date.now()-r*864e5,lapses:r});W.push({w:'old',disp:'old',ts:1,group:'g2',reps:3,due:Date.now()+1e9});W.push({w:'kn',disp:'kn',ts:1,group:'g2',known:true});W.push({w:'other',disp:'other',ts:1,group:'g1'});" +
   "localStorage.setItem('tt_words',JSON.stringify(W));localStorage.setItem('tt_wbgroups',JSON.stringify({list:[{id:'g1',name:'默认'},{id:'g2',name:'牛津'}],def:'g1'}));localStorage.setItem('tt_wbactive','\"g2\"');localStorage.setItem('tt_zoom','\"1.2\"');" +
   "}catch(e){}</script>";
@@ -110,6 +110,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   void( await ev("(function(){var p=document.getElementById('tt-pop');return p&&p.classList.contains('on')?p.innerText:'';})()"), "btn", await ev("!!document.getElementById('wb-wall')"), "err", await ev("window.__ttErr||''"));
   var I=JSON.parse(await info());ok(I.open&&I.n===20&&I.overlap===0&&I.rev>0,"打开就铺满 20 个、新词和复习词都有、一个都不压着："+JSON.stringify(I));
   var w0=await ev("document.querySelectorAll('.ww-w')[0].textContent");
+  var PK=JSON.parse(await ev("(function(){var k=[].slice.call(document.querySelectorAll('.pomo-kitty'));return JSON.stringify({n:k.length,vis:k.filter(function(e){return getComputedStyle(e).visibility==='visible';}).length});})()"));ok(PK.n>0&&PK.vis===0,"单词墙开着时桌面小猫小狗藏起来（她：「沉浸式模式就不要有猫狗了」）："+JSON.stringify(PK));
   await clickAt(".ww-w:nth-child(1)","left");
   ok(/known/.test(await ev("document.querySelectorAll('.ww-w')[0].className")),"左键 → 变绿");
   await clickAt(".ww-w:nth-child(2)","right");
@@ -152,6 +153,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(300);
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(600);
   ok(await ev("document.getElementById('ww-ov').hidden"),"Esc 先收释义、再按一次退出");
+  ok(!(await ev("document.body.classList.contains('ww-on')")),"退出单词墙 → 小猫小狗回来");
   // 墙上点过的每一个（记在 tt_wwseen 里）都排上了下次复习 / 抽查 —— 包括标过「认识」、到了半年抽查的那种
   var sv=JSON.parse(await ev("(function(){var ids=JSON.parse(localStorage.getItem('tt_wwseen')).ids,W=JSON.parse(localStorage.getItem('tt_words'));var ks=Object.keys(ids);return JSON.stringify({n:ks.length,ok:ks.filter(function(k){var x=W.filter(function(y){return (y.id||y.w)===k;})[0];return x&&((x.due>Date.now())||(x.kdue>Date.now()));}).length});})()"));
   ok(sv.n===4&&sv.ok===4,"存下来了：点过的 4 个都排上了下次复习："+JSON.stringify(sv));

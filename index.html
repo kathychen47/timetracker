@@ -1968,6 +1968,7 @@
   .wt-lv label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;padding:6px 11px;font-size:13px;cursor:pointer;background:var(--surface)}
   /* ---------- 单词墙 ---------- */
   .ww-ov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
+  body.ww-on .pomo-kitty{visibility:hidden}   /* 单词墙是沉浸式：桌面小猫小狗先藏起来（她：「沉浸式模式就不要有猫狗了」）；退出墙再出来 */
   .ww-ov[hidden]{display:none}   /* 上面那条 display:flex 会盖过 hidden 属性 —— 不写这句，整个网页一打开就被这层白板挡住、什么都点不动 */
   .ww-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 18px;font-size:12.5px;color:var(--muted);
     border-bottom:1px solid var(--border);opacity:.6;transition:opacity .2s}
@@ -18342,7 +18343,7 @@ margin-left: -22px;
       if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
       ttAlert("这个词书里没有可以铺的词。");return;}
     WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};
-    var ov=wwEl("ww-ov");ov.hidden=false;
+    var ov=wwEl("ww-ov");ov.hidden=false;document.body.classList.add("ww-on");
     var sel=wwEl("ww-n");
     if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
     sel.value=String(wwN());
@@ -18351,7 +18352,7 @@ margin-left: -22px;
   function wwClose(){
     if(!WW.on)return;WW.on=false;
     wwCloseDef();wwCloseBub();wwFlush();
-    wwEl("ww-ov").hidden=true;wwEl("ww-wall").innerHTML="";
+    wwEl("ww-ov").hidden=true;wwEl("ww-wall").innerHTML="";document.body.classList.remove("ww-on");
     if(document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
     try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
   function wwNext(){
