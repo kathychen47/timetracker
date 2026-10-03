@@ -2324,5 +2324,18 @@
 "从牛津选词": "Pick from Oxford",
 "测词汇量": "Vocab test",
 "清一清": "Clean up",
-"导出": "Export"
+"导出": "Export",
+"单词墙": "Word wall",
+"一批单词散在整面墙上：左键认识、中键模糊、右键不认识，右键 / 中键再按一次看完整释义": "A batch of words scattered across a wall: left-click know, middle-click unsure, right-click don't know; press right / middle again for the full definition",
+"左键 认识 · 中键 模糊 · 右键 不认识 · 右键 / 中键再按一次看完整释义 · 绿的再点一次撤销": "Left: know · Middle: unsure · Right: don't know · Right / middle again: full definition · Click a green one again to undo",
+"换个摆法": "Reshuffle",
+"退出（Esc）": "Exit (Esc)",
+"每批": "Per batch",
+"收起释义": "Close definition",
+"下次复习时间已经按遗忘曲线排好。": "Next reviews are scheduled on the forgetting curve.",
+"再铺一批新词": "Lay out more new words",
+"退出": "Exit",
+"换下一批…": "Next batch…",
+"这个词书里没有可以铺的词。": "There are no words in this book to lay out.",
+"（这条释义没有中文，再按一次看完整的）": "(No Chinese in this entry — press again for the full one)"
 }

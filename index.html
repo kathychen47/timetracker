@@ -1966,6 +1966,59 @@
   .wt-row select,.wt-row input[type=number]{padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13.5px}
   .wt-lv{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
   .wt-lv label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;padding:6px 11px;font-size:13px;cursor:pointer;background:var(--surface)}
+  /* ---------- 单词墙 ---------- */
+  .ww-ov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
+  .ww-ov[hidden]{display:none}   /* 上面那条 display:flex 会盖过 hidden 属性 —— 不写这句，整个网页一打开就被这层白板挡住、什么都点不动 */
+  .ww-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;padding:10px 18px;font-size:12.5px;color:var(--muted);
+    border-bottom:1px solid var(--border);opacity:.6;transition:opacity .2s}
+  .ww-bar:hover{opacity:1}
+  .ww-t{color:var(--text);font-size:14px}
+  .ww-bar label{display:inline-flex;align-items:center;gap:5px}
+  .ww-bar select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px 6px}
+  .ww-count{font-variant-numeric:tabular-nums;color:var(--text)}
+  .ww-count b.k{color:var(--cat-sport)} .ww-count b.m{color:var(--muted)} .ww-count b.u{color:var(--danger)}
+  .ww-prog{flex:1 1 80px;min-width:60px;height:4px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+  .ww-prog i{display:block;height:100%;width:0;background:var(--primary);transition:width .25s}
+  .ww-help{flex:1 1 100%;order:9;font-size:11.5px}
+  .ww-bar .btn{padding:3px 10px;font-size:12px}
+  .ww-wrap{position:relative;flex:1;min-height:0;display:flex}
+  .ww-wall{position:relative;flex:1;min-width:0;overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+  .ww-w{position:absolute;font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;line-height:1;
+    padding:.32em .5em .36em;border-radius:.34em;border:1.5px solid var(--border);background:var(--surface);color:var(--text);
+    cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.06);
+    transition:color .18s,background .18s,border-color .18s;animation:wwPop .45s cubic-bezier(.3,1.4,.5,1) both}
+  .ww-w:hover{border-color:var(--primary)}
+  .ww-w.rev{border-style:dashed}
+  .ww-w.known{background:color-mix(in srgb,var(--cat-sport) 16%,var(--bg));border-color:var(--cat-sport);color:var(--cat-sport)}
+  .ww-w.fuzzy{background:var(--surface-2);border-color:var(--muted);color:var(--muted)}
+  .ww-w.unknown{background:color-mix(in srgb,var(--danger) 14%,var(--bg));border-color:var(--danger);color:var(--danger)}
+  .ww-w.out{animation:wwOut .35s ease-in both}
+  @keyframes wwPop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+  @keyframes wwOut{to{opacity:0;transform:scale(.7)}}
+  .ww-bub{position:absolute;z-index:6;max-width:min(300px,80%);background:var(--bg);color:var(--text);border:1.5px solid var(--border);border-radius:9px;
+    padding:7px 10px;font-size:13px;line-height:1.5;box-shadow:0 10px 26px -14px rgba(0,0,0,.4);pointer-events:none}
+  .ww-bub.u{border-color:var(--danger)} .ww-bub.m{border-color:var(--muted)}
+  .ww-bub small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
+  .ww-def{position:absolute;top:0;right:0;bottom:0;width:min(440px,90%);z-index:7;background:var(--bg);border-left:3px solid var(--border);
+    box-shadow:-14px 0 34px -22px rgba(0,0,0,.45);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease}
+  .ww-def.on{transform:none}
+  .ww-def.u{border-left-color:var(--danger)} .ww-def.m{border-left-color:var(--muted)}
+  /* 词在右半边就从左边滑出来，别把正在看的那个词盖住 */
+  .ww-def.lf{right:auto;left:0;border-left:0;border-right:3px solid var(--border);box-shadow:14px 0 34px -22px rgba(0,0,0,.45);transform:translateX(-105%)}
+  .ww-def.lf.on{transform:none}
+  .ww-def.lf.u{border-right-color:var(--danger)} .ww-def.lf.m{border-right-color:var(--muted)}
+  .ww-def-h{display:flex;align-items:baseline;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+  .ww-def-h b{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-size:24px}
+  .ww-def-tag{font-size:11.5px;color:var(--muted)}
+  .ww-def-x{margin-left:auto;border:0;background:none;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 6px;border-radius:6px}
+  .ww-def-x:hover{background:var(--surface-2);color:var(--text)}
+  .ww-def-b{flex:1;overflow:auto;padding:10px 14px 18px}
+  .ww-toast{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--bg);border:1px solid var(--border);border-radius:12px;
+    padding:14px 22px;font-size:14px;text-align:center;line-height:1.7;box-shadow:0 14px 40px -16px rgba(0,0,0,.4);z-index:8}
+  .ww-toast .big{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .ww-toast .k{color:var(--cat-sport)} .ww-toast .m{color:var(--muted)} .ww-toast .u{color:var(--danger)}
+  .ww-toast .btn{margin:10px 4px 0}
+  @media (prefers-reduced-motion:reduce){.ww-w,.ww-w.out{animation:none}}
   .rp-top{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
   .rp-top .btn{padding:2px 9px;font-size:12px}
   .rp-prog b.ok{color:var(--cat-sport)}.rp-prog b.no{color:var(--danger)}
@@ -4117,6 +4170,7 @@ margin-left: -22px;
           <div class="wb-bar">
             <button class="btn primary" id="wb-start">开始背诵</button>
             <button class="btn" id="wb-rapid" title="新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背">极速刷词</button>
+            <button class="btn" id="wb-wall" title="一批单词散在整面墙上：左键认识、中键模糊、右键不认识，右键 / 中键再按一次看完整释义">单词墙</button>
             <button class="btn" id="wb-import">导入单词</button>
             <button class="btn" id="wb-build">从牛津选词</button>
             <button class="btn" id="wb-test">测词汇量</button>
@@ -4565,6 +4619,24 @@ margin-left: -22px;
   </div>
 
   <!-- 背诵卡片 -->
+  <div class="ww-ov" id="ww-ov" hidden>
+    <div class="ww-bar">
+      <b class="ww-t">单词墙</b>
+      <label for="ww-n">每批 <select id="ww-n"><option>20</option><option>30</option><option>40</option><option>50</option></select> 个</label>
+      <span class="ww-count" id="ww-count"></span>
+      <span class="ww-prog"><i id="ww-prog"></i></span>
+      <span class="ww-help">左键 认识 · 中键 模糊 · 右键 不认识 · 右键 / 中键再按一次看完整释义 · 绿的再点一次撤销</span>
+      <button type="button" class="btn" id="ww-shuffle">换个摆法</button>
+      <button type="button" class="btn" id="ww-exit">退出（Esc）</button>
+    </div>
+    <div class="ww-wrap">
+      <div class="ww-wall" id="ww-wall"></div>
+      <aside class="ww-def" id="ww-def">
+        <div class="ww-def-h"><b id="ww-def-w"></b><span class="ww-def-tag" id="ww-def-tag"></span><button type="button" class="ww-def-x" id="ww-def-x" aria-label="收起释义">✕</button></div>
+        <div class="ww-def-b" id="ww-def-b"></div>
+      </aside>
+    </div>
+  </div>
   <div class="overlay" id="flash-overlay">
     <div class="flash-card" id="flash-card">
       <button class="modal-x" id="flash-close" aria-label="关闭">✕</button>
@@ -5808,6 +5880,7 @@ margin-left: -22px;
     "一":"Mon",
     "一个没落下":"Nothing left out",
     "一圈 60 分，可绕多圈，最多 3 小时":"One loop is 60 min; go round more than once, up to 3 hours",
+    "一批单词散在整面墙上：左键认识、中键模糊、右键不认识，右键 / 中键再按一次看完整释义":"A batch of words scattered across a wall: left-click know, middle-click unsure, right-click don't know; press right / middle again for the full definition",
     "一整句":"a whole sentence",
     "一次计时同时算给好几件事：结束时把这段时间平均分给它们，加起来还是这么多，不会虚高":"One session can count towards several things: when it ends, the time is split evenly between them, so it still adds up to the same total and nothing is inflated",
     "一笔流水都没拉到过":"has never pulled in a single transaction",
@@ -5832,6 +5905,7 @@ margin-left: -22px;
     "下一节":"Next section",
     "下划线":"Underline",
     "下午茶":"afternoon tea",
+    "下次复习时间已经按遗忘曲线排好。":"Next reviews are scheduled on the forgetting curve.",
     "下次执行":"Next run",
     "下载模型卡住了（两分钟没进展）。换个网络，或在引擎那儿选个小一点的模型。":"The model download is stuck (no progress for two minutes). Try another network, or pick a smaller model in the engine setting.",
     "下载识别模型…（首次较慢）":"Downloading the OCR model… (slow the first time)",
@@ -6082,6 +6156,7 @@ margin-left: -22px;
     "再导一批":"Import another batch",
     "再把它拆成一步步，每步填个预计时间。":"then break it into steps and give each one a time estimate.",
     "再来一轮":"One more round",
+    "再铺一批新词":"Lay out more new words",
     "写/改笔记":"Write/edit note",
     "写一句自己的解释，背诵时它会顶在最上面…":"Write your own explanation — it sits right at the top when you revise…",
     "写代码":"coding",
@@ -6205,6 +6280,7 @@ margin-left: -22px;
     "单句循环":"Loop",
     "单笔 ≥ 多少算工资":"Counts as salary if ≥",
     "单词":"vocab",
+    "单词墙":"Word wall",
     "卡片大小恢复自动了：内容多大，框就多大":"Card size is back to auto — the box fits the content",
     "历史记录":"History",
     "原文":"Original",
@@ -6455,6 +6531,7 @@ margin-left: -22px;
     "工资":"Salary",
     "左原文右译文（整页翻译，保留排版）":"Original left, translation right (whole page, layout kept)",
     "左右对照":"Side by side",
+    "左键 认识 · 中键 模糊 · 右键 不认识 · 右键 / 中键再按一次看完整释义 · 绿的再点一次撤销":"Left: know · Middle: unsure · Right: don't know · Right / middle again: full definition · Click a green one again to undo",
     "已从税务记录里撤回":"Pulled out of your tax records",
     "已保存":"Saved",
     "已保存 ✓":"Saved ✓",
@@ -6662,7 +6739,9 @@ margin-left: -22px;
     "挡着，再点一下那一类取消":"— click that category again to clear it",
     "挡着，切回「全部账户」就看得到":"is hiding it — switch back to \"All accounts\" and you'll see it",
     "换":"Change",
+    "换下一批…":"Next batch…",
     "换个分组":"Change group",
+    "换个摆法":"Reshuffle",
     "换个颜色":"Change color",
     "换单位":"Switch unit",
     "授权过期，正在自动续…":"Access expired, renewing…",
@@ -6706,6 +6785,7 @@ margin-left: -22px;
     "收起本子栏":"Hide sidebar",
     "收起没用到的":"Hide the unused ones",
     "收起译文只看原文":"Hide the translation, show the original only",
+    "收起释义":"Close definition",
     "收进我的记录":"Add to my records",
     "改":"Edit",
     "改了":"Edited",
@@ -6958,6 +7038,7 @@ margin-left: -22px;
     "每天新词上限":"New words per day",
     "每天最多学多少个没见过的新词。":"How many words you've never seen before to learn each day.",
     "每定稿一句就翻一句（本地模型一句要几秒，会排着队慢慢填）":"Each sentence is translated once it's final (the local model takes a few seconds per line, so they queue up and fill in slowly)",
+    "每批":"Per batch",
     "每月固定一天扣费":"A charge on a fixed day each month",
     "每月平均":"Monthly average",
     "每月构成（实收 = 到手 + PAYE + ACC + GST）":"Monthly breakdown (Gross = Take-home + PAYE + ACC + GST)",
@@ -7533,6 +7614,7 @@ margin-left: -22px;
     "这个筛选下没有内容":"Nothing under this filter",
     "这个范围内还没有数据 —— 上面记一笔，或者换个时间范围 / 多勾几个指标":"No data in this range — add an entry above, or switch the range / tick more metrics",
     "这个范围还没有安排事件":"Nothing scheduled in this range",
+    "这个词书里没有可以铺的词。":"There are no words in this book to lay out.",
     "这个账户":"this account",
     "这么久没有任何操作，先把计时停下了。点一下、按个键、滚一下就继续 —— 光移动鼠标不算。":"Nothing has happened for a while, so the timer stopped. Click, press a key, or scroll to carry on — moving the mouse alone will not.",
     "这些书存在哪、占了多少、会不会丢":"Where these books are stored, how much space they take, and whether they can be lost",
@@ -7600,9 +7682,11 @@ margin-left: -22px;
     "连接 Google Calendar":"Connect Google Calendar",
     "连接 Google 日历":"Google Calendar connected",
     "连接已取消或失败":"Connection cancelled or failed",
+    "退出":"Exit",
     "退出共享":"Leave shared ledger",
     "退出沉浸式（Esc）":"Exit immersive mode (Esc)",
     "退出选择":"Exit selection",
+    "退出（Esc）":"Exit (Esc)",
     "退换货":"returns",
     "退款":"Refund",
     "退货":"Return",
@@ -7861,6 +7945,7 @@ margin-left: -22px;
     "（这个模型你账号用不了或次数用完了——到 ⚙️设置 点「检测可用」换模型，或切成本地 Ollama）":"(Your account can't use this model, or you're out of quota — go to ⚙️ Settings, tap \"Detect\" and pick another model, or switch to local Ollama)",
     "（这个浏览器不支持实时转写）":"(this browser doesn't support live transcription)",
     "（这句还没翻译）":"(not translated yet)",
+    "（这条释义没有中文，再按一次看完整的）":"(No Chinese in this entry — press again for the full one)",
     "（进页面就补记）":"(added when you open the page)",
     "（选大类）":"(pick a category)",
     "（选小类）":"(Pick a sub-category)",
@@ -18208,6 +18293,212 @@ margin-left: -22px;
     if(rpOpen){if(k===" "||k==="Enter"||k==="ArrowRight"){e.preventDefault();rpNext();}return;}
     if(k==="ArrowLeft"||k==="1"){e.preventDefault();rpKnow();}
     else if(k==="ArrowRight"||k==="2"){e.preventDefault();rpDont();}});
+  // ---------- 单词墙 ----------
+  // 她设计的：一批单词（20 / 30 / 40 / 50 个）散在整面墙上，有大有小，不排成一列。
+  //   左键 = 认识（变绿）、中键 = 模糊（变灰）、右键 = 不认识（变红）——
+  //   正好是背诵卡片上那三档，直接喂同一条 FSRS 遗忘曲线（srsGrade）。
+  //   右键 / 中键第一下：词旁边冒一句中文；同一个键再按一下：右边展开完整的词典卡片；再按收起。
+  //   绿的再左键一次 = 撤销（连「今天背了几个」也退回去）；换个键 = 改成那一档。
+  //   字越大 = 越难（新词按牛津等级）、越久没复习、忘过越多次。大的不扎堆、小的也不扎堆，互不重叠。
+  //   今天该复习的和新词混着铺（跟「开始背诵」同一份当日计划、同样的每日上限）；
+  //   一面墙点完自动换下一批；红 / 灰的新词今天还没过学习步骤的，排进后面的批次再见一次。
+  // 原型：https://claude.ai/artifact/BJ8FnguoarJiprVKgbP3By
+  var WW={on:false,queue:[],batch:[],st:{k:0,m:0,u:0},lock:false,bub:null,defFor:null,lv:null,saveT:null,seen:{},again:{}};
+  var WW_G={known:2,fuzzy:1,unknown:0},WW_K={known:"k",fuzzy:"m",unknown:"u"};
+  function wwEl(id){return document.getElementById(id);}
+  function wwN(){var n=+load("tt_wwn",20)||20;return [20,30,40,50].indexOf(n)>=0?n:20;}
+  function wwLv(){                                         // 牛津等级表：只读已经建好的，不现扫词典
+    if(WW.lv)return Promise.resolve(WW.lv);
+    return ensureDictDB().then(function(db){return db?idbGet("meta","levels"):null;}).then(function(rec){
+      var m={};if(rec&&rec.idx)Object.keys(rec.idx).forEach(function(l){(rec.idx[l]||[]).forEach(function(w){m[w]=l;});});
+      WW.lv=m;return m;},function(){WW.lv={};return WW.lv;});}
+  function wwWeight(x){
+    if(!x.reps){var L={a1:.1,a2:.25,b1:.4,b2:.6,c1:.8}[(WW.lv||{})[x.w]];return L===undefined?.55:L;}
+    var od=Math.max(0,(Date.now()-(x.due||Date.now()))/864e5);
+    var d=(x.d!==undefined)?(x.d-1)/9:.4;
+    return Math.min(1,d*.5+Math.min(.3,od/20)+Math.min(.2,(x.lapses||0)*.07));}
+  function wwTier(x){return Math.min(4,Math.floor(wwWeight(x)*5));}
+  function wwSaveSoon(){if(WW.saveT)clearTimeout(WW.saveT);WW.saveT=setTimeout(function(){WW.saveT=null;saveWords();},800);}
+  function wwFlush(){if(WW.saveT){clearTimeout(WW.saveT);WW.saveT=null;}saveWords();}
+  function wwUnbump(isNew){
+    var st=load("tt_srsday",{d:"",n:0,r:0});
+    if(st.d===todayKey()){if(isNew)st.n=Math.max(0,st.n-1);else st.r=Math.max(0,st.r-1);save("tt_srsday",st);}
+    var h=load("tt_srshist",{})||{},k=todayKey();
+    if(h[k]){if(isNew)h[k].n=Math.max(0,h[k].n-1);else h[k].r=Math.max(0,h[k].r-1);save("tt_srshist",h);}}
+  function startWall(extra){
+    var plan=srsPlan(),list;
+    if(extra){list=wbFiltered().filter(function(x){srsInit(x);return !x.known&&!x.mastered&&!x.reps;});}
+    else list=plan.due.concat(plan.fresh);
+    if(!list.length){
+      if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
+      ttAlert("这个词书里没有可以铺的词。");return;}
+    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};WW.again={};
+    var ov=wwEl("ww-ov");ov.hidden=false;
+    wwEl("ww-n").value=String(wwN());
+    try{if(ov.requestFullscreen){var p=ov.requestFullscreen();if(p&&p.catch)p.catch(function(){});}}catch(e){}
+    wwLv().then(function(){wwNext();});}
+  function wwClose(){
+    if(!WW.on)return;WW.on=false;
+    wwCloseDef();wwCloseBub();wwFlush();
+    wwEl("ww-ov").hidden=true;wwEl("ww-wall").innerHTML="";
+    if(document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
+    try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
+  function wwNext(){
+    wwCloseBub();wwCloseDef();
+    var n=wwN();
+    if(!WW.queue.length){wwDone();return;}
+    WW.batch=WW.queue.splice(0,n).map(function(x){return {x:x,s:"idle",el:null,snap:null};});
+    WW.st={k:0,m:0,u:0};wwRender();}
+  function wwDone(){
+    var wall=wwEl("ww-wall");wall.innerHTML="";
+    var plan=srsPlan(),more=plan.allNew>0;
+    var t=document.createElement("div");t.className="ww-toast";
+    t.innerHTML='<div class="big">今天这批过完了 🎉</div>下次复习时间已经按遗忘曲线排好。<br>'+
+      (more?'<button type="button" class="btn" data-ww="more">再铺一批新词</button>':'')+'<button type="button" class="btn primary" data-ww="close">退出</button>';
+    wall.appendChild(t);}
+  function wwSize(scale){WW.batch.forEach(function(it){
+    var base=(wwEl("ww-wall").clientWidth<560)?.72:1.12;
+    it.el.style.fontSize=((14+wwTier(it.x)*6)*base*scale).toFixed(1)+"px";});}
+  // 摆放：大的先放；每个词随机试几百个位置，丢掉压着别人的，剩下的挑「离同一档大小的词最远」的。
+  // 有一个怎么都放不下 → 整批缩小一点从头摆，直到一个都不压着。
+  function wwPlace(){
+    var wall=wwEl("ww-wall"),W=wall.clientWidth,H=wall.clientHeight,pad=16,gap=10,placed=[],out=[];
+    var order=WW.batch.slice().sort(function(a,b){return wwTier(b.x)-wwTier(a.x);});
+    for(var n=0;n<order.length;n++){
+      var it=order[n],el=it.el,w=el.offsetWidth,h=el.offsetHeight,best=null,bs=-1,t=wwTier(it.x);
+      if(w+2*pad>W||h+2*pad>H)return null;
+      for(var k=0;k<400;k++){
+        var x=pad+Math.random()*(W-w-2*pad),y=pad+Math.random()*(H-h-2*pad),hit=false,near=1e9;
+        for(var i=0;i<placed.length;i++){var p=placed[i];
+          if(x<p.x+p.w+gap&&x+w+gap>p.x&&y<p.y+p.h+gap&&y+h+gap>p.y){hit=true;break;}
+          if(p.t===t){var dx=(x+w/2)-(p.x+p.w/2),dy=(y+h/2)-(p.y+p.h/2),dd=Math.sqrt(dx*dx+dy*dy);if(dd<near)near=dd;}}
+        if(hit)continue;
+        var sc=near+Math.random()*30;if(sc>bs){bs=sc;best={x:x,y:y};}
+        if(k>60&&best)break;}
+      if(!best)return null;
+      placed.push({x:best.x,y:best.y,w:w,h:h,t:t});out.push([el,best]);}
+    return out;}
+  function wwLayout(){
+    var sc=1;
+    for(var r=0;r<14;r++){wwSize(sc);var res=wwPlace();
+      if(res){res.forEach(function(q){q[0].style.left=q[1].x+"px";q[0].style.top=q[1].y+"px";});return;}
+      sc*=.9;}}
+  function wwRender(){
+    var wall=wwEl("ww-wall");wall.innerHTML="";
+    WW.batch.forEach(function(it){
+      var b=document.createElement("button");b.type="button";
+      b.className="ww-w"+(it.x.reps?" rev":"");b.textContent=it.x.disp||it.x.w;
+      b.style.animationDelay=(Math.random()*.25).toFixed(2)+"s";
+      b.title=(it.x.reps?"该复习了":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
+      it.el=b;wwBind(it);wall.appendChild(b);});
+    requestAnimationFrame(function(){wwLayout();wwDraw();});}
+  function wwDraw(){
+    var done=WW.st.k+WW.st.m+WW.st.u,n=WW.batch.length;
+    wwEl("ww-count").innerHTML=done+" / "+n+" · 认识 <b class=\"k\">"+WW.st.k+"</b> · 模糊 <b class=\"m\">"+WW.st.m+"</b> · 不认识 <b class=\"u\">"+WW.st.u+"</b> · 还剩 "+WW.queue.length;
+    wwEl("ww-prog").style.width=(n?done/n*100:0)+"%";}
+  // 评分：第一次评之前存一份原样，改档 / 撤销都先恢复原样再评 —— 同一个词不会被重复记两次
+  function wwSet(it,to){
+    var x=it.x,key=x.id||x.w;
+    if(it.s!=="idle")WW.st[WW_K[it.s]]--;
+    if(!it.snap){it.snap=JSON.parse(JSON.stringify(x));it.wasNew=!x.reps;}
+    else{Object.keys(x).forEach(function(k){if(!(k in it.snap))delete x[k];});Object.keys(it.snap).forEach(function(k){x[k]=it.snap[k];});}
+    it.s=to;
+    if(to==="idle"){it.snap=null;if(WW.seen[key]){delete WW.seen[key];wwUnbump(it.wasNew);}}
+    else{
+      if(!WW.seen[key]){WW.seen[key]=1;bumpDay(it.wasNew);}
+      srsGrade(x,WW_G[to]);WW.st[WW_K[to]]++;}
+    ["known","fuzzy","unknown"].forEach(function(c){it.el.classList.toggle(c,to===c);});
+    wwSaveSoon();wwDraw();}
+  function wwPress(it,s){
+    if(WW.lock)return;
+    if(s==="known"){wwCloseBub();if(WW.defFor===it)wwCloseDef();wwSet(it,it.s==="known"?"idle":"known");}
+    else if(it.s===s){                                       // 同一个键第二下：完整释义；再按收起
+      if(WW.defFor===it&&wwEl("ww-def").classList.contains("on"))wwCloseDef();else{wwCloseBub();wwShowDef(it);}}
+    else{wwSet(it,s);if(WW.defFor&&WW.defFor!==it)wwCloseDef();wwShowBub(it);}
+    if(WW.batch.every(function(b){return b.s!=="idle";}))wwBatchDone();}
+  // 一句中文：从牛津卡片里抠第一段中文；抠不到就提示再按一次看完整的
+  function wwShort(w){
+    return ensureDictDB().then(function(db){
+      if(!db)return "";
+      return dictFind("oald",(w||"").toLowerCase()).then(function(hit){
+        var h=hit&&hit.rec&&hit.rec.html;if(!h)return "";
+        var d=document.createElement("div");d.innerHTML=h;
+        var t=(d.textContent||"").replace(/\s+/g," ");
+        var m=t.match(/[\u4e00-\u9fff][^。；;|]{0,28}/);return m?m[0].trim():"";},function(){return "";});});}
+  function wwShowBub(it){
+    wwCloseBub();
+    var wall=wwEl("ww-wall"),b=document.createElement("div");b.className="ww-bub "+(it.s==="unknown"?"u":"m");
+    b.innerHTML='<span class="z">…</span><small>'+(it.s==="unknown"?"右键":"中键")+'再按一次 → 完整释义</small>';
+    wall.appendChild(b);WW.bub=b;
+    function place(){var r=it.el.getBoundingClientRect(),wr=wall.getBoundingClientRect();
+      var x=r.left-wr.left,y=r.bottom-wr.top+6;
+      if(x+b.offsetWidth>wall.clientWidth-8)x=wall.clientWidth-b.offsetWidth-8;
+      if(y+b.offsetHeight>wall.clientHeight-8)y=r.top-wr.top-b.offsetHeight-6;
+      b.style.left=Math.max(8,x)+"px";b.style.top=Math.max(8,y)+"px";}
+    place();
+    wwShort(it.x.w).then(function(z){if(WW.bub!==b)return;
+      b.querySelector(".z").textContent=z||"（这条释义没有中文，再按一次看完整的）";place();});}
+  function wwCloseBub(){if(WW.bub){WW.bub.remove();WW.bub=null;}}
+  function wwShowDef(it){
+    var d=wwEl("ww-def"),bd=wwEl("ww-def-b");
+    var wr=wwEl("ww-wall").getBoundingClientRect(),r=it.el.getBoundingClientRect(),lf=(r.left+r.width/2-wr.left)>wr.width/2;
+    d.className="ww-def on "+(it.s==="unknown"?"u":"m")+(lf?" lf":"");WW.defFor=it;
+    wwEl("ww-def-w").textContent=it.x.disp||it.x.w;
+    wwEl("ww-def-tag").textContent=(it.s==="unknown"?"不认识":"模糊")+" · "+(it.x.reps?"复习":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
+    bd.innerHTML='<div class="dict-hint">加载释义…</div>';
+    wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;});}
+  function wwCloseDef(){var d=wwEl("ww-def");d.className="ww-def"+(d.classList.contains("lf")?" lf":"");WW.defFor=null;}
+  function wwBatchDone(){
+    if(WW.lock)return;WW.lock=true;
+    // 新词评了红 / 灰、学习步骤还没走完（下次是几分钟后）：放进后面的批次再见一次，最多再见两次
+    WW.batch.forEach(function(it){var x=it.x,key=x.id||x.w;
+      if((it.s==="unknown"||it.s==="fuzzy")&&x.due-Date.now()<DAYMIN*60000&&(WW.again[key]||0)<2){
+        WW.again[key]=(WW.again[key]||0)+1;WW.queue.splice(Math.min(WW.queue.length,wwN()),0,x);}});
+    setTimeout(function(){
+      if(!WW.on)return;
+      wwCloseBub();wwCloseDef();
+      var t=document.createElement("div");t.className="ww-toast";
+      t.innerHTML='<div class="big">'+WW.st.k+' / '+WW.batch.length+'</div><span class="k">认识 '+WW.st.k+'</span> · <span class="m">模糊 '+WW.st.m+'</span> · <span class="u">不认识 '+WW.st.u+'</span><br>换下一批…';
+      wwEl("ww-wall").appendChild(t);
+      setTimeout(function(){
+        if(!WW.on)return;
+        WW.batch.forEach(function(b){b.el.classList.add("out");});
+        setTimeout(function(){WW.lock=false;if(WW.on)wwNext();},380);},1500);},500);}
+  function wwBind(it){
+    var el=it.el,pt=null,pressed=false;
+    el.addEventListener("click",function(){if(pressed){pressed=false;return;}wwPress(it,"known");});
+    el.addEventListener("mousedown",function(e){if(e.button===1)e.preventDefault();});
+    el.addEventListener("auxclick",function(e){if(e.button===1){e.preventDefault();wwPress(it,"fuzzy");}});
+    el.addEventListener("contextmenu",function(e){e.preventDefault();if(!pressed)wwPress(it,"unknown");});
+    el.addEventListener("pointerdown",function(e){if(e.pointerType!=="touch")return;
+      pt=setTimeout(function(){pt=null;pressed=true;wwPress(it,"unknown");},500);});
+    ["pointerup","pointercancel","pointerleave"].forEach(function(ev){el.addEventListener(ev,function(){if(pt){clearTimeout(pt);pt=null;}});});}
+  (function(){
+    var ov=wwEl("ww-ov");if(!ov)return;
+    wwEl("ww-exit").addEventListener("click",wwClose);
+    wwEl("ww-def-x").addEventListener("click",wwCloseDef);
+    wwEl("ww-shuffle").addEventListener("click",function(){wwCloseBub();wwCloseDef();wwLayout();});
+    wwEl("ww-n").addEventListener("change",function(){save("tt_wwn",+this.value||20);
+      // 这一批还没点过的放回去，按新的数量重铺
+      var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});
+      WW.queue=back.concat(WW.queue);wwNext();});
+    var wall=wwEl("ww-wall");
+    wall.addEventListener("click",function(e){if(!e.target.closest(".ww-w")){wwCloseDef();wwCloseBub();}
+      var a=e.target.closest("[data-ww]");if(a){if(a.getAttribute("data-ww")==="more"){WW.on=false;startWall(true);}else wwClose();}});
+    wall.addEventListener("contextmenu",function(e){if(!e.target.closest(".ww-w"))e.preventDefault();});
+    wwEl("ww-def-b").addEventListener("click",function(e){
+      var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
+      var bt=e.target.closest(".box_title");if(bt){var u=bt.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+    document.addEventListener("keydown",function(e){
+      if(!WW.on||e.key!=="Escape")return;
+      e.preventDefault();
+      if(wwEl("ww-def").classList.contains("on")){wwCloseDef();return;}
+      wwClose();});
+    document.addEventListener("fullscreenchange",function(){
+      // 按 Esc 先退出的是浏览器全屏；墙本身还开着，铺满窗口照样能用 —— 只是重摆一下适应新尺寸
+      if(WW.on)setTimeout(function(){wwLayout();},80);});
+    var rt=null;window.addEventListener("resize",function(){if(!WW.on)return;clearTimeout(rt);rt=setTimeout(function(){wwCloseBub();wwLayout();},150);});
+  })();
   async function startFlash(){
     var plan=srsPlan();
     flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
@@ -18468,6 +18759,7 @@ margin-left: -22px;
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
     document.getElementById("wb-start").addEventListener("click",startFlash);
     var wbr=document.getElementById("wb-rapid");if(wbr)wbr.addEventListener("click",startRapid);
+    var wbw=document.getElementById("wb-wall");if(wbw)wbw.addEventListener("click",function(){startWall(false);});
     document.getElementById("flash-def").addEventListener("click",function(e){
       if(!flashRevealed){revealFlash();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
