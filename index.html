@@ -18458,7 +18458,7 @@ margin-left: -22px;
     if(!list.length){
       if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
       ttAlert("这个词书里没有可以铺的词。");return;}
-    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};
+    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};WW.extra=0;WW.batch=[];
     var ov=wwEl("ww-ov");ov.hidden=false;document.body.classList.add("ww-on");
     var sel=wwEl("ww-n");
     if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
@@ -18471,9 +18471,21 @@ margin-left: -22px;
     wwEl("ww-ov").hidden=true;wwEl("ww-wall").innerHTML="";document.body.classList.remove("ww-on");
     if(document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
     try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
+  // 一批不够她选的数量（今天该复习的 + 今天新词额度剩下的，加起来只有 7 个）：用额度外的新词补满。
+  // 她：「不管选择多少个都只显示这么多」—— 每批几个是她在墙上选的，墙就该铺这么多。
+  // 补的词从这本词书里还没学过的新词里**随机**挑（同一天导入的一整份名单按字母排，不随机就永远是 a 开头那几个）。
+  function wwTopUp(n){
+    if(WW.queue.length>=n)return;
+    var seen=wwDay().ids,have={};
+    WW.queue.concat(WW.batch.map(function(it){return it.x;})).forEach(function(x){have[x.id||x.w]=1;});
+    var more=shuffle(wbFiltered().filter(function(x){srsInit(x);var k=x.id||x.w;
+      return !x.known&&!x.mastered&&!x.reps&&!have[k]&&!seen[k];}));
+    var add=more.slice(0,n-WW.queue.length);
+    WW.extra=(WW.extra||0)+add.length;WW.queue=WW.queue.concat(add);}
   function wwNext(){
     wwCloseBub();wwCloseDef();
     var n=wwN();
+    wwTopUp(n);
     if(!WW.queue.length){wwDone();return;}
     WW.batch=WW.queue.splice(0,n).map(function(x){return {x:x,s:"idle",el:null,snap:null};});
     WW.st={k:0,m:0,u:0};wwRender();}
@@ -18522,7 +18534,7 @@ margin-left: -22px;
     requestAnimationFrame(function(){wwLayout();wwDraw();});}
   function wwDraw(){
     var done=WW.st.k+WW.st.m+WW.st.u,n=WW.batch.length,d=wwDay();
-    wwEl("ww-count").innerHTML="这批 "+done+" / "+n+" · 今天 认识 <b class=\"k\">"+d.k+"</b> · 模糊 <b class=\"m\">"+d.m+"</b> · 不认识 <b class=\"u\">"+d.u+"</b> · 还剩 "+WW.queue.length;
+    wwEl("ww-count").innerHTML="这批 "+done+" / "+n+" · 今天 认识 <b class=\"k\">"+d.k+"</b> · 模糊 <b class=\"m\">"+d.m+"</b> · 不认识 <b class=\"u\">"+d.u+"</b> · 还剩 "+WW.queue.length+(WW.extra?' · <span title="今天的新词额度（设置 → 词典 → 每天新词）用完了，按你选的每批数量从还没学的新词里补的">额度外新词 '+WW.extra+'</span>':'');
     wwEl("ww-prog").style.width=(n?done/n*100:0)+"%";}
   // 评分：第一次评之前存一份原样，改档 / 撤销都先恢复原样再评 —— 同一个词不会被重复记两次
   function wwSet(it,to){

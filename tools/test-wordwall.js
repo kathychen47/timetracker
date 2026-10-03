@@ -157,6 +157,14 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   // 墙上点过的每一个（记在 tt_wwseen 里）都排上了下次复习 / 抽查 —— 包括标过「认识」、到了半年抽查的那种
   var sv=JSON.parse(await ev("(function(){var ids=JSON.parse(localStorage.getItem('tt_wwseen')).ids,W=JSON.parse(localStorage.getItem('tt_words'));var ks=Object.keys(ids);return JSON.stringify({n:ks.length,ok:ks.filter(function(k){var x=W.filter(function(y){return (y.id||y.w)===k;})[0];return x&&((x.due>Date.now())||(x.kdue>Date.now()));}).length});})()"));
   ok(sv.n===4&&sv.ok===4,"存下来了：点过的 4 个都排上了下次复习："+JSON.stringify(sv));
+  // 每批选 40：今天的新词额度只剩几个也要铺满 40（她：「不管选择多少个都只显示这么多」）
+  await ev("document.getElementById('wb-wall').click()");await sleep(1500);
+  await ev("(function(){var s=document.getElementById('ww-n');s.value='40';s.dispatchEvent(new Event('change',{bubbles:true}));})()");await sleep(1500);
+  // 能铺的上限：这本里今天没点过、没标认识的新词 + 到期复习词。新词一共 25 个，今天额度 20 —— 旧版最多只铺到额度那么多
+  var chk=JSON.parse(await ev("(function(){var seen=(JSON.parse(localStorage.getItem('tt_wwseen'))||{}).ids||{},ws=[].map.call(document.querySelectorAll('.ww-w'),function(e){return e.textContent;});var W=JSON.parse(localStorage.getItem('tt_words'));var bySeen=ws.filter(function(t){return W.some(function(x){return (x.disp||x.w)===t&&seen[x.id||x.w];});}).length;var uniq={};ws.forEach(function(t){uniq[t]=1;});var fresh=W.filter(function(x){return x.group==='g2'&&!x.reps&&!x.known&&!seen[x.id||x.w];}).length;return JSON.stringify({n:ws.length,uniq:Object.keys(uniq).length,seen:bySeen,fresh:fresh});})()"));
+  var cnt2=await ev("document.getElementById('ww-count').innerText");
+  ok(chk.n>=chk.fresh&&chk.n<=40&&chk.uniq===chk.n&&chk.seen===0&&/额度外新词/.test(cnt2),"选 40 个 → 没学过的新词全铺上（超出每天新词额度的补上并标出来），不重复、今天点过的不出现："+JSON.stringify(chk)+" · "+cnt2);
+  await ev("document.getElementById('ww-exit').click()");await sleep(400);
   ok(!(await ev("window.__ttErr||''")), "没报错");
   ws.close(); proc.kill();
   console.log("\n== 单词墙（真 Chrome、真鼠标）==");
