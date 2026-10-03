@@ -2040,6 +2040,8 @@
   .ww-t{color:var(--text);font-size:14px}
   .ww-bar label{display:inline-flex;align-items:center;gap:5px}
   .ww-bar select{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:2px 6px}
+  .ww-bar input[type=range]{width:96px;accent-color:var(--primary)}
+  .ww-gap-v{min-width:2.5em;color:var(--text)}
   .ww-count{font-variant-numeric:tabular-nums;color:var(--text)}
   .ww-count b.k{color:var(--cat-sport)} .ww-count b.m{color:var(--muted)} .ww-count b.u{color:var(--danger)}
   .ww-prog{flex:1 1 80px;min-width:60px;height:4px;border-radius:3px;background:var(--surface-2);overflow:hidden}
@@ -4687,6 +4689,7 @@ margin-left: -22px;
     <div class="ww-bar">
       <b class="ww-t">单词墙</b>
       <label for="ww-n">每批 <select id="ww-n"></select> 个</label>
+      <label for="ww-gap" title="词和词之间大概隔多远。词少的时候调近一点，就聚在中间，不会满屏散开">间距 <input type="range" id="ww-gap" min="0" max="7" step="1"> <span id="ww-gap-v" class="ww-gap-v"></span></label>
       <span class="ww-count" id="ww-count"></span>
       <span class="ww-prog"><i id="ww-prog"></i></span>
       <span class="ww-help">左键 认识 · 中键 模糊 · 右键 不认识 · 同一个键再按一次看完整释义 · 点错了换个键就改过来</span>
@@ -18462,7 +18465,7 @@ margin-left: -22px;
     var ov=wwEl("ww-ov");ov.hidden=false;document.body.classList.add("ww-on");
     var sel=wwEl("ww-n");
     if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
-    sel.value=String(wwN());
+    sel.value=String(wwN());wwGapShow();
     try{if(ov.requestFullscreen){var p=ov.requestFullscreen();if(p&&p.catch)p.catch(function(){});}}catch(e){}
     wwLv().then(function(){wwNext();});}
   function wwClose(){
@@ -18501,28 +18504,54 @@ margin-left: -22px;
     it.el.style.fontSize=((14+wwTier(it.x)*6)*base*scale).toFixed(1)+"px";});}
   // 摆放：大的先放；每个词随机试几百个位置，丢掉压着别人的，剩下的挑「离同一档大小的词最远」的。
   // 有一个怎么都放不下 → 整批缩小一点从头摆，直到一个都不压着。
-  function wwPlace(){
+  // 间距（她：「词少的时候没必要散太远，可以设置单词和单词之间大概的一个距离」）：
+  // 0–6 档 = 每个词离最近的那个词，边到边最多隔这么远（墙里的像素，不受页面缩放影响）；最后一档「铺满」= 原来那样满屏散开。
+  // 存在本机（tt_wwgap），下次打开还是这一档。
+  var WW_GAPS=[16,30,50,80,120,170,240,0],WW_GAPN=["很近","近","较近","适中","较远","远","很远","铺满"];
+  function wwGapI(){var i=+load("tt_wwgap",7);return (i>=0&&i<WW_GAPS.length)?Math.round(i):7;}
+  function wwGapShow(){var i=wwGapI(),r=wwEl("ww-gap"),v=wwEl("ww-gap-v");if(r)r.value=String(i);if(v)v.textContent=WW_GAPN[i];}
+  function wwPlace(gi){
     var wall=wwEl("ww-wall"),W=wall.clientWidth,H=wall.clientHeight,pad=16,gap=10,placed=[],out=[];
+    var maxG=WW_GAPS[gi===undefined?wwGapI():gi],minG=maxG?Math.max(gap,maxG*.5):gap;   // 0 = 铺满；其余：离最近的词隔 [一半, 这一档] 这么远
     var order=WW.batch.slice().sort(function(a,b){return wwTier(b.x)-wwTier(a.x);});
+    // 边到边的距离（两个框之间最短那段；挨着 / 压着 = 0）
+    function edge(x,y,w,h,p){var dx=Math.max(0,p.x-(x+w),x-(p.x+p.w)),dy=Math.max(0,p.y-(y+h),y-(p.y+p.h));return Math.sqrt(dx*dx+dy*dy);}
     for(var n=0;n<order.length;n++){
-      var it=order[n],el=it.el,w=el.offsetWidth,h=el.offsetHeight,best=null,bs=-1,t=wwTier(it.x);
+      var it=order[n],el=it.el,w=el.offsetWidth,h=el.offsetHeight,best=null,bs=-Infinity,t=wwTier(it.x);   // 聚拢时分数是负的，起点不能是 -1
       if(w+2*pad>W||h+2*pad>H)return null;
       for(var k=0;k<400;k++){
-        var x=pad+Math.random()*(W-w-2*pad),y=pad+Math.random()*(H-h-2*pad),hit=false,near=1e9;
+        var x,y;
+        if(!maxG){x=pad+Math.random()*(W-w-2*pad);y=pad+Math.random()*(H-h-2*pad);}
+        else if(!placed.length){x=(W-w)/2+(Math.random()-.5)*W*.08;y=(H-h)/2+(Math.random()-.5)*H*.08;}   // 第一个放在中间附近
+        else{                                                     // 挑一个已经放好的词，在它周围「间距」以内找个位置
+          var a=placed[Math.floor(Math.random()*placed.length)],ang=Math.random()*Math.PI*2,dist=minG+Math.random()*(maxG-minG+1);
+          x=a.x+a.w/2-w/2+Math.cos(ang)*((a.w+w)/2+dist);y=a.y+a.h/2-h/2+Math.sin(ang)*((a.h+h)/2+dist);}
+        x=Math.max(pad,Math.min(W-w-pad,x));y=Math.max(pad,Math.min(H-h-pad,y));
+        var hit=false,near=1e9,closest=1e9;
         for(var i=0;i<placed.length;i++){var p=placed[i];
           if(x<p.x+p.w+gap&&x+w+gap>p.x&&y<p.y+p.h+gap&&y+h+gap>p.y){hit=true;break;}
+          var e=edge(x,y,w,h,p);if(e<closest)closest=e;
           if(p.t===t){var dx=(x+w/2)-(p.x+p.w/2),dy=(y+h/2)-(p.y+p.h/2),dd=Math.sqrt(dx*dx+dy*dy);if(dd<near)near=dd;}}
         if(hit)continue;
-        var sc=near+Math.random()*30;if(sc>bs){bs=sc;best={x:x,y:y};}
+        if(maxG&&placed.length&&(closest>maxG||closest<minG))continue;   // 离最近的词太远 / 太近：不要
+        var sc=near+Math.random()*30;
+        // 聚拢：越靠中间越好（像往一个圆里一圈圈往外长），不然随手往外接，会拉成一条蔓延满屏的藤；
+        // 加一点随机，不然每次长得一模一样。横向的墙更宽，竖直方向的距离算重一点，长出来是个扁圆。
+        if(maxG)sc=-Math.hypot(x+w/2-W/2,(y+h/2-H/2)*1.4)+Math.random()*(maxG+30);
+        if(sc>bs){bs=sc;best={x:x,y:y};}
         if(k>60&&best)break;}
       if(!best)return null;
       placed.push({x:best.x,y:best.y,w:w,h:h,t:t});out.push([el,best]);}
     return out;}
+  // 放不下：先把字缩小一点点；还不行就**先把间距收紧**再缩字 —— 间距是「大概」，字缩太小反而看不清。
+  // 「铺满」那档照旧只缩字。
   function wwLayout(){
-    var sc=1;
-    for(var r=0;r<14;r++){wwSize(sc);var res=wwPlace();
-      if(res){res.forEach(function(q){q[0].style.left=q[1].x+"px";q[0].style.top=q[1].y+"px";});return;}
-      sc*=.9;}}
+    function put(res){res.forEach(function(q){q[0].style.left=q[1].x+"px";q[0].style.top=q[1].y+"px";});}
+    var gi=wwGapI(),sc=1,res;
+    if(WW_GAPS[gi]){
+      for(var g=gi;g>=0;g--)for(var s2=1,r2=0;r2<4;r2++,s2*=.9){wwSize(s2);res=wwPlace(g);if(res){put(res);return;}}
+      sc=.9*.9*.9*.9;}
+    for(var r=0;r<14;r++){wwSize(sc);res=wwPlace(gi);if(res){put(res);return;}sc*=.9;}}
   function wwRender(){
     var wall=wwEl("ww-wall");wall.innerHTML="";
     WW.batch.forEach(function(it){
@@ -18632,6 +18661,10 @@ margin-left: -22px;
     wwEl("ww-exit").addEventListener("click",wwClose);
     wwEl("ww-def-x").addEventListener("click",wwCloseDef);
     wwEl("ww-shuffle").addEventListener("click",function(){wwCloseBub();wwCloseDef();wwLayout();});
+    // 拖间距滑块：当场重摆、存下来（刷新 / 下次打开还是这一档）
+    wwEl("ww-gap").addEventListener("input",function(){var i=+this.value;
+      save("tt_wwgap",i);
+      wwEl("ww-gap-v").textContent=WW_GAPN[i]||"";wwCloseBub();wwCloseDef();if(WW.batch.length)wwLayout();});
     wwEl("ww-refresh").addEventListener("click",function(){
       if(WW.lock)return;
       var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});

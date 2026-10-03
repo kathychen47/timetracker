@@ -164,6 +164,25 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   var chk=JSON.parse(await ev("(function(){var seen=(JSON.parse(localStorage.getItem('tt_wwseen'))||{}).ids||{},ws=[].map.call(document.querySelectorAll('.ww-w'),function(e){return e.textContent;});var W=JSON.parse(localStorage.getItem('tt_words'));var bySeen=ws.filter(function(t){return W.some(function(x){return (x.disp||x.w)===t&&seen[x.id||x.w];});}).length;var uniq={};ws.forEach(function(t){uniq[t]=1;});var fresh=W.filter(function(x){return x.group==='g2'&&!x.reps&&!x.known&&!seen[x.id||x.w];}).length;return JSON.stringify({n:ws.length,uniq:Object.keys(uniq).length,seen:bySeen,fresh:fresh});})()"));
   var cnt2=await ev("document.getElementById('ww-count').innerText");
   ok(chk.n>=chk.fresh&&chk.n<=40&&chk.uniq===chk.n&&chk.seen===0&&/额度外新词/.test(cnt2),"选 40 个 → 没学过的新词全铺上（超出每天新词额度的补上并标出来），不重复、今天点过的不出现："+JSON.stringify(chk)+" · "+cnt2);
+  // 间距：词少的时候聚在一起（她：「词少的时候没必要散太远，可以设置单词和单词之间大概的一个距离」）
+  var GEO="(function(){var wall=document.getElementById('ww-wall'),es=[].slice.call(document.querySelectorAll('.ww-w')),r=es.map(function(e){return {x:e.offsetLeft,y:e.offsetTop,w:e.offsetWidth,h:e.offsetHeight};});"+
+    "function ed(a,b){var dx=Math.max(0,b.x-(a.x+a.w),a.x-(b.x+b.w)),dy=Math.max(0,b.y-(a.y+a.h),a.y-(b.y+b.h));return Math.sqrt(dx*dx+dy*dy);}"+
+    "var worst=0,ov=0;r.forEach(function(a,i){var m=1e9;r.forEach(function(b,j){if(i===j)return;var d=ed(a,b);if(d<m)m=d;if(d===0)ov++;});if(m>worst)worst=m;});"+
+    "var x0=Math.min.apply(0,r.map(function(a){return a.x;})),x1=Math.max.apply(0,r.map(function(a){return a.x+a.w;})),y0=Math.min.apply(0,r.map(function(a){return a.y;})),y1=Math.max.apply(0,r.map(function(a){return a.y+a.h;}));"+
+    "return JSON.stringify({n:r.length,worst:Math.round(worst),ov:ov,area:+(((x1-x0)*(y1-y0))/(wall.clientWidth*wall.clientHeight)).toFixed(2)});})()";
+  async function setGap(i){await ev("(function(){var g=document.getElementById('ww-gap');g.value='"+i+"';g.dispatchEvent(new Event('input',{bubbles:true}));})()");await sleep(700);}
+  await send("Emulation.setDeviceMetricsOverride",{width:1600,height:1000,deviceScaleFactor:1,mobile:false});await sleep(500);   // 她的大屏
+  await ev("(function(){var s=document.getElementById('ww-n');s.value='10';s.dispatchEvent(new Event('change',{bubbles:true}));})()");await sleep(1200);   // 她说的「词少的时候」
+  await setGap(0);var g0=JSON.parse(await ev(GEO));
+  ok(g0.n>5&&g0.ov===0&&g0.worst<=17&&g0.area<0.45,"10 个词、间距「很近」→ 每个词离最近的词不超过 16px、互不压着、聚在中间一小块："+JSON.stringify(g0));
+  await setGap(7);var g7=JSON.parse(await ev(GEO));
+  ok(g7.ov===0&&g7.area>g0.area,"间距「铺满」→ 散开到整面墙："+JSON.stringify(g7));
+  await setGap(3);var g3=JSON.parse(await ev(GEO));
+  ok(g3.ov===0&&g3.worst<=81,"间距「适中」→ 最远隔 80px："+JSON.stringify(g3));
+  ok(await ev("document.getElementById('ww-gap-v').textContent")==="适中","滑块旁边写着这一档的名字");
+  await ev("document.getElementById('ww-exit').click()");await sleep(400);
+  await ev("document.getElementById('wb-wall').click()");await sleep(1500);
+  ok(await ev("document.getElementById('ww-gap').value")==="3"&&JSON.parse(await ev(GEO)).worst<=81,"退出再进来，间距还是「适中」（存在本机）");
   await ev("document.getElementById('ww-exit').click()");await sleep(400);
   ok(!(await ev("window.__ttErr||''")), "没报错");
   ws.close(); proc.kill();
