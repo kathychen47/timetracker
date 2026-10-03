@@ -2238,6 +2238,11 @@
   .nb-doc-panes.one-src>.nb-doc-view{display:none}
   .nb-doc-panes.one-pv>.nb-doc-body{display:none}
   .nb-doc-panes.both>.nb-doc-view{background:var(--surface-2)}
+  /* 笔记主题跟 app 一深一浅的时候，给笔记区铺上主题本来设计时的那种底：
+     浅色主题（字写死成黑色）→ 白纸；深色主题（字写死成浅色）→ 深底。
+     不这么做，深色 app + 浅色主题就是黑字压深底，几乎看不见。 */
+  :root[data-theme="dark"][data-mdth-tone="light"] .mdth{background:#fdfdfc!important;color:#24272e;caret-color:#24272e;color-scheme:light}
+  :root[data-theme="light"][data-mdth-tone="dark"] .mdth{background:#1f2128!important;color:#e6e8ef;caret-color:#e6e8ef;color-scheme:dark}
   @media (max-width:900px){.nb-doc-panes{flex-direction:column}
     .nb-doc-panes.both>.nb-doc-body,.nb-doc-panes.both>.nb-doc-view{min-height:200px}}
   .nb-doc-foot{font-size:11.5px;color:var(--muted);min-height:16px}
@@ -19200,8 +19205,20 @@ margin-left: -22px;
     if(!l){l=document.createElement("link");l.id="mdth-css";l.rel="stylesheet";document.head.appendChild(l);}
     var href=id==="none"?"":("themes/"+id+".css");
     if(l.getAttribute("href")!==href)l.setAttribute("href",href);
-    l.disabled=(id==="none");}
+    l.disabled=(id==="none");
+    mdThTone(id);}
+  // 主题是深是浅，记在 <html data-mdth-tone> 上，CSS 拿它跟 app 的深浅比。
+  // 她：「黑色情况下基本看不清」—— 浅色主题把字写死成黑的，app 一切到深色，黑字就落在深底上。
+  function mdThTone(id){
+    var de=document.documentElement;
+    if(id==="none"){de.removeAttribute("data-mdth-tone");return;}
+    function set(){var t=(mdThList||[]).filter(function(x){return x.id===id;})[0];
+      de.setAttribute("data-mdth-tone",(t&&t.dark)?"dark":"light");}
+    if(mdThList){set();return;}
+    de.setAttribute("data-mdth-tone",/dark|night|black|cobalt/i.test(id)?"dark":"light");   // 列表还没回来先按名字猜，回来再改准
+    fetch("themes/themes.json").then(function(r){return r.json();}).then(function(j){mdThList=mdThList||j;set();},function(){});}
   var mdThList=null;
+  try{mdThTone(mdThemeId());}catch(e){}             // 一打开页面就标好，不用等进笔记本
   function renderMdThemes(){
     var el=document.getElementById("set-mdtheme");if(!el)return;
     function draw(){
