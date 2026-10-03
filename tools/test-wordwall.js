@@ -101,12 +101,12 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
     await mouse("mouseMoved",b.x,b.y,0);
     await send("Input.dispatchMouseEvent",{type:"mousePressed",x:b.x,y:b.y,button:bn,buttons:bs,clickCount:1,pointerType:"mouse"});
     await send("Input.dispatchMouseEvent",{type:"mouseReleased",x:b.x,y:b.y,button:bn,buttons:0,clickCount:1,pointerType:"mouse"});await sleep(350);}
+  // 没打开时这层不能挡着页面（.ww-ov 写了 display:flex，会盖过 hidden 属性 —— 踩过：整个网页点不动）
+  ok(await ev("(function(){var t=document.elementFromPoint(innerWidth/2,innerHeight/2);return !(t&&t.closest('#ww-ov'));})()"),"没打开单词墙时，它不挡着网页");
   var b=await ev("(function(){var r=document.getElementById('wb-wall').getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2};})()");
   await mouse("mouseMoved",b.x,b.y,0);await mouse("mousePressed",b.x,b.y,1);await mouse("mouseReleased",b.x,b.y,0);await sleep(1500);
   var info=function(){return ev("(function(){var a=[].map.call(document.querySelectorAll('.ww-w'),function(e){return e.getBoundingClientRect();}),o=0;for(var i=0;i<a.length;i++)for(var j=i+1;j<a.length;j++){var r=a[i],s=a[j];if(r.left<s.right&&r.right>s.left&&r.top<s.bottom&&r.bottom>s.top)o++;}return JSON.stringify({open:!document.getElementById('ww-ov').hidden,n:a.length,rev:document.querySelectorAll('.ww-w.rev').length,overlap:o,count:document.getElementById('ww-count').innerText,bub:(document.querySelector('.ww-bub')||{}).innerText||'',def:document.getElementById('ww-def').className});})()");};
-  // 没打开时这层不能挡着页面（.ww-ov 写了 display:flex，会盖过 hidden 属性 —— 踩过：整个网页点不动）
-  ok(await ev("(function(){var t=document.elementFromPoint(innerWidth/2,innerHeight/2);return !(t&&t.closest('#ww-ov'));})()"),"没打开单词墙时，它不挡着网页");
-  await send("Runtime.enable");await ev("document.getElementById('wb-wall').click()");await sleep(1200);ok(!EXC.length,"没报错："+EXC.join(" ## ").slice(0,300));
+  await send("Runtime.enable");await sleep(300);ok(!EXC.length,"没报错："+EXC.join(" ## ").slice(0,300));
   void( await ev("(function(){var p=document.getElementById('tt-pop');return p&&p.classList.contains('on')?p.innerText:'';})()"), "btn", await ev("!!document.getElementById('wb-wall')"), "err", await ev("window.__ttErr||''"));
   var I=JSON.parse(await info());ok(I.open&&I.n===20&&I.overlap===0&&I.rev>0,"打开就铺满 20 个、新词和复习词都有、一个都不压着："+JSON.stringify(I));
   var w0=await ev("document.querySelectorAll('.ww-w')[0].textContent");
@@ -125,11 +125,11 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   ok(/known/.test(await ev("document.querySelectorAll('.ww-w')[1].className")),"红的按左键 → 改成绿");
   await clickAt(".ww-w:nth-child(2)","left");
   ok(!/known|unknown|fuzzy/.test(await ev("document.querySelectorAll('.ww-w')[1].className")),"绿的再按左键 → 撤销");
-  var day=JSON.parse(await ev("localStorage.getItem('tt_srsday')"));ok(day&&day.n===2,"今天背了几个：评过 3 个、撤销 1 个 → 记 2 个（换档 / 撤销不重复算）："+JSON.stringify(day));
+  var day=JSON.parse(await ev("localStorage.getItem('tt_srsday')"));ok(day&&(day.n+day.r)===2,"今天背了几个：评过 3 个、撤销 1 个 → 记 2 个（换档 / 撤销不重复算）："+JSON.stringify(day));
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(300);
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(600);
   ok(await ev("document.getElementById('ww-ov').hidden"),"Esc 先收释义、再按一次退出");
-  var sv=JSON.parse(await ev("JSON.stringify(JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return /^nw/.test(x.w)&&x.reps>0;}).length)"));ok(sv===2,"存下来了：两个新词进了复习（撤销的那个没进）："+sv);
+  var sv=JSON.parse(await ev("JSON.stringify(JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return (/^nw/.test(x.w)&&x.due>1e12)||(/^rv/.test(x.w)&&x.due>Date.now());}).length)"));ok(sv===2,"存下来了：评过的两个排上了下次复习（撤销的那个原样没动）："+sv);
   ok(!(await ev("window.__ttErr||''")), "没报错");
   ws.close(); proc.kill();
   console.log("\n== 单词墙（真 Chrome、真鼠标）==");
