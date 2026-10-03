@@ -192,7 +192,9 @@ T("排课时把到点的抽查词排在最前面", function () {
 });
 
 T("标记时就把抽查排上", function () {
-  ok(count("kchkSet(x,KCHK_KNOWN);") === 1, "列表里点「认识」要排半年后");
+  ok(count("kchkSet(x,KCHK_KNOWN);") >= 1, "列表里点「认识」要排半年后");
+  // 极速刷词里按「认识」跟列表里点「认识」是同一件事，也得排上半年后的抽查
+  ok(count("x.known=true;x.upd=Date.now();trashDrop(x.w);kchkSet(x,KCHK_KNOWN);") === 1, "极速刷词按「认识」也要排半年后");
   ok(count("kchkSet(x,KCHK_MASTER);") === 2, "「已掌握」要排一年后 —— 卡片上点的、测词汇量批量标的，两处都要");
   ok(whole.indexOf("x.mastered=true;x.due=Date.now()+365*DAY;") < 0,
     "那句从来没生效过的死代码要换掉");

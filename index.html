@@ -1964,6 +1964,20 @@
   .wt-row select,.wt-row input[type=number]{padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13.5px}
   .wt-lv{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
   .wt-lv label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;padding:6px 11px;font-size:13px;cursor:pointer;background:var(--surface)}
+  .rp-top{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--muted)}
+  .rp-top .btn{padding:2px 9px;font-size:12px}
+  .rp-prog b.ok{color:var(--cat-sport)}.rp-prog b.no{color:var(--danger)}
+  .rp-bar{flex:1;height:4px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+  .rp-bar i{display:block;height:100%;background:var(--primary)}
+  .rp-word{font-size:40px;font-weight:700;text-align:center;margin:34px 0 26px;letter-spacing:.3px;word-break:break-word}
+  .rp-word .fw-spk{font-size:18px;margin-left:8px;vertical-align:middle;border:none;background:none;cursor:pointer;padding:2px 4px;border-radius:6px}
+  .rp-word .fw-spk:hover{background:var(--surface-2)}
+  .rp-btns{display:flex;gap:12px;justify-content:center}
+  .rp-btns .btn{min-width:150px;padding:12px 18px;font-size:15px;font-weight:600}
+  .rp-btns small{display:block;font-size:11px;font-weight:400;opacity:.65;margin-top:2px}
+  .rp-k{border-color:color-mix(in srgb,var(--cat-sport) 55%,var(--border));color:var(--cat-sport)}
+  .rp-u{border-color:color-mix(in srgb,var(--danger) 55%,var(--border));color:var(--danger)}
+  .rp-def{max-height:42vh;overflow:auto;margin:0 0 14px;filter:none!important}
   .wt-lvv{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
   .wt-lvv .btn{padding:3px 10px;font-size:12px}
   .wt-lvlist{margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface)}
@@ -4100,6 +4114,7 @@ margin-left: -22px;
         <div id="dict-study" style="display:none">
           <div class="wb-bar">
             <button class="btn primary" id="wb-start">开始背诵</button>
+            <button class="btn" id="wb-rapid" title="新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背">⚡ 极速刷词</button>
             <button class="btn" id="wb-import">📥 导入单词</button>
             <button class="btn" id="wb-build">📚 从牛津选词</button>
             <button class="btn" id="wb-test">🧪 测词汇量</button>
@@ -5705,6 +5720,7 @@ margin-left: -22px;
     "↑↓ 调整查词结果里词典的先后；取消勾选可在结果中隐藏该词典。（查词卡片点标题栏可折叠）":"↑↓ reorders the dictionaries in look-up results; untick one to hide it from the results. (Click the card's title bar to collapse it)",
     "→ Generate new token → Repository access 选":"→ Generate new token → under Repository access pick",
     "↩ 恢复":"↩ Restore",
+    "↩ 撤销上一个":"↩ Undo last",
     "⇄ 边写边看":"⇄ Split",
     "⊘ 不进统计":"⊘ Exclude from stats",
     "⊘ 这个区间有":"⊘ This range has",
@@ -5738,6 +5754,7 @@ margin-left: -22px;
     "⚠️ 公开仓库有 git 历史：发布过的内容即使撤下，历史记录里仍能查到。别放不想让人看到的东西。":"⚠️ Public repos keep a git history: anything you publish stays findable in that history even after you take it down. Don't put anything there you wouldn't want seen.",
     "⚠️ 浏览器存不下了，刚才那条没能存住":"⚠️ The browser is out of space — that last entry didn't save",
     "⚠️ 自动续期没开：现在每次授权只管 1 小时，过期要手动点一次。点右边开启。":"⚠️ Auto-renew is off: each authorisation lasts only 1 hour and you have to renew it by hand. Turn it on at the right.",
+    "⚡ 极速刷词":"⚡ Rapid triage",
     "⛶ 沉浸":"⛶ Zen",
     "✂️ 按标点重新断句":"✂️ Re-split at punctuation",
     "✂️ 重新断句":"✂️ Re-split",
@@ -6766,6 +6783,7 @@ margin-left: -22px;
     "新西兰 · 银行流水自动进账本":"New Zealand · bank transactions booked automatically",
     "新记的事件默认就是「已完成」":"New events start out marked Done",
     "新词":"New",
+    "新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背":"Go through new words one by one: known ones are skipped and dropped from review; unknown ones show the definition and stay in your normal study",
     "新词书名称，如：雅思核心 / 牛津 B2":"New word book name, e.g. IELTS Core / Oxford B2",
     "方框选中":"Box outline",
     "方案":"proposal",
@@ -7308,6 +7326,8 @@ margin-left: -22px;
     "订阅":"subscription",
     "认不出表头 —— 需要有「日期/时间」和「金额」两列。":"Can't read the header — it needs a \"Date/Time\" column and an \"Amount\" column.",
     "认识":"Known",
+    "认识 = 跳过、不再排复习 · 不认识 = 看释义，留着正常背 · Z 撤销":"Know = skip, no more reviews · Don't know = see the definition, keep studying it · Z to undo",
+    "认识的已经跳过，不再排复习":"Known words were skipped and won't be reviewed",
     "记一笔":"Add entry",
     "记一笔收入":"Log income",
     "记住":"Remember",
@@ -7542,6 +7562,7 @@ margin-left: -22px;
     "这本书没有内置目录":"This book has no built-in contents",
     "这本书的文件丢了，建议删掉重新导入":"This book's file is gone — delete it and import it again",
     "这本已经整本翻好了 ✓（存在本机，换页秒开，不会重翻）":"This book is already fully translated ✓ (stored on this device — pages open instantly, nothing gets re-translated)",
+    "这本词书里没有还没背过的新词可以刷了。":"There are no unstudied new words left in this book.",
     "这本账是":"This ledger is shared with you by ",
     "这条":"this one",
     "这条以前填过统计时长，所以还显示着 —— 统计里这条按它算。清空它就回到按实际时长算，以后不会再出现。":"This entry has a stats duration set, which is why the box is still here — the stats count it by that number. Clear it and the entry goes back to its real length, and the box won't come back.",
@@ -17702,6 +17723,7 @@ margin-left: -22px;
     wbtOverlay.classList.add("on");
     return document.getElementById("wbtool-body");}
   function wbtClose(){
+    try{if(rpOn)rpEnd();}catch(e){}
     if(wbtOverlay){
       wbtOverlay.classList.remove("on");
       var m=wbtOverlay.querySelector(".modal");if(m)m.classList.remove("wbt-tall");}
@@ -18092,6 +18114,92 @@ margin-left: -22px;
       if(!sizing)return;sizing=false;
       var w=c.offsetWidth,h=c.offsetHeight;
       if(w>280&&h>240){flCfg.w=w;flCfg.h=h;saveFlCfg();c.style.maxHeight="none";}});}
+  // ---------- ⚡ 极速刷词 ----------
+  // 她：「单词一个个闪过，只按认识 / 不认识，不认识的才展开释义，认识的直接跳过。
+  //      适合把一大批词快速筛一遍」—— 从牛津一次加了 4885 个，里面一大半早就会了。
+  // 只过**还没开始背的新词**（reps=0、没标认识/掌握、这个功能里没判过「不认识」的）：
+  //   · 认识 → 跟卡片上「🙂 本来就认识」一样：淡化、不排复习，半年后抽查一次
+  //   · 不认识 → 当场看释义，词原样留着走正常的背诵；记一笔 rap，下次刷不再出现
+  // 手快按错了能撤销（Z / Backspace）。词多，存盘攒一下再写，关掉时一定写一次。
+  var rpOn=false,rpArr=[],rpIdx=0,rpOpen=false,rpUndo=[],rpN={k:0,u:0},rpSaveT=null,rpSeq=0;
+  function rpPool(){
+    return wbFiltered().filter(function(x){srsInit(x);return !x.known&&!x.mastered&&!x.rap&&!(x.reps>0);});}
+  function rpSaveSoon(){if(rpSaveT)clearTimeout(rpSaveT);rpSaveT=setTimeout(function(){rpSaveT=null;saveWords();},800);}
+  function rpFlush(){if(rpSaveT){clearTimeout(rpSaveT);rpSaveT=null;}saveWords();}
+  function startRapid(){
+    var pool=rpPool();
+    if(!pool.length){ttAlert("这本词书里没有还没背过的新词可以刷了。");return;}
+    rpArr=shuffle(pool.slice());rpIdx=0;rpOpen=false;rpUndo=[];rpN={k:0,u:0};rpOn=true;
+    var b=wbtOpen("⚡ 极速刷词",'<div class="rp" id="rp"></div>');
+    b.querySelector("#rp").addEventListener("click",function(e){
+      var t=e.target.closest("[data-rp]");if(!t)return;
+      var a=t.getAttribute("data-rp");
+      if(a==="k")rpKnow();else if(a==="u")rpDont();else if(a==="n")rpNext();
+      else if(a==="z")rpBack();else if(a==="s"){var x=rpArr[rpIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));}
+      else if(a==="x")wbtClose();});
+    rpShow();}
+  function rpEnd(){                                         // 关窗（任何方式）都走这里：先落盘，再刷新列表
+    if(!rpOn)return;rpOn=false;rpFlush();
+    try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
+  function rpShow(){
+    var box=document.getElementById("rp");if(!box)return;
+    var seq=++rpSeq,total=rpArr.length;
+    if(rpIdx>=total){
+      rpFlush();
+      box.innerHTML='<div class="wt-big"><div class="n">'+rpN.k+' / '+(rpN.k+rpN.u)+'</div><div class="k">认识的已经跳过，不再排复习</div></div>'+
+        '<div class="wt-note" style="text-align:center">不认识的 '+rpN.u+' 个留在词书里，按正常节奏背。</div>'+
+        '<div style="display:flex;gap:8px;justify-content:center;margin-top:14px">'+
+        (rpUndo.length?'<button class="btn" data-rp="z">↩ 撤销上一个</button>':'')+
+        '<button class="btn primary" data-rp="x">完成</button></div>';
+      return;}
+    var x=rpArr[rpIdx],w=x.disp||x.w;
+    box.innerHTML='<div class="rp-top"><span class="rp-prog"><b>'+rpIdx+'</b> / '+total+' · 认识 <b class="ok">'+rpN.k+'</b> · 不认识 <b class="no">'+rpN.u+'</b></span>'+
+      '<span class="rp-bar"><i style="width:'+(total?(rpIdx/total*100):0).toFixed(1)+'%"></i></span>'+
+      (rpUndo.length?'<button class="btn" data-rp="z" title="撤销上一个（Z）">↩</button>':'')+'</div>'+
+      '<div class="rp-word">'+esc(w)+'<button class="fw-spk" data-rp="s" title="朗读（↑）">🔊</button></div>'+
+      (rpOpen
+        ?'<div class="rp-def flash-def" id="rp-def"><div class="dict-hint">加载释义…</div></div>'+
+         '<div class="rp-btns"><button class="btn primary" data-rp="n">下一个 <small>空格 / →</small></button></div>'
+        :'<div class="rp-btns"><button class="btn rp-k" data-rp="k">认识 <small>← / 1</small></button>'+
+         '<button class="btn rp-u" data-rp="u">不认识 <small>→ / 2</small></button></div>')+
+      '<div class="wt-note" style="text-align:center;margin-top:10px">认识 = 跳过、不再排复习 · 不认识 = 看释义，留着正常背 · Z 撤销</div>';
+    if(!rpOpen&&dictPrefs.autoSpeak)pronounce(w,isCJK(w));
+    if(rpOpen){
+      wbDefHTML(x.w).then(function(h){
+        if(seq!==rpSeq)return;
+        var d=document.getElementById("rp-def");if(d){d.innerHTML=h||'<div class="dict-hint">词典没收录</div>';d.scrollTop=0;}},function(){});}}
+  function rpKnow(){
+    if(!rpOn||rpOpen||rpIdx>=rpArr.length)return;
+    var x=rpArr[rpIdx];
+    rpUndo.push({x:x,k:1,prev:{known:x.known,kdue:x.kdue,kiv:x.kiv,rap:x.rap,upd:x.upd}});
+    x.known=true;x.upd=Date.now();trashDrop(x.w);kchkSet(x,KCHK_KNOWN);
+    rpN.k++;rpIdx++;rpSaveSoon();rpShow();}
+  function rpDont(){
+    if(!rpOn||rpOpen||rpIdx>=rpArr.length)return;
+    var x=rpArr[rpIdx];
+    rpUndo.push({x:x,k:0,prev:{known:x.known,kdue:x.kdue,kiv:x.kiv,rap:x.rap,upd:x.upd}});
+    x.rap=Date.now();x.upd=Date.now();
+    rpN.u++;rpOpen=true;rpSaveSoon();rpShow();}
+  function rpNext(){if(!rpOn||!rpOpen)return;rpOpen=false;rpIdx++;rpShow();}
+  function rpBack(){
+    if(!rpOn||!rpUndo.length)return;
+    var u=rpUndo.pop(),x=u.x,p=u.prev;
+    ["known","kdue","kiv","rap","upd"].forEach(function(k){if(p[k]===undefined)delete x[k];else x[k]=p[k];});
+    if(u.k)rpN.k--;else rpN.u--;
+    // 回到那个词：正看着「不认识」的释义时撤销 → 还是这个词；否则退一格
+    if(!rpOpen)rpIdx=Math.max(0,rpIdx-1);
+    rpOpen=false;rpSaveSoon();rpShow();}
+  document.addEventListener("keydown",function(e){
+    if(!rpOn)return;
+    var ov=document.getElementById("wbtool-overlay");if(!ov||!ov.classList.contains("on"))return;
+    if(e.target&&(/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)||e.target.isContentEditable))return;
+    var k=e.key,done=rpIdx>=rpArr.length;
+    if(k==="z"||k==="Z"||k==="Backspace"){e.preventDefault();rpBack();return;}
+    if(done)return;
+    if(k==="ArrowUp"){e.preventDefault();var x=rpArr[rpIdx];if(x)pronounce(x.disp||x.w,isCJK(x.disp||x.w));return;}
+    if(rpOpen){if(k===" "||k==="Enter"||k==="ArrowRight"){e.preventDefault();rpNext();}return;}
+    if(k==="ArrowLeft"||k==="1"){e.preventDefault();rpKnow();}
+    else if(k==="ArrowRight"||k==="2"){e.preventDefault();rpDont();}});
   async function startFlash(){
     var plan=srsPlan();
     flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
@@ -18351,6 +18459,7 @@ margin-left: -22px;
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
     document.getElementById("wb-start").addEventListener("click",startFlash);
+    var wbr=document.getElementById("wb-rapid");if(wbr)wbr.addEventListener("click",startRapid);
     document.getElementById("flash-def").addEventListener("click",function(e){
       if(!flashRevealed){revealFlash();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}

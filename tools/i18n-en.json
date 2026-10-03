@@ -2311,5 +2311,12 @@
 "已在生词本": "Already in your wordbook",
 "你删过的": "You deleted this",
 "点一下看释义": "Click for the definition",
-"这是唯一一本词书，不能删": "This is your only word book, so it can't be deleted"
+"这是唯一一本词书，不能删": "This is your only word book, so it can't be deleted",
+"⚡ 极速刷词": "⚡ Rapid triage",
+"新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背": "Go through new words one by one: known ones are skipped and dropped from review; unknown ones show the definition and stay in your normal study",
+"认识 = 跳过、不再排复习 · 不认识 = 看释义，留着正常背 · Z 撤销": "Know = skip, no more reviews · Don't know = see the definition, keep studying it · Z to undo",
+"认识的已经跳过，不再排复习": "Known words were skipped and won't be reviewed",
+"这本词书里没有还没背过的新词可以刷了。": "There are no unstudied new words left in this book.",
+"下一个": "Next",
+"↩ 撤销上一个": "↩ Undo last"
 }
