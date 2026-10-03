@@ -1964,6 +1964,17 @@
   .wt-row select,.wt-row input[type=number]{padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:13.5px}
   .wt-lv{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
   .wt-lv label{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);border-radius:9px;padding:6px 11px;font-size:13px;cursor:pointer;background:var(--surface)}
+  .wt-lvv{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+  .wt-lvv .btn{padding:3px 10px;font-size:12px}
+  .wt-lvlist{margin-top:10px;border:1px solid var(--border);border-radius:10px;padding:10px 12px;background:var(--surface)}
+  .wt-lvh{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:8px}
+  .wt-lvh input{flex:1 1 140px;min-width:0;padding:5px 9px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:13px}
+  .wt-lvh .btn{padding:3px 10px;font-size:12px}
+  .wt-lvw{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:2px 10px;max-height:300px;overflow:auto;font-size:13px}
+  .wt-w{padding:3px 5px;border-radius:6px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wt-w:hover{background:var(--primary-soft);color:var(--primary)}
+  .wt-w.in::after{content:" ✓";color:var(--cat-sport)}
+  .wt-w.del{opacity:.42;text-decoration:line-through}
   .wt-lv label.on{background:var(--primary-soft);border-color:transparent;color:var(--primary);font-weight:600}
   .wt-note{font-size:12px;color:var(--muted);line-height:1.65;margin-top:6px}
   .wt-chips{display:flex;flex-wrap:wrap;gap:7px;max-height:44vh;overflow-y:auto;padding:2px}
@@ -5738,6 +5749,7 @@ margin-left: -22px;
     "✏️ 我写的":"✏️ My own",
     "✏️ 我写的 / 随手记":"✏️ My own / Quick notes",
     "✏️ 手动新建的事件":"✏️ Manually created events",
+    "✓ = 已在生词本 · 灰色 = 你删过的 · 点一个词看释义":"✓ = already in your wordbook · grey = you deleted it · click a word for its definition",
     "✓ 云端词典已加载，跨设备可用":"✓ Cloud dictionaries loaded — available on all your devices",
     "✓ 加载完成，可以查词了":"✓ Loaded — ready to look up words",
     "✓ 已上传到云端。现在手机/其他设备登录后，点「☁️ 从云端下载」就能用了。":"✓ Uploaded to the cloud. Sign in on your phone or another device and tap \"☁️ Download from cloud\" to use it.",
@@ -5940,6 +5952,7 @@ margin-left: -22px;
     "体重的输入单位与显示单位可以分开设":"Weight can use different units for input and display",
     "你上次这么写的时候就是这么分的，可以改、也可以✕ 去掉":"Last time you wrote it this way, this is how you split it — you can change it, or ✕ to drop it",
     "你以前删掉过":"You deleted these before",
+    "你删过的":"You deleted this",
     "你取消了":"You cancelled",
     "你取消了共享，这次只录麦克风。":"You cancelled sharing, so this one is mic only.",
     "你手动定的":"You set this manually",
@@ -6435,6 +6448,7 @@ margin-left: -22px;
     "已取消这个账户的归属":"This account's owner has been cleared",
     "已取消，云端词典保持不变。":"Cancelled — the cloud dictionaries are unchanged.",
     "已取消，本机词典保持不变。":"Cancelled — your local dictionaries are unchanged.",
+    "已在生词本":"Already in your wordbook",
     "已复制 ✓":"Copied ✓",
     "已开启 —— 浏览器清空间时不会动它":"On — the browser won't touch it when it reclaims space",
     "已掌握":"Mastered",
@@ -6639,6 +6653,7 @@ margin-left: -22px;
     "提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。":"Tip: A1–B1 are the basics, B2–C1 suit more advanced study. You can run \"🧪 Vocab test\" first and pick by the result.",
     "搜笔记 / 原文 / 书名 / 标签…":"Search notes / excerpts / books / tags…",
     "搜菜名 / 食材 / 标签…":"Search dish / ingredient / tag…",
+    "搜这一级的词":"Search this level",
     "摘要":"Description",
     "摘要，比如 房租 / iCloud":"Description, e.g. Rent / iCloud",
     "摸鱼":"Slacking",
@@ -6951,6 +6966,7 @@ margin-left: -22px;
     "没有内容":"Nothing to import",
     "没有匹配的句子。":"No matching lines.",
     "没有匹配的笔记，换个筛选或搜索词试试。":"No notes match — try a different filter or search term.",
+    "没有匹配的词":"No matching words",
     "没有单位":"no unit",
     "没有发现「两个词听成一个」的情况":"No cases of \"two words heard as one\" found",
     "没有可加的词（可能都已在生词本里）":"No words to add (they may all be in your word list already)",
@@ -7029,6 +7045,7 @@ margin-left: -22px;
     "点一下改回想吃":"Click to put it back on the want list",
     "点一下查":"Click to look up",
     "点一下步骤可以划掉，边做边勾":"Tap a step to cross it off as you cook",
+    "点一下看释义":"Click for the definition",
     "点一下跳过去重听":"Click one to jump there and listen again",
     "点一下进去":"Click to open",
     "点一类只看那一类":"Click a category to see only that one",
@@ -7114,6 +7131,7 @@ margin-left: -22px;
     "看全部账户":"See all accounts",
     "看病":"doctor visit",
     "看看别人分享了什么":"See what others shared",
+    "看看有哪些词：":"See the words:",
     "看看谁做了啥":"See who did what",
     "睡":"sleep",
     "睡前":"Before bed",
@@ -17815,13 +17833,50 @@ margin-left: -22px;
         '<div class="wt-lv" id="wt-lv">'+
         LVORD.map(function(l,i){var on=pre?pre.indexOf(l)>=0:(l==="b2"||l==="c1");
           return '<label class="'+(on?"on":"")+'"><input type="checkbox" value="'+l+'"'+(on?" checked":"")+'>'+LVNAME[l]+' ('+counts[i]+')</label>';}).join("")+
-        '</div></div>'+
+        '</div>'+
+        // 她：「这里要可以查看每个等级的词汇」—— 先看看都是些什么词，再决定挑哪一级
+        '<div class="wt-lvv" id="wt-lvv"><span class="wt-note" style="margin:0">看看有哪些词：</span>'+
+        LVORD.map(function(l){return '<button type="button" class="btn" data-lvview="'+l+'">'+l.toUpperCase()+'</button>';}).join("")+
+        '</div><div class="wt-lvlist" id="wt-lvlist" hidden></div></div>'+
         '<div class="wt-row"><label class="t">最多加入</label><select id="wt-n"><option>50</option><option selected>100</option><option>200</option><option>500</option><option>1000</option><option value="99999">全部</option></select>'+
         ' <label style="margin-left:14px;font-size:13px"><input type="checkbox" id="wt-skip" checked> 跳过已在生词本的</label>'+
         ' <label style="margin-left:10px;font-size:13px"><input type="checkbox" id="wt-skipdel" checked> 跳过我删过的</label></div>'+
         '<div class="wt-row"><label class="t">加到分组</label><select id="wt-group">'+groupOptions()+'</select></div>'+
         '<button class="btn primary" id="wt-do">加入词库</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>'+
         '<div class="wt-note">提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。</div>';
+      // ---- 看某一级的全部词：按字母排，能搜，已在生词本的打 ✓、删过的变灰；点一个词弹释义卡片 ----
+      var lvCur="",lvQ="";
+      function lvDraw(){
+        var box=b.querySelector("#wt-lvlist");if(!box)return;
+        if(!lvCur){box.hidden=true;box.innerHTML="";return;}
+        var have={};words.forEach(function(x){have[x.w]=1;});
+        var all=rec.idx[lvCur].slice().sort(function(x,y){return x.localeCompare(y);});
+        var nIn=all.filter(function(w){return have[w];}).length;
+        var q=lvQ.trim().toLowerCase(),list=q?all.filter(function(w){return w.indexOf(q)>=0;}):all;
+        box.hidden=false;
+        box.innerHTML='<div class="wt-lvh"><b>'+esc(LVNAME[lvCur])+'</b><span class="wt-note" style="margin:0">'+all.length+' 词 · 已在生词本 '+nIn+
+          (q?(' · 搜到 '+list.length):'')+'</span><input type="search" id="wt-lvq" placeholder="搜这一级的词" value="'+esc(lvQ)+'">'+
+          '<button type="button" class="btn" data-lvview="">收起</button></div>'+
+          '<div class="wt-lvw">'+(list.length?list.map(function(w){
+            var cls=have[w]?" in":(trashHas(w)?" del":"");
+            return '<span class="wt-w'+cls+'" data-lvw="'+esc(w)+'" title="'+(have[w]?"已在生词本":(trashHas(w)?"你删过的":"点一下看释义"))+'">'+esc(w)+'</span>';}).join(""):
+            '<span class="wt-note">没有匹配的词</span>')+'</div>'+
+          '<div class="wt-note" style="margin-top:6px">✓ = 已在生词本 · 灰色 = 你删过的 · 点一个词看释义</div>';
+        var qi=box.querySelector("#wt-lvq");
+        if(qi){qi.addEventListener("input",function(){lvQ=qi.value;var pos=qi.selectionStart;lvDraw();
+          var q2=b.querySelector("#wt-lvq");if(q2){q2.focus();try{q2.setSelectionRange(pos,pos);}catch(e){}}});}
+        b.querySelectorAll("#wt-lvv [data-lvview]").forEach(function(x){x.classList.toggle("primary",x.getAttribute("data-lvview")===lvCur);});}
+      // 挂在这次新画出来的两个元素上，不挂在 b 上：b 是所有小弹窗共用的那个框，
+      // 每打开一次就多挂一个，点一下会被处理两遍（开了又关）。
+      function lvClick(e){
+        var v=e.target.closest("[data-lvview]");
+        if(v){var l=v.getAttribute("data-lvview");lvCur=(l===lvCur)?"":l;lvQ="";lvDraw();
+          if(lvCur){var bx=b.querySelector("#wt-lvlist");if(bx)try{bx.scrollIntoView({block:"nearest"});}catch(_e){}}
+          return;}
+        var w=e.target.closest("[data-lvw]");
+        if(w&&ltEnsurePop()){try{showRdPop(w.getAttribute("data-lvw"),w.getBoundingClientRect());}catch(_e){}}}
+      b.querySelector("#wt-lvv").addEventListener("click",lvClick);
+      b.querySelector("#wt-lvlist").addEventListener("click",lvClick);
       b.querySelector("#wt-lv").addEventListener("click",function(e){
         var lb=e.target.closest("label");if(!lb)return;
         setTimeout(function(){lb.classList.toggle("on",lb.querySelector("input").checked);},0);});

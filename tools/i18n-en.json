@@ -2303,5 +2303,12 @@
 "🎧 精听这一段": "🎧 Practise this",
 "用这一条去精听，从你正在听的这一句开始": "Practise this recording, starting from the sentence you're on",
 "🎙 看原稿": "🎙 Transcript",
-"回到这一条的转写稿，停在你正在练的这一句": "Back to this recording's transcript, at the sentence you're practising"
+"回到这一条的转写稿，停在你正在练的这一句": "Back to this recording's transcript, at the sentence you're practising",
+"看看有哪些词：": "See the words:",
+"搜这一级的词": "Search this level",
+"没有匹配的词": "No matching words",
+"✓ = 已在生词本 · 灰色 = 你删过的 · 点一个词看释义": "✓ = already in your wordbook · grey = you deleted it · click a word for its definition",
+"已在生词本": "Already in your wordbook",
+"你删过的": "You deleted this",
+"点一下看释义": "Click for the definition"
 }
