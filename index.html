@@ -2115,6 +2115,18 @@
   .wt-chips{display:flex;flex-wrap:wrap;gap:7px;max-height:44vh;overflow-y:auto;padding:2px}
   .wt-chip{border:1px solid var(--border);background:var(--surface);border-radius:9px;padding:6px 12px;font-size:14px;cursor:pointer;user-select:none}
   .wt-chip.on{background:var(--primary-soft);border-color:transparent;color:var(--primary);font-weight:600}
+  /* 整本词典：一批批推荐去掉的词 */
+  .vb-steps{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 12px}
+  .vb-steps span{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--muted)}
+  .vb-steps span.cur{border-color:var(--primary);color:var(--primary);font-weight:600}
+  .vb-steps span.gone{text-decoration:line-through}
+  .vb-steps span.kept{color:var(--cat-sport);border-color:var(--cat-sport)}
+  .vb-h{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:4px 0 8px}
+  .vb-h b{font-size:15px}
+  .vb-h input{flex:1 1 140px;min-width:0;font:inherit;font-size:13px;padding:5px 9px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)}
+  .vb-chips .wt-chip{padding:3px 9px;font-size:13px}
+  .vb-chips .wt-chip.on::before{content:"留 "}
+  .vb-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;align-items:center}
   .wt-res{display:grid;gap:7px}
   .wt-bar{display:flex;align-items:center;gap:9px;font-size:13px}
   .wt-bar b{width:26px;text-transform:uppercase}
@@ -4239,6 +4251,7 @@ margin-left: -22px;
             <button class="btn" id="wb-wall" title="一批单词散在整面墙上：左键认识、中键模糊、右键不认识，右键 / 中键再按一次看完整释义">单词墙</button>
             <button class="btn" id="wb-import">导入单词</button>
             <button class="btn" id="wb-build">从牛津选词</button>
+            <button class="btn" id="wb-whole" title="朗文 + 牛津里的全部单词建一本词书，一批批推荐去掉太简单的，你点出想留下的">整本词典</button>
             <button class="btn" id="wb-test">测词汇量</button>
             <button class="btn" id="wb-clean" title="把明显不像单词的挑出来，确认后移到回收站">清一清</button>
             <button class="btn" id="wb-export">导出</button>
@@ -5852,10 +5865,12 @@ margin-left: -22px;
     "· 📝 已对齐":"· 📝 Aligned",
     "—— 否则":"— otherwise",
     "← 上一句":"← Previous",
+    "← 上一批":"← Previous batch",
     "← 书架":"← Shelf",
     "← 全部周期":"← All recurring",
     "← 全部录音":"← All recordings",
     "← 全部素材":"← All material",
+    "← 回去再挑":"← Back to picking",
     "← 回去接着练":"← Back to practice",
     "← 改一改":"← Back to edit",
     "← 笔记列表":"← Note list",
@@ -6001,6 +6016,7 @@ margin-left: -22px;
     "不用 key · 按 IP 限速":"No key · rate-limited by IP",
     "不用 key · 每日有量":"No key · daily quota",
     "不用了":"No thanks",
+    "不用再推荐了，建词书 →":"That's enough — create the book →",
     "不用单独登录":"no separate sign-in needed",
     "不用背了":"Skipped",
     "不算这件事了":"Stop counting this one",
@@ -6662,6 +6678,7 @@ margin-left: -22px;
     "应税额":"Taxable",
     "建在当前文件夹下面，可以一层套一层":"Created inside the current folder; nest as deep as you like",
     "建材":"building supplies",
+    "建词书":"Create book",
     "开会时把对方的声音也录进来（戴耳机也行）。点开始后会让你选共享哪个窗口/标签页，记得勾上「分享音频」":"Records the other side of a meeting too (headphones are fine). After you hit start you pick which window/tab to share — remember to tick \"Share audio\"",
     "开发":"development",
     "开启后，从 Google 日历同步过来的事件（包括上面存下来的那些）会自动标记为已完成，并计入统计/图表/目标进度（与本地同名事件自动去重）。":"When this is on, events synced from Google Calendar (including the ones archived above) are marked done automatically and counted in stats, charts and goal progress (duplicates of local events with the same name are removed).",
@@ -6895,6 +6912,7 @@ margin-left: -22px;
     "整个粘进去点 Run，再回来刷新这一页。":" file from the repo, click Run, then come back and refresh this page.",
     "整体放大/缩小。换设备觉得太小就调这里，改完立即生效，这台设备会记住（不影响别的设备）。":"Scales everything up or down. If it looks too small on another device, adjust here — it applies right away and this device remembers it (other devices aren't affected).",
     "整句翻译":"Sentence translation",
+    "整本词典":"Whole dictionary",
     "整段没写":"Skipped",
     "整段没写出来":"Skipped",
     "整段粘贴 → 让 AI 拆成食材和步骤":"Paste a whole block → let AI split it into ingredients and steps",
@@ -7721,6 +7739,7 @@ margin-left: -22px;
     "这天没有事件":"No events this day",
     "这已经是最后一句了，没得可并。":"This is the last sentence — nothing to merge it with.",
     "这张图读不出来":"Can't read this image",
+    "这批都留着":"Keep this whole batch",
     "这是唯一一本词书，不能删":"This is your only word book, so it can't be deleted",
     "这是牛津官方的":"This is the official",
     "这是随手记，没有对应的原文":"This is a quick note — there's no source text to jump to",
@@ -17347,8 +17366,8 @@ margin-left: -22px;
   var WBCOL=["#ef8f7e","#7aa7e0","#6dc39a","#a68ee0","#efc05f","#5fbfcc","#e88aa8","#8b9bd8"];
   function wbColor(g,i){return g.color||WBCOL[i%WBCOL.length];}
   function renderWbGroups(){var el=document.getElementById("wb-groups");if(!el)return;
-    function card(id,name,color,list,isDef){
-      var tot=list.length,done=list.filter(function(x){return srsStage(x)==="mature"||srsStage(x)==="done";}).length;
+    function card(id,name,color,list,isDef,whole){
+      var tot=Math.max(list.length,whole||0),done=list.filter(function(x){return srsStage(x)==="mature"||srsStage(x)==="done";}).length;
       var due=list.filter(function(x){srsInit(x);return !x.known&&!x.mastered&&x.reps>0&&x.due<=Date.now();}).length;
       var pct=tot?Math.round(done/tot*100):0;
       return '<div class="wb-book'+(wbActive===id?" on":"")+'" data-g="'+id+'" style="--bc:'+color+'">'+
@@ -17363,11 +17382,13 @@ margin-left: -22px;
         '</div></div>';}
     var html=card("all","全部",WBCOL[7],words,false);
     html+=wbGroups.list.map(function(g,i){
-      return card(g.id,g.name,wbColor(g,i),words.filter(function(x){return wbGroupOf(x)===g.id;}),g.id===wbGroups.def);}).join("");
+      return card(g.id,g.name,wbColor(g,i),words.filter(function(x){return wbGroupOf(x)===g.id;}),g.id===wbGroups.def,g.vb&&g.vb.total);}).join("");
     html+='<div class="wb-book add" id="wb-newbook"><div class="cover"><div class="plus">＋</div></div><div class="nm">新建词书</div></div>';
     el.innerHTML=html;}
   function renderWordbook(){
     var box=document.getElementById("wb-list");if(!box)return;updateWbCount();renderWbGroups();
+    if(!vbFilling&&wbGroups.list.some(function(g){return g.vb&&(wbActive==="all"||wbActive===g.id);}))
+      vbFillActive(vbHint).then(function(n){if(n)renderWordbook();});
     var startBtn=document.getElementById("wb-start"),hint=document.getElementById("wb-hint"),exp=document.getElementById("wb-export");
     var arr=wbFiltered();if(exp)exp.disabled=!arr.length;
     if(!arr.length){box.innerHTML='<div class="dict-hint">'+(words.length?"这个分组还没有词。":"生词本是空的。查词后点右上角的小星星把词收进来。")+'</div>';
@@ -18166,6 +18187,157 @@ margin-left: -22px;
         renderWordbook();});
     },function(e){b.innerHTML='<div class="wt-note">读取失败：'+esc(String(e&&e.message||e))+'</div>';});}
 
+  // ===== 整本词典词书（朗文 + 牛津，去掉太简单的）=====
+  // 她：「我还是需要一个可以导入所有朗文或者牛津单词的单词本」「除开太低级的」
+  //     「每次推荐去掉一批词汇，我可以点击那些我不想去掉的」。
+  // 三四万个词不能真的全写进生词本：生词本存在 localStorage（整个网站约 5MB）里，而且每改一下整本同步上云。
+  // 所以这本词书只记「规则」：去掉了哪几批 + 哪几个词点了留下（同步上云的就这点东西）。词还在词典里，
+  // **背到哪儿铺到哪儿**：这本里没背过的新词少于 150 个，就按这本固定的乱序再铺到 300 个。
+  // 哪批算「简单」：牛津 A1/A2/B1/B2/C1（Oxford 5000 的等级），朗文的红点（●●● 最常用 3000、●●○ 再往后 3000、●○○ 再 3000）。
+  // 一个词落在它**最简单**的那一批里（牛津 B1、朗文 ●●● → 算在「朗文最常用 3000」）。
+  var VB_TIERS=[["o:a1","牛津 A1"],["o:a2","牛津 A2"],["l:3","朗文最常用 3000"],["o:b1","牛津 B1"],
+    ["l:2","朗文常用 3000–6000"],["o:b2","牛津 B2"],["l:1","朗文常用 6000–9000"],["o:c1","牛津 C1"]];
+  var VB_BUF=300,vbLexMem=null,vbLexSig="",vbFilling=null;
+  function vbTierOf(e){                                   // e = [词, 显示写法, 牛津等级, 朗文红点数]
+    for(var i=0;i<VB_TIERS.length;i++){var t=VB_TIERS[i][0],v=t.slice(2);
+      if(t[0]==="o"&&e[2]===v)return t;
+      if(t[0]==="l"&&String(e[3])===v)return t;}
+    return "";}
+  function vbScan(store,onRow){return new Promise(function(res,rej){
+    try{var rq=DICT_DB.transaction(store,"readonly").objectStore(store).openCursor();
+      rq.onsuccess=function(){var c=rq.result;if(!c){res();return;}onRow(c.value);c.continue();};
+      rq.onerror=function(){rej(rq.error);};}catch(e){rej(e);}});}
+  // 两本词典里的全部单词（只要单个词、去掉转向条目、去掉只有大写写法的人名地名），带牛津等级和朗文红点。
+  // 扫一遍很慢（几十万条），扫完存在本机词典库里（meta「vblex」），词典换了才重扫。
+  function vbLex(onProg){
+    var sig=(dictCounts.oald||0)+"/"+(dictCounts.ldoce||0);
+    if(vbLexMem&&vbLexSig===sig)return Promise.resolve(vbLexMem);
+    return ensureDictDB().then(function(db){
+      if(!db)throw new Error("打不开本地词典库"+dictDBWhy());
+      if(!dictCounts.oald&&!dictCounts.ldoce)throw new Error("先在 ⚙️设置 → 📖词典 里加载牛津或朗文");
+      return idbGet("meta","vblex");}).then(function(rec){
+      if(rec&&rec.sig===sig&&rec.list){vbLexMem=rec.list;vbLexSig=sig;return rec.list;}
+      var m={},n=0;
+      function row(store){return function(v){
+        n++;if(onProg&&n%20000===0)onProg(n);
+        var k=v.k;if(!/^[a-z][a-z'-]*$/.test(k)||k.length<2)return;
+        var h=v.html||"";if(h.slice(0,8)==="@@@LINK=")return;
+        var e=m[k]||(m[k]={d:"",o:"",l:0,low:false});
+        var d=v.disp||k;if(!/^[A-Z]/.test(d)){e.low=true;if(!e.d||/^[A-Z]/.test(e.d))e.d=d;}else if(!e.d)e.d=d;
+        if(store==="oald"){var ms=h.match(/ox[35]ksym_(a1|a2|b1|b2|c1)/g);
+          if(ms)ms.forEach(function(x){var l=x.slice(-2);if(!e.o||LVORD.indexOf(l)<LVORD.indexOf(e.o))e.o=l;});}
+        else{var mm=h.slice(0,4000).match(/<span class="level tooltip">([●○]+)<\/span>/);
+          if(mm)e.l=Math.max(e.l,mm[1].split("●").length-1);}};}
+      var p=Promise.resolve();
+      if(dictCounts.oald)p=p.then(function(){return vbScan("oald",row("oald"));});
+      if(dictCounts.ldoce)p=p.then(function(){return vbScan("ldoce",row("ldoce"));});
+      return p.then(function(){
+        var list=Object.keys(m).sort().filter(function(k){return m[k].low;})
+          .map(function(k){var e=m[k];return [k,e.d||k,e.o,e.l];});
+        vbLexMem=list;vbLexSig=sig;
+        return idbPut("meta",{id:"vblex",sig:sig,list:list}).then(function(){return list;},function(){return list;});});});}
+  function vbHash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+  function vbOut(vb,e){var t=vbTierOf(e);return !!t&&vb.drop.indexOf(t)>=0&&!(vb.keep&&vb.keep[e[0]]);}
+  // 给一本整本词典词书补词：没背过的新词少于一半缓冲就补到 300 个。返回补了几个。
+  function vbFill(g,onProg){
+    var vb=g&&g.vb;if(!vb)return Promise.resolve(0);
+    var fresh=words.filter(function(x){return wbGroupOf(x)===g.id&&!x.reps&&!x.known&&!x.mastered;}).length;
+    if(fresh>=VB_BUF/2)return Promise.resolve(0);
+    return vbLex(onProg).then(function(lex){
+      var have={};words.forEach(function(x){have[x.w]=1;});
+      var cand=lex.filter(function(e){return !have[e[0]]&&!vbOut(vb,e)&&!trashHas(e[0]);});
+      cand.sort(function(a,b){return vbHash(vb.seed+a[0])-vbHash(vb.seed+b[0]);});   // 每本一个固定的乱序：换设备也一样
+      var add=cand.slice(0,VB_BUF-fresh);
+      return add.length?addWords(add.map(function(e){return {w:e[0],disp:e[1]};}),g.id).added:0;});}
+  // 正在看 / 正在背的那本（或「全部」里的每一本整本词典）补词
+  function vbFillActive(onProg){
+    var gs=wbGroups.list.filter(function(g){return g.vb&&(wbActive==="all"||wbActive===g.id);});
+    if(!gs.length)return Promise.resolve(0);
+    if(vbFilling)return vbFilling;
+    var tot=0;
+    vbFilling=gs.reduce(function(p,g){return p.then(function(){return vbFill(g,onProg).then(function(n){tot+=n;});});},Promise.resolve())
+      .then(function(){vbFilling=null;return tot;},function(){vbFilling=null;return tot;});
+    return vbFilling;}
+  function vbHint(n){var h=document.getElementById("wb-hint");if(h)h.textContent="第一次要扫一遍词典，铺词中… "+n.toLocaleString()+" 条";}
+  // 先补词再开始（背诵 / 极速刷词 / 单词墙）
+  function vbThen(fn){return function(){var a=arguments;
+    vbFillActive(vbHint).then(function(n){if(n)try{renderWordbook();}catch(e){}fn.apply(null,a);});};}
+
+  function openWhole(){
+    var b=wbtOpen("整本词典",'<div class="wt-note" id="vb-msg">正在读两本词典里的全部单词（第一次要扫一遍，约一两分钟）…</div>');
+    vbLex(function(n){var m=b.querySelector("#vb-msg");if(m)m.textContent="扫描中… "+n.toLocaleString()+" 条（第一次要一两分钟）";}).then(function(lex){
+      var have={};words.forEach(function(x){have[x.w]=1;});
+      var pool=lex.filter(function(e){return !have[e[0]];}),inBook=lex.length-pool.length;
+      var tiers={};VB_TIERS.forEach(function(t){tiers[t[0]]=[];});
+      pool.forEach(function(e){var t=vbTierOf(e);if(t)tiers[t].push(e);});
+      var drop=[],keep={},state={},cur=0,q="";            // state[层] = "gone" 去掉 / "kept" 留着
+      function left(){var n=0;pool.forEach(function(e){if(!vbOut({drop:drop,keep:keep},e))n++;});return n;}
+      function steps(){return '<div class="vb-steps">'+VB_TIERS.map(function(t,i){
+        var st=state[t[0]],n=tiers[t[0]].length;
+        return '<span class="'+(i===cur?"cur":(st||""))+'">'+esc(t[1])+' '+n+'</span>';}).join("")+'</div>';}
+      function draw(){
+        var t=VB_TIERS[cur];
+        if(!t){final();return;}
+        var list=tiers[t[0]];
+        if(!list.length){state[t[0]]="gone";cur++;draw();return;}
+        var ql=q.trim().toLowerCase(),show=ql?list.filter(function(e){return e[0].indexOf(ql)>=0;}):list;
+        var nk=list.filter(function(e){return keep[e[0]];}).length;
+        b.innerHTML='<div class="wt-note" style="margin-top:0">两本词典里的单词一共 <b>'+lex.length.toLocaleString()+'</b> 个（只算单个词、去掉了人名地名）'+
+            (inBook?'，你生词本里已经有的 '+inBook.toLocaleString()+' 个不会重复加':'')+'。下面一批批推荐去掉太简单的，<b>点一下 = 这个词留下</b>。</div>'+
+          steps()+
+          '<div class="vb-h"><b>第 '+(cur+1)+' 批建议去掉：'+esc(t[1])+' · '+list.length+' 个</b>'+
+          '<input type="search" id="vb-q" placeholder="在这批里找词" value="'+esc(q)+'"></div>'+
+          '<div class="wt-chips vb-chips" id="vb-chips">'+show.map(function(e){
+            return '<span class="wt-chip'+(keep[e[0]]?" on":"")+'" data-vw="'+esc(e[0])+'">'+esc(e[1])+'</span>';}).join("")+'</div>'+
+          '<div class="vb-btns">'+
+            '<button class="btn primary" id="vb-drop">去掉这批'+(nk?'（留下点了的 '+nk+' 个）':'')+'</button>'+
+            '<button class="btn" id="vb-keepall">这批都留着</button>'+
+            '<button class="btn" id="vb-done">不用再推荐了，建词书 →</button>'+
+            (cur?'<button class="btn" id="vb-back">← 上一批</button>':'')+
+          '</div>';
+        var qi=b.querySelector("#vb-q");
+        qi.addEventListener("input",function(){q=qi.value;var pos=qi.selectionStart;draw();
+          var q2=b.querySelector("#vb-q");if(q2){q2.focus();try{q2.setSelectionRange(pos,pos);}catch(e){}}});
+        b.querySelector("#vb-chips").addEventListener("click",function(e){
+          var c=e.target.closest("[data-vw]");if(!c)return;var w=c.getAttribute("data-vw");
+          if(keep[w])delete keep[w];else keep[w]=1;c.classList.toggle("on",!!keep[w]);
+          var n2=list.filter(function(x){return keep[x[0]];}).length;
+          b.querySelector("#vb-drop").textContent="去掉这批"+(n2?"（留下点了的 "+n2+" 个）":"");});
+        b.querySelector("#vb-drop").addEventListener("click",function(){
+          if(drop.indexOf(t[0])<0)drop.push(t[0]);state[t[0]]="gone";cur++;q="";draw();});
+        b.querySelector("#vb-keepall").addEventListener("click",function(){
+          drop=drop.filter(function(x){return x!==t[0];});state[t[0]]="kept";cur++;q="";draw();});
+        b.querySelector("#vb-done").addEventListener("click",function(){cur=VB_TIERS.length;final();});
+        var bk=b.querySelector("#vb-back");
+        if(bk)bk.addEventListener("click",function(){cur--;var tt=VB_TIERS[cur][0];
+          drop=drop.filter(function(x){return x!==tt;});delete state[tt];q="";draw();});}
+      function final(){
+        var n=left(),gone=VB_TIERS.filter(function(t){return drop.indexOf(t[0])>=0;}).map(function(t){return t[1];});
+        var nk=Object.keys(keep).length;
+        b.innerHTML=steps()+
+          '<div class="wt-big"><div class="n">'+n.toLocaleString()+'</div><div class="k">个词进这本词书</div></div>'+
+          '<div class="wt-note">'+(gone.length?'去掉了：'+esc(gone.join("、"))+(nk?'（其中 '+nk+' 个你点了留下）':''):'一批都没去掉')+'。'+
+            '<br>词不会一下子全塞进生词本：先铺 '+VB_BUF+' 个，背到哪儿铺到哪儿，顺序是打乱的。手机上用之前要先下载牛津 / 朗文。</div>'+
+          '<div class="wt-row" style="margin-top:12px"><label class="t">词书名字</label><input id="vb-name" value="朗文+牛津 全词" style="font:inherit;padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text)"></div>'+
+          '<div class="vb-btns"><button class="btn primary" id="vb-make">建词书</button><button class="btn" id="vb-back2">← 回去再挑</button><span class="wt-note" id="vb-msg2" style="margin:0"></span></div>';
+        b.querySelector("#vb-back2").addEventListener("click",function(){
+          cur=Math.max(0,VB_TIERS.length-1);var tt=VB_TIERS[cur][0];drop=drop.filter(function(x){return x!==tt;});delete state[tt];draw();});
+        b.querySelector("#vb-make").addEventListener("click",function(){
+          if(!n){b.querySelector("#vb-msg2").textContent="一个词都没剩，回去少去掉一点";return;}
+          var nm=(b.querySelector("#vb-name").value||"").trim()||"朗文+牛津 全词";
+          var g={id:"g"+uid(),name:nm,vb:{drop:drop.slice(),keep:keep,seed:String(Math.floor(Math.random()*1e9)),total:n,ts:Date.now()}};
+          wbGroups.list.push(g);saveWbGroups();
+          wbActive=g.id;save("tt_wbactive",wbActive);
+          b.querySelector("#vb-make").disabled=true;b.querySelector("#vb-msg2").textContent="铺词中…";
+          vbFill(g).then(function(k){
+            renderWordbook();
+            b.innerHTML='<div class="wt-big"><div class="n">✓</div><div class="k">「'+esc(nm)+'」建好了</div></div>'+
+              '<div class="wt-note" style="text-align:center">一共 '+n.toLocaleString()+' 个词，先铺了 '+k+' 个。背诵、极速刷词、单词墙都能直接用。</div>'+
+              '<div class="vb-btns" style="justify-content:center"><button class="btn primary" id="vb-fin">完成</button></div>';
+            b.querySelector("#vb-fin").addEventListener("click",wbtClose);});});}
+      draw();
+    },function(e){b.innerHTML='<div class="wt-note">读取失败：'+esc(String(e&&e.message||e))+'</div>';});}
+
   // ③ 词汇量测试
   function openTest(){
     var b=wbtOpen("测词汇量",'<div class="wt-note">准备题目中…</div>');
@@ -18521,9 +18693,12 @@ margin-left: -22px;
       return !x.known&&!x.mastered&&!x.reps&&!have[k]&&!seen[k];}));
     var add=more.slice(0,n-WW.queue.length);
     WW.extra=(WW.extra||0)+add.length;WW.queue=WW.queue.concat(add);}
-  function wwNext(){
+  function wwNext(filled){
     wwCloseBub();wwCloseDef();
     var n=wwN();
+    // 整本词典：这一面不够铺就先补词，补完再来一次（只补一次 —— 词典里真没词了也不能一直转圈，踩过：整页卡死）
+    if(filled!==true&&WW.queue.length<n&&wbGroups.list.some(function(g){return g.vb;})){   // 整本词典：先补词再铺
+      vbFillActive().then(function(){if(WW.on)wwNext(true);},function(){if(WW.on)wwNext(true);});return;}
     wwTopUp(n);
     if(!WW.queue.length){wwDone();return;}
     WW.batch=WW.queue.splice(0,n).map(function(x){return {x:x,s:"idle",el:null,snap:null};});
@@ -18998,9 +19173,9 @@ margin-left: -22px;
       var del=e.target.closest(".del");if(del){removeWord(del.getAttribute("data-w"));return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var head=e.target.closest(".wb-head");if(head)toggleWbItem(head.closest(".wb-item"));});
-    document.getElementById("wb-start").addEventListener("click",startFlash);
-    var wbr=document.getElementById("wb-rapid");if(wbr)wbr.addEventListener("click",startRapid);
-    var wbw=document.getElementById("wb-wall");if(wbw)wbw.addEventListener("click",function(){startWall(false);});
+    document.getElementById("wb-start").addEventListener("click",vbThen(startFlash));
+    var wbr=document.getElementById("wb-rapid");if(wbr)wbr.addEventListener("click",vbThen(startRapid));
+    var wbw=document.getElementById("wb-wall");if(wbw)wbw.addEventListener("click",vbThen(function(){startWall(false);}));
     document.getElementById("flash-def").addEventListener("click",function(e){
       if(!flashRevealed){revealFlash();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
@@ -19058,6 +19233,7 @@ margin-left: -22px;
     var wbe=document.getElementById("wb-export");if(wbe)wbe.addEventListener("click",exportWb);
     var wbi=document.getElementById("wb-import");if(wbi)wbi.addEventListener("click",openImport);
     var wbb=document.getElementById("wb-build");if(wbb)wbb.addEventListener("click",function(){openBuild(null);});
+    var wbwh=document.getElementById("wb-whole");if(wbwh)wbwh.addEventListener("click",openWhole);
     var wbt=document.getElementById("wb-test");if(wbt)wbt.addEventListener("click",openTest);
     var wtc=document.getElementById("wbtool-close");if(wtc)wtc.addEventListener("click",wbtClose);
     var wto=document.getElementById("wbtool-overlay");
