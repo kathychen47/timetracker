@@ -38,10 +38,35 @@ def pv_blocks(h):
         e = end_of_span(h, m.start()); blk = h[m.start():e]
         hm = re.search(r'<span class="phrvbhwd">(.*?)</span>\s*<span class="pos">', blk, re.S)
         if not hm: continue
-        t = re.sub(r'<span class="object">.*?</span>', ' ', hm.group(1), flags=re.S)
+        t = re.sub(r'<span class="(?:object|geo|registerlab)">.*?</span>', ' ', hm.group(1), flags=re.S)
         t = re.sub(r'<[^>]+>', '', t); t = re.sub(r'\s+', ' ', t).strip().lower()
-        if t and ' ' in t: out.append((t, blk))
+        for v in pv_variants(t): out.append((v, blk))
     return out
+LABELS = r'\b(?:british|american|australian) english\b|\binformal\b|\bformal\b|\bspoken\b|\bold-fashioned\b|\bliterary\b|\btechnical\b|\bnot polite\b'
+def pv_variants(t):
+    """词头里的写法变体都拆成能查的键：
+    「ponce about/around」→ ponce about、ponce around；「brush up (on)」→ brush up、brush up on；
+    「cater for (also cater to somebody)」→ cater for；「cash up british english, cash out american english」→ cash up、cash out。"""
+    t = t.replace('’', "'").replace('↔', ' ')
+    t = re.sub(r'\(also [^)]*\)', ' ', t)
+    t = re.sub(r'\betc\b\.?', ' ', t)
+    t = re.sub(LABELS, ' ', t)
+    outs = []
+    for part in re.split(r'[,;]', t):
+        part = re.sub(r'\s+', ' ', part).strip()
+        if not part: continue
+        alts = [part]
+        m = re.search(r'\(([^)]*)\)', part)                     # 可有可无的那段：带 / 不带各一个
+        if m: alts = [part[:m.start()] + part[m.end():], part[:m.start()] + m.group(1) + part[m.end():]]
+        for a in alts:
+            toks = [x.split('/') for x in a.split()]
+            combos = ['']
+            for opts in toks:
+                combos = [(c + ' ' + o).strip() for c in combos for o in opts if o][:12]
+            for c in combos:
+                c = re.sub(r'\s+', ' ', c).strip()
+                if c and ' ' in c and re.fullmatch(r"[a-z' .-]+", c) and c not in outs: outs.append(c)
+    return outs
 BTN_RE = re.compile(r'<span class="popup-button"[^>]*>(.*?)</span>\s*(?=<div class="at-link">)', re.S)
 def strip_pops(s, stat):
     out = []; pos = 0

@@ -17150,7 +17150,20 @@ margin-left: -22px;
         if(!next){rec=null;break;}              // 指过去的词也没有 → 当作查不到，走翻译兜底
         rec=next;hops++;}
       if(rec&&!linkTarget(rec.html))return {rec:rec,base:rec.k,changed:(rec.k||"")!==key};}
+    // 词组：词典里的词头常带宾语 / 括号 / 逗号（牛津「bring out of himself, herself, etc.」），
+    // 生词本里存的是干净的「bring out of」。按「去掉 somebody / something / 标点后一样」找回原词条。
+    if(/\s/.test(key)){
+      var want=pvNorm(key),first=key.split(/\s+/)[0]+" ",cs=[];
+      try{cs=await prefixSearch(store,first,600);}catch(e){}
+      for(var j=0;j<cs.length;j++)if(cs[j].k!==key&&pvNorm(cs[j].k)===want){
+        var r2=null;try{r2=await idbGet(store,cs[j].k);}catch(e){}
+        if(r2&&!linkTarget(r2.html))return {rec:r2,base:r2.k,changed:true};}}
     return null;}
+  var PV_OBJ=("somebody something sb sth yourself oneself himself herself itself themselves myself ourselves yourselves "+
+    "one's sb's sth's doing").split(" ");
+  function pvNorm(k){
+    return String(k||"").toLowerCase().replace(/[!’]/g,function(c){return c==="’"?"'":"";}).replace(/,.*$/,"")
+      .replace(/(\w+)\/\w+/g,"$1").split(/\s+/).filter(function(w){return w&&PV_OBJ.indexOf(w)<0;}).join(" ");}
   function viaHTML(q,base){
     return '<div class="dict-hint via">“'+esc(q)+'” 按原形 <b>'+esc(base)+'</b> 查到：</div>';}
   async function doLookup(q){
@@ -18536,13 +18549,17 @@ margin-left: -22px;
     if(WW.batch.every(function(b){return b.s!=="idle";}))wwBatchDone();}
   // 一句中文：从牛津卡片里抠第一段中文；抠不到就提示再按一次看完整的
   function wwShort(w){
-    return ensureDictDB().then(function(db){
-      if(!db)return "";
-      return dictFind("oald",(w||"").toLowerCase()).then(function(hit){
+    var key=(w||"").toLowerCase();
+    function one(store){
+      return dictFind(store,key).then(function(hit){
         var h=hit&&hit.rec&&hit.rec.html;if(!h)return "";
         var d=document.createElement("div");d.innerHTML=h;
+        if(store==="ldoce"){var tr=d.querySelector("TRAN");return tr?tr.textContent.replace(/\s+/g," ").trim().slice(0,30):"";}
         var t=(d.textContent||"").replace(/\s+/g," ");
-        var m=t.match(/[\u4e00-\u9fff][^。；;|]{0,28}/);return m?m[0].trim():"";},function(){return "";});});}
+        var m=t.match(/[\u4e00-\u9fff][^。；;|]{0,28}/);return m?m[0].trim():"";},function(){return "";});}
+    return ensureDictDB().then(function(db){
+      if(!db)return "";
+      return one("oald").then(function(z){return z||(dictCounts.ldoce?one("ldoce"):"");});});}
   // 摆在词旁边。坐标全用 offsetLeft/offsetTop（墙里的、没被 zoom 放大的那套）：
   // 全站套了一层 zoom（1.1 / 1.2 / 1.35），getBoundingClientRect 给的是放大后的屏幕坐标，
   // style.left/top 却是放大前的 —— 两套混着用，气泡就落到下面好几行去了

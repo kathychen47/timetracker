@@ -39,7 +39,7 @@ fs.writeFileSync(seedPage, "<script>localStorage.clear();" +
   "localStorage.setItem('tt_settings','{\"pets\":[]}');" +
   "localStorage.setItem('tt_dictprefs',JSON.stringify({order:['collins','oald'],enabled:{oald:true,collins:true},collapsed:{oald:false,collins:false}}));" +
   "var r=indexedDB.open('ttdict',1);r.onupgradeneeded=function(){var d=r.result;['oald','collins','meta'].forEach(function(s){d.createObjectStore(s,{keyPath:s==='meta'?'id':'k'});});};" +
-  "r.onsuccess=function(){var d=r.result,tx=d.transaction('oald','readwrite');tx.objectStore('oald').put({k:'grand',disp:'grand',html:'<div class=\"oald\">OALD-GRAND 牛津那条</div>'});" +
+  "r.onsuccess=function(){var d=r.result,tx=d.transaction('oald','readwrite');tx.objectStore('oald').put({k:'grand',disp:'grand',html:'<div class=\"oald\">OALD-GRAND 牛津那条</div>'});tx.objectStore('oald').put({k:'bring out of himself, herself, etc.',disp:'bring out of himself, herself, etc.',html:'<div class=\"oald\">OALD-BRING-OUT-OF 让某人不再拘谨</div>'});" +
   "tx.oncomplete=function(){d.close();document.title='SEEDED';};};</script>");
 var page = path.join(dir, "page.html");
 fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8"));
@@ -105,7 +105,7 @@ fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"),
     ok(!popAsk, "加朗文时不该问要不要覆盖牛津：" + popAsk);
     var setup = await ev("document.getElementById('dict-setup').innerText");
     ok(/朗文\(英→中\) ✓ 7/.test(setup), "设置里显示朗文已加载 7 条：" + setup.split("\n")[0]);
-    ok(/牛津\(英→中\) ✓ 1/.test(setup), "牛津那条还算在：" + setup.split("\n")[0]);
+    ok(/牛津\(英→中\) ✓ 2/.test(setup), "牛津那条还算在：" + setup.split("\n")[0]);
 
     // ---- 查词 ----
     async function look(q) {
@@ -124,6 +124,8 @@ fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"),
     ok(gu.length === 1 && /放弃/.test(gu[0].t), "查 give up → 短语动词单独成条：" + (gu[0] && gu[0].t.slice(0, 60)));
     var lf = await look("look forward to");
     ok(lf.length === 1 && /期待/.test(lf[0].t), "look forward to（宾语 something 去掉当词头）也查得到");
+    var bo = await look("bring out of");
+    ok(bo.length === 1 && bo[0].st === "oald" && /BRING-OUT-OF/.test(bo[0].t), "生词本里存的干净写法 bring out of → 找回牛津那条带宾语的词头「bring out of himself, herself, etc.」");
     var took = await look("took");
     ok(took.length === 1 && /take的过去式/.test(took[0].t), "took → take 的过去式");
 
