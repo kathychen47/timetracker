@@ -1988,6 +1988,7 @@
     cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.06);
     transition:color .18s,background .18s,border-color .18s;animation:wwPop .45s cubic-bezier(.3,1.4,.5,1) both}
   .ww-w:hover{border-color:var(--primary)}
+  .ww-w:focus{outline:none} .ww-w:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
   .ww-w.rev{border-style:dashed}
   .ww-w.known{background:color-mix(in srgb,var(--cat-sport) 16%,var(--bg));border-color:var(--cat-sport);color:var(--cat-sport)}
   .ww-w.fuzzy{background:var(--surface-2);border-color:var(--muted);color:var(--muted)}
@@ -1999,15 +2000,13 @@
     padding:7px 10px;font-size:13px;line-height:1.5;box-shadow:0 10px 26px -14px rgba(0,0,0,.4);pointer-events:none}
   .ww-bub.u{border-color:var(--danger)} .ww-bub.m{border-color:var(--muted)}
   .ww-bub small{display:block;color:var(--muted);font-size:11px;margin-top:2px}
-  .ww-def{position:absolute;top:0;right:0;bottom:0;width:min(440px,90%);z-index:7;background:var(--bg);border-left:3px solid var(--border);
-    box-shadow:-14px 0 34px -22px rgba(0,0,0,.45);display:flex;flex-direction:column;transform:translateX(105%);transition:transform .22s ease}
-  .ww-def.on{transform:none}
-  .ww-def.u{border-left-color:var(--danger)} .ww-def.m{border-left-color:var(--muted)}
-  /* 词在右半边就从左边滑出来，别把正在看的那个词盖住 */
-  .ww-def.lf{right:auto;left:0;border-left:0;border-right:3px solid var(--border);box-shadow:14px 0 34px -22px rgba(0,0,0,.45);transform:translateX(-105%)}
-  .ww-def.lf.on{transform:none}
-  .ww-def.lf.u{border-right-color:var(--danger)} .ww-def.lf.m{border-right-color:var(--muted)}
-  .ww-def-h{display:flex;align-items:baseline;gap:10px;padding:14px 16px 10px;border-bottom:1px solid var(--border)}
+  /* 完整释义：贴在那个词旁边的卡片（她：「完整释义也在它的旁边」），右边放不下放左边，都不行放上下 */
+  .ww-def{position:absolute;left:0;top:0;width:min(420px,calc(100% - 24px));max-height:min(72%,560px);z-index:7;background:var(--bg);
+    border:1.5px solid var(--border);border-radius:12px;box-shadow:0 18px 44px -18px rgba(0,0,0,.5);display:flex;flex-direction:column;
+    opacity:0;visibility:hidden;transform:scale(.97);transform-origin:top left;transition:opacity .15s,transform .15s,visibility 0s .15s}
+  .ww-def.on{opacity:1;visibility:visible;transform:none;transition:opacity .15s,transform .15s}
+  .ww-def.u{border-color:var(--danger)} .ww-def.m{border-color:var(--muted)}
+  .ww-def-h{display:flex;align-items:baseline;gap:10px;padding:12px 14px 8px;border-bottom:1px solid var(--border)}
   .ww-def-h b{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-size:24px}
   .ww-def-tag{font-size:11.5px;color:var(--muted)}
   .ww-def-x{margin-left:auto;border:0;background:none;color:var(--muted);font-size:17px;cursor:pointer;padding:2px 6px;border-radius:6px}
@@ -18425,29 +18424,40 @@ margin-left: -22px;
         var d=document.createElement("div");d.innerHTML=h;
         var t=(d.textContent||"").replace(/\s+/g," ");
         var m=t.match(/[\u4e00-\u9fff][^。；;|]{0,28}/);return m?m[0].trim():"";},function(){return "";});});}
+  // 摆在词旁边。坐标全用 offsetLeft/offsetTop（墙里的、没被 zoom 放大的那套）：
+  // 全站套了一层 zoom（1.1 / 1.2 / 1.35），getBoundingClientRect 给的是放大后的屏幕坐标，
+  // style.left/top 却是放大前的 —— 两套混着用，气泡就落到下面好几行去了
+  // （她截图里 tragedy 的那句中文跑到 tragety 下面）。
+  // mode="below"：小气泡，紧贴在词正下方（下面放不下就放上面）；
+  // mode="side"：完整释义，右边 → 左边 → 下面 → 上面，挑第一个放得下的。
+  function wwNear(it,box,mode){
+    var wall=wwEl("ww-wall"),W=wall.clientWidth,H=wall.clientHeight,e=it.el,g=8;
+    var ex=e.offsetLeft,ey=e.offsetTop,ew=e.offsetWidth,eh=e.offsetHeight,bw=box.offsetWidth,bh=box.offsetHeight,x,y;
+    if(mode==="side"){
+      if(ex+ew+g+bw<=W-8){x=ex+ew+g;y=ey;}
+      else if(ex-g-bw>=8){x=ex-g-bw;y=ey;}
+      else{x=ex;y=(ey+eh+g+bh<=H-8)?(ey+eh+g):(ey-g-bh);}}
+    else{x=ex;y=(ey+eh+6+bh<=H-8)?(ey+eh+6):(ey-6-bh);}
+    x=Math.max(8,Math.min(x,W-bw-8));y=Math.max(8,Math.min(y,H-bh-8));
+    box.style.left=x+"px";box.style.top=y+"px";}
   function wwShowBub(it){
     wwCloseBub();
     var wall=wwEl("ww-wall"),b=document.createElement("div");b.className="ww-bub "+(it.s==="unknown"?"u":"m");
     b.innerHTML='<span class="z">…</span><small>'+(it.s==="unknown"?"右键":"中键")+'再按一次 → 完整释义</small>';
     wall.appendChild(b);WW.bub=b;
-    function place(){var r=it.el.getBoundingClientRect(),wr=wall.getBoundingClientRect();
-      var x=r.left-wr.left,y=r.bottom-wr.top+6;
-      if(x+b.offsetWidth>wall.clientWidth-8)x=wall.clientWidth-b.offsetWidth-8;
-      if(y+b.offsetHeight>wall.clientHeight-8)y=r.top-wr.top-b.offsetHeight-6;
-      b.style.left=Math.max(8,x)+"px";b.style.top=Math.max(8,y)+"px";}
-    place();
+    wwNear(it,b,"below");
     wwShort(it.x.w).then(function(z){if(WW.bub!==b)return;
-      b.querySelector(".z").textContent=z||"（这条释义没有中文，再按一次看完整的）";place();});}
+      b.querySelector(".z").textContent=z||"（这条释义没有中文，再按一次看完整的）";wwNear(it,b,"below");});}
   function wwCloseBub(){if(WW.bub){WW.bub.remove();WW.bub=null;}}
   function wwShowDef(it){
     var d=wwEl("ww-def"),bd=wwEl("ww-def-b");
-    var wr=wwEl("ww-wall").getBoundingClientRect(),r=it.el.getBoundingClientRect(),lf=(r.left+r.width/2-wr.left)>wr.width/2;
-    d.className="ww-def on "+(it.s==="unknown"?"u":"m")+(lf?" lf":"");WW.defFor=it;
+    d.className="ww-def on "+(it.s==="unknown"?"u":"m");WW.defFor=it;
     wwEl("ww-def-w").textContent=it.x.disp||it.x.w;
     wwEl("ww-def-tag").textContent=(it.s==="unknown"?"不认识":"模糊")+" · "+(it.x.reps?"复习":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
     bd.innerHTML='<div class="dict-hint">加载释义…</div>';
-    wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;});}
-  function wwCloseDef(){var d=wwEl("ww-def");d.className="ww-def"+(d.classList.contains("lf")?" lf":"");WW.defFor=null;}
+    wwNear(it,d,"side");
+    wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;wwNear(it,d,"side");});}
+  function wwCloseDef(){wwEl("ww-def").className="ww-def";WW.defFor=null;}
   function wwBatchDone(){
     if(WW.lock)return;WW.lock=true;
     // 新词评了红 / 灰、学习步骤还没走完（下次是几分钟后）：放进后面的批次再见一次，最多再见两次

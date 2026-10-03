@@ -40,7 +40,7 @@ var seed = "<script>try{localStorage.clear();" +
   // 宠物会满屏走，趴到牌子上会把点击吃掉 —— 这里只测牌子，先不养
   "localStorage.setItem('tt_settings','{\"pets\":[]}');" +
   "var W=[];for(var i=0;i<25;i++)W.push({w:'nw'+i,disp:'newword'+i,ts:1,group:'g2'});for(var r=0;r<5;r++)W.push({w:'rv'+r,disp:'review'+r,ts:1,group:'g2',reps:3,s:5,d:6,iv:5,due:Date.now()-r*864e5,lapses:r});W.push({w:'old',disp:'old',ts:1,group:'g2',reps:3,due:Date.now()+1e9});W.push({w:'kn',disp:'kn',ts:1,group:'g2',known:true});W.push({w:'other',disp:'other',ts:1,group:'g1'});" +
-  "localStorage.setItem('tt_words',JSON.stringify(W));localStorage.setItem('tt_wbgroups',JSON.stringify({list:[{id:'g1',name:'默认'},{id:'g2',name:'牛津'}],def:'g1'}));localStorage.setItem('tt_wbactive','\"g2\"');" +
+  "localStorage.setItem('tt_words',JSON.stringify(W));localStorage.setItem('tt_wbgroups',JSON.stringify({list:[{id:'g1',name:'默认'},{id:'g2',name:'牛津'}],def:'g1'}));localStorage.setItem('tt_wbactive','\"g2\"');localStorage.setItem('tt_zoom','\"1.2\"');" +
   "}catch(e){}</script>";
 var dir = fs.mkdtempSync(path.join(os.tmpdir(), "tt-realclick-"));
 var page = path.join(dir, "page.html");
@@ -114,8 +114,13 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   ok(/known/.test(await ev("document.querySelectorAll('.ww-w')[0].className")),"左键 → 变绿");
   await clickAt(".ww-w:nth-child(2)","right");
   I=JSON.parse(await info());ok(/unknown/.test(await ev("document.querySelectorAll('.ww-w')[1].className"))&&!!I.bub&&!/on/.test(I.def),"右键第一下 → 变红、冒一句、不展开："+JSON.stringify(I));
+  // 她：「释义应该直接在它旁边啊」—— 页面套了 1.2 倍缩放，按屏幕坐标量：气泡紧贴在词下方（或上方）
+  var gapB=JSON.parse(await ev("(function(){var e=document.querySelectorAll('.ww-w')[1].getBoundingClientRect(),b=document.querySelector('.ww-bub').getBoundingClientRect();var below=b.top-e.bottom,above=e.top-b.bottom;return JSON.stringify({d:Math.min(Math.abs(below),Math.abs(above)),xo:Math.max(0,Math.min(e.right,b.right)-Math.max(e.left,b.left))});})()"));
+  ok(gapB.d<20&&gapB.xo>0,"一句中文就贴在这个词的正下方 / 正上方（1.2 倍缩放下）："+JSON.stringify(gapB));
   await clickAt(".ww-w:nth-child(2)","right");
   I=JSON.parse(await info());ok(/on u/.test(I.def)&&!I.bub,"右键第二下 → 展开完整释义："+I.def);
+  var gapD=JSON.parse(await ev("(function(){var e=document.querySelectorAll('.ww-w')[1].getBoundingClientRect(),b=document.getElementById('ww-def').getBoundingClientRect();var h=Math.min(Math.abs(b.left-e.right),Math.abs(e.left-b.right)),v=Math.min(Math.abs(b.top-e.bottom),Math.abs(e.top-b.bottom));var hov=Math.min(e.bottom,b.bottom)-Math.max(e.top,b.top),wov=Math.min(e.right,b.right)-Math.max(e.left,b.left);return JSON.stringify({side:(h<24&&hov>0)||(v<24&&wov>0),h:h,v:v});})()"));
+  ok(gapD.side,"完整释义也贴在这个词旁边："+JSON.stringify(gapD));
   ok(await ev("(function(){var e=document.querySelectorAll('.ww-w')[1],r=e.getBoundingClientRect();var t=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);return t===e;})()"),"释义栏没盖住正在看的那个词");
   await ev("(function(){document.getElementById('ww-def-x').click();})()");await sleep(300);
   await clickAt(".ww-w:nth-child(3)","middle");
@@ -129,7 +134,7 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(300);
   await send("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});await send("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape"});await sleep(600);
   ok(await ev("document.getElementById('ww-ov').hidden"),"Esc 先收释义、再按一次退出");
-  var sv=JSON.parse(await ev("JSON.stringify(JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return (/^nw/.test(x.w)&&x.due>1e12)||(/^rv/.test(x.w)&&x.due>Date.now());}).length)"));ok(sv===2,"存下来了：评过的两个排上了下次复习（撤销的那个原样没动）："+sv);
+  var sv=JSON.parse(await ev("JSON.stringify(JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return (/^nw/.test(x.w)&&x.due>1e12)||(/^rv/.test(x.w)&&x.due>Date.now());}).length)"));ok(sv===2,"存下来了：评过的两个排上了下次复习（撤销的那个原样没动）："+sv+" "+(await ev("JSON.stringify(JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return /^(nw|rv)/.test(x.w)&&(x.reps!==(/^rv/.test(x.w)?3:undefined)||x.st);}).map(function(x){return x.w+':r'+x.reps+':due'+Math.round((x.due-Date.now())/60000)+'m';}))")));
   ok(!(await ev("window.__ttErr||''")), "没报错");
   ws.close(); proc.kill();
   console.log("\n== 单词墙（真 Chrome、真鼠标）==");
