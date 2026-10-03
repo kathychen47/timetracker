@@ -1057,7 +1057,7 @@
 "推送前捡回云端的事件": "Recovered cloud events before push",
 "提交（已选": "Submit (selected:",
 "提示。": "as a hint. ",
-"提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。": "Tip: A1–B1 are the basics, B2–C1 suit more advanced study. You can run \"🧪 Vocab test\" first and pick by the result.",
+"提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「测词汇量」再按结果选。": "Tip: A1–B1 are the basics, B2–C1 suit more advanced study. You can run \"Vocab test\" first and pick by the result.",
 "搜笔记 / 原文 / 书名 / 标签…": "Search notes / excerpts / books / tags…",
 "搜菜名 / 食材 / 标签…": "Search dish / ingredient / tag…",
 "摘要": "Description",
@@ -2214,7 +2214,7 @@
 "📝 随手记": "📝 Quick note",
 "📝 音频 + 已有文本": "📝 Audio + existing text",
 "📥 导入": "📥 Import",
-"📥 导入单词": "📥 Import words",
+"📥 导入单词": "Import words",
 "📥 导入收入记录": "📥 Import income records",
 "📷 选图": "📷 Choose photo",
 "🔁 周期": "🔁 Recurring",
@@ -2318,5 +2318,11 @@
 "认识的已经跳过，不再排复习": "Known words were skipped and won't be reviewed",
 "这本词书里没有还没背过的新词可以刷了。": "There are no unstudied new words left in this book.",
 "下一个": "Next",
-"↩ 撤销上一个": "↩ Undo last"
+"↩ 撤销上一个": "↩ Undo last",
+"极速刷词": "Rapid triage",
+"导入单词": "Import words",
+"从牛津选词": "Pick from Oxford",
+"测词汇量": "Vocab test",
+"清一清": "Clean up",
+"导出": "Export"
 }

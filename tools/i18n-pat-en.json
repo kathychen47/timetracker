@@ -352,7 +352,7 @@
 "没认出来：{1}": "Couldn't make sense of that: {1}",
 "测试中… {1}": "Testing… {1}",
 "清掉 {1} 之前的 {2} 笔": "Clear the {2} from before {1}",
-"清掉了 {1} 个。误伤了的话，用「📥 导入单词」重新加回来就行。": "Cleared {1}. If any were wrongly caught, add them back with 📥 Import words.",
+"清掉了 {1} 个。误伤了的话，用「导入单词」重新加回来就行。": "Cleared {1}. If any were wrongly caught, add them back with 📥 Import words.",
 "清掉了 {1} 条 ✓": "Cleared {1} ✓",
 "清掉导入的 {1} 笔": "Clear the {1} imported",
 "清掉自动存下来的 {1} 条 Google 历史记录？你的 Google 日历不受影响，「把过去的 Google 事件存进我的记录」也会跟着关掉（否则它们下次又会长回来）。": "Clear the {1} Google history records saved automatically? Your Google Calendar isn't touched, and \"Save past Google events into my records\" gets switched off too (otherwise they'd grow back next time).",

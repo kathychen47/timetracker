@@ -1792,7 +1792,9 @@
   .rl mark{background:#FFF1A8;color:inherit;border-radius:3px;padding:0 1px}
   /* wordbook */
   #wb-count{font-size:11px;opacity:.7}
-  .wb-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .wb-bar{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+  .wb-bar .btn{white-space:nowrap}   /* 她：「不需要这些小图标」—— 只剩字，也别让两个字一行地折下来 */
+  .wb-bar .wb-hint{white-space:nowrap}
   .wb-hint{color:var(--muted);font-size:13px}
   .wb-item{background:var(--surface);border:1px solid var(--border);border-radius:11px;margin-bottom:8px;overflow:hidden}
   .wb-head{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer}
@@ -4114,12 +4116,12 @@ margin-left: -22px;
         <div id="dict-study" style="display:none">
           <div class="wb-bar">
             <button class="btn primary" id="wb-start">开始背诵</button>
-            <button class="btn" id="wb-rapid" title="新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背">⚡ 极速刷词</button>
-            <button class="btn" id="wb-import">📥 导入单词</button>
-            <button class="btn" id="wb-build">📚 从牛津选词</button>
-            <button class="btn" id="wb-test">🧪 测词汇量</button>
-            <button class="btn" id="wb-clean" title="把明显不像单词的挑出来，确认后移到回收站">🧹 清一清</button>
-            <button class="btn" id="wb-export">⬇️ 导出</button>
+            <button class="btn" id="wb-rapid" title="新词一个个过：认识的直接跳过、不再排复习；不认识的看一眼释义，留着正常背">极速刷词</button>
+            <button class="btn" id="wb-import">导入单词</button>
+            <button class="btn" id="wb-build">从牛津选词</button>
+            <button class="btn" id="wb-test">测词汇量</button>
+            <button class="btn" id="wb-clean" title="把明显不像单词的挑出来，确认后移到回收站">清一清</button>
+            <button class="btn" id="wb-export">导出</button>
             <span class="wb-hint" id="wb-hint"></span>
           </div>
           <div class="wb-groups" id="wb-groups"></div>
@@ -5940,6 +5942,7 @@ margin-left: -22px;
     "从云端收回…":"Bringing it back from the cloud…",
     "从哪天开始记？ 这天之前的流水永远不会进账本。":"Start tracking from which date? Transactions before this date never enter the book.",
     "从小红书/网页复制一整段菜谱贴这里":"Paste a whole recipe copied from Xiaohongshu/a web page here",
+    "从牛津选词":"Pick from Oxford",
     "从轮换里去掉":"Take out of the rotation",
     "从这天起记":"Track from this date",
     "付款方":"Payer",
@@ -6408,8 +6411,10 @@ margin-left: -22px;
     "对方的 Google 邮箱":"Their Google email",
     "对齐":"align",
     "导入":"Import",
+    "导入单词":"Import words",
     "导入菜谱":"Import recipes",
     "导入菜谱文件（.json）":"Import a recipe file (.json)",
+    "导出":"Export",
     "导出 Markdown":"Export Markdown",
     "导出中…":"Exporting…",
     "导出于":"Exported",
@@ -6667,7 +6672,7 @@ margin-left: -22px;
     "推送前捡回云端的事件":"Recovered cloud events before push",
     "提交（已选":"Submit (selected:",
     "提示。":"as a hint. ",
-    "提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。":"Tip: A1–B1 are the basics, B2–C1 suit more advanced study. You can run \"🧪 Vocab test\" first and pick by the result.",
+    "提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「测词汇量」再按结果选。":"Tip: A1–B1 are the basics, B2–C1 suit more advanced study. You can run \"Vocab test\" first and pick by the result.",
     "搜笔记 / 原文 / 书名 / 标签…":"Search notes / excerpts / books / tags…",
     "搜菜名 / 食材 / 标签…":"Search dish / ingredient / tag…",
     "搜这一级的词":"Search this level",
@@ -6896,6 +6901,7 @@ margin-left: -22px;
     "条 —— 查词不受这个表限制，只是其余的词牛津没有标等级，没法按难度挑。":"entries — look-up isn't limited by this list; the rest simply aren't graded by Oxford, so they can't be picked by difficulty.",
     "条记录":"records",
     "来源":"Source",
+    "极速刷词":"Rapid triage",
     "某人":"Someone",
     "查":"Go",
     "查到：":"found:",
@@ -7007,6 +7013,7 @@ margin-left: -22px;
     "油漆":"paint",
     "流量":"mobile data",
     "浅色 / 深色。也可以点左下角图标快速切换。":"Light / Dark. You can also click the icon in the bottom-left to switch quickly.",
+    "测词汇量":"Vocab test",
     "测试":"Test",
     "测试中…":"Testing…",
     "测试连接":"Test connection",
@@ -7022,6 +7029,7 @@ margin-left: -22px;
     "添加":"Add",
     "添加大类":"Add category",
     "添加自定义颜色":"Add a custom color",
+    "清一清":"Clean up",
     "清掉云端带下来的示例事件":"Removed demo events pulled from the cloud",
     "清掉存下来的":"Clear saved ones",
     "清掉这一句的听写和判分":"Clear this line's dictation and score",
@@ -7775,7 +7783,7 @@ margin-left: -22px;
     "📝 随手记":"📝 Quick note",
     "📝 音频 + 已有文本":"📝 Audio + existing text",
     "📥 导入":"📥 Import",
-    "📥 导入单词":"📥 Import words",
+    "📥 导入单词":"Import words",
     "📥 导入收入记录":"📥 Import income records",
     "📷 选图":"📷 Choose photo",
     "🔁 周期":"🔁 Recurring",
@@ -8158,7 +8166,7 @@ margin-left: -22px;
     ["转写功能没能初始化：","^转写功能没能初始化：(.+?)$","Transcription failed to start: \u00011"],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的，先列前 15 个： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words — the first 15 are: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
     ["移到回收站？以后自动收词也不会再收它们。","^挑出 (.+?) 个不像单词的： (.+?) 移到回收站？以后自动收词也不会再收它们。$","Found \u00011 entries that don't look like words: \u00012 Move them to the bin? Auto-collect will stop picking them up too."],
-    ["个。误伤了的话，用「📥 导入单词」重新加回来就行。","^清掉了 (.+?) 个。误伤了的话，用「📥 导入单词」重新加回来就行。$","Cleared \u00011. If any were wrongly caught, add them back with 📥 Import words."],
+    ["个。误伤了的话，用「导入单词」重新加回来就行。","^清掉了 (.+?) 个。误伤了的话，用「导入单词」重新加回来就行。$","Cleared \u00011. If any were wrongly caught, add them back with 📥 Import words."],
     ["」？里面的词会移到默认词书。","^删除词书「(.+?)」？里面的词会移到默认词书。$","Delete the word book \"\u00011\"? The words inside move to the default word book."],
     ["」？里面的词会移到默认组。","^删除分组「(.+?)」？里面的词会移到默认组。$","Delete the group \"\u00011\"? The words inside move to the default group."],
     ["下载翻译模型 ~110MB（只有第一次）…","^下载翻译模型 ~110MB（只有第一次）… (.+?)%$","Downloading the translation model ~110MB (first time only)… \u00011%"],
@@ -17755,7 +17763,7 @@ margin-left: -22px;
 
   // ① 导入单词：贴 → 体检（去重/剔除/问删过的） → 确认导入
   function openImport(){
-    var b=wbtOpen("📥 导入单词",""),raw="",res=null,pick={};
+    var b=wbtOpen("导入单词",""),raw="",res=null,pick={};
     function nBack(){return res.back.filter(function(w,i){return pick["back:"+i];}).length;}
     function nBad(){return res.bad.filter(function(o,i){return pick["bad:"+i];}).length;}
     function sumRow(cls,ic,k,n,hid,h){
@@ -17869,7 +17877,7 @@ margin-left: -22px;
 
   // ② 从牛津按等级选词
   function openBuild(pre){
-    var b=wbtOpen("📚 从牛津选词",'<div class="wt-note">正在读取牛津分级（首次要扫一遍词典，约十几秒）…</div>');
+    var b=wbtOpen("从牛津选词",'<div class="wt-note">正在读取牛津分级（首次要扫一遍词典，约十几秒）…</div>');
     getLevelIndex(function(n){b.innerHTML='<div class="wt-note">扫描中… '+n.toLocaleString()+' 条</div>';}).then(function(rec){
       var counts=LVORD.map(function(l){return rec.idx[l].length;});
       var graded=counts.reduce(function(s,n){return s+n;},0);
@@ -17891,7 +17899,7 @@ margin-left: -22px;
         ' <label style="margin-left:10px;font-size:13px"><input type="checkbox" id="wt-skipdel" checked> 跳过我删过的</label></div>'+
         '<div class="wt-row"><label class="t">加到分组</label><select id="wt-group">'+groupOptions()+'</select></div>'+
         '<button class="btn primary" id="wt-do">加入词库</button><span class="wt-note" id="wt-msg" style="margin-left:10px"></span>'+
-        '<div class="wt-note">提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「🧪 测词汇量」再按结果选。</div>';
+        '<div class="wt-note">提示：A1–B1 是基础词，B2–C1 更适合进阶。可先做「测词汇量」再按结果选。</div>';
       // ---- 看某一级的全部词：按字母排，能搜，已在生词本的打 ✓、删过的变灰；点一个词弹释义卡片 ----
       var lvCur="",lvQ="";
       function lvDraw(){
@@ -17945,7 +17953,7 @@ margin-left: -22px;
 
   // ③ 词汇量测试
   function openTest(){
-    var b=wbtOpen("🧪 测词汇量",'<div class="wt-note">准备题目中…</div>');
+    var b=wbtOpen("测词汇量",'<div class="wt-note">准备题目中…</div>');
     getLevelIndex(function(n){b.innerHTML='<div class="wt-note">首次要扫一遍词典… '+n.toLocaleString()+' 条</div>';}).then(function(rec){
       var PER=8,sample=[];
       LVORD.forEach(function(l){var p=rec.idx[l].slice();shuffle(p);
@@ -18130,7 +18138,7 @@ margin-left: -22px;
     var pool=rpPool();
     if(!pool.length){ttAlert("这本词书里没有还没背过的新词可以刷了。");return;}
     rpArr=shuffle(pool.slice());rpIdx=0;rpOpen=false;rpUndo=[];rpN={k:0,u:0};rpOn=true;
-    var b=wbtOpen("⚡ 极速刷词",'<div class="rp" id="rp"></div>');
+    var b=wbtOpen("极速刷词",'<div class="rp" id="rp"></div>');
     b.querySelector("#rp").addEventListener("click",function(e){
       var t=e.target.closest("[data-rp]");if(!t)return;
       var a=t.getAttribute("data-rp");
@@ -18513,7 +18521,7 @@ margin-left: -22px;
       var gone={};bad.forEach(function(b){gone[b.x.w]=1;trashAdd(b.x.w);});
       words=words.filter(function(x){return !gone[x.w];});
       saveWords();updateWbCount();renderWordbook();
-      await ttAlert("清掉了 "+bad.length+" 个。误伤了的话，用「📥 导入单词」重新加回来就行。",{anchor:wbc});});
+      await ttAlert("清掉了 "+bad.length+" 个。误伤了的话，用「导入单词」重新加回来就行。",{anchor:wbc});});
     var wbe=document.getElementById("wb-export");if(wbe)wbe.addEventListener("click",exportWb);
     var wbi=document.getElementById("wb-import");if(wbi)wbi.addEventListener("click",openImport);
     var wbb=document.getElementById("wb-build");if(wbb)wbb.addEventListener("click",function(){openBuild(null);});
