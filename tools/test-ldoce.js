@@ -37,9 +37,11 @@ var seedPage = path.join(dir, "seed.html");
 fs.writeFileSync(seedPage, "<script>localStorage.clear();" +
   "localStorage.setItem('tt_lang','\"zh\"');localStorage.setItem('tt_tab','\"dict\"');localStorage.setItem('tt_dicttab','\"look\"');" +
   "localStorage.setItem('tt_settings','{\"pets\":[]}');" +
+  // 单词墙用的几个词组（全是新词）：大小要按难度分开；play a off against b 显示回牛津原样的大写
+  "localStorage.setItem('tt_words',JSON.stringify(['take off','give up','abound in','play a off against b'].map(function(w){return {w:w,disp:w,ts:1,group:'default'};})));" +
   "localStorage.setItem('tt_dictprefs',JSON.stringify({order:['collins','oald'],enabled:{oald:true,collins:true},collapsed:{oald:false,collins:false}}));" +
   "var r=indexedDB.open('ttdict',1);r.onupgradeneeded=function(){var d=r.result;['oald','collins','meta'].forEach(function(s){d.createObjectStore(s,{keyPath:s==='meta'?'id':'k'});});};" +
-  "r.onsuccess=function(){var d=r.result,tx=d.transaction('oald','readwrite');tx.objectStore('oald').put({k:'grand',disp:'grand',html:'<div class=\"oald\">OALD-GRAND 牛津那条</div>'});tx.objectStore('oald').put({k:'bring out of himself, herself, etc.',disp:'bring out of himself, herself, etc.',html:'<div class=\"oald\">OALD-BRING-OUT-OF 让某人不再拘谨</div>'});" +
+  "r.onsuccess=function(){var d=r.result,tx=d.transaction('oald','readwrite');tx.objectStore('oald').put({k:'grand',disp:'grand',html:'<div class=\"oald\">OALD-GRAND 牛津那条</div>'});tx.objectStore('oald').put({k:'take off',disp:'take off',html:'<div class=\"oald\"><span class=\"ox3ksym_a2\"></span>起飞</div>'});tx.objectStore('oald').put({k:'abound in',disp:'abound in',html:'<div class=\"oald\">大量存在</div>'});tx.objectStore('oald').put({k:'play a off against b',disp:'play A off against B',html:'<div class=\"oald\">使互相争斗</div>'});var tm=d.transaction('meta','readwrite');tm.objectStore('meta').put({id:'levels',idx:{a1:['take','give','look'],a2:[],b1:[],b2:[],c1:['abound']},beyond:[],ts:1});tx.objectStore('oald').put({k:'bring out of himself, herself, etc.',disp:'bring out of himself, herself, etc.',html:'<div class=\"oald\">OALD-BRING-OUT-OF 让某人不再拘谨</div>'});" +
   "tx.oncomplete=function(){d.close();document.title='SEEDED';};};</script>");
 var page = path.join(dir, "page.html");
 fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8"));
@@ -105,7 +107,7 @@ fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"),
     ok(!popAsk, "加朗文时不该问要不要覆盖牛津：" + popAsk);
     var setup = await ev("document.getElementById('dict-setup').innerText");
     ok(/朗文\(英→中\) ✓ 7/.test(setup), "设置里显示朗文已加载 7 条：" + setup.split("\n")[0]);
-    ok(/牛津\(英→中\) ✓ 2/.test(setup), "牛津那条还算在：" + setup.split("\n")[0]);
+    ok(/牛津\(英→中\) ✓ 5/.test(setup), "牛津那条还算在：" + setup.split("\n")[0]);
 
     // ---- 查词 ----
     async function look(q) {
@@ -119,7 +121,8 @@ fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"),
     ok(g[1] && g[1].src === "朗文当代 · 英汉双解", "朗文卡片标题：" + (g[1] && g[1].src));
     ok(g[1] && /宏伟的/.test(g[1].t) && /big and very impressive/.test(g[1].t), "朗文英汉双解都在（big and very impressive / 宏伟的）");
     var to = await look("take off");
-    ok(to.length === 1 && to[0].st === "ldoce" && /脱下/.test(to[0].t) && /起飞/.test(to[0].t), "查 take off → 朗文里那条短语动词（脱下…），后面跟着名词 take-off（起飞）");
+    var toL = to.filter(function (c) { return c.st === "ldoce"; })[0] || { t: "" };
+    ok(/脱下/.test(toL.t) && /起飞/.test(toL.t), "查 take off → 朗文里那条短语动词（脱下…），后面跟着名词 take-off（起飞）");
     var gu = await look("give up");
     ok(gu.length === 1 && /放弃/.test(gu[0].t), "查 give up → 短语动词单独成条：" + (gu[0] && gu[0].t.slice(0, 60)));
     var lf = await look("look forward to");
@@ -150,6 +153,18 @@ fs.writeFileSync(page, fs.readFileSync(path.join(__dirname, "..", "index.html"),
     var low = Object.keys(con).filter(function (k) { return con[k] < 3; });
     ok(Object.keys(con).length >= 5 && !low.length, "深色模式下朗文的字都看得清（对比度 ≥ 3）：" + JSON.stringify(con));
 
+    // ---- 单词墙：词组按难度有大有小 ----
+    await ev("document.documentElement.setAttribute('data-theme','light')");
+    await ev("(function(){var b=document.querySelector('.rail button[data-tab=dict]');if(b)b.click();var t=document.querySelector('#dict-tabs [data-dt=study]');if(t)t.click();})()"); await sleep(800);
+    await ev("document.getElementById('wb-wall').click()"); await sleep(2500);
+    var fs2 = JSON.parse(await ev("JSON.stringify((function(){var o={};[].forEach.call(document.querySelectorAll('.ww-w'),function(e){o[e.textContent]=parseFloat(e.style.fontSize);});return o;})())"));
+    ok(Object.keys(fs2).length === 4, "墙上 4 个词组：" + JSON.stringify(fs2));
+    ok(fs2["take off"] < fs2["abound in"] && fs2["give up"] < fs2["abound in"], "take off（牛津 A2）、give up（A1 动词）比 abound in（C1 动词、只有一本词典收）小：" + JSON.stringify(fs2));
+    ok(fs2["play A off against B"] > 0, "play a off against b 显示回牛津原样 play A off against B");
+    var saved = await ev("JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return x.w==='play a off against b';})[0].disp");
+    await sleep(1000);
+    saved = await ev("JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return x.w==='play a off against b';})[0].disp");
+    ok(saved === "play A off against B", "改回来的写法存进生词本了：" + saved);
     ok(!EXC.length, "没报错：" + EXC.join(" ## ").slice(0, 300));
   } catch (e) { fail++; console.log("  x 出错：" + (e && e.stack || e)); }
   finally {

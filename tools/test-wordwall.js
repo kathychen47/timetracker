@@ -180,8 +180,16 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   await setGap(3);var g3=JSON.parse(await ev(GEO));
   ok(g3.ov===0&&g3.worst<=81,"间距「适中」→ 最远隔 80px："+JSON.stringify(g3));
   ok(await ev("document.getElementById('ww-gap-v').textContent")==="适中","滑块旁边写着这一档的名字");
+  // 顺序「按字母」：同一个动词的词组排在一起、一批里一起出现（她：「设置乱序还是顺序就可以了」）
+  await ev("(function(){var s=document.getElementById('ww-ord');s.value='seq';s.dispatchEvent(new Event('change',{bubbles:true}));})()");await sleep(1200);
+  var sq=JSON.parse(await ev("(function(){var seen=(JSON.parse(localStorage.getItem('tt_wwseen'))||{}).ids||{},W=JSON.parse(localStorage.getItem('tt_words')).filter(function(x){return x.group==='g2'&&!x.known&&!x.reps&&!seen[x.id||x.w];});"+
+    "var all=W.map(function(x){return x.w;}).sort(),byDisp={};W.forEach(function(x){byDisp[x.disp]=x.w;});"+
+    "var on=[].map.call(document.querySelectorAll('.ww-w'),function(e){return byDisp[e.textContent];}).filter(Boolean).sort();return JSON.stringify({on:on,first:all.slice(0,on.length)});})()"));
+  ok(sq.on.length>=8&&sq.on.join()===sq.first.join(),"按字母：这一批里的新词就是按字母排最前面那几个（到期复习的也按字母插在里面）："+sq.on.join(","));
+  ok(await ev("localStorage.getItem('tt_wword')")==='"seq"',"顺序存下来了");
   await ev("document.getElementById('ww-exit').click()");await sleep(400);
   await ev("document.getElementById('wb-wall').click()");await sleep(1500);
+  ok(await ev("document.getElementById('ww-ord').value")==="seq","退出再进来，还是「按字母」");
   ok(await ev("document.getElementById('ww-gap').value")==="3"&&JSON.parse(await ev(GEO)).worst<=81,"退出再进来，间距还是「适中」（存在本机）");
   await ev("document.getElementById('ww-exit').click()");await sleep(400);
   ok(!(await ev("window.__ttErr||''")), "没报错");

@@ -4689,6 +4689,7 @@ margin-left: -22px;
     <div class="ww-bar">
       <b class="ww-t">单词墙</b>
       <label for="ww-n">每批 <select id="ww-n"></select> 个</label>
+      <label for="ww-ord" title="按顺序：按字母排，同一个动词的词组（put about、put behind、put out…）排在一起、一批里一起出现">顺序 <select id="ww-ord"><option value="rand">乱序</option><option value="seq">按字母（同一个动词在一起）</option></select></label>
       <label for="ww-gap" title="词和词之间大概隔多远。词少的时候调近一点，就聚在中间，不会满屏散开">间距 <input type="range" id="ww-gap" min="0" max="7" step="1"> <span id="ww-gap-v" class="ww-gap-v"></span></label>
       <span class="ww-count" id="ww-count"></span>
       <span class="ww-prog"><i id="ww-prog"></i></span>
@@ -6058,6 +6059,7 @@ margin-left: -22px;
     "书里的目录":"Book contents",
     "买菜":"groceries",
     "买菜 / 房东 Mike / 打车":"Groceries / landlord Mike / taxi",
+    "乱序":"Shuffled",
     "二":"Tue",
     "二手置换":"secondhand",
     "云同步还没连上 —— 等状态变成「已同步 ✓」再点一次。（没对完账就存会存重）":"Cloud sync isn't connected — wait until the status says \"Synced ✓\" and tap again. (Archiving before it reconciles creates duplicates)",
@@ -6797,6 +6799,7 @@ margin-left: -22px;
     "按原书位置摆放译文":"Put the translation where it sits in the book",
     "按墓碑清掉别的设备删过的":"cleared what another device deleted, by tombstone",
     "按墓碑清掉别的设备删过的事件":"Dropped events deleted on other devices (tombstones)",
+    "按字母（同一个动词在一起）":"A–Z (same verb together)",
     "按当前灵敏度把这篇重新断句（可以反复调，不会越合越死）":"Re-split this transcript at the current sensitivity (adjust as often as you like — it never keeps gluing lines together)",
     "按当天汇率":"Daily rates",
     "按当天汇率折算":"Convert at each day's rate",
@@ -7817,6 +7820,7 @@ margin-left: -22px;
     "银行账户":"Bank accounts",
     "银行那边最新的一笔还停在":"The bank's side still has nothing newer than",
     "锻炼":"exercise",
+    "间距":"Spacing",
     "阅读":"Reading",
     "阅读方式":"Reading mode",
     "随手记":"Quick notes",
@@ -7839,6 +7843,7 @@ margin-left: -22px;
     "页":"Page",
     "页面上那几只宠物":"The pets on the page",
     "项目":"Project",
+    "顺序":"Order",
     "颂钵":"Singing bowl",
     "预估税负":"Estimated tax",
     "预估税负只算你点过「记入税务」的那":"Estimated tax only counts the",
@@ -17961,7 +17966,7 @@ margin-left: -22px;
       var w=(it.w||"").toLowerCase().trim();if(!w)return;
       if(isSaved(w)){skip++;return;}
       if(trashDrop(w,true))td=true;                      // 主动加回来了，就别再记着"删过"
-      var o={w:w,disp:it.disp||w,dict:isCJK(w)?"collins":"oald",ts:Date.now(),group:gid,
+      var o={w:w,disp:it.disp||String(it.w).trim()||w,dict:isCJK(w)?"collins":"oald",ts:Date.now(),group:gid,
         ef:2.5,iv:0,reps:0,lapses:0,due:Date.now()};
       var ex=String(it.ex||"").trim();
       if(ex){if(exIsCtx(w,ex))o.ctx=[{s:ex.slice(0,300),src:"导入",ts:Date.now()}];
@@ -18433,6 +18438,11 @@ margin-left: -22px;
   var WW_G={known:2,fuzzy:1,unknown:0},WW_K={known:"k",fuzzy:"m",unknown:"u"};
   function wwEl(id){return document.getElementById(id);}
   var WW_NS=[10,15,20,25,30,35,40,45,50,55,60];
+  // 顺序（她：「同一个动词的词组能一起出现吗？设置乱序还是顺序就可以了」）：
+  // rand = 打乱；seq = 按字母排 —— 词组的第一个词就是动词，按字母排同一个动词的自然挨在一起，一批里一起出现。存在本机（tt_wword）。
+  function wwOrd(){return load("tt_wword","rand")==="seq"?"seq":"rand";}
+  function wwSortSeq(a){return a.slice().sort(function(x,y){var p=String(x.w||"").toLowerCase(),q=String(y.w||"").toLowerCase();return p<q?-1:p>q?1:0;});}
+  function wwArrange(a){return wwOrd()==="seq"?wwSortSeq(a):shuffle(a.slice());}
   function wwN(){var n=+load("tt_wwn",20)||20;return WW_NS.indexOf(n)>=0?n:20;}
   // 今天在墙上点过哪些（跨批次、跨退出），以及今天一共认识 / 模糊 / 不认识几个。
   // 只在这台设备上记（每台各自的墙），到第二天自动清零。
@@ -18444,8 +18454,34 @@ margin-left: -22px;
     return ensureDictDB().then(function(db){return db?idbGet("meta","levels"):null;}).then(function(rec){
       var m={};if(rec&&rec.idx)Object.keys(rec.idx).forEach(function(l){(rec.idx[l]||[]).forEach(function(w){m[w]=l;});});
       WW.lv=m;return m;},function(){WW.lv={};return WW.lv;});}
+  // 词组（短语动词）的难度。她：「单词大小怎么都一样大」—— 牛津的等级表只有单词，三千多个词组全落在「没等级」那一档，一样大。
+  // 估法：① 牛津给这个词组标了等级（take off 标了 A2）就用它；
+  //       ② 没标的看**动词本身**的等级：take / get / put 这种 A1 动词组成的偏常用，画小；abound、accede 这种生僻动词组成的画大；
+  //       ③ 只有一本词典收的（多半是俚语 / 地区用法：bugger about、number off）再大一号。
+  // 每批开铺前现查（一批最多 60 个），查过的记在 WW.ph 里。顺手把显示写法改回词典原样（play a off against b → play A off against B）。
+  function wwPhraseInfo(list){
+    WW.ph=WW.ph||{};
+    var todo=list.filter(function(x){return /\s/.test(x.w||"")&&!WW.ph[x.w];});
+    if(!todo.length)return Promise.resolve();
+    return ensureDictDB().then(function(db){if(!db)return;
+      var fixed=false;
+      return Promise.all(todo.map(function(x){
+        var q=String(x.w).toLowerCase();
+        return Promise.all([dictFind("oald",q).catch(function(){return null;}),
+                            dictCounts.ldoce?dictFind("ldoce",q).catch(function(){return null;}):Promise.resolve(null)]).then(function(r){
+          var o=r[0]&&r[0].rec,h=(o&&o.html)||"",ms=h.match(/ox[35]ksym_(a1|a2|b1|b2|c1)/g),lv=null;
+          if(ms)ms.forEach(function(m){var l=m.slice(-2);if(!lv||LVORD.indexOf(l)<LVORD.indexOf(lv))lv=l;});
+          WW.ph[x.w]={lv:lv,one:!!dictCounts.ldoce&&(!r[0]!==!r[1])};
+          if(o&&o.disp&&o.disp!==x.disp&&String(o.disp).toLowerCase()===q&&(x.disp||x.w)===x.w){x.disp=o.disp;fixed=true;}});}))
+        .then(function(){if(fixed)wwSaveSoon();});});}
   function wwWeight(x){
-    if(!x.reps){var L={a1:.1,a2:.25,b1:.4,b2:.6,c1:.8}[(WW.lv||{})[x.w]];return L===undefined?.55:L;}
+    var LV={a1:.1,a2:.25,b1:.4,b2:.6,c1:.8};
+    if(!x.reps){var L=LV[(WW.lv||{})[x.w]];if(L!==undefined)return L;
+      var ph=WW.ph&&WW.ph[x.w];
+      if(ph){if(ph.lv)return LV[ph.lv];
+        var words=String(x.w).split(/\s+/),base=(WW.lv||{})[words[0]==="be"&&words[1]?words[1]:words[0]];
+        return Math.min(.95,(base?LV[base]:.8)+.05+(ph.one?.2:0));}
+      return .55;}
     var od=Math.max(0,(Date.now()-(x.due||Date.now()))/864e5);
     var d=(x.d!==undefined)?(x.d-1)/9:.4;
     return Math.min(1,d*.5+Math.min(.3,od/20)+Math.min(.2,(x.lapses||0)*.07));}
@@ -18461,11 +18497,11 @@ margin-left: -22px;
     if(!list.length){
       if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
       ttAlert("这个词书里没有可以铺的词。");return;}
-    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};WW.extra=0;WW.batch=[];
+    WW.queue=wwArrange(list);WW.on=true;WW.seen={};WW.extra=0;WW.batch=[];
     var ov=wwEl("ww-ov");ov.hidden=false;document.body.classList.add("ww-on");
     var sel=wwEl("ww-n");
     if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
-    sel.value=String(wwN());wwGapShow();
+    sel.value=String(wwN());wwGapShow();wwEl("ww-ord").value=wwOrd();
     try{if(ov.requestFullscreen){var p=ov.requestFullscreen();if(p&&p.catch)p.catch(function(){});}}catch(e){}
     wwLv().then(function(){wwNext();});}
   function wwClose(){
@@ -18481,7 +18517,7 @@ margin-left: -22px;
     if(WW.queue.length>=n)return;
     var seen=wwDay().ids,have={};
     WW.queue.concat(WW.batch.map(function(it){return it.x;})).forEach(function(x){have[x.id||x.w]=1;});
-    var more=shuffle(wbFiltered().filter(function(x){srsInit(x);var k=x.id||x.w;
+    var more=wwArrange(wbFiltered().filter(function(x){srsInit(x);var k=x.id||x.w;
       return !x.known&&!x.mastered&&!x.reps&&!have[k]&&!seen[k];}));
     var add=more.slice(0,n-WW.queue.length);
     WW.extra=(WW.extra||0)+add.length;WW.queue=WW.queue.concat(add);}
@@ -18491,7 +18527,10 @@ margin-left: -22px;
     wwTopUp(n);
     if(!WW.queue.length){wwDone();return;}
     WW.batch=WW.queue.splice(0,n).map(function(x){return {x:x,s:"idle",el:null,snap:null};});
-    WW.st={k:0,m:0,u:0};wwRender();}
+    WW.st={k:0,m:0,u:0};
+    wwEl("ww-wall").innerHTML="";                              // 上一批的按钮先撤掉，别在查词典那一小会儿里还能点
+    var b=WW.batch;
+    wwPhraseInfo(b.map(function(it){return it.x;})).then(function(){if(WW.on&&WW.batch===b)wwRender();},function(){if(WW.on&&WW.batch===b)wwRender();});}
   function wwDone(){
     var wall=wwEl("ww-wall");wall.innerHTML="";
     var plan=srsPlan(),more=plan.allNew>0;
@@ -18668,13 +18707,17 @@ margin-left: -22px;
     wwEl("ww-refresh").addEventListener("click",function(){
       if(WW.lock)return;
       var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});
-      // 没点的混进剩下的里面：之后还可能遇到，但不会马上又是这一批
-      WW.queue=shuffle(WW.queue.concat(back));
+      // 没点的混进剩下的里面：之后还可能遇到，但不会马上又是这一批（按字母时：剩下的照原顺序往下走，没点的排到最后）
+      WW.queue=wwOrd()==="seq"?WW.queue.concat(back):shuffle(WW.queue.concat(back));
       if(back.length&&WW.queue.length>back.length){                // 尽量别让刚放回去的又出现在紧接着这一批
         var keep={};back.forEach(function(x){keep[x.id||x.w]=1;});
         var a=WW.queue.filter(function(x){return !keep[x.id||x.w];}),b=WW.queue.filter(function(x){return keep[x.id||x.w];});
         WW.queue=a.concat(b);}
       wwNext();});
+    wwEl("ww-ord").addEventListener("change",function(){save("tt_wword",this.value==="seq"?"seq":"rand");
+      if(!WW.on||WW.lock)return;
+      var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});
+      WW.queue=wwArrange(back.concat(WW.queue));wwNext();});
     wwEl("ww-n").addEventListener("change",function(){save("tt_wwn",+this.value||20);
       // 这一批还没点过的放回去，按新的数量重铺
       var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});
