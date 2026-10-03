@@ -5116,7 +5116,7 @@ margin-left: -22px;
       </div>
       <div class="set-item">
         <div class="set-sec-h" style="font-size:14px">词书管理</div>
-        <div class="set-desc" style="margin-bottom:8px">也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时里面的词会移到默认词书。</div>
+        <div class="set-desc" style="margin-bottom:8px">也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时可以选：词移到默认词书，或者连词一起删掉。</div>
         <div id="wbg-manage"></div>
         <div style="display:flex;gap:8px;margin-top:8px">
           <input type="text" id="wbg-new" placeholder="新分组名，如：雅思" autocomplete="off" style="flex:1;box-sizing:border-box;padding:8px 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text)">
@@ -5881,7 +5881,7 @@ margin-left: -22px;
     "也可以在设置里把翻译引擎换成 AI。":"or switch the translation engine to AI in Settings.",
     "也可以整段粘贴进去让 AI 帮你拆成食材和步骤。":"or paste a whole block of text and let AI split it into ingredients and steps.",
     "也可以点上面「＋ 写一条」记点跟书无关的想法。":"You can also tap \"＋ New note\" above to jot down a thought that has nothing to do with a book.",
-    "也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时里面的词会移到默认词书。":"You can also manage these from the cards on the \"desk\" in your word list. ⭐ is the default book — new words land there; deleting a book moves its words to the default one.",
+    "也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时可以选：词移到默认词书，或者连词一起删掉。":"You can also manage these from the cards on the \"desk\" in your word list. ⭐ is the default book — new words land there; when deleting a book you choose whether its words move to the default one or get deleted too.",
     "也可以直接把文件从电脑里拖到这个页面上":"You can also drag files from your computer onto this page",
     "习惯":"Habits",
     "书":"books",
@@ -7535,6 +7535,7 @@ margin-left: -22px;
     "这天没有事件":"No events this day",
     "这已经是最后一句了，没得可并。":"This is the last sentence — nothing to merge it with.",
     "这张图读不出来":"Can't read this image",
+    "这是唯一一本词书，不能删":"This is your only word book, so it can't be deleted",
     "这是牛津官方的":"This is the official",
     "这是随手记，没有对应的原文":"This is a quick note — there's no source text to jump to",
     "这本 EPUB 没有可读章节":"This EPUB has no readable chapters",
@@ -17059,6 +17060,31 @@ margin-left: -22px;
     saveWords();updateWbCount();wbPaintWord(w);
     var inp=document.getElementById("dict-q");
     if(inp&&document.getElementById("dict-look").style.display!=="none")doLookup(inp.value);}
+  // 删词书：里面的词怎么办，让她自己选。
+  // 她：「为啥删除会移动到默认，不要啊，可以选的应该」—— 从牛津一次加了 4885 个词进一本书，
+  // 想整本不要了，原来只能「删书、词全挪进默认」，等于删不掉。
+  // 整本连词删掉的不进「删过的」名单：她多半是想换个等级重新挑，进了名单就再也加不回来了。
+  async function wbDeleteGroup(gid,anchor){
+    var nm=wbGroupName(gid),isDef=(gid===wbGroups.def);
+    var n=words.filter(function(x){return wbGroupOf(x)===gid;}).length;
+    if(isDef&&wbGroups.list.length<=1){ttAlert("这是唯一一本词书，不能删");return false;}
+    var items=[];
+    if(!isDef&&n)items.push({v:"move",label:"删掉词书，"+n+" 个词移到「"+wbGroupName(wbGroups.def)+"」"});
+    items.push({v:"all",label:n?("连同里面的 "+n+" 个词一起删掉"):"删掉这本空词书",danger:true});
+    items.push({sep:true});items.push({v:"",label:"取消"});
+    var v=await ttMenu(items,{anchor:anchor});
+    if(!v)return false;
+    if(v==="all"&&n>=20&&!await ttConfirm("把「"+nm+"」连同里面的 "+n+" 个词全部删掉？\n这些词的学习进度也一起没了。\n（不会记进「删过的」名单，以后还能从牛津重新加回来）",{danger:true,okText:"全部删掉",anchor:anchor}))return false;
+    if(v==="all")words=words.filter(function(x){return wbGroupOf(x)!==gid;});
+    else words.forEach(function(x){if(wbGroupOf(x)===gid)x.group=wbGroups.def;});
+    saveWords();
+    wbGroups.list=wbGroups.list.filter(function(x){return x.id!==gid;});
+    if(isDef&&wbGroups.list.length)wbGroups.def=wbGroups.list[0].id;   // 删的是默认那本：顺位第一本接班
+    saveWbGroups();
+    if(wbActive===gid){wbActive="all";save("tt_wbactive",wbActive);}
+    renderWordbook();try{renderWbgManage();}catch(e){}
+    try{updateWbCount();}catch(e){}
+    return true;}
   function removeWord(w){words=words.filter(function(x){return x.w!==w;});saveWords();trashAdd(w);renderWordbook();}
   // 认识了：词留在列表里（淡化、沉到最后、不再排复习），随时可以点回来。
   // 不删掉是有意的 —— 词还在生词本里，本身就挡住了"再次被自动收进来"。
@@ -18394,12 +18420,7 @@ margin-left: -22px;
         var nm=await ttPrompt("重命名词书：",g.name,{anchor:ren});if(!nm||!nm.trim())return;
         g.name=nm.trim();saveWbGroups();renderWordbook();return;}
       if(df){e.stopPropagation();wbGroups.def=df.getAttribute("data-def");saveWbGroups();renderWordbook();renderWbgManage();return;}
-      if(dg){e.stopPropagation();var gid=dg.getAttribute("data-delg");
-        if(!await ttConfirm("删除词书「"+wbGroupName(gid)+"」？里面的词会移到默认词书。",{danger:true,anchor:dg}))return;
-        words.forEach(function(x){if(wbGroupOf(x)===gid)x.group=wbGroups.def;});saveWords();
-        wbGroups.list=wbGroups.list.filter(function(x){return x.id!==gid;});saveWbGroups();
-        if(wbActive===gid){wbActive="all";save("tt_wbactive",wbActive);}
-        renderWordbook();renderWbgManage();return;}
+      if(dg){e.stopPropagation();await wbDeleteGroup(dg.getAttribute("data-delg"),dg);return;}
       if(e.target.closest("#wb-newbook")){
         var nm2=await ttPrompt("新词书名称，如：雅思核心 / 牛津 B2","",{anchor:document.getElementById("wb-newbook")});
         if(!nm2||!nm2.trim())return;
@@ -18413,12 +18434,7 @@ margin-left: -22px;
       var df=e.target.closest("[data-def]"),rn=e.target.closest("[data-ren]"),dg=e.target.closest("[data-delg]");
       if(df){wbGroups.def=df.getAttribute("data-def");saveWbGroups();renderWbgManage();renderWordbook();return;}
       if(rn){var id=rn.getAttribute("data-ren"),g=null;wbGroups.list.forEach(function(x){if(x.id===id)g=x;});if(!g)return;var nm=await ttPrompt("重命名分组：",g.name,{anchor:rn});if(!nm||!nm.trim())return;g.name=nm.trim();saveWbGroups();renderWbgManage();renderWordbook();return;}
-      if(dg){var gid=dg.getAttribute("data-delg");if(gid===wbGroups.def){ttAlert("默认组不能删，先把别的组设为默认（点 ☆）");return;}
-        if(!await ttConfirm("删除分组「"+wbGroupName(gid)+"」？里面的词会移到默认组。",{danger:true,anchor:dg}))return;
-        words.forEach(function(x){if(wbGroupOf(x)===gid)x.group=wbGroups.def;});saveWords();
-        wbGroups.list=wbGroups.list.filter(function(x){return x.id!==gid;});saveWbGroups();
-        if(wbActive===gid){wbActive="all";save("tt_wbactive",wbActive);}
-        renderWbgManage();renderWordbook();return;}});
+      if(dg){await wbDeleteGroup(dg.getAttribute("data-delg"),dg);return;}});
     var wba=document.getElementById("wbg-add");
     if(wba)wba.addEventListener("click",function(){var i=document.getElementById("wbg-new"),nm=i.value.trim();if(!nm){i.focus();return;}
       wbGroups.list.push({id:"g"+uid(),name:nm});saveWbGroups();i.value="";renderWbgManage();renderWordbook();});

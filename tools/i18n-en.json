@@ -316,7 +316,7 @@
 "也可以在设置里把翻译引擎换成 AI。": "or switch the translation engine to AI in Settings.",
 "也可以整段粘贴进去让 AI 帮你拆成食材和步骤。": "or paste a whole block of text and let AI split it into ingredients and steps.",
 "也可以点上面「＋ 写一条」记点跟书无关的想法。": "You can also tap \"＋ New note\" above to jot down a thought that has nothing to do with a book.",
-"也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时里面的词会移到默认词书。": "You can also manage these from the cards on the \"desk\" in your word list. ⭐ is the default book — new words land there; deleting a book moves its words to the default one.",
+"也可以直接在生词本的「书桌」上点卡片管理。⭐ 是默认词书，新收的词默认进这里；删除词书时可以选：词移到默认词书，或者连词一起删掉。": "You can also manage these from the cards on the \"desk\" in your word list. ⭐ is the default book — new words land there; when deleting a book you choose whether its words move to the default one or get deleted too.",
 "也可以直接把文件从电脑里拖到这个页面上": "You can also drag files from your computer onto this page",
 "习惯": "Habits",
 "书 / PDF": "Books / PDFs",
@@ -2310,5 +2310,6 @@
 "✓ = 已在生词本 · 灰色 = 你删过的 · 点一个词看释义": "✓ = already in your wordbook · grey = you deleted it · click a word for its definition",
 "已在生词本": "Already in your wordbook",
 "你删过的": "You deleted this",
-"点一下看释义": "Click for the definition"
+"点一下看释义": "Click for the definition",
+"这是唯一一本词书，不能删": "This is your only word book, so it can't be deleted"
 }
