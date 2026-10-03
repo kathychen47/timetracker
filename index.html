@@ -2005,7 +2005,7 @@
     border:1.5px solid var(--border);border-radius:12px;box-shadow:0 18px 44px -18px rgba(0,0,0,.5);display:flex;flex-direction:column;
     opacity:0;visibility:hidden;transform:scale(.97);transform-origin:top left;transition:opacity .15s,transform .15s,visibility 0s .15s}
   .ww-def.on{opacity:1;visibility:visible;transform:none;transition:opacity .15s,transform .15s}
-  .ww-def.u{border-color:var(--danger)} .ww-def.m{border-color:var(--muted)}
+  .ww-def.u{border-color:var(--danger)} .ww-def.m{border-color:var(--muted)} .ww-def.k{border-color:var(--cat-sport)}
   .ww-def-h{display:flex;align-items:baseline;gap:10px;padding:12px 14px 8px;border-bottom:1px solid var(--border)}
   .ww-def-h b{font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;font-size:24px}
   .ww-def-tag{font-size:11.5px;color:var(--muted)}
@@ -4621,11 +4621,12 @@ margin-left: -22px;
   <div class="ww-ov" id="ww-ov" hidden>
     <div class="ww-bar">
       <b class="ww-t">单词墙</b>
-      <label for="ww-n">每批 <select id="ww-n"><option>20</option><option>30</option><option>40</option><option>50</option></select> 个</label>
+      <label for="ww-n">每批 <select id="ww-n"></select> 个</label>
       <span class="ww-count" id="ww-count"></span>
       <span class="ww-prog"><i id="ww-prog"></i></span>
-      <span class="ww-help">左键 认识 · 中键 模糊 · 右键 不认识 · 右键 / 中键再按一次看完整释义 · 绿的再点一次撤销</span>
-      <button type="button" class="btn" id="ww-shuffle">换个摆法</button>
+      <span class="ww-help">左键 认识 · 中键 模糊 · 右键 不认识 · 同一个键再按一次看完整释义 · 点错了换个键就改过来</span>
+      <button type="button" class="btn" id="ww-refresh" title="换一批新的：点过的不会再出现，这批没点的放回去，之后还可能遇到">换一批</button>
+      <button type="button" class="btn" id="ww-shuffle" title="还是这些词，重新摆一下位置">重新摆</button>
       <button type="button" class="btn" id="ww-exit">退出（Esc）</button>
     </div>
     <div class="ww-wrap">
@@ -6531,6 +6532,7 @@ margin-left: -22px;
     "左原文右译文（整页翻译，保留排版）":"Original left, translation right (whole page, layout kept)",
     "左右对照":"Side by side",
     "左键 认识 · 中键 模糊 · 右键 不认识 · 右键 / 中键再按一次看完整释义 · 绿的再点一次撤销":"Left: know · Middle: unsure · Right: don't know · Right / middle again: full definition · Click a green one again to undo",
+    "左键 认识 · 中键 模糊 · 右键 不认识 · 同一个键再按一次看完整释义 · 点错了换个键就改过来":"Left: know · Middle: unsure · Right: don't know · Same button again: full definition · Wrong one? Press another button to change it",
     "已从税务记录里撤回":"Pulled out of your tax records",
     "已保存":"Saved",
     "已保存 ✓":"Saved ✓",
@@ -6738,6 +6740,8 @@ margin-left: -22px;
     "挡着，再点一下那一类取消":"— click that category again to clear it",
     "挡着，切回「全部账户」就看得到":"is hiding it — switch back to \"All accounts\" and you'll see it",
     "换":"Change",
+    "换一批":"New batch",
+    "换一批新的：点过的不会再出现，这批没点的放回去，之后还可能遇到":"Get a new batch: words you've marked won't come back; unmarked ones go back and may appear later",
     "换下一批…":"Next batch…",
     "换个分组":"Change group",
     "换个摆法":"Reshuffle",
@@ -7533,6 +7537,7 @@ margin-left: -22px;
     "还在录音，离开就没了":"Still recording — leave now and it's gone",
     "还是在这转":"Transcribe here anyway",
     "还是没存住 —— 浏览器存储可能满了":"Still couldn't save — browser storage may be full",
+    "还是这些词，重新摆一下位置":"Same words, new positions",
     "还款":"Repayment",
     "还没从 Google 删掉 —— 授权续上后会自动处理":"Not deleted from Google yet — it'll be handled once you renew the authorization",
     "还没传上去 —— Google 授权过期了（每次只管 1 小时），续上会自动补传":"Not uploaded yet — the Google authorization expired (it only lasts an hour); renew it and this goes up automatically",
@@ -7724,6 +7729,7 @@ margin-left: -22px;
     "重复周期":"Repeat",
     "重新拉":"Fetch again",
     "重新授权":"Re-authorise",
+    "重新摆":"Re-arrange",
     "重新翻译":"Re-translate",
     "重新翻译整篇":"Retranslate everything",
     "重新翻译这一页":"Translate this page again",
@@ -18296,16 +18302,23 @@ margin-left: -22px;
   // 她设计的：一批单词（20 / 30 / 40 / 50 个）散在整面墙上，有大有小，不排成一列。
   //   左键 = 认识（变绿）、中键 = 模糊（变灰）、右键 = 不认识（变红）——
   //   正好是背诵卡片上那三档，直接喂同一条 FSRS 遗忘曲线（srsGrade）。
-  //   右键 / 中键第一下：词旁边冒一句中文；同一个键再按一下：右边展开完整的词典卡片；再按收起。
-  //   绿的再左键一次 = 撤销（连「今天背了几个」也退回去）；换个键 = 改成那一档。
+  //   右键 / 中键第一下：词旁边冒一句中文；同一个键再按一下：词旁边展开完整的词典卡片；再按收起。
+  //   左键也一样：绿的再按一下看完整释义（她：「绿色再点一下也显示释义」）。点错了换个键就改成那一档。
   //   字越大 = 越难（新词按牛津等级）、越久没复习、忘过越多次。大的不扎堆、小的也不扎堆，互不重叠。
   //   今天该复习的和新词混着铺（跟「开始背诵」同一份当日计划、同样的每日上限）；
-  //   一面墙点完自动换下一批；红 / 灰的新词今天还没过学习步骤的，排进后面的批次再见一次。
+  //   一面墙点完自动换下一批。今天点过的词记在 tt_wwseen 里：中途退出、点「换一批」、关掉再开，
+  //   都不会再出现；没点的放回去，之后还可能遇到。今天的认识 / 模糊 / 不认识也一直累计。
   // 原型：https://claude.ai/artifact/BJ8FnguoarJiprVKgbP3By
-  var WW={on:false,queue:[],batch:[],st:{k:0,m:0,u:0},lock:false,bub:null,defFor:null,lv:null,saveT:null,seen:{},again:{}};
+  var WW={on:false,queue:[],batch:[],st:{k:0,m:0,u:0},lock:false,bub:null,defFor:null,lv:null,saveT:null,seen:{}};
   var WW_G={known:2,fuzzy:1,unknown:0},WW_K={known:"k",fuzzy:"m",unknown:"u"};
   function wwEl(id){return document.getElementById(id);}
-  function wwN(){var n=+load("tt_wwn",20)||20;return [20,30,40,50].indexOf(n)>=0?n:20;}
+  var WW_NS=[10,15,20,25,30,35,40,45,50,55,60];
+  function wwN(){var n=+load("tt_wwn",20)||20;return WW_NS.indexOf(n)>=0?n:20;}
+  // 今天在墙上点过哪些（跨批次、跨退出），以及今天一共认识 / 模糊 / 不认识几个。
+  // 只在这台设备上记（每台各自的墙），到第二天自动清零。
+  function wwDay(){var d=load("tt_wwseen",null);
+    if(!d||d.d!==todayKey())d={d:todayKey(),ids:{},k:0,m:0,u:0};return d;}
+  function wwDaySave(d){save("tt_wwseen",d);}
   function wwLv(){                                         // 牛津等级表：只读已经建好的，不现扫词典
     if(WW.lv)return Promise.resolve(WW.lv);
     return ensureDictDB().then(function(db){return db?idbGet("meta","levels"):null;}).then(function(rec){
@@ -18319,21 +18332,20 @@ margin-left: -22px;
   function wwTier(x){return Math.min(4,Math.floor(wwWeight(x)*5));}
   function wwSaveSoon(){if(WW.saveT)clearTimeout(WW.saveT);WW.saveT=setTimeout(function(){WW.saveT=null;saveWords();},800);}
   function wwFlush(){if(WW.saveT){clearTimeout(WW.saveT);WW.saveT=null;}saveWords();}
-  function wwUnbump(isNew){
-    var st=load("tt_srsday",{d:"",n:0,r:0});
-    if(st.d===todayKey()){if(isNew)st.n=Math.max(0,st.n-1);else st.r=Math.max(0,st.r-1);save("tt_srsday",st);}
-    var h=load("tt_srshist",{})||{},k=todayKey();
-    if(h[k]){if(isNew)h[k].n=Math.max(0,h[k].n-1);else h[k].r=Math.max(0,h[k].r-1);save("tt_srshist",h);}}
   function startWall(extra){
     var plan=srsPlan(),list;
     if(extra){list=wbFiltered().filter(function(x){srsInit(x);return !x.known&&!x.mastered&&!x.reps;});}
     else list=plan.due.concat(plan.fresh);
+    var seenToday=wwDay().ids;
+    list=list.filter(function(x){return !seenToday[x.id||x.w];});      // 今天点过的不再铺
     if(!list.length){
       if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
       ttAlert("这个词书里没有可以铺的词。");return;}
-    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};WW.again={};
+    WW.queue=shuffle(list.slice());WW.on=true;WW.seen={};
     var ov=wwEl("ww-ov");ov.hidden=false;
-    wwEl("ww-n").value=String(wwN());
+    var sel=wwEl("ww-n");
+    if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
+    sel.value=String(wwN());
     try{if(ov.requestFullscreen){var p=ov.requestFullscreen();if(p&&p.catch)p.catch(function(){});}}catch(e){}
     wwLv().then(function(){wwNext();});}
   function wwClose(){
@@ -18392,8 +18404,8 @@ margin-left: -22px;
       it.el=b;wwBind(it);wall.appendChild(b);});
     requestAnimationFrame(function(){wwLayout();wwDraw();});}
   function wwDraw(){
-    var done=WW.st.k+WW.st.m+WW.st.u,n=WW.batch.length;
-    wwEl("ww-count").innerHTML=done+" / "+n+" · 认识 <b class=\"k\">"+WW.st.k+"</b> · 模糊 <b class=\"m\">"+WW.st.m+"</b> · 不认识 <b class=\"u\">"+WW.st.u+"</b> · 还剩 "+WW.queue.length;
+    var done=WW.st.k+WW.st.m+WW.st.u,n=WW.batch.length,d=wwDay();
+    wwEl("ww-count").innerHTML="这批 "+done+" / "+n+" · 今天 认识 <b class=\"k\">"+d.k+"</b> · 模糊 <b class=\"m\">"+d.m+"</b> · 不认识 <b class=\"u\">"+d.u+"</b> · 还剩 "+WW.queue.length;
     wwEl("ww-prog").style.width=(n?done/n*100:0)+"%";}
   // 评分：第一次评之前存一份原样，改档 / 撤销都先恢复原样再评 —— 同一个词不会被重复记两次
   function wwSet(it,to){
@@ -18401,19 +18413,22 @@ margin-left: -22px;
     if(it.s!=="idle")WW.st[WW_K[it.s]]--;
     if(!it.snap){it.snap=JSON.parse(JSON.stringify(x));it.wasNew=!x.reps;}
     else{Object.keys(x).forEach(function(k){if(!(k in it.snap))delete x[k];});Object.keys(it.snap).forEach(function(k){x[k]=it.snap[k];});}
+    var day=wwDay();
+    if(it.s!=="idle")day[WW_K[it.s]]=Math.max(0,(day[WW_K[it.s]]||0)-1);
     it.s=to;
-    if(to==="idle"){it.snap=null;if(WW.seen[key]){delete WW.seen[key];wwUnbump(it.wasNew);}}
-    else{
-      if(!WW.seen[key]){WW.seen[key]=1;bumpDay(it.wasNew);}
-      srsGrade(x,WW_G[to]);WW.st[WW_K[to]]++;}
+    if(!WW.seen[key]){WW.seen[key]=1;bumpDay(it.wasNew);}
+    srsGrade(x,WW_G[to]);WW.st[WW_K[to]]++;
+    day.ids[key]=to;day[WW_K[to]]=(day[WW_K[to]]||0)+1;wwDaySave(day);
     ["known","fuzzy","unknown"].forEach(function(c){it.el.classList.toggle(c,to===c);});
     wwSaveSoon();wwDraw();}
   function wwPress(it,s){
     if(WW.lock)return;
-    if(s==="known"){wwCloseBub();if(WW.defFor===it)wwCloseDef();wwSet(it,it.s==="known"?"idle":"known");}
-    else if(it.s===s){                                       // 同一个键第二下：完整释义；再按收起
+    if(it.s===s){                                            // 同一个键第二下：完整释义；再按收起（绿的也一样）
       if(WW.defFor===it&&wwEl("ww-def").classList.contains("on"))wwCloseDef();else{wwCloseBub();wwShowDef(it);}}
-    else{wwSet(it,s);if(WW.defFor&&WW.defFor!==it)wwCloseDef();wwShowBub(it);}
+    else{
+      wwSet(it,s);if(WW.defFor&&WW.defFor!==it)wwCloseDef();
+      if(WW.defFor===it)wwShowDef(it);                       // 释义开着时改了档：卡片跟着换颜色
+      else if(s==="known")wwCloseBub();else wwShowBub(it);}
     if(WW.batch.every(function(b){return b.s!=="idle";}))wwBatchDone();}
   // 一句中文：从牛津卡片里抠第一段中文；抠不到就提示再按一次看完整的
   function wwShort(w){
@@ -18451,24 +18466,20 @@ margin-left: -22px;
   function wwCloseBub(){if(WW.bub){WW.bub.remove();WW.bub=null;}}
   function wwShowDef(it){
     var d=wwEl("ww-def"),bd=wwEl("ww-def-b");
-    d.className="ww-def on "+(it.s==="unknown"?"u":"m");WW.defFor=it;
+    d.className="ww-def on "+({unknown:"u",fuzzy:"m",known:"k"}[it.s]||"m");WW.defFor=it;
     wwEl("ww-def-w").textContent=it.x.disp||it.x.w;
-    wwEl("ww-def-tag").textContent=(it.s==="unknown"?"不认识":"模糊")+" · "+(it.x.reps?"复习":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
+    wwEl("ww-def-tag").textContent=({unknown:"不认识",fuzzy:"模糊",known:"认识"}[it.s]||"")+" · "+(it.x.reps?"复习":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
     bd.innerHTML='<div class="dict-hint">加载释义…</div>';
     wwNear(it,d,"side");
     wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;wwNear(it,d,"side");});}
   function wwCloseDef(){wwEl("ww-def").className="ww-def";WW.defFor=null;}
   function wwBatchDone(){
     if(WW.lock)return;WW.lock=true;
-    // 新词评了红 / 灰、学习步骤还没走完（下次是几分钟后）：放进后面的批次再见一次，最多再见两次
-    WW.batch.forEach(function(it){var x=it.x,key=x.id||x.w;
-      if((it.s==="unknown"||it.s==="fuzzy")&&x.due-Date.now()<DAYMIN*60000&&(WW.again[key]||0)<2){
-        WW.again[key]=(WW.again[key]||0)+1;WW.queue.splice(Math.min(WW.queue.length,wwN()),0,x);}});
     setTimeout(function(){
       if(!WW.on)return;
       wwCloseBub();wwCloseDef();
       var t=document.createElement("div");t.className="ww-toast";
-      t.innerHTML='<div class="big">'+WW.st.k+' / '+WW.batch.length+'</div><span class="k">认识 '+WW.st.k+'</span> · <span class="m">模糊 '+WW.st.m+'</span> · <span class="u">不认识 '+WW.st.u+'</span><br>换下一批…';
+      t.innerHTML='<div class="big">'+WW.st.k+' / '+WW.batch.length+'</div>这批 <span class="k">认识 '+WW.st.k+'</span> · <span class="m">模糊 '+WW.st.m+'</span> · <span class="u">不认识 '+WW.st.u+'</span><br>换下一批…';
       wwEl("ww-wall").appendChild(t);
       setTimeout(function(){
         if(!WW.on)return;
@@ -18488,6 +18499,16 @@ margin-left: -22px;
     wwEl("ww-exit").addEventListener("click",wwClose);
     wwEl("ww-def-x").addEventListener("click",wwCloseDef);
     wwEl("ww-shuffle").addEventListener("click",function(){wwCloseBub();wwCloseDef();wwLayout();});
+    wwEl("ww-refresh").addEventListener("click",function(){
+      if(WW.lock)return;
+      var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});
+      // 没点的混进剩下的里面：之后还可能遇到，但不会马上又是这一批
+      WW.queue=shuffle(WW.queue.concat(back));
+      if(back.length&&WW.queue.length>back.length){                // 尽量别让刚放回去的又出现在紧接着这一批
+        var keep={};back.forEach(function(x){keep[x.id||x.w]=1;});
+        var a=WW.queue.filter(function(x){return !keep[x.id||x.w];}),b=WW.queue.filter(function(x){return keep[x.id||x.w];});
+        WW.queue=a.concat(b);}
+      wwNext();});
     wwEl("ww-n").addEventListener("change",function(){save("tt_wwn",+this.value||20);
       // 这一批还没点过的放回去，按新的数量重铺
       var back=WW.batch.filter(function(it){return it.s==="idle";}).map(function(it){return it.x;});

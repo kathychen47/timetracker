@@ -2337,5 +2337,10 @@
 "退出": "Exit",
 "换下一批…": "Next batch…",
 "这个词书里没有可以铺的词。": "There are no words in this book to lay out.",
-"（这条释义没有中文，再按一次看完整的）": "(No Chinese in this entry — press again for the full one)"
+"（这条释义没有中文，再按一次看完整的）": "(No Chinese in this entry — press again for the full one)",
+"左键 认识 · 中键 模糊 · 右键 不认识 · 同一个键再按一次看完整释义 · 点错了换个键就改过来": "Left: know · Middle: unsure · Right: don't know · Same button again: full definition · Wrong one? Press another button to change it",
+"换一批": "New batch",
+"换一批新的：点过的不会再出现，这批没点的放回去，之后还可能遇到": "Get a new batch: words you've marked won't come back; unmarked ones go back and may appear later",
+"重新摆": "Re-arrange",
+"还是这些词，重新摆一下位置": "Same words, new positions"
 }
