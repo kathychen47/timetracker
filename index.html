@@ -1553,6 +1553,70 @@
   .dict-def ct,.dict-def dct,.dict-def lct,.dict-def .zm{display:block}
   .dict-def .zm{font-weight:700;margin-top:10px}
   .dict-def a{color:inherit;text-decoration:none}
+  /* 朗文当代（英汉双解）。照原版 ldoce6ec.css 的排版，但颜色全换成主题色 —— 原版写死蓝 / 黑 / 灰，深色模式下看不清。
+     原版那些弹出层（例句库、同义词库、词汇集）太大没收；搭配 / 词源 / 动词变化 / 词族 收成可点开的小按钮。 */
+  .dict-def .ldoce{line-height:1.6}
+  .dict-def .ldoce .hwd{display:none}
+  .dict-def .ldoce .def{font-weight:400}
+  .dict-def .ldoce .entry{display:block;margin-top:.4em}
+  .dict-def .ldoce .entry+.entry,.dict-def .ldoce>div+div{margin-top:1em;padding-top:.6em;border-top:1px dashed var(--border)}
+  .dict-def .ldoce .hyphenation{font-weight:700;font-size:1.25em;color:var(--primary)}
+  .dict-def .ldoce .homnum{vertical-align:super;font-size:.6em;font-weight:700;color:var(--primary)}
+  .dict-def .ldoce .pron{color:var(--muted)}
+  .dict-def .ldoce .level{color:var(--primary);letter-spacing:-1px}
+  .dict-def .ldoce .freq,.dict-def .ldoce .synopp,.dict-def .ldoce .ac{border:1px solid currentColor;border-radius:3px;padding:0 3px;font-size:.72em;font-weight:700;color:var(--primary)}
+  .dict-def .ldoce .pos,.dict-def .ldoce .gram{font-style:italic;color:var(--cat-sport)}
+  .dict-def .ldoce .geo,.dict-def .ldoce .registerlab{font-style:italic;color:var(--cat-study)}
+  .dict-def .ldoce .sense,.dict-def .ldoce .subsense{display:block;margin-top:.35em}
+  .dict-def .ldoce .subsense{margin-left:1em}
+  .dict-def .ldoce .sensenum{font-weight:700;margin-right:4px;color:var(--primary)}
+  .dict-def .ldoce .sensenum:after{content:"."}
+  .dict-def .ldoce .signpost{background:var(--primary);color:#fff;border-radius:3px;padding:0 5px;margin:0 .3em;font-size:.78em;font-weight:700}
+  .dict-def .ldoce .signpost SIGNEN{text-transform:uppercase}
+  .dict-def .ldoce SIGN,.dict-def .ldoce TRAN,.dict-def .ldoce EXAMPLE,.dict-def .ldoce COLLOC,.dict-def .ldoce COLLOT,.dict-def .ldoce Gram,.dict-def .ldoce HINT,.dict-def .ldoce Usage,.dict-def .ldoce Error,.dict-def .ldoce F2N{margin-left:5px}
+  .dict-def .ldoce .lexunit,.dict-def .ldoce .lexvar,.dict-def .ldoce .phrasetext,.dict-def .ldoce .phrv,.dict-def .ldoce .opp,.dict-def .ldoce .syn,.dict-def .ldoce .deriv,.dict-def .ldoce .orthvar,.dict-def .ldoce .pluralform,.dict-def .ldoce .pasttense,.dict-def .ldoce .pastpart,.dict-def .ldoce .comp,.dict-def .ldoce .superl,.dict-def .ldoce .w,.dict-def .ldoce .exp{font-weight:700}
+  .dict-def .ldoce .example{display:block;color:var(--muted);padding-left:.9em}
+  .dict-def .ldoce .gramexa,.dict-def .ldoce .colloexa,.dict-def .ldoce .phrase,.dict-def .ldoce .runon,.dict-def .ldoce .tail,.dict-def .ldoce .expl,.dict-def .ldoce .item,.dict-def .ldoce .grammar,.dict-def .ldoce .section,.dict-def .ldoce .exponent,.dict-def .ldoce .wswd,.dict-def .ldoce .etymsense{display:block}
+  .dict-def .ldoce .propform,.dict-def .ldoce .propformprep{display:block;font-style:italic;font-weight:600;margin-top:.2em}
+  .dict-def .ldoce .runon{margin-top:.6em}
+  .dict-def .ldoce .neutral{font-style:normal;font-weight:400;color:inherit}
+  .dict-def .ldoce .italic,.dict-def .ldoce .linkword,.dict-def .ldoce .object,.dict-def .ldoce .etymorigin{font-style:italic;font-weight:400}
+  .dict-def .ldoce .phrvbentry{display:block;margin-top:.8em;padding-top:.5em;border-top:1px dashed var(--border)}
+  .dict-def .ldoce .phrvbhwd{font-weight:700;font-size:1.1em;color:var(--primary)}
+  .dict-def .ldoce .refhwd{font-variant:small-caps}
+  .dict-def .ldoce a.lx{color:var(--primary);cursor:pointer;border-bottom:1px dotted currentColor}
+  .dict-def .ldoce .badexa,.dict-def .ldoce .badcollo{text-decoration:line-through}
+  /* 原版 .buttons 这个 span 一直包到词条末尾（释义都在它里面），所以它只能是普通块，小按钮自己排成一行 */
+  .dict-def .ldoce .buttons{display:block}
+  .dict-def .ldoce details.lpop{display:inline-block;margin:.3em 6px .3em 0;vertical-align:top}
+  .dict-def .ldoce details.lpop[open]{display:block;margin-right:0}
+  .dict-def .ldoce details.lpop>summary{list-style:none;cursor:pointer;display:inline-block;font-size:.78em;padding:1px 9px;border:1px solid var(--border);border-radius:999px;color:var(--muted)}
+  .dict-def .ldoce details.lpop>summary::-webkit-details-marker{display:none}
+  .dict-def .ldoce details.lpop[open]>summary{color:var(--primary);border-color:var(--primary)}
+  .dict-def .ldoce .at-link{display:block;border:1px solid var(--border);border-radius:10px;padding:.45em .75em;margin:.4em 0;background:var(--surface)}
+  .dict-def .ldoce .popheader,.dict-def .ldoce .popverbs{display:block;font-weight:700;font-size:.78em;letter-spacing:.05em;color:var(--muted);margin-bottom:.3em}
+  .dict-def .ldoce .collocate{display:block;margin-top:3px}
+  .dict-def .ldoce .expandable{cursor:pointer}
+  /* 全站有个 .arrow（日历翻页的方框按钮），先抹掉；原版的 ► 字体里画出来像个歪箭头，换成 CSS 画的小三角 */
+  .dict-def .ldoce .arrow{width:0;height:0;border:0;background:none;border-radius:0;display:inline-block;font-size:0;margin:0 7px 1px 1px;vertical-align:middle;
+    border-left:6px solid var(--muted);border-top:4px solid transparent;border-bottom:4px solid transparent;transition:transform .15s}
+  .dict-def .ldoce .expandable.on .arrow{transform:rotate(90deg)}
+  .dict-def .ldoce .colloc{font-weight:700;color:var(--primary)}
+  .dict-def .ldoce .content{display:none;margin:2px 0 6px 1.2em}
+  .dict-def .ldoce .content.on{display:block}
+  .dict-def .ldoce .colloinexa,.dict-def .ldoce .nodeword{font-weight:700}
+  .dict-def .ldoce .collgloss,.dict-def .ldoce .gloss{color:var(--muted)}
+  .dict-def .ldoce .verbtable table{border-collapse:collapse;margin-top:6px;font-size:.92em}
+  .dict-def .ldoce .verbtable td{border:1px solid var(--border);padding:1px 6px}
+  .dict-def .ldoce .verbtable .lemma,.dict-def .ldoce .verb_form{font-weight:700;color:var(--primary)}
+  .dict-def .ldoce .wf .group{display:block;margin-top:4px}
+  .dict-def .ldoce .wf .pos{display:block;font-weight:700}
+  .dict-def .ldoce .wf .w{display:inline-block;margin-right:12px}
+  .dict-def .ldoce .collobox,.dict-def .ldoce .thesbox,.dict-def .ldoce .usagebox,.dict-def .ldoce .grambox,.dict-def .ldoce .f2nbox,.dict-def .ldoce .errorbox{display:block;border:1px solid var(--border);border-radius:10px;padding:.45em .75em;margin:.6em 0}
+  .dict-def .ldoce .heading{display:block;font-weight:700;color:var(--primary)}
+  .dict-def .ldoce .secheading,.dict-def .ldoce .subheading{display:block;font-weight:700;font-size:.82em;letter-spacing:.04em;color:var(--muted);text-transform:uppercase;margin-top:.4em}
+  .dict-def .ldoce .spokensect{display:block;border-top:2px solid var(--border);border-bottom:2px solid var(--border);padding:4px 0;margin:.6em 0}
+  .dict-def .ldoce .spokensecthead{display:block;font-weight:700;color:var(--primary)}
   /* 🎙 录音转写 */
   .rec-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .rec-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
@@ -5093,7 +5157,7 @@ margin-left: -22px;
     <div class="set-pane" data-pane="dict">
       <div class="set-sec-h">📖 词典 · 背单词</div>
       <div class="set-item">
-        <div class="set-desc" style="margin-bottom:10px">牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。</div>
+        <div class="set-desc" style="margin-bottom:10px">牛津(英→中)、朗文(英→中)、柯林斯(中→英) 三本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。</div>
         <div class="dict-setup" id="dict-setup"></div>
       </div>
       <div class="set-item">
@@ -6949,6 +7013,7 @@ margin-left: -22px;
     "服务器":"server",
     "服务费":"Service fee",
     "服饰":"apparel",
+    "朗文当代 · 英汉双解":"Longman Contemporary · EN–ZH",
     "朗读":"Read aloud",
     "朗读（快捷键 ↑）":"Say it (shortcut ↑)",
     "期":"due",
@@ -7181,7 +7246,7 @@ margin-left: -22px;
     "爬山":"Hiking",
     "版式":"Layout",
     "牙":"dental",
-    "牛津(英→中)、柯林斯(中→英) 两本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。":"Two dictionaries: Oxford (EN→ZH) and Collins (ZH→EN). Once loaded they live on this device and work offline; to use them on your phone too, sign in to cloud sync and tap \"⬆️ Upload to cloud\".",
+    "牛津(英→中)、朗文(英→中)、柯林斯(中→英) 三本词典。首次加载后存在本机、离线可查；想让手机也能用，登录云同步后点「⬆️ 上传到云端」。":"Three dictionaries: Oxford (EN→ZH), Longman (EN→ZH) and Collins (ZH→EN). Once loaded they live on this device and work offline; to use them on your phone too, sign in to cloud sync and tap \"⬆️ Upload to cloud\".",
     "牛津高阶 · 英汉双解":"Oxford Advanced · EN–ZH",
     "牛腩 500g\n番茄 3 个":"Beef brisket 500g\n3 tomatoes",
     "牛腩 500g&#10;番茄 3 个":"Beef brisket 500g&#10;3 tomatoes",
@@ -16059,7 +16124,7 @@ margin-left: -22px;
     recs=load("tt_recs",[])||[];if(state.tab==="rec")try{recRenderList();}catch(e){}   // 云端拉下来的是文字，音频还在各自的机器上
     gluRecs=load("tt_glu",[])||[];var _gc=load("tt_glucfg",null);if(_gc&&typeof _gc==="object")gluCfg=_gc;
     bodyRecs=load("tt_body",[])||[];var _bc=load("tt_bodycfg",null);if(_bc&&typeof _bc==="object"){bodyCfg=_bc;if(!bodyCfg.on||!bodyCfg.on.length)bodyCfg.on=["w","waist","hip","thigh","calf"];}
-    if(state.tab==="body")try{renderBody();gluRenderCard();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){if(!dp.order||dp.order.length<2)dp.order=["oald","collins"];if(!dp.enabled)dp.enabled={oald:true,collins:true};if(!dp.collapsed)dp.collapsed={oald:false,collins:false};dictPrefs=dp;}
+    if(state.tab==="body")try{renderBody();gluRenderCard();}catch(e){}var wg=load("tt_wbgroups",null);if(wg&&wg.list&&wg.list.length)wbGroups=wg;var dp=load("tt_dictprefs",null);if(dp){dictPrefs=dictPrefsFix(dp);}
     // 下面这些以前只写进了 localStorage，没回到内存里的变量 —— 换台设备登录，
     // 云端明明拉下来了，记账/术语表/文件夹树还是空的，非得刷新一次页面才看得见。
     // 更要命的是内存里那份空的一旦被写回去（在记账页随手点个「月/年」就会），
@@ -16667,8 +16732,10 @@ margin-left: -22px;
   })();
 
   // ---------- 词典 · 背单词 ----------
-  var DICT_DB=null,DICT_STORES=["oald","collins"],dictCounts={oald:0,collins:0};
-  var DICT_FILES={oald:"oald.tsv.gz",collins:"collins.tsv.gz"};
+  var DICT_DB=null,DICT_STORES=["oald","ldoce","collins"],dictCounts={oald:0,ldoce:0,collins:0};
+  // 一本词典可以拆成几个文件：Supabase 免费版单个文件上限 50MB，朗文压完 60MB，所以拆成两半。
+  var DICT_FILES={oald:["oald.tsv.gz"],ldoce:["ldoce-1.tsv.gz","ldoce-2.tsv.gz"],collins:["collins.tsv.gz"]};
+  var DICT_MB={oald:34,ldoce:60,collins:40};               // 下载 / 上传前告诉她大概多少流量
   var importedBlobs={};
   var words=load("tt_words",[])||[];
   var wbGroups=load("tt_wbgroups",null);
@@ -16681,9 +16748,16 @@ margin-left: -22px;
   function dlFile(name,content,mime){var b=new Blob([content],{type:(mime||"text/plain")+";charset=utf-8"});var u=URL.createObjectURL(b);var a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(u);},120);}
   var pronAccent=load("tt_pronacc","en-GB");
   var dictPrefs=load("tt_dictprefs",null)||{};
-  (function(){if(!dictPrefs.order||dictPrefs.order.length<2)dictPrefs.order=["oald","collins"];
-    if(!dictPrefs.enabled)dictPrefs.enabled={oald:true,collins:true};
-    if(!dictPrefs.collapsed)dictPrefs.collapsed={oald:false,collins:false};
+  function dictPrefsFix(dp){
+    var all=["oald","ldoce","collins"];
+    if(!dp.order||dp.order.length<2)dp.order=all.slice();
+    dp.order=dp.order.filter(function(k,i,a){return all.indexOf(k)>=0&&a.indexOf(k)===i;});
+    all.forEach(function(k){if(dp.order.indexOf(k)>=0)return;
+      var at=dp.order.indexOf("oald");dp.order.splice(at>=0?at+1:dp.order.length,0,k);});
+    if(!dp.enabled)dp.enabled={};if(!dp.collapsed)dp.collapsed={};
+    all.forEach(function(k){if(dp.enabled[k]===undefined)dp.enabled[k]=true;if(dp.collapsed[k]===undefined)dp.collapsed[k]=false;});
+    return dp;}
+  (function(){dictPrefsFix(dictPrefs);
     if(dictPrefs.autoAdd===undefined)dictPrefs.autoAdd=false;
     if(dictPrefs.autoSpeak===undefined)dictPrefs.autoSpeak=false;
     if(dictPrefs.logCal===undefined)dictPrefs.logCal=true;
@@ -16812,14 +16886,21 @@ margin-left: -22px;
     }catch(e){}
   }
   if("speechSynthesis" in window){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=function(){};}catch(e){}}
-  function srcName(store){return store==="oald"?"牛津高阶 · 英汉双解":"柯林斯 · 中英/近义词";}
+  function srcName(store){return store==="oald"?"牛津高阶 · 英汉双解":store==="ldoce"?"朗文当代 · 英汉双解":"柯林斯 · 中英/近义词";}
 
+  // v2：多了朗文（ldoce）那张表。已有的牛津 / 柯林斯原样留着，不用重新导入。
+  // 别的标签页还开着旧版、攥着 v1 不放时，升级会一直等 —— 不能让查词就这么卡死，直接说清楚。
   function idbOpen(){return new Promise(function(res,rej){
-    var r=indexedDB.open("ttdict",1);
+    var r=indexedDB.open("ttdict",2),done=false;
     r.onupgradeneeded=function(){var db=r.result;
       DICT_STORES.forEach(function(s){if(!db.objectStoreNames.contains(s))db.createObjectStore(s,{keyPath:"k"});});
       if(!db.objectStoreNames.contains("meta"))db.createObjectStore("meta",{keyPath:"id"});};
-    r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
+    r.onblocked=function(){if(done)return;done=true;rej(new Error("别的标签页还开着旧版 Timetracker，关掉它们再刷新这一页"));};
+    r.onsuccess=function(){var db=r.result;
+      if(done){db.close();return;}done=true;
+      db.onversionchange=function(){try{db.close();}catch(e){}if(DICT_DB===db)DICT_DB=null;};   // 以后再升级时别挡着新版
+      res(db);};
+    r.onerror=function(){if(done)return;done=true;rej(r.error);};});}
   // 拿不到就返回 null，**绝不 reject**。
   // 调用方全是 `await ensureDictDB()` 开头的 async 函数，一 reject 就整个炸在半路：
   // 背单词那条路（showFlash → wbDefHTML）会渲染不出卡片，白着，一个字都不说。
@@ -16901,48 +16982,59 @@ margin-left: -22px;
 
   function renderDictSetup(){
     var el=document.getElementById("dict-setup");if(!el)return;
-    var ao=dictCounts.oald,co=dictCounts.collins;
-    var line='牛津(英→中) '+(ao?'<b>✓ '+ao.toLocaleString()+'</b>':trv('✗ 未加载'))+' · 柯林斯(中→英) '+(co?'<b>✓ '+co.toLocaleString()+'</b>':trv('✗ 未加载'));
+    var ao=dictCounts.oald,co=dictCounts.collins,lo=dictCounts.ldoce;
+    var line='牛津(英→中) '+(ao?'<b>✓ '+ao.toLocaleString()+'</b>':trv('✗ 未加载'))+' · 朗文(英→中) '+(lo?'<b>✓ '+lo.toLocaleString()+'</b>':trv('✗ 未加载'))+' · 柯林斯(中→英) '+(co?'<b>✓ '+co.toLocaleString()+'</b>':trv('✗ 未加载'));
     var loggedIn=(typeof SB!=="undefined"&&SB&&sbUser);
     var btns='<label class="btn primary" style="cursor:pointer">📁 导入文件<input type="file" id="dict-file" accept=".gz" multiple hidden></label> <button class="btn" id="dict-dl">☁️ 从云端下载</button>';
     if(loggedIn)btns+=' <button class="btn" id="dict-up">⬆️ 上传到云端</button> <button class="btn" id="dict-sqlbtn">① 配置云端(SQL)</button>';
     el.innerHTML=line+'<div>'+btns+'</div>'+
       '<div id="dict-sql" style="display:none;margin-top:10px"><div style="color:var(--muted);margin-bottom:4px">把这段贴到 Supabase → SQL Editor 运行一次（建私有桶 + 只授权你自己），然后回来点「⬆️ 上传到云端」：</div><textarea readonly style="width:100%;height:130px;font-family:monospace;font-size:12px;border:1px solid var(--border);border-radius:8px;padding:8px;background:var(--surface);color:var(--text)"></textarea><button class="btn" id="dict-sqlcopy" style="margin-top:6px">复制 SQL</button></div>'+
       '<div id="dict-prog" style="margin-top:8px;color:var(--muted)"></div>';
-    if(!loggedIn&&(!ao||!co))el.insertAdjacentHTML("beforeend",'<div style="margin-top:6px;color:var(--muted);font-size:12px">想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。</div>');}
+    if(!loggedIn&&(!ao||!co||!lo))el.insertAdjacentHTML("beforeend",'<div style="margin-top:6px;color:var(--muted);font-size:12px">想让手机也能用？先在 ⚙️设置→云同步 用 Google 登录，这里会多出「上传到云端」。</div>');}
   function dictProg(t){var p=document.getElementById("dict-prog");if(p)p.textContent=t;}
 
+  function storeOfFile(name){
+    return /collins|柯林/i.test(name)?"collins":/ldoce|longman|朗文/i.test(name)?"ldoce":/oald|oxford|牛津/i.test(name)?"oald":null;}
   async function importDictFiles(files){
-    var already=DICT_STORES.filter(function(s){return dictCounts[s]>0;});
+    // 只问「这次要导入的那几本」本机是不是已经有了 —— 加朗文不该被问「要不要覆盖牛津」
+    var mine={};for(var j=0;j<files.length;j++){var s0=storeOfFile(files[j].name);if(s0)mine[s0]=1;}
+    var already=DICT_STORES.filter(function(s){return mine[s]&&dictCounts[s]>0;});
     if(already.length){
       var ok=await ttConfirm("本机已经有词典了（"+already.map(srcName).join("、")+"）。\n重新导入会覆盖，确定继续吗？",
         {okText:"覆盖导入",anchor:document.getElementById("dict-prog")});
       if(!ok){dictProg("已取消。");return;}}
     for(var i=0;i<files.length;i++){var f=files[i];
-      var store=/collins|柯林/i.test(f.name)?"collins":(/oald|oxford|牛津/i.test(f.name)?"oald":null);
-      if(!store){dictProg("认不出文件："+f.name+"（名字里要含 oald 或 collins）");continue;}
-      dictProg("导入 "+f.name+" …");importedBlobs[store]=f;
+      var store=storeOfFile(f.name);
+      if(!store){dictProg("认不出文件："+f.name+"（名字里要含 oald / ldoce / collins）");continue;}
+      dictProg("导入 "+f.name+" …");(importedBlobs[store]=importedBlobs[store]||{})[f.name]=f;
       try{await loadDictBlob(store,f,function(n){dictProg("导入 "+store+"："+n.toLocaleString()+" 词…");});}
       catch(err){dictProg("导入失败："+String(err&&err.message||err));return;}}
     renderDictSetup();dictProg("✓ 加载完成，可以查词了");}
 
   async function cloudDownloadDicts(){
     if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再点下载。");return;}
-    // 本机已经有词典就先问一句，避免误点白下 70+MB 流量
+    // 只补这台设备还没有的那几本（比如新加的朗文），已有的不重下；全都有了才问要不要整套重下。
     var loaded=DICT_STORES.filter(function(s){return dictCounts[s]>0;});
-    if(loaded.length){
+    var todo=DICT_STORES.filter(function(s){return !dictCounts[s];});
+    if(!todo.length){
       var info=loaded.map(function(s){return "· "+srcName(s)+"（已有 "+dictCounts[s].toLocaleString()+" 词）";}).join("\n");
-      var ok=await ttConfirm("这台设备已经有词典了：\n"+info+"\n\n重新下载会消耗约 70MB 流量并覆盖本机词典。\n只有换设备或词典损坏时才需要下载，确定继续吗？",
+      var mb=0;DICT_STORES.forEach(function(s){mb+=DICT_MB[s]||0;});
+      var ok=await ttConfirm("这台设备已经有词典了：\n"+info+"\n\n重新下载会消耗约 "+mb+"MB 流量并覆盖本机词典。\n只有换设备或词典损坏时才需要下载，确定继续吗？",
         {okText:"仍然重下",danger:true,anchor:document.getElementById("dict-dl")});
-      if(!ok){dictProg("已取消，本机词典保持不变。");return;}}
-    for(var i=0;i<DICT_STORES.length;i++){var store=DICT_STORES[i];
-      dictProg("下载 "+srcName(store)+" …（首次较大，稍等）");
-      try{
-        var r=await SB.storage.from("dict").download(DICT_FILES[store]);
-        if(r.error){dictProg("下载失败("+store+")："+r.error.message+"　—— 词典可能还没上传到 dict 桶");return;}
-        await loadDictBlob(store,r.data,function(n){dictProg("写入 "+store+"："+n.toLocaleString()+" 词…");});
-      }catch(err){dictProg("下载失败："+String(err&&err.message||err));return;}}
-    renderDictSetup();dictProg("✓ 云端词典已加载，跨设备可用");}
+      if(!ok){dictProg("已取消，本机词典保持不变。");return;}
+      todo=DICT_STORES.slice();}
+    var got=[],miss=[];
+    for(var i=0;i<todo.length;i++){var store=todo[i],parts=DICT_FILES[store],okAll=true;
+      for(var p=0;p<parts.length;p++){
+        dictProg("下载 "+srcName(store)+(parts.length>1?"（"+(p+1)+"/"+parts.length+"）":"")+" …约 "+Math.round((DICT_MB[store]||0)/parts.length)+"MB，稍等");
+        try{
+          var r=await SB.storage.from("dict").download(parts[p]);
+          if(r.error){okAll=false;miss.push(srcName(store));break;}     // 云端还没有这本：跳过，别的照下
+          await loadDictBlob(store,r.data,function(n){dictProg("写入 "+srcName(store)+"："+n.toLocaleString()+" 词…");});
+        }catch(err){dictProg("下载失败："+String(err&&err.message||err));renderDictSetup();return;}}
+      if(okAll)got.push(srcName(store));}
+    renderDictSetup();
+    dictProg((got.length?"✓ 已加载："+got.join("、")+"。":"")+(miss.length?"　云端还没有："+miss.join("、")+"（先在有这本词典的电脑上点「⬆️ 上传到云端」）":"")||"没有要下载的。");}
 
   function cloudSQL(){
     var uid=(sbUser&&sbUser.id)||"你的UID";
@@ -16950,35 +17042,42 @@ margin-left: -22px;
   function showCloudSQL(){var box=document.getElementById("dict-sql");if(!box)return;
     box.style.display="";var ta=box.querySelector("textarea");if(ta)ta.value=cloudSQL();ta.scrollIntoView({block:"nearest"});}
 
-  function blobFromStore(store){return ensureDictDB().then(function(){return new Promise(function(res,rej){
+  // part / nParts：拆成几份时只取第 part 份（按顺序平均切），每份都压在 50MB 以下。
+  function blobFromStore(store,part,nParts){nParts=nParts||1;part=part||0;
+    return ensureDictDB().then(function(){return idbCount(store);}).then(function(total){return new Promise(function(res,rej){
+    var lo=Math.floor(part*total/nParts),hi=Math.floor((part+1)*total/nParts),i=0;
     var out=[];var rq=DICT_DB.transaction(store,"readonly").objectStore(store).openCursor();
-    rq.onsuccess=function(){var c=rq.result;if(c){var r=c.value;out.push(r.k+"\t"+(r.disp||r.k)+"\t"+r.html);c.continue();}
-      else{try{var text=out.join("\n")+"\n";var gz=new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));new Response(gz).blob().then(res,rej);}catch(e){rej(e);}}};
+    function pack(){try{var text=out.join("\n")+"\n";var gz=new Blob([text]).stream().pipeThrough(new CompressionStream("gzip"));new Response(gz).blob().then(res,rej);}catch(e){rej(e);}}
+    rq.onsuccess=function(){var c=rq.result;
+      if(c&&i<hi){if(i>=lo){var r=c.value;out.push(r.k+"\t"+(r.disp||r.k)+"\t"+r.html);}i++;c.continue();}
+      else pack();};
     rq.onerror=function(){rej(rq.error);};});});}
   async function uploadDictToCloud(){
     if(!SB||!sbUser){dictProg("请先在 ⚙️设置 → 云同步 用 Google 登录，再上传。");return;}
     var stores=DICT_STORES.filter(function(s){return importedBlobs[s]||dictCounts[s]>0;});
     if(!stores.length){dictProg("先用「📁 导入文件」把词典载入，再点上传。");return;}
-    // 云端已有就先问一句，避免误点白传 70+MB
-    try{
-      var ls=await SB.storage.from("dict").list("",{limit:100});
-      var have=(ls&&ls.data)?ls.data.filter(function(f){
-        return DICT_STORES.some(function(s){return DICT_FILES[s]===f.name;});}):[];
-      if(have.length){
-        var info=have.map(function(f){
-          var mb=f.metadata&&f.metadata.size?(" "+(f.metadata.size/1048576).toFixed(0)+"MB"):"";
-          var t=f.updated_at?("，"+String(f.updated_at).slice(0,10)+" 传的"):"";
-          return "· "+f.name+mb+t;}).join("\n");
-        var ok=await ttConfirm("云端已经有词典了：\n"+info+"\n\n重新上传会覆盖它们（约 70MB 流量）。\n只有换了词典文件才需要重传，确定继续吗？",
-          {okText:"仍然重传",danger:true,anchor:document.getElementById("dict-up")});
-        if(!ok){dictProg("已取消，云端词典保持不变。");return;}}
-    }catch(e){}
-    for(var i=0;i<stores.length;i++){var store=stores[i];
+    // 云端已经有的那几本不重传（加朗文时不该把牛津柯林斯再传一遍）；全都有了才问要不要整套重传
+    var inCloud={};
+    try{var ls=await SB.storage.from("dict").list("",{limit:100});
+      if(ls&&ls.data)ls.data.forEach(function(f){inCloud[f.name]=f;});}catch(e){}
+    var todo=stores.filter(function(s){return DICT_FILES[s].some(function(n){return !inCloud[n];});});
+    if(!todo.length){
+      var info=[];stores.forEach(function(s){DICT_FILES[s].forEach(function(n){var f=inCloud[n];
+        var mb=f&&f.metadata&&f.metadata.size?(" "+(f.metadata.size/1048576).toFixed(0)+"MB"):"";
+        var t=f&&f.updated_at?("，"+String(f.updated_at).slice(0,10)+" 传的"):"";
+        info.push("· "+n+mb+t);});});
+      var mb=0;stores.forEach(function(s){mb+=DICT_MB[s]||0;});
+      var ok=await ttConfirm("云端已经有这些词典了：\n"+info.join("\n")+"\n\n重新上传会覆盖它们（约 "+mb+"MB 流量）。\n只有换了词典文件才需要重传，确定继续吗？",
+        {okText:"仍然重传",danger:true,anchor:document.getElementById("dict-up")});
+      if(!ok){dictProg("已取消，云端词典保持不变。");return;}
+      todo=stores;}
+    var jobs=[];todo.forEach(function(s){DICT_FILES[s].forEach(function(n,pi){jobs.push({s:s,n:n,pi:pi,np:DICT_FILES[s].length});});});
+    for(var i=0;i<jobs.length;i++){var jb=jobs[i],store=jb.s;
       try{
-        var blob=importedBlobs[store];
-        if(!blob){dictProg("打包 "+srcName(store)+"（从本机词典生成，稍等）…");blob=await blobFromStore(store);}
-        dictProg("上传 "+srcName(store)+" 到云端…（"+(i+1)+"/"+stores.length+"）");
-        var r=await SB.storage.from("dict").upload(DICT_FILES[store],blob,{upsert:true,contentType:"application/gzip"});
+        var mine=importedBlobs[store]||{},blob=mine[jb.n];
+        if(!blob){dictProg("打包 "+jb.n+"（从本机词典生成，稍等）…");blob=await blobFromStore(store,jb.pi,jb.np);}
+        dictProg("上传 "+jb.n+" 到云端…（"+(i+1)+"/"+jobs.length+"）");
+        var r=await SB.storage.from("dict").upload(jb.n,blob,{upsert:true,contentType:"application/gzip"});
         if(r.error){dictProg("上传失败："+r.error.message+"　—— 多半是还没跑配置 SQL");showCloudSQL();return;}
       }catch(err){dictProg("上传失败："+String(err&&err.message||err));showCloudSQL();return;}}
     dictProg("✓ 已上传到云端。现在手机/其他设备登录后，点「☁️ 从云端下载」就能用了。");}
@@ -16995,7 +17094,7 @@ margin-left: -22px;
     for(var i=1;i<=m;i++){var prev=dp[0];dp[0]=i;
       for(var j=1;j<=n;j++){var t=dp[j];dp[j]=Math.min(dp[j]+1,dp[j-1]+1,prev+(a.charCodeAt(i-1)===b.charCodeAt(j-1)?0:1));prev=t;}}
     return dp[n];}
-  function firstEnabledStore(cjk){var pref=cjk?["collins","oald"]:["oald","collins"];
+  function firstEnabledStore(cjk){var pref=cjk?["collins","oald","ldoce"]:["oald","ldoce","collins"];
     for(var i=0;i<pref.length;i++)if(dictPrefs.enabled[pref[i]]!==false&&dictCounts[pref[i]])return pref[i];return pref[0];}
   async function getSuggest(q){q=(q||"").trim();if(!q)return [];
     if(!await ensureDictDB())return [];
@@ -17064,7 +17163,7 @@ margin-left: -22px;
       if(dictPrefs.enabled[store]===false)continue;
       var hit=null;try{hit=await dictFind(store,key);}catch(e){}
       if(hit){matches.push([store,hit.rec]);if(hit.changed&&!viaBase)viaBase=hit.base;}}
-    if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]==="oald")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
+    if(dictPrefs.autoSpeak&&matches.length){var f0=matches[0],sy=(f0[0]!=="collins")?(f0[1].disp||f0[1].k):f0[1].k;pronounce(sy,isCJK(sy));}
     if(dictPrefs.autoAdd&&matches.length){var m0=matches[0],w0=m0[1].k,d0=m0[1].disp||w0;
       // 标过「认识」或删过的词，不再自动收。
       // ⚠️ 这条路以前**完全没过筛子** —— 只要词典里查得到就收，
@@ -17085,7 +17184,7 @@ margin-left: -22px;
         return;}
       // 一本词典都没加载：以前到这里就 return 了，什么都不给。可划词卡走的是 wbDefHTML，
       // 它不看 dictCounts —— 同一台机器上「划词能翻、查词框不能翻」。这里也补一张翻译卡。
-      if(!dictCounts.oald&&!dictCounts.collins){
+      if(!dictCounts.oald&&!dictCounts.collins&&!dictCounts.ldoce){
         box.innerHTML=wordNoteHTML(key)+'<div class="dict-hint">词典还没加载（去 ⚙️设置 → 📖词典 里导入/下载）。先给你翻一下：</div>'+
           mineBtnHTML(key,q)+
           '<div class="dict-card" id="dict-fallback"><div class="dict-card-top"><span class="dict-src">翻译</span></div><div class="dict-hint">翻译中…</div></div>';
@@ -17102,6 +17201,10 @@ margin-left: -22px;
     // 笔记挂在真正匹配上的那个词头上（查 running 命中 run 时，笔记是 run 的）
     var nk=matches.length?matches[0][1].k:key;
     box.innerHTML=(viaBase?viaHTML(q,viaBase):"")+wordNoteHTML(nk)+html;}
+  // 朗文的搭配是「► take a seat」一行一行的，点一下展开例句。查词页、划词卡、生词本、单词墙都用得到，挂在 document 上。
+  document.addEventListener("click",function(e){
+    var x=e.target&&e.target.closest&&e.target.closest(".ldoce .expandable");if(!x)return;
+    var c=x.nextElementSibling;if(c&&c.classList.contains("content")){c.classList.toggle("on");x.classList.toggle("on");}});
   function refreshLookup(){var q=document.getElementById("dict-q");if(q&&q.value.trim())doLookup(q.value);}
   // 正文字号自己调。默认 14 —— 和以前一样，不动已有的观感。
   function dictFsApply(){var v=+load("tt_dfs",14)||14;
@@ -17111,7 +17214,7 @@ margin-left: -22px;
   function dictFsStep(d){save("tt_dfs",Math.max(11,Math.min(22,(+load("tt_dfs",14)||14)+d)));dictFsApply();}
 
   function dictCardHTML(store,rec){
-    var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store==="oald"?disp:w;
+    var w=rec.k,disp=rec.disp||rec.k,saved=isSaved(w),say=store!=="collins"?disp:w;
     var col=dictPrefs.collapsed[store]?" collapsed":"";
     return '<div class="dict-card'+col+'" data-store="'+store+'"><div class="dict-card-top">'+
       '<button class="dict-fold" data-store="'+store+'"><span class="caret">▾</span> <span class="dict-src">'+srcName(store)+'</span></button>'+
@@ -17519,7 +17622,7 @@ margin-left: -22px;
       var hit=null;try{hit=await dictFind(store,key);}catch(e){}
       var rec=hit?hit.rec:null;
       if(hit&&hit.changed&&!via)via=viaHTML(key,hit.base);
-      if(rec){var say=store==="oald"?(rec.disp||rec.k):rec.k;
+      if(rec){var say=store!=="collins"?(rec.disp||rec.k):rec.k;
         cards+='<div class="dict-card" data-store="'+store+'"><div class="dict-card-top"><span class="dict-src">'+srcName(store)+'</span>'+
           '<button class="dict-spk" data-say="'+esc(say)+'" data-cjk="'+(isCJK(say)?1:0)+'" title="朗读">🔊</button></div>'+
           '<div class="dict-def">'+rec.html+'</div></div>';}}
@@ -18773,6 +18876,7 @@ margin-left: -22px;
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var gb=e.target.closest(".dict-grp");if(gb){wbMenu(gb.getAttribute("data-w"),gb);return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
+      var lx=e.target.closest(".dict-def a.lx");if(lx){var lt=lx.getAttribute("data-lx");if(lt){q.value=lt;doLookup(lt);window.scrollTo(0,0);}return;}
       var en=e.target.closest(".dict-def .en");if(en){var t=en.textContent.trim();if(t){q.value=t;doLookup(t);window.scrollTo(0,0);}}});
     document.getElementById("wb-list").addEventListener("click",function(e){
       var mv=e.target.closest(".wb-move");
