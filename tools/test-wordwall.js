@@ -192,6 +192,20 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   ok(await ev("document.getElementById('ww-ord').value")==="seq","退出再进来，还是「按字母」");
   ok(await ev("document.getElementById('ww-gap').value")==="3"&&JSON.parse(await ev(GEO)).worst<=81,"退出再进来，间距还是「适中」（存在本机）");
   await ev("document.getElementById('ww-exit').click()");await sleep(400);
+  // 背诵卡片、极速刷词也一样：开着时没有动物在跑，关掉就回来（她：「背单词的时候不要有动物在跑」）
+  var KV="(function(){var k=[].slice.call(document.querySelectorAll('.pomo-kitty'));return k.length+'/'+k.filter(function(e){return getComputedStyle(e).visibility==='visible';}).length;})()";
+  var kv0=await ev(KV);
+  await ev("document.getElementById('wb-start').click()");await sleep(1500);
+  var kvF=await ev(KV),fOn=await ev("document.getElementById('flash-overlay').classList.contains('on')");
+  await ev("document.getElementById('flash-overlay').dispatchEvent(new MouseEvent('click',{bubbles:true}))");await sleep(500);
+  var kvF2=await ev(KV);
+  await ev("document.getElementById('wb-rapid').click()");await sleep(1500);
+  var kvR=await ev(KV),rOn=await ev("!!document.querySelector('#wbtool-overlay.on #rp')");
+  await ev("document.getElementById('wbtool-close').click()");await sleep(500);
+  var kvR2=await ev(KV);
+  ok(/^[1-9]\d*\/[1-9]/.test(kv0),"背单词之前宠物在："+kv0);
+  ok(fOn&&/\/0$/.test(kvF)&&kvF2===kv0,"背诵卡片开着 → 宠物藏起来，关掉 → 回来："+kvF+" → "+kvF2);
+  ok(rOn&&/\/0$/.test(kvR)&&kvR2===kv0,"极速刷词开着 → 宠物藏起来，关掉 → 回来："+kvR+" → "+kvR2);
   ok(!(await ev("window.__ttErr||''")), "没报错");
   ws.close(); proc.kill();
   console.log("\n== 单词墙（真 Chrome、真鼠标）==");
