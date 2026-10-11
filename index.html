@@ -1584,7 +1584,7 @@
   .dict-def .ldoce .phrvbentry{display:block;margin-top:.8em;padding-top:.5em;border-top:1px dashed var(--border)}
   .dict-def .ldoce .phrvbhwd{font-weight:700;font-size:1.1em;color:var(--primary)}
   .dict-def .ldoce .refhwd{font-variant:small-caps}
-  .dict-def .ldoce a.lx{color:var(--primary);cursor:pointer;border-bottom:1px dotted currentColor}
+  #dict-result .dict-def .ldoce a.lx{color:var(--primary);cursor:pointer;border-bottom:1px dotted currentColor}
   .dict-def .ldoce .badexa,.dict-def .ldoce .badcollo{text-decoration:line-through}
   /* 原版 .buttons 这个 span 一直包到词条末尾（释义都在它里面），所以它只能是普通块，小按钮自己排成一行 */
   .dict-def .ldoce .buttons{display:block}
@@ -2034,6 +2034,8 @@
   .ww-ov{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;flex-direction:column}
   /* 背单词的时候桌面小猫小狗先藏起来，关掉就回来（她：「沉浸式模式就不要有猫狗了」「背单词的时候不要有动物在跑」）：
      单词墙（body.ww-on）、背诵卡片（#flash-overlay.on）、极速刷词（工具窗里的 #rp） */
+  [hidden]{display:none!important}   /* 全站：hidden 一律藏起来。以前 .x{display:flex} 会盖过它：区间日期框、记账共享条、转写进度、划词卡设置条、分类色板、精听控制条都藏不掉 */
+  body.zen .pomo-kitty,
   body.ww-on .pomo-kitty,
   body:has(#flash-overlay.on) .pomo-kitty,
   body:has(#wbtool-overlay.on #rp) .pomo-kitty{visibility:hidden}
@@ -5603,8 +5605,12 @@ margin-left: -22px;
       if(e.key==="Escape"){e.preventDefault();ttPopDone(null);}});
     document.addEventListener("mousedown",function(e){
       if(ttPopEl&&ttPopEl.classList.contains("on")&&!ttPopEl.contains(e.target))ttPopDone(null);},true);
+    // 走捕获、而且吃掉：小弹窗开着时按键只给它。以前 Esc 关掉弹窗的同时也把背后的背诵卡片 / 单词墙关了，
+    // 方向键、1-3 还会给背后那张卡打分。
     document.addEventListener("keydown",function(e){
-      if(ttPopEl&&ttPopEl.classList.contains("on")&&e.key==="Escape")ttPopDone(null);});
+      if(!ttPopEl||!ttPopEl.classList.contains("on"))return;
+      if(e.key==="Escape"){e.preventDefault();e.stopImmediatePropagation();ttPopDone(null);return;}
+      if(!ttPopEl.contains(e.target))e.stopImmediatePropagation();},true);
     return ttPopEl;}
   function ttPopDone(v){
     if(!ttPopEl)return;ttPopEl.classList.remove("on");
@@ -18245,7 +18251,7 @@ margin-left: -22px;
   // 给一本整本词典词书补词：没背过的新词少于一半缓冲就补到 300 个。返回补了几个。
   function vbFill(g,onProg){
     var vb=g&&g.vb;if(!vb)return Promise.resolve(0);
-    var fresh=words.filter(function(x){return wbGroupOf(x)===g.id&&!x.reps&&!x.known&&!x.mastered;}).length;
+    var fresh=words.filter(function(x){return wbGroupOf(x)===g.id&&!x.reps&&!x.known&&!x.mastered&&!x.rap;}).length;
     if(fresh>=VB_BUF/2)return Promise.resolve(0);
     return vbLex(onProg).then(function(lex){
       var have={};words.forEach(function(x){have[x.w]=1;});
@@ -18416,13 +18422,14 @@ margin-left: -22px;
     flSegs.push({w:1,sec:Math.max(0,Math.round((cut-flActFrom)/1000))});
     flAway=true;flAwayFrom=cut;
     return true;}
+  function flUIOn(){if(typeof document.getElementById!=="function")return true;var o=document.getElementById("flash-overlay");return !!(o&&o.classList.contains("on"));}   // 计时三个模式共用，进度行只有背诵卡片有
   function flBeat(){                           // 有一点动静 = 人还在
     if(!flashStart)return;
     var now=Date.now();
     if(flAway){
       flSegs.push({gap:1,sec:Math.max(0,Math.round((now-flAwayFrom)/1000))});
       flActFrom=now;flAway=false;
-      try{flashProgress();}catch(_e){}}        // 立刻把「已暂停」撤掉，别等下一秒才反应
+      if(flUIOn())try{flashProgress();}catch(_e){}}        // 立刻把「已暂停」撤掉，别等下一秒才反应
     flLastAct=now;}
   function flNetMs(){                          // 到这一刻，真正在背的时长
     if(!flashStart)return 0;
@@ -18528,7 +18535,7 @@ margin-left: -22px;
   function startRapid(){
     var pool=rpPool();
     if(!pool.length){ttAlert("这本词书里没有还没背过的新词可以刷了。");return;}
-    rpArr=shuffle(pool.slice());rpIdx=0;rpOpen=false;rpUndo=[];rpN={k:0,u:0};rpOn=true;
+    rpArr=shuffle(pool.slice());rpIdx=0;rpOpen=false;rpUndo=[];rpN={k:0,u:0};rpOn=true;studyStart();
     var b=wbtOpen("极速刷词",'<div class="rp" id="rp"></div>');
     b.querySelector("#rp").addEventListener("click",function(e){
       var t=e.target.closest("[data-rp]");if(!t)return;
@@ -18538,7 +18545,7 @@ margin-left: -22px;
       else if(a==="x")wbtClose();});
     rpShow();}
   function rpEnd(){                                         // 关窗（任何方式）都走这里：先落盘，再刷新列表
-    if(!rpOn)return;rpOn=false;rpFlush();
+    if(!rpOn)return;rpOn=false;rpFlush();studyEnd(rpN.k+rpN.u);
     try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
   function rpShow(){
     var box=document.getElementById("rp");if(!box)return;
@@ -18566,7 +18573,8 @@ margin-left: -22px;
     if(rpOpen){
       wbDefHTML(x.w).then(function(h){
         if(seq!==rpSeq)return;
-        var d=document.getElementById("rp-def");if(d){d.innerHTML=h||'<div class="dict-hint">词典没收录</div>';d.scrollTop=0;}},function(){});}}
+        var d=document.getElementById("rp-def");if(d){d.innerHTML=h||'<div class="dict-hint">词典没收录</div>';d.scrollTop=0;
+          defTrFill(d,x.disp||x.w,function(){return seq!==rpSeq;});}},function(){});}}
   function rpKnow(){
     if(!rpOn||rpOpen||rpIdx>=rpArr.length)return;
     var x=rpArr[rpIdx];
@@ -18673,7 +18681,7 @@ margin-left: -22px;
     if(!list.length){
       if(!extra&&plan.allNew){ttConfirm("今天该复习的和今天的新词都过完了。\n要不要再铺一批新词（超出今天的新词额度）？",{okText:"再铺一批"}).then(function(ok){if(ok)startWall(true);});return;}
       ttAlert("这个词书里没有可以铺的词。");return;}
-    WW.queue=wwArrange(list);WW.on=true;WW.seen={};WW.extra=0;WW.batch=[];
+    WW.queue=wwArrange(list);WW.on=true;WW.seen={};WW.extra=0;WW.batch=[];if(!flashStart){studyStart();WW.tot=0;}
     var ov=wwEl("ww-ov");ov.hidden=false;document.body.classList.add("ww-on");
     var sel=wwEl("ww-n");
     if(!sel.options.length)sel.innerHTML=WW_NS.map(function(n){return '<option value="'+n+'">'+n+'</option>';}).join("");
@@ -18682,7 +18690,7 @@ margin-left: -22px;
     wwLv().then(function(){wwNext();});}
   function wwClose(){
     if(!WW.on)return;WW.on=false;
-    wwCloseDef();wwCloseBub();wwFlush();
+    wwCloseDef();wwCloseBub();wwFlush();studyEnd(WW.tot||0);
     wwEl("ww-ov").hidden=true;wwEl("ww-wall").innerHTML="";document.body.classList.remove("ww-on");
     if(document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
     try{renderWordbook();}catch(e){}try{updateWbCount();}catch(e){}}
@@ -18792,7 +18800,7 @@ margin-left: -22px;
     var day=wwDay();
     if(it.s!=="idle")day[WW_K[it.s]]=Math.max(0,(day[WW_K[it.s]]||0)-1);
     it.s=to;
-    if(!WW.seen[key]){WW.seen[key]=1;bumpDay(it.wasNew);}
+    if(!WW.seen[key]){WW.seen[key]=1;bumpDay(it.wasNew);WW.tot=(WW.tot||0)+1;}
     srsGrade(x,WW_G[to]);WW.st[WW_K[to]]++;
     day.ids[key]=to;day[WW_K[to]]=(day[WW_K[to]]||0)+1;wwDaySave(day);
     ["known","fuzzy","unknown"].forEach(function(c){it.el.classList.toggle(c,to===c);});
@@ -18844,6 +18852,15 @@ margin-left: -22px;
     wwShort(it.x.w).then(function(z){if(WW.bub!==b)return;
       b.querySelector(".z").textContent=z||"（这条释义没有中文，再按一次看完整的）";wwNear(it,b,"below");});}
   function wwCloseBub(){if(WW.bub){WW.bub.remove();WW.bub=null;}}
+  // 词典没收录（Lorentzian 这种）→ 用翻译顶上。单词墙的完整释义、极速刷词用；
+  // 判定和背诵卡片一样：看有没有「真正的词典卡」，自己写的黄色笔记卡不算、要留着。
+  function defTrFill(box,word,stale){
+    if(!box||box.querySelector(".dict-card:not(.mynote)"))return;
+    var mine=box.querySelector(".dict-card.mynote"),keep=mine?mine.outerHTML:"";
+    box.innerHTML=keep+'<div class="dict-hint tr-wait">词典没收录，翻译中…</div>';
+    function put(h){if(stale())return;var w=box.querySelector(".tr-wait");if(w)w.outerHTML=h;}
+    trWord(word).then(function(tr){put(tr?trCardHTML(word,tr,{pick:false,src:false}):'<div class="dict-hint">词典没收录，翻译也没拿到</div>');},
+      function(e){put('<div class="dict-hint">词典没收录，翻译也失败了：'+esc(String(e&&e.message||e))+'</div>');});}
   function wwShowDef(it){
     var d=wwEl("ww-def"),bd=wwEl("ww-def-b");
     d.className="ww-def on "+({unknown:"u",fuzzy:"m",known:"k"}[it.s]||"m");WW.defFor=it;
@@ -18851,7 +18868,8 @@ margin-left: -22px;
     wwEl("ww-def-tag").textContent=({unknown:"不认识",fuzzy:"模糊",known:"认识"}[it.s]||"")+" · "+(it.x.reps?"复习":"新词")+((WW.lv||{})[it.x.w]?(" · 牛津 "+WW.lv[it.x.w].toUpperCase()):"");
     bd.innerHTML='<div class="dict-hint">加载释义…</div>';
     wwNear(it,d,"side");
-    wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;wwNear(it,d,"side");});}
+    wbDefHTML(it.x.w).then(function(h){if(WW.defFor!==it)return;bd.innerHTML=h;bd.scrollTop=0;wwNear(it,d,"side");
+      defTrFill(bd,it.x.disp||it.x.w,function(){return WW.defFor!==it;});});}
   function wwCloseDef(){wwEl("ww-def").className="ww-def";WW.defFor=null;}
   function wwBatchDone(){
     if(WW.lock)return;WW.lock=true;
@@ -18907,7 +18925,8 @@ margin-left: -22px;
     wall.addEventListener("contextmenu",function(e){if(!e.target.closest(".ww-w"))e.preventDefault();});
     wwEl("ww-def-b").addEventListener("click",function(e){
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
-      var bt=e.target.closest(".box_title");if(bt){var u=bt.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+      // 折叠块交给 document 上统一的开关（这里再切一次 = 打不开）
+    });
     document.addEventListener("keydown",function(e){
       if(!WW.on||e.key!=="Escape")return;
       e.preventDefault();
@@ -18922,11 +18941,15 @@ margin-left: -22px;
     var plan=srsPlan();
     flashArr=shuffle(plan.due.slice()).concat(shuffle(plan.fresh.slice()));
     if(!flashArr.length){
-      var pool=wbFiltered().filter(function(x){return !x.mastered&&!x.known;});
+      var fresh=wbFiltered().filter(function(x){srsInit(x);return !x.mastered&&!x.known&&!x.reps;});
+      var pool=fresh.length?fresh:wbFiltered().filter(function(x){return !x.mastered&&!x.known;});
       if(!pool.length){ttAlert("这个分组没有可背的词。");return;}
-      if(!await ttConfirm("今天的复习和新词都完成啦 🎉\n要不要额外再过一遍（不影响复习计划）？",{okText:"再来一轮"}))return;
-      flashArr=shuffle(pool.slice());}
-    flashIdx=0;flashDone=0;flSeen={};flHold=null;flashStart=Date.now();flReset(flashStart);startClock();
+      if(!await ttConfirm(fresh.length
+          ?"今天的复习和新词都完成啦 🎉\n要不要再学一批新词？（超出今天的新词额度，以后的复习量会跟着变多）"
+          :"今天的复习和新词都完成啦 🎉\n新词也都学过了。要不要提前复习一轮？（会按这次的回答重新排复习时间）",
+          {okText:fresh.length?"再学一批":"提前复习"}))return;
+      flashArr=shuffle(pool.slice()).slice(0,fresh.length?Math.max(10,dictPrefs.dailyNew||20):pool.length);}
+    flashIdx=0;flashDone=0;flSeen={};flHold=null;studyStart();   // 计时 / 走神 / 写日历那套和单词墙、极速刷词共用
     document.getElementById("flash-overlay").classList.add("on");
     bindFlashCfg();applyFlash();showFlash();}
   function flashProgress(){
@@ -18942,12 +18965,16 @@ margin-left: -22px;
       (flAway?'<span class="fl-idle" title="这么久没有任何操作，先把计时停下了。点一下、按个键、滚一下就继续 —— 光移动鼠标不算。">⏸ 已暂停</span>':'');}
   function fmtClock(ms){var s=Math.max(0,Math.floor(ms/1000));return pad(Math.floor(s/60))+":"+pad(s%60);}   // 背单词计时用，别和统计的 fmtDur(分钟) 重名
   var flashTick=null;
+  // 这套计时（扣掉走神、写日历）背诵卡片、单词墙、极速刷词共用；进度行只有背诵卡片有
+  function studyStart(){flashDone=0;flashStart=Date.now();flReset(flashStart);startClock();}
+  function studyEnd(n){if(!flashStart)return;flashDone=n||0;stopClock();endStudySession();
+    try{if(document.getElementById("dict-study").style.display!=="none")renderWordbook();}catch(e){}}
   function startClock(){
     if(flashTick)clearInterval(flashTick);
     flashTick=setInterval(function(){
       if(!flashStart)return;
       // 刚判定人不在了：整条进度行重画一次，把「已暂停」挂出来（里头也会顺带更新时钟）
-      if(flCheckIdle()){try{flashProgress();}catch(_e){}return;}
+      if(flCheckIdle()){if(flUIOn())try{flashProgress();}catch(_e){}return;}
       var el=document.getElementById("flash-clock");
       if(!el)return;
       el.textContent=fmtClock(flNetMs());},1000);}
@@ -19160,7 +19187,7 @@ margin-left: -22px;
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
       var gb=e.target.closest(".dict-grp");if(gb){wbMenu(gb.getAttribute("data-w"),gb);return;}
       var a=e.target.closest(".dict-add");if(a){toggleWord(a.getAttribute("data-w"),a.getAttribute("data-disp"),a.getAttribute("data-dict"));return;}
-      var lx=e.target.closest(".dict-def a.lx");if(lx){var lt=lx.getAttribute("data-lx");if(lt){q.value=lt;doLookup(lt);window.scrollTo(0,0);}return;}
+      var lx=e.target.closest(".dict-def a.lx");if(lx){var lt=lx.getAttribute("data-lx");try{lt=decodeURIComponent(lt);}catch(_e){}if(lt){q.value=lt;doLookup(lt);window.scrollTo(0,0);}return;}
       var en=e.target.closest(".dict-def .en");if(en){var t=en.textContent.trim();if(t){q.value=t;doLookup(t);window.scrollTo(0,0);}}});
     document.getElementById("wb-list").addEventListener("click",function(e){
       var mv=e.target.closest(".wb-move");
@@ -19183,7 +19210,8 @@ margin-left: -22px;
     document.getElementById("flash-def").addEventListener("click",function(e){
       if(!flashRevealed){revealFlash();return;}
       var spk=e.target.closest(".dict-spk");if(spk){pronounce(spk.getAttribute("data-say"),spk.getAttribute("data-cjk")==="1");return;}
-      var b=e.target.closest(".box_title");if(b){var u=b.closest(".unbox");if(u)u.classList.toggle("is-active");}});
+      // 折叠块（.box_title）由 document 上那个统一的开关管，这里不能再切一次 —— 一次点击切两下 = 打不开
+    });
     document.getElementById("flash-btns").addEventListener("click",function(e){
       if(e.target.closest("[data-gonext]")){goNextFlash();return;}
       var g=e.target.closest("[data-g]");if(g)gradeFlash(+g.getAttribute("data-g"));});
