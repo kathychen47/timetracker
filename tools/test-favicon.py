@@ -36,8 +36,9 @@ if svg:
     chk(" " not in body, "data URI 里不该有裸空格")
     dec = unquote(body)
     chk(dec.startswith("<svg") and dec.rstrip().endswith("</svg>"), "解出来不是完整的 svg：" + dec[:60])
-    chk("#6366f1" in dec, "底色该是 app 的 --primary #6366f1")
-    chk("<circle" in dec and "<path" in dec, "该有表盘和指针")
+    # 2026-10-12 换成像素小猫（她挑的 5 号）：淡灰紫底 + 一格一格的灰猫
+    chk("#dfe3f3" in dec, "底色该是像素猫那张的淡灰紫 #dfe3f3")
+    chk(dec.count("<rect") > 100 and "#9aa0b5" in dec and "#2a2838" in dec, "该是一格一格画的灰猫（有眼睛）")
 
 # 3) 两张 PNG 解得开、尺寸对、真的画了东西（不是一整块空白）
 for name, pat, want in (("32×32", r'sizes="32x32"', 32), ("iOS 180", r'rel="apple-touch-icon"', 180)):
@@ -49,13 +50,14 @@ for name, pat, want in (("32×32", r'sizes="32x32"', 32), ("iOS 180", r'rel="app
     chk(im.size == (want, want), name + " 尺寸应为 %d，实际 %s" % (want, im.size))
     cols = im.getcolors(maxcolors=1 << 16) or []
     chk(len(cols) > 4, name + " 只有 %d 种颜色，八成画空了" % len(cols))
-    # 正中间应该是白的（时钟中心那一带），四角应该是透明的（圆角切掉了）
+    # 正中间是猫（不透明），四角应该是透明的（圆角切掉了）
     cx = im.getpixel((want // 2, want // 2))
     chk(im.getpixel((0, 0))[3] < 40, name + " 左上角该是透明的（圆角），实际 alpha=%d" % im.getpixel((0,0))[3])
     chk(cx[3] > 200, name + " 正中间不该是透明的")
 
 # 4) 顺带确认没把原来的 head 弄丢
-chk("<title>" in html, "title 没了")
+chk("<title>Meowly</title>" in html, "标题该是 Meowly（中英文界面都一样）")
+chk('name="apple-mobile-web-app-title" content="Meowly"' in html, "手机主屏名字该是 Meowly")
 chk('name="viewport"' in html, "viewport 没了")
 chk(html.count('name="theme-color"') == 2, "theme-color 该是明暗各一条")
 
