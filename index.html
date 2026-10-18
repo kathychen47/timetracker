@@ -11873,7 +11873,13 @@ margin-left: -22px;
   function packLayout(evs){
     // 按真实结束时间判断重叠。原来强行拉到 15 分钟，导致"9:00–9:05"和"9:10–9:40"
     // 明明前后脚，却被当成重叠排成两栏。只给零长度事件垫 1 分钟。
-    var items=evs.map(function(e){var s=toMin(e.start),en=Math.max(toMin(e.end),s+1);return{id:e.id,s:s,e2:en};});
+    // 但还得按**画出来有多高**算：很短的事件块最矮也有 EVMINH 像素（≈十几分钟那么高），
+    // 两件都只有几分钟、前后挨着的事，时间上不重叠，画出来却叠在一起 ——
+    // 后面那块盖住前面那块，被盖住的点不到、改不了，只能删（她 10-18 截图：CMS 压在 UC Online 上）。
+    // 所以结束时间取「真实结束」和「块底边对应的时刻」里晚的那个。
+    var minMin=EVMINH/Math.max(1,PH)*60;
+    var items=evs.map(function(e){var s=toMin(e.start),en=toMin(e.end);if(en<s)en=1440;
+      return{id:e.id,s:s,e2:Math.max(en,s+1,s+minMin)};});
     items.sort(function(a,b){return a.s-b.s||a.e2-b.e2;});
     var map={},group=[],groupEnd=-1;
     function flush(){var colsEnd=[];group.forEach(function(it){var placed=false;
