@@ -1651,7 +1651,7 @@
   #rec-home.recording .rec-home-only,#rec-home.recording .rec-list,#rec-home.recording .tm-panel{display:none!important}
   .rec-pill.rec-recb{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
   .rec-pill.rec-recb:hover{filter:brightness(1.06);background:var(--primary)}
-  .rec-livescroll{max-height:calc(var(--vh,100vh) - 150px)}
+  .rec-livescroll{max-height:none}
   .rec-live .rp.int .body{opacity:.55;font-style:italic}
   .rec-livebar .rec-ctl{gap:10px;flex-wrap:wrap}
   .rec-livebar .rec-ctl button{width:auto;height:38px;padding:0 16px;white-space:nowrap;border:1px solid var(--border);border-radius:99px;font-size:14px}
@@ -1748,8 +1748,10 @@
   .rec-chips button.on{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
 
   /* 详情：正文 */
-  #rec-doc{position:relative}
-  .rec-scroll{max-height:calc(var(--vh,100vh) - 208px);overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
+  #rec-doc{position:relative;display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 44px)}
+  #rec-livedoc{display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 80px)}
+  #rec-livedoc[hidden]{display:none}
+  .rec-scroll{flex:1;min-height:0;overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
   @media (prefers-reduced-motion:reduce){.rec-scroll{scroll-behavior:auto}}
   .rec-docin{max-width:1040px;margin:0 auto;padding:18px 0 0}
   .rec-h1{font-size:var(--rh1);font-weight:500;line-height:1.2;letter-spacing:-.01em;outline:none;text-wrap:balance;margin:0 0 16px;border-radius:6px}
@@ -1839,7 +1841,7 @@
   .rec-pk .ft button:hover{background:var(--surface)}
   .rec-pk .em{padding:8px 15px 13px;font-size:13.5px;color:var(--muted)}
   /* 底部播放条 */
-  .rec-player{max-width:1040px;margin:8px auto 0;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
+  .rec-player{max-width:1040px;margin:8px auto 0;width:100%;flex:none;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
   .rec-bar2{height:6px;border-radius:99px;background:var(--surface-2);position:relative;cursor:pointer;margin:4px 0 8px}
   .rec-bar2 i{display:block;height:100%;width:0;background:var(--primary);border-radius:99px}
   .rec-bar2 b{position:absolute;top:50%;left:0;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.2)}
@@ -1904,7 +1906,7 @@
   @media (max-width:640px){
     .rec-h1{font-size:calc(var(--rh1) - 4px)}.rec-card{grid-template-columns:34px 1fr;column-gap:10px}
     .rec-card .own{width:34px;height:34px;font-size:16px;margin-top:22px}.rec-card h2{font-size:20px}.rec-card .bx{padding:16px 14px 14px}
-    .rec-scroll{max-height:calc(var(--vh,100vh) - 230px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
+    #rec-doc{height:calc(var(--vh,100vh) - 30px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
 
   /* ---------- 🎧 精听（竖排：原文在上、听写在下）---------- */
   .lt-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
