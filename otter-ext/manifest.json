@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Otter 翻译 + 复制（Meowly）",
+  "version": "0.1.0",
+  "description": "在 Otter 网页版的每一句下面加中文翻译；一键复制整篇或最近 N 分钟的稿子。",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://translate.googleapis.com/*",
+    "https://api.mymemory.translated.net/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*.ts.net/*"
+  ],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["https://otter.ai/*", "https://*.otter.ai/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

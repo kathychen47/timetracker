@@ -1,0 +1,29 @@
+/* 每句下面的译文：灰色小一号，和 Otter 自己的正文对齐 */
+.mtr-tr{display:block;color:#6b7280;font-size:.92em;line-height:1.55;margin:4px 0 2px;font-style:normal;user-select:text}
+.mtr-tr.mtr-wait{opacity:.45}
+body.mtr-off .mtr-tr{display:none!important}
+
+/* 右下角的小面板 */
+#mtr-panel{position:fixed;right:18px;bottom:110px;z-index:2147483000;font:14px/1.4 "Figtree","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;color:#1f2430}
+#mtr-panel *{box-sizing:border-box}
+#mtr-fab{width:44px;height:44px;border-radius:50%;border:1px solid #e5e7eb;background:#fff;box-shadow:0 6px 20px rgba(0,0,0,.14);cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4f46e5}
+#mtr-fab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#mtr-fab.off{color:#9ca3af}
+#mtr-box{position:absolute;right:0;bottom:54px;width:290px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;box-shadow:0 12px 34px rgba(0,0,0,.18);padding:12px;display:none}
+#mtr-panel.open #mtr-box{display:block}
+#mtr-box h4{margin:0 0 8px;font-size:13px;font-weight:600;color:#6b7280}
+#mtr-box .row{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}
+#mtr-box button{font:inherit;font-size:13.5px;font-weight:600;border:1px solid #e5e7eb;background:#f9fafb;color:#1f2430;border-radius:10px;padding:7px 11px;cursor:pointer}
+#mtr-box button:hover{background:#eef2ff;border-color:#c7d2fe}
+#mtr-box button.pri{background:#4f46e5;border-color:#4f46e5;color:#fff}
+#mtr-box select,#mtr-box input{font:inherit;font-size:13px;border:1px solid #e5e7eb;border-radius:8px;padding:5px 7px;background:#fff;color:#1f2430}
+#mtr-box input[type=number]{width:58px}
+#mtr-box input.wide{width:100%}
+#mtr-box label{display:flex;align-items:center;gap:6px;font-size:13px;color:#374151;cursor:pointer}
+#mtr-box hr{border:0;border-top:1px solid #f0f0f3;margin:10px 0}
+#mtr-box .sw{width:40px;height:23px;border-radius:99px;background:#d1d5db;position:relative;border:0;padding:0;cursor:pointer;flex:none}
+#mtr-box .sw::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .15s}
+#mtr-box .sw.on{background:#4f46e5}#mtr-box .sw.on::after{left:20px}
+#mtr-box .muted{font-size:12px;color:#6b7280}
+#mtr-toast{position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#1f2430;color:#fff;font:13.5px/1.5 "Segoe UI","PingFang SC",sans-serif;padding:9px 14px;border-radius:10px;z-index:2147483001;display:none;max-width:80vw}
+#mtr-toast.on{display:block}
