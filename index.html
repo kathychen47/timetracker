@@ -1626,6 +1626,10 @@
   body[data-recfont="nunito"]{--font-rec:"Nunito Sans","PingFang SC","Microsoft YaHei",var(--font)}
   body[data-recfont="jakarta"]{--font-rec:"Plus Jakarta Sans","PingFang SC","Microsoft YaHei",var(--font)}
   #view-rec,#view-listen{font-family:var(--font-rec)}
+  :root{--rfs:15px;--rlh:25px;--rh1:28px}
+  body[data-recfs="s"]{--rfs:13.5px;--rlh:22px;--rh1:24px}
+  body[data-recfs="l"]{--rfs:17px;--rlh:27px;--rh1:32px}
+  body[data-recfs="xl"]{--rfs:19px;--rlh:30px;--rh1:36px}
   #view-rec button,#view-rec input,#view-rec select,#view-rec textarea,
   #view-listen button,#view-listen input,#view-listen select,#view-listen textarea{font-family:inherit}
   #view-rec.docon .rec-home-only,#view-listen.docon .lt-home-only{display:none}
@@ -1650,6 +1654,17 @@
   .rec-livescroll{max-height:calc(var(--vh,100vh) - 150px)}
   .rec-live .rp.int .body{opacity:.55;font-style:italic}
   .rec-livebar .rec-ctl{gap:10px;flex-wrap:wrap}
+  .rec-livebar .rec-ctl button{width:auto;height:38px;padding:0 16px;white-space:nowrap;border:1px solid var(--border);border-radius:99px;font-size:14px}
+  .rec-livebar .rec-ctl .rec-muteb{background:var(--surface);border-color:transparent}
+  .rec-livebar .rec-ctl .rec-muteb.on{background:var(--primary-soft);color:var(--primary)}
+  .rec-livebar .rec-ctl #rec-pause{background:var(--surface);border-color:transparent;display:inline-flex;align-items:center;gap:6px}
+  .rec-livebar .rec-ctl #rec-pause svg{width:18px;height:18px}
+  .rec-livebar .rec-ctl .rec-stopb{border-color:transparent}
+  .rec-livehint{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+  .rec-lvl{display:flex;justify-content:center;align-items:center;gap:3px;height:22px;margin:2px 0 6px}
+  .rec-lvl i{display:block;width:3px;height:3px;border-radius:2px;background:var(--border);transition:height .08s}
+  .rec-lines.rec-live{max-height:none;overflow:visible;background:none;border:0;padding:0;margin:26px 0 0}
+  .rec-lines.rec-live .dict-hint{text-align:center;padding:40px 0;background:none;border:0}
   .rec-livel{display:inline-flex;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
   .rec-livel svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .rec-livebar .rec-time{min-width:60px;text-align:center;color:var(--text);font-size:15px}
@@ -1709,7 +1724,7 @@
   .rec-icb svg,.rec-pill svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .rec-icb.rec-sq{border:1px solid var(--border);background:var(--bg);font-size:18px;font-weight:700;letter-spacing:1px;line-height:1;padding:0 0 4px}
   .rec-morew:has(.rec-menu.on) .rec-sq{border-color:var(--text)}
-  .rec-pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid var(--border);border-radius:99px;background:var(--bg);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer;flex:none}
+  .rec-pill{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 14px;border:1px solid var(--border);border-radius:99px;background:var(--bg);color:var(--text);font:inherit;font-size:14px;font-weight:600;cursor:pointer;flex:none;white-space:nowrap}
   .rec-pill svg{width:18px;height:18px}
   .rec-pill.on{background:var(--primary-soft);border-color:var(--primary);color:var(--primary)}
   .rec-search{flex:1;max-width:360px;margin:0 auto;display:flex;align-items:center;gap:10px;height:38px;padding:0 16px;border-radius:99px;min-width:0;
@@ -1737,7 +1752,7 @@
   .rec-scroll{max-height:calc(var(--vh,100vh) - 208px);overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
   @media (prefers-reduced-motion:reduce){.rec-scroll{scroll-behavior:auto}}
   .rec-docin{max-width:1040px;margin:0 auto;padding:18px 0 0}
-  .rec-h1{font-size:28px;font-weight:500;line-height:1.2;letter-spacing:-.01em;outline:none;text-wrap:balance;margin:0 0 16px;border-radius:6px}
+  .rec-h1{font-size:var(--rh1);font-weight:500;line-height:1.2;letter-spacing:-.01em;outline:none;text-wrap:balance;margin:0 0 16px;border-radius:6px}
   .rec-h1:empty::before{content:attr(data-ph);color:var(--muted)}
   .rec-h1:focus{box-shadow:0 0 0 2px var(--primary-soft)}
   .rec-metarow{display:flex;align-items:center;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
@@ -1774,7 +1789,7 @@
   .rp.open .rec-av{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--primary)}
   .rp .name time{font-size:12.5px;font-weight:400;color:var(--muted);font-variant-numeric:tabular-nums;cursor:pointer;flex:none}
   .rp .name time:hover{color:var(--primary)}
-  .rp .body{grid-column:2;font-size:15px;line-height:25px;color:var(--text);min-width:0;word-break:break-word}
+  .rp .body{grid-column:2;font-size:var(--rfs);line-height:var(--rlh);color:var(--text);min-width:0;word-break:break-word}
   .rp .rl{display:inline}
   .rp .rs{outline:none;border-radius:6px}
   .rp .rs[contenteditable=true]{cursor:text;background:var(--bg);box-shadow:0 0 0 1px var(--primary);padding:1px 3px}
@@ -1887,7 +1902,7 @@
   .rec-exp .b2{border:1px solid var(--border);background:var(--bg);color:var(--text)}
   @media (max-width:860px){.rec-exp .eb{grid-template-columns:1fr}.rec-exp .er{display:none}.rec-pill span{display:none}.rec-pill{padding:0 10px}}
   @media (max-width:640px){
-    .rec-h1{font-size:24px}.rp .body{font-size:15px;line-height:24px}.rec-card{grid-template-columns:34px 1fr;column-gap:10px}
+    .rec-h1{font-size:calc(var(--rh1) - 4px)}.rec-card{grid-template-columns:34px 1fr;column-gap:10px}
     .rec-card .own{width:34px;height:34px;font-size:16px;margin-top:22px}.rec-card h2{font-size:20px}.rec-card .bx{padding:16px 14px 14px}
     .rec-scroll{max-height:calc(var(--vh,100vh) - 230px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
 
@@ -1912,11 +1927,11 @@
   .lt-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
   .lt-lab{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:8px;margin:0 0 4px}
   .lt-lab button{border:0;background:none;color:var(--primary);cursor:pointer;font-size:12px;padding:1px 4px;border-radius:5px}
-  .lt-src{font-size:15px;line-height:25px;word-break:break-word}
+  .lt-src{font-size:var(--rfs);line-height:var(--rlh);word-break:break-word}
   .lt-tr{font-size:14.5px;line-height:1.7;color:var(--muted);margin:4px 0 0;word-break:break-word}
   .lt-hidden{filter:blur(6px);opacity:.55;user-select:none;cursor:pointer}
-  .lt-in{width:100%;box-sizing:border-box;min-height:80px;resize:vertical;padding:10px 13px;font-size:15px;
-    line-height:25px;border:1px solid var(--border);border-radius:12px;background:var(--bg);
+  .lt-in{width:100%;box-sizing:border-box;min-height:80px;resize:vertical;padding:10px 13px;font-size:var(--rfs);
+    line-height:var(--rlh);border:1px solid var(--border);border-radius:12px;background:var(--bg);
     color:var(--text);font-family:inherit;margin-top:12px;outline:none}
   .lt-in:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
   .lt-btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
@@ -4625,15 +4640,17 @@ margin-left: -22px;
             </div>
           </div>
           <div class="rec-player rec-livebar">
+            <div class="rec-lvl" id="rec-lvl"></div>
             <div class="rec-ctl">
-              <span class="rec-livel"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></span>
+              <span class="rec-livel" title="麦克风"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></span>
+              <button type="button" class="rec-pill rec-muteb" id="rec-mute"><span>静音</span></button>
               <span class="rec-livel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="rec-livelang"></span></span>
               <span class="rec-sp"></span>
               <button type="button" class="rec-pill" id="rec-pause"></button>
               <span class="rec-time" id="rec-time"></span>
               <button type="button" class="rec-pill rec-stopb" id="rec-stop"><span>停止</span></button>
               <span class="rec-sp"></span>
-              <span class="wt-note" id="rec-hint" style="margin:0"></span>
+              <span class="wt-note rec-livehint" id="rec-hint" style="margin:0"></span>
             </div>
           </div>
         </div>
@@ -4651,10 +4668,13 @@ margin-left: -22px;
               <hr>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.5 15.5M8.5 8.5L20 20"/></svg><span>重新断句</span>
                 <span class="rec-chips" id="rec-segchips"><button type="button" data-seg="tight">紧</button><button type="button" data-seg="normal">标准</button><button type="button" data-seg="para">整段</button></span></div>
+              <button type="button" data-rm="spk"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="10" r="3"/><path d="M6.5 18.5c1.2-2.2 3.2-3.3 5.5-3.3s4.3 1.1 5.5 3.3"/></svg>识别说话人</button>
               <button type="button" data-rm="redo" id="rec-whisper"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"/></svg>重新转写</button>
               <hr>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg><span>翻译引擎</span>
                 <span class="rec-chips" id="rec-trchips"></span></div>
+              <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 16l3-9h4l3 9M9 13h6"/></svg><span>字号</span>
+                <span class="rec-chips" id="rec-fschips"><button type="button" data-fs="s">小</button><button type="button" data-fs="m">标准</button><button type="button" data-fs="l">大</button><button type="button" data-fs="xl">特大</button></span></div>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M3 18l5-13 5 13M5 13h6M14 18l3-8 3 8M15.5 15h3"/></svg><span>字体</span>
                 <span class="rec-chips" id="rec-fontchips"><button type="button" data-font="figtree">Figtree</button><button type="button" data-font="nunito">Nunito Sans</button><button type="button" data-font="jakarta">Plus Jakarta Sans</button></span></div>
               <hr>
@@ -4684,6 +4704,7 @@ margin-left: -22px;
             <div class="rec-pchips" id="rec-speed"></div>
             <div class="rec-prow"><span>跟读（读到哪滚到哪）</span><button type="button" class="rec-sw on" id="rec-follow" aria-label="跟读"></button></div>
             <div class="rec-prow"><span>显示译文</span><button type="button" class="rec-sw on" id="rec-bi" aria-label="显示译文"></button></div>
+            <div class="rec-prow"><span>跳过静音（两句之间停太久直接跳）</span><button type="button" class="rec-sw" id="rec-skip" aria-label="跳过静音"></button></div>
           </div>
           <div class="rec-bar2" id="rec-pbar"><i></i><b></b></div>
           <div class="rec-times"><span id="rec-now">0:00</span><span id="rec-dur">0:00</span></div>
@@ -4824,14 +4845,14 @@ margin-left: -22px;
           <aside class="nb-side" id="fx-side"></aside>
           <div class="nb-main">
             <div class="rd-import">
-              <label class="btn primary" style="cursor:pointer" title="也可以直接把文件从电脑里拖到这个页面上">＋ 导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
-              <label class="btn" style="cursor:pointer" title="选一整个文件夹，里面的子文件夹结构会一起搭出来">📂 导入文件夹<input type="file" id="rd-dirfile" webkitdirectory directory multiple hidden></label>
+              <label class="btn primary rec-ib" style="cursor:pointer" title="也可以直接把文件从电脑里拖到这个页面上"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>导入书<input type="file" id="rd-file" accept=".pdf,.epub,.docx,.doc,.txt,.md,.markdown,.csv,.log,.srt,.vtt,.json,.xml,.rtf,.html,.htm" multiple hidden></label>
+              <label class="btn rec-ib" style="cursor:pointer" title="选一整个文件夹，里面的子文件夹结构会一起搭出来"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>导入文件夹<input type="file" id="rd-dirfile" webkitdirectory directory multiple hidden></label>
               <button class="btn" id="fx-pick" title="多选：一次移走或删掉好几个（也可以直接按住 Ctrl / ⌘ 点）"><svg class="ck-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect></svg><svg class="ck-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="4"></rect><path d="M8.5 12.2l2.4 2.4 4.6-4.8"></path></svg>选择</button>
-              <button class="btn" id="fx-newnote" title="就建在当前这个文件夹里">📝 新建笔记</button>
-              <button class="btn" id="rd-newfolder" title="建在当前文件夹下面，可以一层套一层">＋ 新建文件夹</button>
-              <button class="btn" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份">🗂 本地文件夹</button>
-              <button class="btn" id="rd-tonotes" title="按时间 / 标签 / 书来翻笔记，还能全文搜">🔍 笔记总览</button>
-              <button class="btn" id="fx-store" title="这些书存在哪、占了多少、会不会丢">💾 存储</button>
+              <button class="btn rec-ib" id="fx-newnote" title="就建在当前这个文件夹里"><svg viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16zM13 7l4 4"/></svg>新建笔记</button>
+              <button class="btn rec-ib" id="rd-newfolder" title="建在当前文件夹下面，可以一层套一层"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM12 10v6M9 13h6"/></svg>新建文件夹</button>
+              <button class="btn rec-ib" id="rd-dir" type="button" title="选一个本地文件夹，导入的书自动往那儿存一份"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M7 15h3"/></svg>本地文件夹</button>
+              <button class="btn rec-ib" id="rd-tonotes" title="按时间 / 标签 / 书来翻笔记，还能全文搜"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>笔记总览</button>
+              <button class="btn rec-ib" id="fx-store" title="这些书存在哪、占了多少、会不会丢"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>存储</button>
               <div class="seg" id="rd-view" style="margin-left:auto" title="怎么显示">
                 <button data-rv="grid" class="on" title="封面：大图标，像 Windows 的文件夹">▦ 封面</button>
                 <button data-rv="list" title="列表：一行一个，带大小和进度">☰ 列表</button>
@@ -4849,8 +4870,8 @@ margin-left: -22px;
 
       <div id="rd-read" style="display:none">
         <div class="rd-bar">
-          <button class="btn" id="rd-back">← 书架</button>
-          <button class="btn" id="rd-toc-btn" title="目录">☰ 目录</button>
+          <button class="btn rec-ib" id="rd-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>书架</button>
+          <button class="btn rec-ib" id="rd-toc-btn" title="目录"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>目录</button>
           <b class="rd-title" id="rd-title"></b>
           <span class="grow"></span>
           <div class="rd-nav">
@@ -6085,6 +6106,7 @@ margin-left: -22px;
     "C:\\Users\\你\\OneDrive\\1_Code\\Timetracker\\extension":"C:\\Users\\You\\OneDrive\\1_Code\\Timetracker\\extension",
     "CPU（稳）":"CPU (stable)",
     "CPU（稳，慢一些）":"CPU (steady, slower)",
+    "Chrome 问你要录哪里的声音：开会选「Entire Screen」并打开「Share system audio」；只录麦克风就点 Cancel。不想每次问，去 ··· 里关掉「连电脑里的声音一起录」。":"Chrome is asking which audio to capture: for a meeting pick Entire Screen and turn on Share system audio; for mic only press Cancel. To stop being asked, turn off \"Also record the computer's audio\" under ···.",
     "Edge Function 还没配密钥 —— 照 supabase/AKAHU.md 第 4 步设那三条":"The Edge Function has no secrets set — set those three per step 4 in supabase/AKAHU.md",
     "GST 待定":"GST TBD",
     "GST 总额":"GST total",
@@ -6147,8 +6169,11 @@ margin-left: -22px;
     "finishUp:落库":"finishUp: save",
     "http://Mac的IP:11434":"http://your-Mac-IP:11434",
     "kg 公斤":"kg",
+    "large-v3-turbo · 最准（要显卡，约 900MB）":"large-v3-turbo · most accurate (needs a GPU, ~900MB)",
     "leaveFollow:存档没了，手上还有时间":"leaveFollow: saved state gone, time still on hand",
+    "medium · 口音更稳（慢，约 500MB）":"medium · better with accents (slow, ~500MB)",
     "onComplete:不归我管":"onComplete: not this tab's timer",
+    "small · 更准":"small · more accurate",
     "small · 最准":"small · most accurate",
     "small ·最准· 240MB":"small · most accurate · 240MB",
     "tiny · 最快":"tiny · fastest",
@@ -6280,6 +6305,7 @@ margin-left: -22px;
     "三":"Wed",
     "上一句":"Previous sentence",
     "上一期":"Previous period",
+    "上一条还在识别说话人，等它好了再来":"Still identifying speakers in the previous one, wait for it to finish",
     "上一次同步还没回来，等一下…":"The last sync hasn't come back yet, hang on…",
     "上一段还在转，等它转完":"Still transcribing the last one — wait for it to finish",
     "上一节":"Prev section",
@@ -6301,6 +6327,7 @@ margin-left: -22px;
     "下次执行":"Next run",
     "下载模型卡住了（两分钟没进展）。换个网络，或在引擎那儿选个小一点的模型。":"The model download is stuck (no progress for two minutes). Try another network, or pick a smaller model in the engine setting.",
     "下载识别模型…（首次较慢）":"Downloading the OCR model… (slow the first time)",
+    "下载说话人模型（只有第一次，约 32MB）…":"Downloading the speaker models (first time only, ~32MB)…",
     "下限 ($)":"From ($)",
     "下面选的引擎":"the engine selected below",
     "不会":"won't",
@@ -6378,6 +6405,7 @@ margin-left: -22px;
     "书名,位置,类型,颜色,原文摘录,笔记,标签,时间":"Book,Location,Type,Color,Excerpt,Note,Tags,Time",
     "书在浏览器的 IndexedDB，库名":"Books live in the browser's IndexedDB, database name",
     "书库正在别的标签页里升级，刷新一下再试":"The library is upgrading in another tab, refresh and try again",
+    "书架":"Shelf",
     "书签那条路每次都要弹一个新窗口，还会被 GitHub 这类网站的安全策略挡住。":"The bookmarklet route pops open a new window every time, and sites like GitHub block it with their security policy.",
     "书里划的":"From books",
     "书里划过的笔记会留在「🔍 笔记总览」里。":"The notes you made in the books stay in \"🔍 All notes\".",
@@ -6576,6 +6604,7 @@ margin-left: -22px;
     "准备中 · 正在取转写引擎（第一次要从 CDN 下，之后有缓存）…":"Getting ready · fetching the transcription engine (downloaded from the CDN the first time, cached after that)…",
     "准备中…":"Getting ready…",
     "准备模型…":"Getting the model ready…",
+    "准备识别说话人…":"Getting ready to identify speakers…",
     "准备题目中…":"Getting the questions ready…",
     "凌晨 1 点":"1 AM",
     "凌晨 2 点":"2 AM",
@@ -6713,6 +6742,7 @@ margin-left: -22px;
     "取云端音频…":"Fetching the audio from the cloud…",
     "取消归档":"Unarchive",
     "取消标记":"Untag",
+    "取消静音":"Unmute",
     "变化曲线":"Trend",
     "口语":"speaking",
     "句子前后留白（秒）":"Padding around each sentence (sec)",
@@ -6906,7 +6936,9 @@ margin-left: -22px;
     "对答案":"Check answer",
     "对齐":"align",
     "导入":"Import",
+    "导入书":"Import book",
     "导入单词":"Import words",
+    "导入文件夹":"Import folder",
     "导入菜谱":"Import recipes",
     "导入菜谱文件（.json）":"Import a recipe file (.json)",
     "导入音频 · 自动转写":"Import audio · auto-transcribe",
@@ -7293,7 +7325,9 @@ margin-left: -22px;
     "新建事件弹窗里那个「同时加到我的 Google 日历」默认勾上，不用每次手动勾。":"Ticks \"Also add to my Google Calendar\" in the new-event dialog by default, so you don't have to each time.",
     "新建大类，名称：":"New category, name:",
     "新建待办":"New to-do",
+    "新建文件夹":"New folder",
     "新建文件夹（建在最外层）：":"New folder (at the top level):",
+    "新建笔记":"New note",
     "新建词书":"New word book",
     "新技能":"New skill",
     "新技能叫什么？（比如：学 SQL）":"What's the new skill called? (e.g. Learn SQL)",
@@ -7417,6 +7451,7 @@ margin-left: -22px;
     "未连接（先在「👤 账号」用 Google 登录）":"Not connected (sign in with Google under \"👤 Account\" first)",
     "未配置":"Not set up",
     "本地 Ollama（免费无限，只有跑模型的这台电脑能用）":"Local Ollama (free and unlimited, only on the computer running the model)",
+    "本地文件夹":"Local folder",
     "本地模型":"Local model",
     "本地模型没给出译文":"The local model returned no translation",
     "本地模型没返回内容":"The local model returned nothing",
@@ -7517,6 +7552,7 @@ margin-left: -22px;
     "沟通":"catch-up",
     "没出现":"doesn't",
     "没勾":"Not checked",
+    "没听出有人说话。":"Couldn't hear anyone speaking.",
     "没听清是哪个单词":"Didn't catch which word",
     "没听清金额，换句话说说？例如「记一笔收入 4600，含GST」":"Didn't catch the amount — try again? e.g. \"log income 4600, GST included\"",
     "没找到匹配的菜。":"No dishes match.",
@@ -7644,6 +7680,7 @@ margin-left: -22px;
     "牛腩冷水下锅焯水&#10;番茄炒出汁":"Blanch the brisket from cold water&#10;Fry the tomatoes until saucy",
     "物业":"property fees",
     "物流":"logistics",
+    "特大":"Extra large",
     "环形":"Donut",
     "现在不自动翻，卡片上有按钮想翻再点 · 点一下打开":"Auto-translate is off; use the button on the card when you want it · click to turn on",
     "现在按真实日期算，零点一过就是新的一天。":"Days follow the real date right now — a new one starts the moment it hits midnight.",
@@ -7740,6 +7777,7 @@ margin-left: -22px;
     "笔记":"Notes",
     "笔记/标注列表":"Notes / highlights",
     "笔记内容：":"Note:",
+    "笔记总览":"All notes",
     "笔记正文渲染出来长什么样。这些是从 Typora 主题转过来的（MIT License · evgo），只作用在笔记预览区，不影响 app 其他地方。":"How the body of a note is rendered. These are converted from Typora themes (MIT License · evgo) and apply only to the note preview — nothing else in the app changes.",
     "笔记的 Markdown 主题":"Markdown theme for notes",
     "第一次要做的事":"First-time setup",
@@ -7905,6 +7943,8 @@ margin-left: -22px;
     "识别中…":"Reading…",
     "识别器不认的专业词，在这儿教它。转写稿里改对一个词，也会自动记住。":"Teach the recognizer the jargon it doesn't know here. Fix a word in a transcript and it remembers that too.",
     "识别语言":"OCR language",
+    "识别说话人":"Identify speakers",
+    "识别说话人…":"Identifying speakers…",
     "识别这一页的文字（扫描版用）":"Recognize the text on this page (for scans)",
     "诊所":"clinic",
     "词":"words",
@@ -7975,6 +8015,8 @@ margin-left: -22px;
     "路费":"tolls",
     "跳过已在生词本的":"Skip words already in the word list",
     "跳过我删过的":"Skip words I've deleted",
+    "跳过静音":"Skip silence",
+    "跳过静音（两句之间停太久直接跳）":"Skip silence (jump over long gaps between sentences)",
     "身体":"Body",
     "身体数据":"Body stats",
     "身体数据 · 体重与围度":"Body stats · weight & measurements",
@@ -8111,6 +8153,7 @@ margin-left: -22px;
     "这台设备上没有它的音频 —— 音频不进云端，得回到录它的那台机器。":"Its audio isn't on this device — audio never goes to the cloud, so go back to the machine that recorded it.",
     "这台设备上没有它的音频。文字都在 —— 回到存音频的那台机器，或者在设置里把存储改成「云端」再重新导入。":"Its audio isn't on this device. The text is all here — go back to the machine that has the audio, or set storage to \"Cloud\" in the settings and import it again.",
     "这台设备上没有它的音频（音频不进云端），没法重转。":"Its audio isn't on this device (audio never goes to the cloud), so it can't be re-transcribed.",
+    "这台设备上没有它的音频，认不了人。":"No audio for it on this device, so speakers can't be identified.",
     "这台设备上没有这本书（笔记是从别的设备同步过来的）":"This book isn't on this device (the note synced over from another one)",
     "这台设备上没有音频，传不上去。":"No audio on this device — nothing to upload.",
     "这台设备上自动续期不行（浏览器拦了第三方 Cookie），点右边「重新授权」手动来一次，约管 1 小时":"Auto-renew doesn't work on this device (the browser blocks third-party cookies) — tap \"Re-authorise\" on the right to do it by hand, lasts about 1 hour",
@@ -8242,6 +8285,7 @@ margin-left: -22px;
     "雪纳瑞":"Schnauzer",
     "零食":"snacks",
     "需求评审":"Requirements review",
+    "静音":"Mute",
     "面试":"interview",
     "鞋":"shoes",
     "音频":"Audio",
@@ -8280,6 +8324,7 @@ margin-left: -22px;
     "高亮（先选中文字）":"Highlight (select text first)",
     "高亮（右键删除这个颜色）":"Highlight (right-click to remove this color)",
     "高铁":"high-speed rail",
+    "麦克风":"Microphone",
     "麦克风 + 电脑声音，一起录着（实时字幕只认麦克风，对方那半段录完用「重新转写」出字）":"Recording mic + computer audio (live captions only hear the mic; use Re-transcribe afterwards to get the other side)",
     "默认":"Default",
     "默认不加回来 —— 想要哪个就点哪个":"Not added back by default — tap the ones you want",
@@ -9823,6 +9868,9 @@ margin-left: -22px;
     var mic=await navigator.mediaDevices.getUserMedia({audio:true});
     if(!wantSys)return {stream:mic,mixed:false};
     var disp=null;
+    // Chrome 只有这一条路能拿到电脑里的声音：弹个「共享」窗。开会选 Entire Screen 并打开 Share system audio；
+    // 会议开在某个标签页里就选那个标签页；不想录电脑声音直接 Cancel，只录麦克风。
+    recToast(trv("Chrome 问你要录哪里的声音：开会选「Entire Screen」并打开「Share system audio」；只录麦克风就点 Cancel。不想每次问，去 ··· 里关掉「连电脑里的声音一起录」。"));
     try{disp=await navigator.mediaDevices.getDisplayMedia({video:true,audio:true});}
     catch(e){
       if(e&&e.name==="NotAllowedError")recNote("你取消了共享，这次只录麦克风。");
@@ -9869,9 +9917,10 @@ margin-left: -22px;
     var ll=document.getElementById("rec-livelang");
     if(ll){var sel=document.getElementById("rec-lang");ll.textContent=sel&&sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";}
     document.getElementById("rec-lang").disabled=true;
-    recPaintPause();
+    recMuted=false;var mb=document.getElementById("rec-mute");if(mb){mb.classList.remove("on");mb.querySelector("span").textContent=trv("静音");}
+    recPaintPause();recLvlStart();
     recTick=setInterval(recPaintTime,500);recPaintTime();
-    recDrawLive();}
+    recDrawLive();requestAnimationFrame(recLvlTick);}
 
   function recSRStart(){
     if(!SRC)return;
@@ -9916,6 +9965,33 @@ margin-left: -22px;
     recPend=null;recLastEnd=Math.max(recLastEnd,recElapsed());
     recSRStart();
     recPaintPause();recPaintTime();}
+  // 静音：麦克风轨道关掉（录下来是无声），识别器也停；再点恢复
+  var recMuted=false,recLvlCtx=null,recLvlAn=null,recLvlBuf=null,recLvlHist=[];
+  function recMute(on){
+    recMuted=on;
+    var mic=(recStream&&recStream.__mic)||recStream;
+    try{if(mic)mic.getAudioTracks().forEach(function(t){t.enabled=!on;});}catch(e){}
+    if(on){if(recSR){var s=recSR;recSR=null;try{s.stop();}catch(e){}}segFlush();}
+    else if(recOn&&!recPausedAt){recPend=null;recLastEnd=Math.max(recLastEnd,recElapsed());recSRStart();}
+    var b=document.getElementById("rec-mute");if(b){b.classList.toggle("on",on);b.querySelector("span").textContent=on?trv("取消静音"):trv("静音");}}
+  function recLvlStart(){
+    try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC||!recStream)return;
+      recLvlCtx=new AC();recLvlAn=recLvlCtx.createAnalyser();recLvlAn.fftSize=512;
+      recLvlCtx.createMediaStreamSource(recStream).connect(recLvlAn);
+      recLvlBuf=new Uint8Array(recLvlAn.fftSize);recLvlHist=[];
+      var box=document.getElementById("rec-lvl");if(box)box.innerHTML=new Array(49).join("<i></i>");
+    }catch(e){recLvlAn=null;}}
+  function recLvlStop(){try{if(recLvlCtx)recLvlCtx.close();}catch(e){}recLvlCtx=null;recLvlAn=null;
+    var box=document.getElementById("rec-lvl");if(box)box.querySelectorAll("i").forEach(function(i){i.style.height="";});}
+  function recLvlTick(){
+    if(!recOn||!recLvlAn)return;
+    try{recLvlAn.getByteTimeDomainData(recLvlBuf);}catch(e){return;}
+    var sum=0;for(var i=0;i<recLvlBuf.length;i++){var v=(recLvlBuf[i]-128)/128;sum+=v*v;}
+    var rms=Math.sqrt(sum/recLvlBuf.length),lv=(recPausedAt||recMuted)?0:Math.min(1,rms*4);
+    recLvlHist.push(lv);if(recLvlHist.length>48)recLvlHist.shift();
+    var dots=document.querySelectorAll("#rec-lvl i");
+    for(var k=0;k<dots.length;k++){var h=recLvlHist[recLvlHist.length-dots.length+k];dots[k].style.height=(3+Math.round((h||0)*16))+"px";}
+    requestAnimationFrame(recLvlTick);}
   function recPaintPause(){
     var b=document.getElementById("rec-pause");if(!b)return;
     b.innerHTML=recPausedAt
@@ -9928,6 +10004,7 @@ margin-left: -22px;
     recOn=false;
     if(recPausedAt){recPauseTot+=Date.now()-recPausedAt;recPausedAt=0;}
     if(recSR){var s=recSR;recSR=null;try{s.stop();}catch(e){}}
+    recLvlStop();
     segFlush();                                        // 攒着的最后半句别丢了
     if(recTick){clearInterval(recTick);recTick=null;}
     try{recMR&&recMR.state!=="inactive"&&recMR.stop();}catch(e){}
@@ -9958,7 +10035,8 @@ margin-left: -22px;
     saveRecs();recRenderList();
     if(!okSave)ttAlert("文字存下来了，但音频没能写进本机数据库（多半是空间满了）。");
     recNote(recLines.length?("记下 "+recLines.length+" 句 · "+tsLabel(dur)):("录了 "+tsLabel(dur)+"，但一句都没识别出来"+(SRC?"":"（这个浏览器不支持实时转写）")));
-    recOpen(id);}
+    recOpen(id);
+    if(okSave&&recLines.length)recDiarize(recs[0],true);}
 
   function recToCalendar(r){
     var end=new Date(r.ts),start=new Date(r.ts-r.dur*1000);
@@ -9995,7 +10073,8 @@ margin-left: -22px;
     if(live)h+='<div class="rp live int"><span class="rec-av none">·</span><div class="name"><time>'+tsLabel(lt)+'</time></div><div class="body">'+esc(live)+'</div></div>';
     if(!h)h='<div class="dict-hint">'+(SRC?trv("说话就会出字…"):trv("这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。"))+'</div>';
     box.innerHTML=h;
-    box.scrollTop=box.scrollHeight;}
+    var sc=box.closest(".rec-scroll");if(sc)sc.scrollTop=sc.scrollHeight;else box.scrollTop=box.scrollHeight;
+    recLvlTick();}
 
   // ---- 说话人：人名库（tt_people，跟云同步）----
   // 每条录音上：line.sp = 这条录音里的第几个声音（簇号），rec.spk = {簇号: 人 id}。
@@ -10478,6 +10557,7 @@ margin-left: -22px;
       Object.keys(r.spk).forEach(function(k){if(+k>mx)mx=+k;});
       sp=mx+1;p.lines.forEach(function(i){r.lines[i].sp=sp;});}
     if(pid)r.spk[sp]=pid;else delete r.spk[sp];
+    if(pid&&r.spv&&r.spv[sp])personLearn(pid,r.spv[sp]);
     saveRecs();recPkClose();recPaintLines();recPaintHead();}
 
   // ---- 划词浮条：高亮 / 评论 / 复制 / 加生词本 ----
@@ -10530,8 +10610,11 @@ margin-left: -22px;
     var tc=document.getElementById("rec-trchips");
     if(tc&&typeof TRENG!=="undefined")tc.innerHTML=TRENG.map(function(x){return '<button type="button" data-treng="'+x.v+'"'+(trEngine===x.v?' class="on"':'')+' title="'+esc(x.h||"")+'">'+esc(x.n)+'</button>';}).join("");
     var f=load("tt_recfont","figtree");
-    document.querySelectorAll("#rec-fontchips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-font")===f);});}
-  function recApplyFont(){var f=load("tt_recfont","figtree");document.body.setAttribute("data-recfont",f);}
+    document.querySelectorAll("#rec-fontchips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-font")===f);});
+    var fs=load("tt_recfs","m");
+    document.querySelectorAll("#rec-fschips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-fs")===fs);});}
+  function recApplyFont(){var f=load("tt_recfont","figtree");document.body.setAttribute("data-recfont",f);
+    document.body.setAttribute("data-recfs",load("tt_recfs","m"));}
   // 重转 / 重新断句之后，句子全换了 —— 评论、高亮、说话人按**时间**搬到新句子上。
   // 时间轴是音频自己的，模型换了也不会变；文字会变，所以高亮按「同一时刻 + 同一个词」找回来，找不到的就丢。
   function recCarry(oldL,newL){
@@ -10570,6 +10653,7 @@ margin-left: -22px;
     go.addEventListener("click",function(){recOn?recStop():recStart();});
     var stop=document.getElementById("rec-stop");if(stop)stop.addEventListener("click",function(){if(recOn)recStop();});
     var pa=document.getElementById("rec-pause");if(pa)pa.addEventListener("click",function(){recPausedAt?recResume():recPause();});
+    var mu=document.getElementById("rec-mute");if(mu)mu.addEventListener("click",function(){if(recOn)recMute(!recMuted);});
     var sb=document.getElementById("rec-setbtn"),sp0=document.getElementById("rec-setpanel");
     if(sb)sb.addEventListener("click",function(e){e.stopPropagation();sp0.classList.toggle("on");});
     // 内录：不支持的浏览器（Safari、手机）直接把这个勾去掉，别让人勾了发现没用。默认开着 —— 开会才是主场景
@@ -10637,8 +10721,11 @@ margin-left: -22px;
       if(te){trEngine=te;save("tt_trengine",te);try{var s=document.getElementById("tr-engine");if(s)s.value=te;}catch(err){}recMenuPaint();return;}
       var ft=b.getAttribute("data-font");
       if(ft){save("tt_recfont",ft);recApplyFont();recMenuPaint();return;}
+      var fs=b.getAttribute("data-fs");
+      if(fs){save("tt_recfs",fs);recApplyFont();recMenuPaint();return;}
       var m=b.getAttribute("data-rm");menu.classList.remove("on");
       if(m==="copy")recCopyAll();
+      else if(m==="spk")recDiarize(recCur,false);
       else if(m==="export")recXOpen();
       else if(m==="del")recDelCur();});
     // 导出弹窗
@@ -10697,6 +10784,14 @@ margin-left: -22px;
     var bi=document.getElementById("rec-bi"),biOn=load("tt_recbi",true)!==false;
     bi.classList.toggle("on",biOn);lines.classList.toggle("nobi",!biOn);
     bi.addEventListener("click",function(){var on=!bi.classList.contains("on");bi.classList.toggle("on",on);lines.classList.toggle("nobi",!on);save("tt_recbi",on);});
+    var sk=document.getElementById("rec-skip"),skipOn=!!load("tt_recskip",false);sk.classList.toggle("on",skipOn);
+    sk.addEventListener("click",function(){skipOn=!skipOn;save("tt_recskip",skipOn);sk.classList.toggle("on",skipOn);});
+    // 跳过静音：按稿子的时间戳 —— 两句之间空超过 1.2 秒，播到空档就直接跳到下一句开头
+    au.addEventListener("timeupdate",function(){
+      if(!skipOn||!recCur||au.paused)return;
+      var L=recCur.lines,i=recFindLine(au.currentTime),nx=L[i+1];
+      if(!nx)return;var en=i>=0?(+L[i].e||0):0;
+      if(au.currentTime>en+0.15&&(+nx.t||0)-en>1.2&&au.currentTime<(+nx.t||0)-0.2){try{au.currentTime=(+nx.t||0)-0.1;}catch(e){}}});
     document.getElementById("rec-tr").addEventListener("click",function(){
       if(!recCur)return;
       var has=recCur.lines.some(function(l){return l.tr;});
@@ -10767,7 +10862,10 @@ margin-left: -22px;
   var WMODELS=[
     {id:"onnx-community/whisper-tiny_timestamped",name:"tiny · 最快",mb:42,rt:0.25},
     {id:"onnx-community/whisper-base_timestamped",name:"base · 推荐",mb:77,rt:0.5},
-    {id:"onnx-community/whisper-small_timestamped",name:"small · 最准",mb:240,rt:1.5}];
+    {id:"onnx-community/whisper-small_timestamped",name:"small · 更准",mb:240,rt:1.5},
+    {id:"onnx-community/whisper-medium_timestamped",name:"medium · 口音更稳（慢，约 500MB）",mb:500,rt:3},
+    {id:"onnx-community/whisper-large-v3-turbo_timestamped",name:"large-v3-turbo · 最准（要显卡，约 900MB）",mb:900,rt:4,gpu:true}];
+  function wModelBig(id){return /medium|large/.test(String(id||""));}
   function wModelRT(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].rt||0.5;return 0.5;}
   function wModelName(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].name;return "";}
   // 估个时间给你看 —— 干等着不知道要多久最难受。CPU 大约「音频时长 x 模型倍率」，显卡快 4 倍左右。
@@ -10803,7 +10901,7 @@ margin-left: -22px;
     '      cur=model+"|"+device;',
     '      pipe=await pipeline("automatic-speech-recognition",model,{',
     '        device:device,',
-    '        dtype:(device==="webgpu")?{encoder_model:"fp32",decoder_model_merged:"q4"}:"q8",',
+    '        dtype:e.data.dtype||((device==="webgpu")?{encoder_model:"fp32",decoder_model_merged:"q4"}:"q8"),',
     '        progress_callback:(p)=>self.postMessage({type:"load",p:p}),',
     '      });',
     '    }',
@@ -10929,7 +11027,9 @@ margin-left: -22px;
         w.addEventListener("message",onmsg);w.addEventListener("error",onerr);
         wProg("准备中 · 正在取转写引擎（第一次要从 CDN 下，之后有缓存）…",null);
         bark(20000,"转写线程 20 秒没有任何反应 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。");
-        w.postMessage({audio:a.pcm,model:model,lang:lang||undefined,device:dev});});
+        // 大模型：显卡上编码器用 fp16（fp32 要 1.2GB 显存）；CPU 上一律 q8
+        var dtype=(dev==="webgpu")?{encoder_model:wModelBig(model)?"fp16":"fp32",decoder_model_merged:"q4"}:"q8";
+        w.postMessage({audio:a.pcm,model:model,lang:lang||undefined,device:dev,dtype:dtype});});
     }).catch(function(err){wkrBusy=false;wProg(null);throw err;});}
 
   // Whisper 给的 chunks 正好一句一条，直接就是我们要的行
@@ -10945,6 +11045,153 @@ margin-left: -22px;
       L.push({t:Math.round(t*10)/10,e:Math.round(e*10)/10,s:s});});
     return L;}
 
+  // ---------- 说话人：谁在什么时候说 ----------
+  // 两个小模型，都在浏览器里跑、音频不出本机：
+  //   · pyannote segmentation 3.0（~6MB）：每 30 秒一窗，给出"这一窗里 1/2/3 号声音各在什么时候说"。
+  //     窗与窗之间的编号对不上（这是模型的性质），所以还要第二步。
+  //   · WeSpeaker ResNet34（~26MB）：每一段说话算一个 256 维声纹，整条录音的段按声纹相近聚成簇 —— 簇号就是 line.sp。
+  //   · 簇的平均声纹存在 rec.spv，跟 tt_people 里记过的人比：像谁就直接写谁的名字；不像就叫「说话人 N」等她改。
+  //     她改一次名字，这个簇的声纹就记到那个人名下（people[i].v），下次录到直接认出来。
+  var DIAR_SEG="onnx-community/pyannote-segmentation-3.0",DIAR_EMB="onnx-community/wespeaker-voxceleb-resnet34-LM";
+  var DIAR_THR=0.35,DIAR_MATCH=0.45,DIAR_MAXK=6;         // 聚类 / 认人的余弦相似度门槛（WeSpeaker 同一个人通常 0.4–0.7，不同人 0.3 以下）；一场会最多认 6 个人
+  var dwkr=null,dwkrBusy=false;
+  function dwkrSrc(){return [
+    'let TF=null,seg=null,segP=null,emb=null,embP=null;',
+    'async function lib(){if(!TF)TF=await import("'+TJS+'");return TF;}',
+    'self.postMessage({type:"boot"});',
+    'self.onmessage=async (e)=>{',
+    '  const {audio,segModel,embModel}=e.data;',
+    '  try{',
+    '    const {AutoProcessor,AutoModelForAudioFrameClassification,AutoModel,env}=await lib();',
+    '    env.allowLocalModels=false;',
+    '    const prog=(p)=>self.postMessage({type:"load",p:p});',
+    '    if(!seg){segP=await AutoProcessor.from_pretrained(segModel,{progress_callback:prog});',
+    '      seg=await AutoModelForAudioFrameClassification.from_pretrained(segModel,{device:"wasm",dtype:"fp32",progress_callback:prog});}',
+    '    if(!emb){embP=await AutoProcessor.from_pretrained(embModel,{progress_callback:prog});',
+    '      emb=await AutoModel.from_pretrained(embModel,{device:"wasm",dtype:"fp32",progress_callback:prog});}',
+    '    self.postMessage({type:"run"});',
+    '    const SR=16000,WIN=30*SR,n=0;let count=0;',
+    '    for(let off=0;off<audio.length;off+=WIN){',
+    '      const chunk=audio.subarray(off,Math.min(audio.length,off+WIN));',
+    '      if(chunk.length<SR*0.6)break;',
+    '      const inputs=await segP(chunk);',
+    '      const {logits}=await seg(inputs);',
+    '      const res=segP.post_process_speaker_diarization(logits,chunk.length);',
+    '      const raw=(res&&res[0])||[],merged=[];',
+    '      for(const s of raw){',
+    '        if(!(s.id>=1&&s.id<=3))continue;',                  // 0 = 没人说；4–6 = 两个人叠着说，跳过
+    '        const last=merged[merged.length-1];',
+    '        if(last&&last.id===s.id&&s.start-last.end<0.35)last.end=s.end;else merged.push({id:s.id,start:s.start,end:s.end});}',
+    '      for(const s of merged){',
+    '        if(s.end-s.start<0.8)continue;',
+    '        const a=Math.max(0,Math.floor(s.start*SR)),b=Math.min(chunk.length,Math.floor(Math.min(s.end,s.start+8)*SR));',
+    '        if(b-a<SR*0.8)continue;',
+    '        const inp=await embP(chunk.subarray(a,b));',
+    '        const out=await emb(inp);',
+    '        let T=out.embeddings||out.last_hidden_state||out[Object.keys(out)[0]];',   // 输出名随版本变，拿第一个张量
+    '        let v=Array.from(T.data);',
+    '        if(T.dims&&T.dims.length===3){const D=T.dims[2],Tn=T.dims[1],m=new Array(D).fill(0);for(let t=0;t<Tn;t++)for(let d=0;d<D;d++)m[d]+=v[t*D+d]/Tn;v=m;}',
+    '        let nrm=0;for(const x of v)nrm+=x*x;nrm=Math.sqrt(nrm)||1;',
+    '        self.postMessage({type:"seg",s:off/SR+s.start,e:off/SR+s.end,v:v.map(x=>x/nrm)});count++;}',
+    '      self.postMessage({type:"prog",done:Math.min(audio.length,off+WIN),total:audio.length});}',
+    '    self.postMessage({type:"done",n:count});',
+    '  }catch(err){self.postMessage({type:"err",msg:String((err&&err.message)||err)});}',
+    '};'].join("\n");}
+  function dwkrGet(){
+    if(dwkr)return dwkr;
+    var url=URL.createObjectURL(new Blob([dwkrSrc()],{type:"text/javascript"}));
+    dwkr=new Worker(url,{type:"module"});
+    return dwkr;}
+  function cosv(a,b){var s=0,n=Math.min(a.length,b.length);for(var i=0;i<n;i++)s+=a[i]*b[i];return s;}
+  // 平均连接的层次聚类：最像的两簇先并，并到谁都不够像为止
+  function diarCluster(segs){
+    var cl=segs.map(function(s,i){return {ids:[i],v:s.v.slice(),w:Math.max(0.3,s.e-s.s)};});
+    function norm(v){var n=0;for(var i=0;i<v.length;i++)n+=v[i]*v[i];n=Math.sqrt(n)||1;for(var j=0;j<v.length;j++)v[j]/=n;}
+    while(cl.length>1){
+      var best=-2,bi=-1,bj=-1;
+      for(var i=0;i<cl.length;i++)for(var j=i+1;j<cl.length;j++){var c=cosv(cl[i].v,cl[j].v);if(c>best){best=c;bi=i;bj=j;}}
+      if(best<DIAR_THR&&cl.length<=DIAR_MAXK)break;        // 够像才并；人太多时再往下并到 6 个为止
+      if(best<0.12)break;
+      var A=cl[bi],B=cl[bj],v=[];
+      for(var k=0;k<A.v.length;k++)v.push((A.v[k]*A.w+B.v[k]*B.w)/(A.w+B.w));
+      norm(v);A.v=v;A.w+=B.w;A.ids=A.ids.concat(B.ids);cl.splice(bj,1);}
+    // 太碎的簇（总共没说几秒）往最像的大簇里靠，免得满屏「说话人 7」
+    var big=cl.filter(function(c){return c.w>=4;}),small=cl.filter(function(c){return c.w<4;});
+    if(big.length)small.forEach(function(s){var bb=null,bs=-2;big.forEach(function(b){var c=cosv(s.v,b.v);if(c>bs){bs=c;bb=b;}});
+      if(bb&&bs>0.2)bb.ids=bb.ids.concat(s.ids);else big.push(s);});
+    else big=small;
+    return big;}
+  // 给每一句挑一个簇：按时间重叠最多的那个；一句话里没人说的（静音）跟前一句
+  function diarAssign(r,segs,clusters){
+    var segCl=new Array(segs.length);
+    clusters.forEach(function(c,ci){c.ids.forEach(function(i){segCl[i]=ci;});});
+    var first={};segs.forEach(function(s,i){var ci=segCl[i];if(ci===undefined)return;if(first[ci]===undefined||s.s<first[ci])first[ci]=s.s;});
+    var order=Object.keys(first).map(Number).sort(function(a,b){return first[a]-first[b];}),num={};
+    order.forEach(function(ci,k){num[ci]=k;});
+    var prev=null;
+    r.lines.forEach(function(l){
+      var t=+l.t||0,e=+l.e||0,ov={},bestC=null,bestO=0;
+      segs.forEach(function(s,i){var ci=segCl[i];if(ci===undefined)return;var o=Math.min(e,s.e)-Math.max(t,s.s);if(o>0.05)ov[ci]=(ov[ci]||0)+o;});
+      Object.keys(ov).forEach(function(ci){if(ov[ci]>bestO){bestO=ov[ci];bestC=+ci;}});
+      if(bestC===null)bestC=prev;
+      if(bestC===null||bestC===undefined){delete l.sp;return;}
+      l.sp=num[bestC];prev=bestC;});
+    // 只有被句子用到的簇才算数，按在稿子里第一次出现的顺序编成 0、1、2…，免得出现「说话人 1、说话人 3、说话人 4」
+    var used={},k2=0;r.lines.forEach(function(l){if(l.sp!==undefined&&used[l.sp]===undefined)used[l.sp]=k2++;});
+    r.lines.forEach(function(l){if(l.sp!==undefined)l.sp=used[l.sp];});
+    var spv={};clusters.forEach(function(c,ci){var n0=num[ci];if(n0===undefined||used[n0]===undefined)return;spv[used[n0]]=c.v.map(function(x){return Math.round(x*10000)/10000;});});
+    r.spv=spv;
+    r.spk=r.spk||{};
+    // 跟记过的人比：像谁就写谁
+    Object.keys(r.spv).forEach(function(k){
+      if(r.spk[k])return;
+      var bp=null,bs=-2;
+      people.forEach(function(p){(p.v||[]).forEach(function(v){var c=cosv(v,r.spv[k]);if(c>bs){bs=c;bp=p;}});});
+      if(bp&&bs>=DIAR_MATCH)r.spk[k]=bp.id;});}
+  function recDiarize(r,quiet){
+    if(!r)return Promise.resolve(false);
+    if(dwkrBusy)return Promise.reject(new Error("上一条还在识别说话人，等它好了再来"));
+    dwkrBusy=true;
+    return recGet(r.id).then(function(blob){
+      if(!blob)throw new Error("这台设备上没有它的音频，认不了人。");
+      return toPCM16k(blob);
+    }).then(function(a){
+      return new Promise(function(res,rej){
+        var w=dwkrGet(),segs=[],seen={},wd=null;
+        function bark(ms,why){if(wd)clearTimeout(wd);wd=setTimeout(function(){off();dwkrBusy=false;wProg(null);try{w.terminate();}catch(e){}if(dwkr===w)dwkr=null;rej(new Error(why));},ms);}
+        function off(){if(wd)clearTimeout(wd);w.removeEventListener("message",onmsg);w.removeEventListener("error",onerr);}
+        function onmsg(e){var d=e.data||{};
+          if(d.type==="boot"){bark(45000,"说话人模型加载不出来（多半是拿不到 transformers.js）。");return;}
+          if(d.type==="load"){bark(180000,"下载说话人模型卡住了。");var p=d.p||{};
+            if(p.status==="progress"&&p.file){seen[p.file]=p.progress||0;var ks=Object.keys(seen),avg=ks.reduce(function(s,k){return s+seen[k];},0)/ks.length;
+              wProg("下载说话人模型（只有第一次，约 32MB）…",avg);}return;}
+          if(d.type==="run"){bark(20*60*1000,"识别说话人超过 20 分钟还没结束，先停了。");wProg("识别说话人…",null);return;}
+          if(d.type==="seg"){segs.push({s:d.s,e:d.e,v:d.v});return;}
+          if(d.type==="prog"){bark(10*60*1000,"识别说话人卡住了。");wProg("识别说话人 · "+tsLabel(d.done/16000)+" / "+tsLabel(d.total/16000),d.total?d.done/d.total*100:null);return;}
+          if(d.type==="err"){off();dwkrBusy=false;wProg(null);rej(new Error(d.msg));return;}
+          if(d.type==="done"){off();dwkrBusy=false;wProg(null);res(segs);}}
+        function onerr(ev){off();dwkrBusy=false;wProg(null);rej(new Error("说话人识别线程起不来："+((ev&&ev.message)||"")));}
+        w.addEventListener("message",onmsg);w.addEventListener("error",onerr);
+        wProg("准备识别说话人…",null);bark(20000,"说话人识别线程 20 秒没反应。");
+        w.postMessage({audio:a.pcm,segModel:DIAR_SEG,embModel:DIAR_EMB},[a.pcm.buffer]);});
+    }).then(function(segs){
+      if(!segs.length)throw new Error("没听出有人说话。");
+      var clusters=diarCluster(segs);
+      diarAssign(r,segs,clusters);
+      saveRecs();
+      if(recCur===r){recPaintLines();recPaintHead();}
+      recRenderList();
+      var named=Object.keys(r.spk||{}).length,n=clusters.length;
+      if(!quiet)recToast((isEN()?("Found "+n+" speaker(s)"+(named?(", recognised "+named):"")):("听出 "+n+" 个人"+(named?("，认出 "+named+" 个"):"")))+(isEN()?". Click a name to tag.":"。点名字可以标人。"));
+      return true;
+    }).catch(function(err){dwkrBusy=false;wProg(null);if(!quiet)ttAlert("识别说话人失败："+String(err&&err.message||err));return false;});}
+  // 她把某个簇标成某个人：这个簇的声纹记到那个人名下（最多留 8 份，老的挤掉）
+  function personLearn(pid,vec){
+    var p=personById(pid);if(!p||!vec)return;
+    p.v=p.v||[];
+    for(var i=0;i<p.v.length;i++)if(cosv(p.v[i],vec)>0.97)return;   // 几乎一样的不重复记
+    p.v.push(vec);if(p.v.length>8)p.v.shift();savePeople();}
+
   // ---- 入口 ①：导一个已有的音频/视频文件进来 ----
   async function whisperFile(f){
     if(!f)return;
@@ -10958,6 +11205,7 @@ margin-left: -22px;
       recs.unshift(r);saveRecs();recRenderList();
       recNote("转好了："+out.lines.length+" 句 · "+tsLabel(out.dur)+"（用了 "+Math.round(out.ms/1000)+" 秒）");
       recOpen(id);
+      recDiarize(r,true);
     }catch(err){
       try{await recDrop(id);}catch(e){}
       ttAlert("转写失败："+String(err&&err.message||err));}}
@@ -10974,7 +11222,8 @@ margin-left: -22px;
       var out=await whisperRun(blob,wLang());
       recCur.lines=out.lines;termAll(recCur.lines);try{recCarry(old,recCur.lines);}catch(e){}if(!recCur.dur)recCur.dur=Math.round(out.dur);
       recCur.by="whisper";saveRecs();recCurLine=-1;recPaintLines();recPaintHead();
-      ttAlert("重转好了："+out.lines.length+" 句（用了 "+Math.round(out.ms/1000)+" 秒）");
+      recToast("重转好了："+out.lines.length+" 句（用了 "+Math.round(out.ms/1000)+" 秒）");
+      recDiarize(recCur,true);
     }catch(err){ttAlert("转写失败："+String(err&&err.message||err));}}
 
   function wLang(){var v=document.getElementById("rec-lang").value||"";return v.slice(0,2)||undefined;}
