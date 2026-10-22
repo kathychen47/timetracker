@@ -1653,13 +1653,31 @@
   .rec-pill.rec-recb:hover{filter:brightness(1.06);background:var(--primary)}
   .rec-livescroll{max-height:none}
   .rec-live .rp.int .body{opacity:.55;font-style:italic}
-  .rec-livebar .rec-ctl{gap:10px;flex-wrap:wrap}
+  .rec-livebar .rec-ctl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
+  .rec-livebar .rec-ctl>:first-child{justify-self:start}
+  .rec-livebar .rec-left,.rec-livebar .rec-mid,.rec-livebar .rec-right{display:inline-flex;align-items:center;gap:10px}
+  .rec-livebar .rec-mid{justify-self:center}
+  .rec-livebar .rec-right{justify-self:end}
+  .rec-livebar .rec-right .rec-icb{border:0;background:none;width:38px}
+  .rec-livebar .rec-right .rec-icb:hover{background:var(--surface-2)}
+  .rec-imgmenu{right:0;left:auto;top:auto;bottom:46px;width:220px}
+  .rec-lvl{width:100%}
   .rec-livebar .rec-ctl button{width:auto;height:38px;padding:0 16px;white-space:nowrap;border:1px solid var(--border);border-radius:99px;font-size:14px}
   .rec-livebar .rec-ctl .rec-muteb{background:var(--surface);border-color:transparent}
   .rec-livebar .rec-ctl .rec-muteb.on{background:var(--primary-soft);color:var(--primary)}
   .rec-livebar .rec-ctl #rec-pause{background:var(--surface);border-color:transparent;display:inline-flex;align-items:center;gap:6px}
   .rec-livebar .rec-ctl #rec-pause svg{width:18px;height:18px}
   .rec-livebar .rec-ctl .rec-stopb{border-color:transparent}
+  .rec-micb{display:inline-flex;align-items:center;gap:2px;height:38px;padding:0 8px;border:0;background:none;color:var(--text);cursor:pointer;border-radius:10px}
+  .rec-micb:hover{background:var(--surface-2)}
+  .rec-micb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .rec-micb .caret{width:14px;height:14px;color:var(--muted)}
+  .rec-micb .lbl{font-size:14px;color:var(--muted);margin:0 2px 0 4px}
+  .rec-micb.on{background:var(--primary-soft);color:var(--primary)}
+  .rec-micmenu{left:0;right:auto;top:auto;bottom:46px;width:min(360px,calc(100vw - 80px))}
+  .rec-micmenu .h{padding:8px 10px 4px;font-size:13px;color:var(--muted)}
+  .rec-micmenu button .ck{margin-left:auto;color:var(--primary)}
+  .rec-micmenu button span.n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rec-livehint{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
   .rec-lvl{display:flex;justify-content:center;align-items:center;gap:3px;height:22px;margin:2px 0 6px}
   .rec-lvl i{display:block;width:3px;height:3px;border-radius:2px;background:var(--border);transition:height .08s}
@@ -1748,8 +1766,9 @@
   .rec-chips button.on{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
 
   /* 详情：正文 */
-  #rec-doc{position:relative;display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 44px)}
-  #rec-livedoc{display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 80px)}
+  #rec-doc{position:relative;display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 96px)}
+  #rec-livedoc{display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 132px)}
+  main:has(#view-rec.on #rec-doc:not([style*="none"])),main:has(#rec-home.recording){padding-bottom:18px;overflow:hidden}
   #rec-livedoc[hidden]{display:none}
   .rec-scroll{flex:1;min-height:0;overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
   @media (prefers-reduced-motion:reduce){.rec-scroll{scroll-behavior:auto}}
@@ -1795,6 +1814,12 @@
   .rp .rl{display:inline}
   .rp .rs{outline:none;border-radius:6px}
   .rp .rs[contenteditable=true]{cursor:text;background:var(--bg);box-shadow:0 0 0 1px var(--primary);padding:1px 3px}
+  .rp .imgs{grid-column:2;display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+  .rimg{position:relative;margin:0;max-width:min(420px,100%)}
+  .rimg img{display:block;max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--border);background:var(--surface);cursor:zoom-in}
+  .rimg figcaption{font-size:12px;color:var(--muted);margin-top:3px;font-variant-numeric:tabular-nums}
+  .rimg .x{position:absolute;top:6px;right:6px;border:0;border-radius:7px;background:rgba(0,0,0,.55);color:#fff;width:24px;height:24px;cursor:pointer;opacity:0;font-size:13px}
+  .rimg:hover .x{opacity:1}
   .rp .rtr{display:block;color:var(--muted);font-size:13.5px;line-height:22px;margin:2px 0 4px}
   .rec-lines.nobi .rtr{display:none}
   .rw{padding:2px 0;cursor:pointer;box-decoration-break:clone;-webkit-box-decoration-break:clone}
@@ -1814,6 +1839,8 @@
   @media (min-width:1180px){
     #view-rec.hascm .rp .cm{position:absolute;left:100%;top:8px;width:230px;margin:0 0 0 18px}
     #view-rec.hascm .rp .cm::before{content:"";position:absolute;left:-7px;top:12px;width:12px;height:12px;background:var(--bg);border-left:1px solid var(--border);border-bottom:1px solid var(--border);transform:rotate(45deg)}}
+  #rec-imgmenu2{position:absolute;right:auto;top:auto;bottom:auto;display:none}
+  #rec-imgmenu2.on{display:block}
   .rec-tip{position:absolute;display:none;gap:2px;padding:5px;border-radius:14px;background:var(--bg);border:1px solid var(--border);box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:40}
   .rec-tip.on{display:flex}
   .rec-tip button{width:36px;height:34px;border:0;border-radius:9px;background:none;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
@@ -1906,7 +1933,7 @@
   @media (max-width:640px){
     .rec-h1{font-size:calc(var(--rh1) - 4px)}.rec-card{grid-template-columns:34px 1fr;column-gap:10px}
     .rec-card .own{width:34px;height:34px;font-size:16px;margin-top:22px}.rec-card h2{font-size:20px}.rec-card .bx{padding:16px 14px 14px}
-    #rec-doc{height:calc(var(--vh,100vh) - 30px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
+    #rec-doc{height:calc(var(--vh,100vh) - 70px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
 
   /* ---------- 🎧 精听（竖排：原文在上、听写在下）---------- */
   .lt-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
@@ -4587,6 +4614,8 @@ margin-left: -22px;
             <button type="button" class="rec-icb rec-sq" id="rec-setbtn" title="录音设置">···</button>
             <div class="rec-menu rec-hmenu" id="rec-setpanel">
         <div class="rec-bar">
+          <span class="rec-mlab">麦克风</span>
+          <select id="rec-micsel" title="用哪个麦克风录"><option value="">默认</option></select>
           <span class="rec-mlab">语言</span>
           <select id="rec-lang" title="说的是哪种语言">
             <option value="en-NZ">English (NZ)</option>
@@ -4644,15 +4673,23 @@ margin-left: -22px;
           <div class="rec-player rec-livebar">
             <div class="rec-lvl" id="rec-lvl"></div>
             <div class="rec-ctl">
-              <span class="rec-livel" title="麦克风"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></span>
+              <span class="rec-left"><div class="rec-morew rec-micw"><button type="button" class="rec-micb" id="rec-micbtn" title="选择麦克风"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg><svg viewBox="0 0 24 24" class="caret"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="rec-menu rec-micmenu" id="rec-micmenu"></div></div>
               <button type="button" class="rec-pill rec-muteb" id="rec-mute"><span>静音</span></button>
-              <span class="rec-livel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="rec-livelang"></span></span>
-              <span class="rec-sp"></span>
+              <div class="rec-morew"><button type="button" class="rec-micb" id="rec-langbtn" title="转写语言"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="rec-livelang" class="lbl"></span><svg viewBox="0 0 24 24" class="caret"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="rec-menu rec-micmenu" id="rec-langmenu"></div></div>
+              <button type="button" class="rec-micb" id="rec-livetrb" title="边录边翻：每定稿一句翻一句"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg></button></span>
+              <span class="rec-mid">
               <button type="button" class="rec-pill" id="rec-pause"></button>
               <span class="rec-time" id="rec-time"></span>
               <button type="button" class="rec-pill rec-stopb" id="rec-stop"><span>停止</span></button>
-              <span class="rec-sp"></span>
+              </span>
+              <span class="rec-right">
               <span class="wt-note rec-livehint" id="rec-hint" style="margin:0"></span>
+              <button type="button" class="rec-icb" id="rec-livecm" title="评论（记在现在这个时间点）"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg></button>
+              <div class="rec-morew"><button type="button" class="rec-icb" id="rec-liveimg" title="加图片（记在现在这个时间点）"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg></button>
+                <div class="rec-menu rec-imgmenu" id="rec-imgmenu"><button type="button" data-im="up"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>上传图片</button><button type="button" data-im="paste"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h6"/></svg>从剪贴板粘贴</button></div></div>
+              </span>
             </div>
           </div>
         </div>
@@ -4720,10 +4757,12 @@ margin-left: -22px;
             <button type="button" id="rec-tr" title="翻译：没译文时翻整篇，有译文时显示 / 隐藏"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg></button>
           </div>
         </div>
+        <div class="rec-menu rec-imgmenu" id="rec-imgmenu2"><button type="button" data-im="up"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>上传图片</button><button type="button" data-im="paste"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h6"/></svg>从剪贴板粘贴</button></div>
         <div class="rec-tip" id="rec-tip">
           <button type="button" data-act="hl" title="高亮（先选中文字）"><svg viewBox="0 0 24 24"><path d="M9 11l4-7 5 3-4 7zM9 11l-2 6 5-3M4 21h16"/></svg></button>
           <button type="button" data-act="cm" title="评论"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg></button>
           <button type="button" data-act="cp" title="复制"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button>
+          <button type="button" data-act="img" title="加图片到这一段"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg></button>
           <button type="button" data-act="wb" title="选中的词加进生词本"><svg viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg></button>
         </div>
         <div class="rec-pk" id="rec-pk">
@@ -6312,6 +6351,7 @@ margin-left: -22px;
     "上一段还在转，等它转完":"Still transcribing the last one — wait for it to finish",
     "上一节":"Prev section",
     "上传中…":"Uploading…",
+    "上传图片":"Upload image",
     "上传音频到云端…":"Uploading the audio to the cloud…",
     "上臂围":"Upper arm",
     "上限 ($)":"To ($)",
@@ -6440,6 +6480,7 @@ margin-left: -22px;
     "从 Google 删除":"Delete from Google",
     "从上到下的纯文字":"Plain text, top to bottom",
     "从云端收回…":"Bringing it back from the cloud…",
+    "从剪贴板粘贴":"Paste from clipboard",
     "从哪天开始记？ 这天之前的流水永远不会进账本。":"Start tracking from which date? Transactions before this date never enter the book.",
     "从小红书/网页复制一整段菜谱贴这里":"Paste a whole recipe copied from Xiaohongshu/a web page here",
     "从牛津选词":"Pick from Oxford",
@@ -6646,6 +6687,7 @@ margin-left: -22px;
     "删掉这个指标":"Delete this metric",
     "删掉这个暂停，时间并回相邻的段（会算成专注）":"Delete this pause and give the time back to the neighboring segments (it'll count as focus)",
     "删掉这个目标":"Delete this goal",
+    "删掉这张图":"Delete this image",
     "删掉这条":"Delete this",
     "删掉这条从 Google 存下来的记录？你的 Google 日历不受影响，以后也不会再自动存回来。":"Delete this record saved from Google? Your Google Calendar isn't touched, and it won't be saved back here again.",
     "删掉这条周期记账？（已经记进账本的那些流水不动，要删得去明细里删）":"Delete this recurring entry? (Transactions already in the book stay; to remove those, delete them from the list)",
@@ -6683,6 +6725,7 @@ margin-left: -22px;
     "刷新":"Refresh",
     "剁手":"impulse buy",
     "前进 5 秒":"Forward 5 s",
+    "剪贴板里没有图片。":"No image on the clipboard.",
     "副屏":"Second pane",
     "加一个时段标签（比如：运动后 / 加餐后）":"Add a time tag (e.g. After workout / After snack)",
     "加一个自己的时段":"Add your own time tag",
@@ -6693,6 +6736,8 @@ margin-left: -22px;
     "加入生词本":"Add to word list",
     "加入词库":"Add to word list",
     "加到分组":"Add to group",
+    "加图片到这一段":"Add image to this paragraph",
+    "加图片（记在现在这个时间点）":"Add image (at the current time)",
     "加成一块牌子":"Add it as a tag",
     "加标签":"Add tags",
     "加油":"petrol",
@@ -6828,6 +6873,9 @@ margin-left: -22px;
     "固定不动":"Stay put",
     "固定汇率":"fixed rates",
     "固定秒数":"Fixed seconds",
+    "图片存不进本机库：":"Couldn't save the image locally: ",
+    "图片已加到":"Image added at",
+    "图片记在":"Image noted at",
     "图表":"Charts",
     "圣伯纳":"Saint Bernard",
     "在书里高亮或划线一段话，自动用":"Highlight or underline a passage in a book and it's translated automatically by ",
@@ -7206,6 +7254,7 @@ margin-left: -22px;
     "换一批":"New batch",
     "换一批新的：点过的不会再出现，这批没点的放回去，之后还可能遇到":"Get a new batch: words you've marked won't come back; unmarked ones go back and may appear later",
     "换下一批…":"Next batch…",
+    "换不过去：":"Couldn't switch: ",
     "换个分组":"Change group",
     "换个摆法":"Reshuffle",
     "换个颜色":"Change color",
@@ -7596,6 +7645,7 @@ margin-left: -22px;
     "测试连接":"Test connection",
     "测量次数":"Readings",
     "浏览器不让用麦克风做识别，音频还在录。":"The browser blocked the mic for recognition; the audio is still recording.",
+    "浏览器不让读剪贴板，直接 Ctrl+V 粘贴也行。":"The browser won't let me read the clipboard; press Ctrl+V to paste instead.",
     "浏览器太旧，不支持解压(DecompressionStream)，请用新版 Chrome/Edge/Safari":"Your browser is too old to unzip this (DecompressionStream), please use a recent Chrome/Edge/Safari",
     "浏览器太老，不支持解压":"Browser is too old — no unzip support",
     "浏览器把文件夹选择框拦掉了 —— 它只认「刚点下去那一下」。 请直接点「🗂 本地文件夹」里的按钮，别经过输入框。":"The browser blocked the folder picker — it only allows one right after a click. Click the buttons inside \"🗂 Local folder\" directly, not through a text box.",
@@ -7707,6 +7757,7 @@ margin-left: -22px;
     "用「轮着做」那排按钮切得勤的话就选短的。":"Pick a short one if you switch a lot with the Take turns buttons. ",
     "用一句话告诉我…（Enter 发送，Shift+Enter 换行）":"Tell me in one line… (Enter to send, Shift+Enter for a new line)",
     "用一句话说：今早 62.5 公斤，腰围 72，大腿 52，有点浮肿":"In one line: 62.5 kg this morning, waist 72, thigh 52, a bit puffy",
+    "用哪个麦克风录":"Which microphone to record with",
     "用显卡跑（快 5–10 倍）":"Running on the GPU (5–10× faster)",
     "用显卡还是 CPU":"GPU or CPU",
     "用这一条去精听，从你正在听的这一句开始":"Practise this recording, starting from the sentence you're on",
@@ -7943,6 +7994,8 @@ margin-left: -22px;
     "评分":"Rating",
     "评审":"review",
     "评论":"Comment",
+    "评论记在":"Comment noted at",
+    "评论（记在现在这个时间点）":"Comment (at the current time)",
     "识别中…":"Reading…",
     "识别器不认的专业词，在这儿教它。转写稿里改对一个词，也会自动记住。":"Teach the recognizer the jargon it doesn't know here. Fix a word in a transcript and it remembers that too.",
     "识别语言":"OCR language",
@@ -8033,6 +8086,7 @@ margin-left: -22px;
     "转写稿":"Transcript",
     "转写稿没勾，预览空着。":"Transcript isn't selected, so the preview is empty.",
     "转写线程 20 秒没有任何反应 —— 多半是拿不到 transformers.js（断网或 CDN 被挡）。":"The transcription worker hasn't said a word in 20 seconds — most likely transformers.js can't be fetched (offline, or the CDN is blocked).",
+    "转写语言":"Transcription language",
     "转写超过 30 分钟还没结束，先停了。试试选 tiny 模型，或把音频切短一点。":"Transcription has run past 30 minutes, so it stopped. Try the tiny model, or cut the audio into shorter pieces.",
     "转出":"Transfer out",
     "转账":"Transfer",
@@ -8044,6 +8098,9 @@ margin-left: -22px;
     "输入说话人名字":"Type a speaker name",
     "边录边出字 · 回放时逐句对照，点时间戳跳到那一刻":"Words appear as you record · play back line by line, click a timestamp to jump there",
     "边录边翻":"Translate as you record",
+    "边录边翻：关":"Live translation: off",
+    "边录边翻：开":"Live translation: on",
+    "边录边翻：每定稿一句翻一句":"Live translation: each sentence is translated as it lands",
     "达成 ✓":"Reached ✓",
     "运动":"Sport",
     "运费":"shipping fee",
@@ -8063,6 +8120,7 @@ margin-left: -22px;
     "还没填过路径，点这里填一次":"No path saved yet — click here to set it once",
     "还没存下任何历史事件。":"Nothing archived yet.",
     "还没拉过":"Never fetched",
+    "还没拿到麦克风列表，先录一次再看。":"No microphone list yet. Record once, then check again.",
     "还没有任何流水。":"No transactions yet.",
     "还没有任何记录":"No records yet",
     "还没有备忘":"No notes yet",
@@ -8227,8 +8285,10 @@ margin-left: -22px;
     "选了的每只下面都有一根滑块，各调各的大小；点右边的百分比恢复原大小。":"Each selected pet gets its own size slider; click the percentage to reset it.",
     "选择":"Select",
     "选择说话人":"Select speaker",
+    "选择麦克风":"Select a microphone",
     "选指标":"Pick metrics",
     "选文件（.json / .csv）":"Choose a file (.json / .csv)",
+    "选的那个麦克风现在用不了，换回默认的。":"That microphone isn't available right now; switched back to the default.",
     "选等级":"Pick levels",
     "选项":"Options",
     "逐句循环 · 听写 · 自动对答案，错在哪一层看颜色":"Loop each sentence · dictate · auto-check, and the colors show what kind of mistake",
@@ -9835,8 +9895,9 @@ margin-left: -22px;
     return out;}
 
   function recDB(){return new Promise(function(res,rej){
-    var r=indexedDB.open("ttrec",1);
-    r.onupgradeneeded=function(){var db=r.result;if(!db.objectStoreNames.contains("audio"))db.createObjectStore("audio",{keyPath:"id"});};
+    var r=indexedDB.open("ttrec",2);
+    r.onupgradeneeded=function(){var db=r.result;if(!db.objectStoreNames.contains("audio"))db.createObjectStore("audio",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("img"))db.createObjectStore("img",{keyPath:"id"});};
     r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});}
   function recPut(id,blob){return recDB().then(function(db){return new Promise(function(res,rej){
     var tx=db.transaction("audio","readwrite");tx.objectStore("audio").put({id:id,b:blob});
@@ -9866,10 +9927,48 @@ margin-left: -22px;
   //     一停整个共享就结束，音频也跟着断。所以视频轨留着跑，只是我们不用它。
   //   · Windows：共享整个屏幕时能勾「分享系统音频」；共享某个标签页能拿到该标签页的声音。
   //   · macOS：只有标签页的声音拿得到，系统级的抓不到（要 BlackHole 那类虚拟声卡）。
-  var recSysStream=null,recMixCtx=null;
+  var recSysStream=null,recMixCtx=null,recMicSrc=null,recMixDest=null;
+  function recMicId(){return load("tt_recmic","")||"";}
+  function recMicConstraint(id){return id?{deviceId:{exact:id}}:true;}
+  async function recGetMic(){
+    var id=recMicId();
+    try{return await navigator.mediaDevices.getUserMedia({audio:recMicConstraint(id)});}
+    catch(e){if(!id)throw e;
+      save("tt_recmic","");recToast(trv("选的那个麦克风现在用不了，换回默认的。"));
+      return await navigator.mediaDevices.getUserMedia({audio:true});}}
+  // 列出麦克风。没授权过时拿不到名字，所以列表在第一次录过之后才全
+  async function recMicList(){
+    var out=[];
+    try{var ds=await navigator.mediaDevices.enumerateDevices();
+      ds.forEach(function(d){if(d.kind==="audioinput")out.push({id:d.deviceId,n:d.label||(trv("麦克风")+" "+(out.length+1))});});}catch(e){}
+    return out;}
+  async function recMicPaint(){
+    var list=await recMicList(),cur=recMicId(),menu=document.getElementById("rec-micmenu"),sel=document.getElementById("rec-micsel");
+    var h='<div class="h">'+trv("选择麦克风")+'</div>';
+    list.forEach(function(d){h+='<button type="button" data-mic="'+esc(d.id)+'"><span class="n">'+esc(d.n)+'</span>'+((d.id===cur||(!cur&&d.id==="default"))?'<span class="ck">✓</span>':'')+'</button>';});
+    if(!list.length)h+='<div class="h">'+trv("还没拿到麦克风列表，先录一次再看。")+'</div>';
+    if(menu)menu.innerHTML=h;
+    if(sel){sel.innerHTML='<option value="">'+trv("默认")+'</option>'+list.map(function(d){return '<option value="'+esc(d.id)+'"'+(d.id===cur?" selected":"")+'>'+esc(d.n)+'</option>';}).join("");}}
+  // 录到一半换麦克风：新麦接进混音，旧的断掉。MediaRecorder 录的是混音出口，轨道没变，不会断
+  async function recSetMic(id){
+    save("tt_recmic",id||"");
+    if(recOn&&recMixCtx&&recMixDest){
+      try{var mic=await recGetMic();
+        var src=recMixCtx.createMediaStreamSource(mic);src.connect(recMixDest);
+        if(recMicSrc){try{recMicSrc.disconnect();}catch(e){}}
+        var old=recStream&&recStream.__mic;if(old&&old!==mic){try{old.getTracks().forEach(function(t){t.stop();});}catch(e){}}
+        recMicSrc=src;if(recStream)recStream.__mic=mic;
+        if(recMuted)mic.getAudioTracks().forEach(function(t){t.enabled=false;});
+      }catch(e){recToast(trv("换不过去：")+String(e&&e.message||e));}}
+    recMicPaint();}
   async function recBuildStream(wantSys){
-    var mic=await navigator.mediaDevices.getUserMedia({audio:true});
-    if(!wantSys)return {stream:mic,mixed:false};
+    var mic=await recGetMic();
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)return {stream:mic,mixed:false};
+    recMixCtx=new AC();recMixDest=recMixCtx.createMediaStreamDestination();
+    recMicSrc=recMixCtx.createMediaStreamSource(mic);recMicSrc.connect(recMixDest);
+    var out=recMixDest.stream;out.__mic=mic;
+    if(!wantSys)return {stream:out,mixed:false};
     var disp=null;
     // Chrome 只有这一条路能拿到电脑里的声音：弹个「共享」窗。开会选 Entire Screen 并打开 Share system audio；
     // 会议开在某个标签页里就选那个标签页；不想录电脑声音直接 Cancel，只录麦克风。
@@ -9880,21 +9979,15 @@ margin-left: -22px;
     catch(e){
       if(e&&e.name==="NotAllowedError")recNote("你取消了共享，这次只录麦克风。");
       else recNote("这个浏览器抓不到电脑里的声音，只录麦克风。");
-      return {stream:mic,mixed:false};}
+      return {stream:out,mixed:false};}
     if(!disp.getAudioTracks().length){                 // 选了但没勾「分享音频」
       try{disp.getTracks().forEach(function(t){t.stop();});}catch(_){}
       ttAlert("你选的那个没有带声音 —— 弹窗左下角有个「分享音频 / Share audio」的勾，要勾上。\n\n这次先只录麦克风。");
-      return {stream:mic,mixed:false};}
+      return {stream:out,mixed:false};}
     recSysStream=disp;
-    var AC=window.AudioContext||window.webkitAudioContext;
-    recMixCtx=new AC();
-    var dest=recMixCtx.createMediaStreamDestination();
-    recMixCtx.createMediaStreamSource(mic).connect(dest);
-    recMixCtx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(dest);
+    recMixCtx.createMediaStreamSource(new MediaStream(disp.getAudioTracks())).connect(recMixDest);
     // 你在系统弹窗里按「停止共享」时，把整个录音也收掉，不然会留下一段只有麦克风的尾巴
     disp.getVideoTracks().forEach(function(t){t.onended=function(){if(recOn)recStop();};});
-    var out=dest.stream;
-    out.__mic=mic;                                     // 停止时要一起关掉
     return {stream:out,mixed:true};}
   // ---- 录 ----
   var recPausedAt=0,recPauseTot=0;                        // 暂停：计时和音频一起停，时间戳不会跑偏
@@ -9905,7 +9998,7 @@ margin-left: -22px;
     catch(err){ttAlert("拿不到麦克风："+String(err&&err.message||err)+"\n\n浏览器地址栏左边有个权限图标，允许一下麦克风再试。");return;}
     recStream=built.stream;
     recNote(built.mixed?"麦克风 + 电脑声音，一起录着（实时字幕只认麦克风，对方那半段录完用「重新转写」出字）":"");
-    recChunks=[];recLines=[];recPend=null;recLastEnd=0;recT0=Date.now();recOn=true;recPausedAt=0;recPauseTot=0;
+    recChunks=[];recLines=[];recPend=null;recLastEnd=0;recT0=Date.now();recOn=true;recPausedAt=0;recPauseTot=0;recLiveImgs=[];recLiveCms=[];
     recBlobType=recMime();
     try{recMR=recBlobType?new MediaRecorder(recStream,{mimeType:recBlobType}):new MediaRecorder(recStream);}
     catch(e){recMR=new MediaRecorder(recStream);}
@@ -9919,11 +10012,9 @@ margin-left: -22px;
     var lm=document.getElementById("rec-livemeta");
     if(lm){var d=new Date();lm.innerHTML='<span class="who">'+avHTML(myName(),"#8b6f62")+esc(myName())+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'+esc(recDocDate(d))+'</span>';}
-    var ll=document.getElementById("rec-livelang");
-    if(ll){var sel=document.getElementById("rec-lang");ll.textContent=sel&&sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";}
-    document.getElementById("rec-lang").disabled=true;
+    recLangPaint();
     recMuted=false;var mb=document.getElementById("rec-mute");if(mb){mb.classList.remove("on");mb.querySelector("span").textContent=trv("静音");}
-    recPaintPause();recLvlStart();
+    recPaintPause();recLvlStart();recMicPaint();
     recTick=setInterval(recPaintTime,500);recPaintTime();
     recDrawLive();requestAnimationFrame(recLvlTick);}
 
@@ -9997,6 +10088,15 @@ margin-left: -22px;
     var dots=document.querySelectorAll("#rec-lvl i");
     for(var k=0;k<dots.length;k++){var h=recLvlHist[recLvlHist.length-dots.length+k];dots[k].style.height=(3+Math.round((h||0)*16))+"px";}
     requestAnimationFrame(recLvlTick);}
+  function recLangPaint(){
+    var sel=document.getElementById("rec-lang"),ll=document.getElementById("rec-livelang"),menu=document.getElementById("rec-langmenu");
+    if(ll&&sel)ll.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";
+    if(menu&&sel)menu.innerHTML='<div class="h">'+trv("转写语言")+'</div>'+[].map.call(sel.options,function(o){return '<button type="button" data-lang="'+esc(o.value)+'"><span class="n">'+esc(o.text)+'</span>'+(o.value===sel.value?'<span class="ck">✓</span>':'')+'</button>';}).join("");
+    var tb=document.getElementById("rec-livetrb"),cb=document.getElementById("rec-livetr");if(tb&&cb)tb.classList.toggle("on",!!cb.checked);}
+  function recSetLang(v){
+    var sel=document.getElementById("rec-lang");if(!sel)return;sel.value=v;save("tt_reclang",v);
+    if(recOn&&recSR&&!recPausedAt){var s0=recSR;recSR=null;try{s0.stop();}catch(e){}segFlush();recPend=null;recLastEnd=Math.max(recLastEnd,recElapsed());recSRStart();}
+    recLangPaint();}
   function recPaintPause(){
     var b=document.getElementById("rec-pause");if(!b)return;
     b.innerHTML=recPausedAt
@@ -10020,7 +10120,7 @@ margin-left: -22px;
     try{if(recSysStream)recSysStream.getTracks().forEach(function(t){t.stop();});}catch(e){}
     recSysStream=null;
     try{if(recMixCtx){recMixCtx.close();recMixCtx=null;}}catch(e){}
-    document.getElementById("rec-lang").disabled=false;}
+    recMicSrc=null;recMixDest=null;}
 
   async function recFinish(){
     segFlush();                                        // 兜一次：stop 之后识别器还可能补一段
@@ -10037,6 +10137,7 @@ margin-left: -22px;
     recs.unshift({id:id,title:ttl,ts:Date.now(),dur:Math.round(dur),
       lang:document.getElementById("rec-lang").value||"",lines:recLines.slice(),
       size:blob.size,noAudio:!okSave});
+    try{recAttachLive(recs[0]);}catch(e){}
     saveRecs();recRenderList();
     if(!okSave)ttAlert("文字存下来了，但音频没能写进本机数据库（多半是空间满了）。");
     recNote(recLines.length?("记下 "+recLines.length+" 句 · "+tsLabel(dur)):("录了 "+tsLabel(dur)+"，但一句都没识别出来"+(SRC?"":"（这个浏览器不支持实时转写）")));
@@ -10072,12 +10173,18 @@ margin-left: -22px;
     var live=pend+(interim?((pend?" ":"")+interim):"");
     var lt=segBuf.length?segBuf[0].t:recElapsed();
     var h="";
+    function extras(t0,t1){var x="";
+      recLiveCms.forEach(function(c){if(c.t>=t0&&c.t<t1)x+='<div class="cm"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg><span class="t">'+esc(c.cm)+'</span></div>';});
+      var im="";recLiveImgs.forEach(function(g){if(g.t>=t0&&g.t<t1)im+='<figure class="rimg"><img alt="" data-src="'+g.id+'"><figcaption>'+tsLabel(g.t)+'</figcaption></figure>';});
+      return x+(im?('<div class="imgs">'+im+'</div>'):"");}
     tail.forEach(function(l,k){
+      var nx=tail[k+1],t1=nx?(+nx.t||0):1e9;
       h+='<div class="rp live"><span class="rec-av none">·</span><div class="name"><time>'+tsLabel(l.t)+'</time></div>'+
-        '<div class="body">'+esc(l.s)+(l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div></div>';});
+        '<div class="body">'+esc(l.s)+(l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div>'+extras(k?(+l.t||0):0,t1)+'</div>';});
+    if(!tail.length&&(recLiveImgs.length||recLiveCms.length))h+='<div class="rp live"><span class="rec-av none">·</span><div class="name"><time>0:00</time></div><div class="body"></div>'+extras(0,1e9)+'</div>';
     if(live)h+='<div class="rp live int"><span class="rec-av none">·</span><div class="name"><time>'+tsLabel(lt)+'</time></div><div class="body">'+esc(live)+'</div></div>';
     if(!h)h='<div class="dict-hint">'+(SRC?trv("说话就会出字…"):trv("这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。"))+'</div>';
-    box.innerHTML=h;
+    box.innerHTML=h;recImgsFill(box);
     var sc=box.closest(".rec-scroll");if(sc)sc.scrollTop=sc.scrollHeight;else box.scrollTop=box.scrollHeight;
     recLvlTick();}
 
@@ -10099,8 +10206,9 @@ margin-left: -22px;
     return p?p.n:((isEN()?"Speaker ":"说话人 ")+(+sp+1));}
   function recSpColor(r,sp){
     var pid=r&&r.spk&&r.spk[sp],p=pid?personById(pid):null;return p?p.c:"";}
+  function avChar(name){var m=/^(说话人|Speaker)\s*(\d+)$/.exec(String(name||"").trim());return m?m[2]:(String(name||"").trim().charAt(0).toUpperCase()||"·");}
   function avHTML(name,color,cls){
-    var ch=String(name||"").trim().charAt(0).toUpperCase()||"·";
+    var ch=avChar(name);
     return '<span class="rec-av'+(cls?(" "+cls):"")+'"'+(color?(' style="background:'+color+'"'):'')+'>'+esc(ch)+'</span>';}
   // ---- 段落：同一个声音连着说的并成一段；没分过声音就按停顿分 ----
   function recParas(r){
@@ -10204,6 +10312,7 @@ margin-left: -22px;
     box.innerHTML='<span class="who">'+avHTML(me,"#8b6f62")+esc(me)+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'+esc(recDocDate(d))+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'+esc(recDurLabel(r.dur))+'</span>'+
+      (recImgCount(r)?('<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>'+recImgCount(r)+' '+(isEN()?"screenshot(s)":"张图")+'</span>'):'')+
       '<span class="bar"></span>'+
       '<button type="button" id="rec-copyall"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>复制全文</span></button>';
     // 关键词：按词频，去掉虚词。中文没有空格，先不做
@@ -10261,10 +10370,12 @@ margin-left: -22px;
           (l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</span>';
         if(!recEditing)h+=" ";});
       h+='</div>';
+      h+=recImgsHTML(r,p);
       p.lines.forEach(function(li){var l=r.lines[li];if(!l.cm)return;hasCm=true;
         h+='<div class="cm" data-cmli="'+li+'"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg><span class="t">'+esc(l.cm)+'</span><button type="button" class="x" data-cmx="'+li+'" title="'+esc(trv("删掉这条评论"))+'">✕</button></div>';});
       h+='</div>';});
     box.innerHTML=h||'<div class="dict-hint">这条录音还没有文字。</div>';
+    recImgsFill(box);
     document.getElementById("view-rec").classList.toggle("hascm",hasCm);
     box.classList.toggle("editing",recEditing);
     recCurWord=null;
@@ -10452,7 +10563,7 @@ margin-left: -22px;
     var c=document.createElement("canvas");c.width=c.height=100;var g=c.getContext("2d");
     g.fillStyle=color||"#6b7280";g.beginPath();g.arc(50,50,50,0,Math.PI*2);g.fill();
     g.fillStyle="#fff";g.font="bold 56px Figtree, Arial, sans-serif";g.textAlign="center";g.textBaseline="middle";
-    g.fillText(String(name||"·").trim().charAt(0).toUpperCase()||"·",50,54);
+    g.fillText(avChar(name),50,54);
     return c.toDataURL("image/png");}
   function loadScriptOnce(url){return new Promise(function(res,rej){
     if(document.querySelector('script[src="'+url+'"]')&&window.docx){res();return;}
@@ -10462,7 +10573,14 @@ margin-left: -22px;
     await loadScriptOnce("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js");
     var D=window.docx;if(!D)throw new Error("docx 库没加载上");
     var names=recXOpt("names"),time=recXOpt("time"),av=recXOpt("av"),tr=recXOpt("tr");
-    var F="Segoe UI",kids=[];
+    var F="Segoe UI",kids=[],imgs={};
+    // 图：按段落第一句归档，缩到 480 磅宽以内
+    var paras0=recXParas(r,recXOpt("join"));
+    for(var pi=0;pi<paras0.length;pi++){var p0=paras0[pi];
+      for(var q=0;q<p0.lines.length;q++){var l0=r.lines[p0.lines[q]];if(!l0.img)continue;
+        for(var z=0;z<l0.img.length;z++){var b0=await recImgGet(l0.img[z].id);if(!b0)continue;
+          var dim=await recImgDims(b0),k=Math.min(1,480/dim.w);
+          imgs[p0.lines[0]]=imgs[p0.lines[0]]||[];imgs[p0.lines[0]].push({data:new Uint8Array(await b0.arrayBuffer()),w:Math.round(dim.w*k),h:Math.round(dim.h*k)});}}}
     kids.push(new D.Paragraph({spacing:{after:80},children:[new D.TextRun({text:r.title||"",bold:true,size:30,color:"323130",font:F})]}));
     kids.push(new D.Paragraph({spacing:{after:60},children:[new D.TextRun({text:recDocDate(new Date(r.ts)),size:20,color:"605e5c",font:F})]}));
     kids.push(new D.Paragraph({spacing:{after:240},children:[new D.TextRun({text:recDurLabel(r.dur),size:20,color:"605e5c",font:F})]}));
@@ -10476,13 +10594,17 @@ margin-left: -22px;
       if(runs.length)runs.push(new D.TextRun({text:"",break:1}));
       runs.push(new D.TextRun({text:recXText(r,p),size:21,color:"323130",font:F}));
       if(tr&&recXTr(r,p))runs.push(new D.TextRun({text:recXTr(r,p),size:19,color:"605e5c",font:F,break:1}));
-      kids.push(new D.Paragraph({spacing:{after:200,line:300},children:runs}));});
+      kids.push(new D.Paragraph({spacing:{after:200,line:300},children:runs}));
+      (imgs[p.lines[0]]||[]).forEach(function(im){kids.push(new D.Paragraph({spacing:{after:200},children:[new D.ImageRun({data:im.data,transformation:{width:im.w,height:im.h}})]}));});});
     var doc=new D.Document({sections:[{children:kids}]});
     var blob=await D.Packer.toBlob(doc);
     downloadFile(recXFile(r,"docx"),blob,"application/vnd.openxmlformats-officedocument.wordprocessingml.document");
     wProg(null);}
+  function recImgDims(blob){return new Promise(function(res){var im=new Image(),u=URL.createObjectURL(blob);
+    im.onload=function(){URL.revokeObjectURL(u);res({w:im.naturalWidth||400,h:im.naturalHeight||300});};im.onerror=function(){URL.revokeObjectURL(u);res({w:400,h:300});};im.src=u;});}
+  function recImgDataURL(blob){return new Promise(function(res){var rd=new FileReader();rd.onload=function(){res(rd.result);};rd.onerror=function(){res("");};rd.readAsDataURL(blob);});}
   // PDF：生成一页同样排版的 HTML，交给浏览器的打印对话框存成 PDF（中英文字体都有）
-  function recXPdf(r){
+  async function recXPdf(r){
     var names=recXOpt("names"),time=recXOpt("time"),av=recXOpt("av"),tr=recXOpt("tr");
     var h='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(r.title||"")+'</title><style>'+
       'body{font-family:"Segoe UI",Figtree,"PingFang SC","Microsoft YaHei",sans-serif;color:#323130;max-width:760px;margin:40px auto;padding:0 24px;font-size:14px;line-height:1.6}'+
@@ -10490,10 +10612,13 @@ margin-left: -22px;
       '.a{width:22px;height:22px;border-radius:50%;color:#fff;font-weight:700;font-size:11px;display:flex;align-items:center;justify-content:center;margin-top:2px}'+
       '.n{font-weight:700;color:#605e5c}.t{color:#a19f9d;margin-left:8px}.b{grid-column:2}.r{grid-column:2;color:#605e5c;font-size:13px}'+
       '@media print{body{margin:0}}</style></head><body><h1>'+esc(r.title||"")+'</h1><div class="m">'+esc(recXDateLine(r))+'</div>';
-    recXParas(r,recXOpt("join")).forEach(function(p){var nm=recSpName(r,p.sp);
-      h+='<div class="p"><span class="a" style="background:'+(recSpColor(r,p.sp)||"#6b7280")+';visibility:'+((av&&nm)?"visible":"hidden")+'">'+esc((nm||"·").charAt(0).toUpperCase())+'</span>'+
+    var ps=recXParas(r,recXOpt("join"));
+    for(var pi=0;pi<ps.length;pi++){var p=ps[pi],nm=recSpName(r,p.sp),ih="";
+      for(var q=0;q<p.lines.length;q++){var l0=r.lines[p.lines[q]];if(!l0.img)continue;
+        for(var z=0;z<l0.img.length;z++){var b0=await recImgGet(l0.img[z].id);if(!b0)continue;ih+='<img src="'+(await recImgDataURL(b0))+'" style="max-width:100%;max-height:360px;border-radius:8px;margin:6px 0;display:block">';}}
+      h+='<div class="p"><span class="a" style="background:'+(recSpColor(r,p.sp)||"#6b7280")+';visibility:'+((av&&nm)?"visible":"hidden")+'">'+esc(avChar(nm||"·"))+'</span>'+
         '<div>'+(names&&nm?'<span class="n">'+esc(nm)+'</span>':'')+(time?'<span class="t">'+tsLabel(p.t)+'</span>':'')+'</div>'+
-        '<div class="b">'+esc(recXText(r,p))+'</div>'+(tr&&recXTr(r,p)?'<div class="r">'+esc(recXTr(r,p))+'</div>':'')+'</div>';});
+        '<div class="b">'+esc(recXText(r,p))+'</div>'+(tr&&recXTr(r,p)?'<div class="r">'+esc(recXTr(r,p))+'</div>':'')+(ih?'<div class="b">'+ih+'</div>':'')+'</div>';}
     h+='</body></html>';
     var f=document.createElement("iframe");f.style.cssText="position:fixed;right:0;bottom:0;width:0;height:0;border:0";
     document.body.appendChild(f);
@@ -10510,7 +10635,7 @@ margin-left: -22px;
     try{
       if(REC_X.tx){var fmt=recXFmt();
         if(fmt==="docx")await recXDocx(r);
-        else if(fmt==="pdf")recXPdf(r);
+        else if(fmt==="pdf")await recXPdf(r);
         else if(fmt==="srt")downloadFile(recXFile(r,"srt"),recXSrt(r),"text/plain");
         else downloadFile(recXFile(r,fmt),recXPlain(r,fmt),fmt==="md"?"text/markdown":"text/plain");}
       if(REC_X.hl)downloadFile(recXFile(r,"highlights.txt"),recXHl(r),"text/plain");
@@ -10572,6 +10697,7 @@ margin-left: -22px;
     recHovP=p;var tip=document.getElementById("rec-tip");if(!tip)return;
     if(!p){tip.classList.remove("on");return;}
     p.classList.add("hov");tip.classList.add("on");
+    var im2=document.getElementById("rec-imgmenu2");if(im2){im2.classList.remove("on");}
     var host=document.getElementById("rec-doc"),hr=host.getBoundingClientRect(),r=p.getBoundingClientRect(),w=tip.offsetWidth||150,z=recZ();
     tip.style.left=Math.max(0,(r.right-hr.left)/z-w-6)+"px";tip.style.top=((r.top-hr.top)/z-30)+"px";}
   // 全站套了 root.style.zoom：getBoundingClientRect 给的是放大后的数，写 style.left 要换回去
@@ -10603,6 +10729,9 @@ margin-left: -22px;
         if(!w||w.length<2)return;try{if(!isSaved(w)){toggleWord(w,w,"oald");n++;}}catch(e){}});
       try{updateWbCount();}catch(e){}
       recToast(n?(trv("加进生词本")+" "+n):trv("这些词生词本里都已经有了。"));window.getSelection().removeAllRanges();return;}
+    if(act==="img"){
+      var tipm=document.getElementById("rec-imgmenu2"),tp=document.getElementById("rec-tip");
+      if(tipm){tipm.style.left=tp.style.left;tipm.style.top=(parseFloat(tp.style.top)+40)+"px";tipm.classList.toggle("on");}return;}
     if(act==="cm"){
       var li=ws.length?+ws[0].getAttribute("data-li"):(p?+p.querySelector(".rl").getAttribute("data-li"):-1);
       var l=r.lines[li];if(!l)return;
@@ -10659,6 +10788,27 @@ margin-left: -22px;
     var stop=document.getElementById("rec-stop");if(stop)stop.addEventListener("click",function(){if(recOn)recStop();});
     var pa=document.getElementById("rec-pause");if(pa)pa.addEventListener("click",function(){recPausedAt?recResume():recPause();});
     var mu=document.getElementById("rec-mute");if(mu)mu.addEventListener("click",function(){if(recOn)recMute(!recMuted);});
+    var mb=document.getElementById("rec-micbtn"),mm=document.getElementById("rec-micmenu");
+    if(mb)mb.addEventListener("click",function(e){e.stopPropagation();recMicPaint();mm.classList.toggle("on");});
+    if(mm)mm.addEventListener("click",function(e){var b=e.target.closest("[data-mic]");if(!b)return;mm.classList.remove("on");recSetMic(b.getAttribute("data-mic"));});
+    var ms=document.getElementById("rec-micsel");if(ms)ms.addEventListener("change",function(){recSetMic(this.value);});
+    recMicPaint();
+    try{navigator.mediaDevices.addEventListener("devicechange",function(){recMicPaint();});}catch(e){}
+    var lc=document.getElementById("rec-livecm");if(lc)lc.addEventListener("click",function(){recAddComment(-1);});
+    var lb=document.getElementById("rec-langbtn"),lm=document.getElementById("rec-langmenu");
+    if(lb)lb.addEventListener("click",function(e){e.stopPropagation();recLangPaint();lm.classList.toggle("on");});
+    if(lm)lm.addEventListener("click",function(e){var b=e.target.closest("[data-lang]");if(!b)return;lm.classList.remove("on");recSetLang(b.getAttribute("data-lang"));});
+    var tb=document.getElementById("rec-livetrb");if(tb)tb.addEventListener("click",function(){var cb=document.getElementById("rec-livetr");if(!cb)return;cb.checked=!cb.checked;save("tt_reclivetr",cb.checked);recLangPaint();
+      recToast(cb.checked?trv("边录边翻：开"):trv("边录边翻：关"));});
+    var li0=document.getElementById("rec-liveimg"),im0=document.getElementById("rec-imgmenu");
+    if(li0)li0.addEventListener("click",function(e){e.stopPropagation();im0.classList.toggle("on");});
+    document.querySelectorAll("#rec-imgmenu,#rec-imgmenu2").forEach(function(mn){
+      mn.addEventListener("click",function(e){var b=e.target.closest("[data-im]");if(!b)return;mn.classList.remove("on");
+        if(b.getAttribute("data-im")==="up")recPickImage();else recPasteImage();});});
+    document.addEventListener("paste",function(e){
+      if(state.tab!=="rec")return;if(e.target.closest("input,textarea,[contenteditable=true]"))return;
+      var items=(e.clipboardData&&e.clipboardData.items)||[];
+      for(var i=0;i<items.length;i++){if(/^image\//.test(items[i].type)){var f=items[i].getAsFile();if(f){e.preventDefault();recAddImage(f,recImgTarget());return;}}}});
     var sb=document.getElementById("rec-setbtn"),sp0=document.getElementById("rec-setpanel");
     if(sb)sb.addEventListener("click",function(e){e.stopPropagation();sp0.classList.toggle("on");});
     // 内录：不支持的浏览器（Safari、手机）直接把这个勾去掉，别让人勾了发现没用。默认开着 —— 开会才是主场景
@@ -10682,7 +10832,8 @@ margin-left: -22px;
       if(del){e.stopPropagation();var id=del.getAttribute("data-rdel"),r0=null;
         recs.forEach(function(x){if(x.id===id)r0=x;});
         if(!await ttConfirm("删掉「"+(r0?r0.title:"")+"」？音频和文字都会没有，撤不回来。",{danger:true,anchor:del}))return;
-        recDrop(id);recs=recs.filter(function(x){return x.id!==id;});saveRecs();recRenderList();return;}
+        recDrop(id);if(r0)(r0.lines||[]).forEach(function(l){(l.img||[]).forEach(function(x){recImgDrop(x.id);});});
+        recs=recs.filter(function(x){return x.id!==id;});saveRecs();recRenderList();return;}
       if(e.target.closest("[data-rnote]"))return;
       var mo=e.target.closest("[data-rmore]");
       if(mo){var n=mo.previousElementSibling;n.classList.toggle("clip");mo.textContent=n.classList.contains("clip")?trv("展开"):trv("收起");return;}
@@ -10714,6 +10865,9 @@ margin-left: -22px;
     document.addEventListener("mousedown",function(e){
       if(menu.classList.contains("on")&&!e.target.closest(".rec-morew"))menu.classList.remove("on");
       if(sp0&&sp0.classList.contains("on")&&!e.target.closest(".rec-morew"))sp0.classList.remove("on");
+      var mm2=document.getElementById("rec-micmenu");if(mm2&&mm2.classList.contains("on")&&!e.target.closest(".rec-micw"))mm2.classList.remove("on");
+      var lm2=document.getElementById("rec-langmenu");if(lm2&&lm2.classList.contains("on")&&!e.target.closest("#rec-langmenu")&&!e.target.closest("#rec-langbtn"))lm2.classList.remove("on");
+      ["rec-imgmenu","rec-imgmenu2"].forEach(function(k){var mn=document.getElementById(k);if(mn&&mn.classList.contains("on")&&!e.target.closest("#"+k)&&!e.target.closest("#rec-liveimg")&&!e.target.closest('[data-act="img"]'))mn.classList.remove("on");});
       var pk=document.getElementById("rec-pk");
       if(pk&&pk.classList.contains("on")&&!e.target.closest("#rec-pk")&&!e.target.closest("[data-pk]"))recPkClose();
       var po=document.getElementById("rec-po");
@@ -10807,6 +10961,8 @@ margin-left: -22px;
       if(!recCur)return;
       var nm=e.target.closest("[data-pk]");if(nm){e.stopPropagation();recPkOpen(nm);return;}
       var cx=e.target.closest("[data-cmx]");if(cx){var l0=recCur.lines[+cx.getAttribute("data-cmx")];if(l0){delete l0.cm;saveRecs();recPaintLines();}return;}
+      var ix=e.target.closest("[data-imgx]");if(ix){recDelImage(+ix.closest(".rimg").getAttribute("data-li"),ix.getAttribute("data-imgx"));return;}
+      var fg=e.target.closest(".rimg img");if(fg&&fg.src){window.open(fg.src,"_blank");return;}
       if(e.target.closest("[contenteditable=true]"))return;   // 正在改这句，别抢光标
       if(window.getSelection&&String(window.getSelection()).trim())return;   // 在选字，不是在点
       var w=e.target.closest(".rw[data-wt]");                 // 点某个词 → 从那个词开始放
@@ -11049,6 +11205,102 @@ margin-left: -22px;
       if(!isFinite(e)||e<=t)e=(i+1<cs.length&&cs[i+1].timestamp)?(+cs[i+1].timestamp[0]||t+1):(dur||t+1);
       L.push({t:Math.round(t*10)/10,e:Math.round(e*10)/10,s:s});});
     return L;}
+
+  // ---- 图片：录音时或回放时贴进来，挂在当时那一句上（Otter 的 screenshot）----
+  // 图片本体存 IndexedDB（ttrec 库的 img 表），稿子里只记 id + 时间，不然 localStorage 立刻撑爆。
+  function recImgDB(){return new Promise(function(res,rej){
+    var r=indexedDB.open("ttrec",2);
+    r.onupgradeneeded=function(){var db=r.result;
+      if(!db.objectStoreNames.contains("audio"))db.createObjectStore("audio",{keyPath:"id"});
+      if(!db.objectStoreNames.contains("img"))db.createObjectStore("img",{keyPath:"id"});};
+    r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};
+    r.onblocked=function(){rej(new Error("关掉其他打开着这个网站的标签页再试"));};});}
+  function recImgPut(id,blob){return recImgDB().then(function(db){return new Promise(function(res,rej){
+    var tx=db.transaction("img","readwrite");tx.objectStore("img").put({id:id,b:blob});
+    tx.oncomplete=function(){res(true);};tx.onerror=function(){rej(tx.error);};});});}
+  function recImgGet(id){return recImgDB().then(function(db){return new Promise(function(res){
+    var tx=db.transaction("img","readonly"),q=tx.objectStore("img").get(id);
+    q.onsuccess=function(){res((q.result&&q.result.b)||null);};q.onerror=function(){res(null);};});
+    }).catch(function(){return null;});}
+  function recImgDrop(id){return recImgDB().then(function(db){return new Promise(function(res){
+    var tx=db.transaction("img","readwrite");tx.objectStore("img").delete(id);
+    tx.oncomplete=function(){res(true);};tx.onerror=function(){res(false);};});}).catch(function(){return false;});}
+  var recImgURL={};                                      // id → blob URL（内存缓存）
+  function recImgSrc(id){
+    if(recImgURL[id])return Promise.resolve(recImgURL[id]);
+    return recImgGet(id).then(function(b){if(!b)return "";recImgURL[id]=URL.createObjectURL(b);return recImgURL[id];});}
+  // 太大的图缩到 1600 像素以内、转 JPEG —— 截图动辄几 MB，几十张就把本机库吃满了
+  function recImgShrink(blob){return new Promise(function(res){
+    var img=new Image(),u=URL.createObjectURL(blob);
+    img.onload=function(){
+      var W=img.naturalWidth,H=img.naturalHeight,k=Math.min(1,1600/Math.max(W,H));
+      if(k>=1&&blob.size<900*1024){URL.revokeObjectURL(u);res(blob);return;}
+      var c=document.createElement("canvas");c.width=Math.round(W*k);c.height=Math.round(H*k);
+      c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+      c.toBlob(function(b){URL.revokeObjectURL(u);res(b||blob);},"image/jpeg",0.86);};
+    img.onerror=function(){URL.revokeObjectURL(u);res(blob);};
+    img.src=u;});}
+  // 录音中：图片 / 评论先按时间攒着，录完再挂到对应的句子上
+  var recLiveImgs=[],recLiveCms=[];
+  function recNowT(){
+    if(recOn)return recElapsed();
+    var au=document.getElementById("rec-audio");return au?(au.currentTime||0):0;}
+  function recLineAt(r,t){                               // 这个时刻正在说的那句；没有就取它前面最近的一句
+    var L=r.lines,best=-1;
+    for(var i=0;i<L.length;i++){if((+L[i].t||0)<=t+0.05)best=i;else break;}
+    return best;}
+  async function recAddImage(blob,li){
+    if(!blob||!/^image\//.test(blob.type||""))return;
+    var small=await recImgShrink(blob),id="i"+uid();
+    try{await recImgPut(id,small);}catch(e){ttAlert("图片存不进本机库："+String(e&&e.message||e));return;}
+    var t=recNowT();
+    if(recOn){recLiveImgs.push({id:id,t:t});recToast(trv("图片记在")+" "+tsLabel(t));recDrawLive();return;}
+    var r=recCur;if(!r)return;
+    if(li===undefined||li===null||li<0)li=recLineAt(r,t);
+    if(li<0){if(!r.lines.length)r.lines.push({t:0,e:1,s:""});li=0;}
+    var l=r.lines[li];l.img=l.img||[];l.img.push({id:id,t:Math.round(t*10)/10});
+    saveRecs();recPaintLines();recPaintHead();recToast(trv("图片已加到")+" "+tsLabel(l.t));}
+  async function recDelImage(li,id){
+    var r=recCur;if(!r)return;var l=r.lines[li];if(!l||!l.img)return;
+    l.img=l.img.filter(function(x){return x.id!==id;});if(!l.img.length)delete l.img;
+    await recImgDrop(id);if(recImgURL[id]){URL.revokeObjectURL(recImgURL[id]);delete recImgURL[id];}
+    saveRecs();recPaintLines();recPaintHead();}
+  function recAddComment(li){
+    var t=recNowT();
+    if(recOn){ttPromptLong(trv("评论")+" · "+tsLabel(t),"",{}).then(function(v){if(v===null)return;v=String(v).trim();if(!v)return;
+      recLiveCms.push({t:t,cm:v});recToast(trv("评论记在")+" "+tsLabel(t));recDrawLive();});return;}
+    var r=recCur;if(!r)return;
+    if(li===undefined||li===null||li<0)li=recLineAt(r,t);
+    var l=r.lines[li];if(!l)return;
+    ttPromptLong(trv("评论"),l.cm||"",{}).then(function(v){if(v===null)return;l.cm=String(v).trim();if(!l.cm)delete l.cm;saveRecs();recPaintLines();});}
+  // 录完：把攒着的图片和评论挂到句子上
+  function recAttachLive(r){
+    if(!recLiveImgs.length&&!recLiveCms.length)return;
+    if(!r.lines.length)r.lines.push({t:0,e:Math.max(1,r.dur||1),s:""});
+    recLiveImgs.forEach(function(x){var li=Math.max(0,recLineAt(r,x.t)),l=r.lines[li];l.img=l.img||[];l.img.push({id:x.id,t:Math.round(x.t*10)/10});});
+    recLiveCms.forEach(function(x){var li=Math.max(0,recLineAt(r,x.t)),l=r.lines[li];l.cm=l.cm?(l.cm+"\n"+x.cm):x.cm;});
+    recLiveImgs=[];recLiveCms=[];}
+  function recImgCount(r){var n=0;(r.lines||[]).forEach(function(l){if(l.img)n+=l.img.length;});return n;}
+  // 段落里的图：先画占位，再异步把 blob URL 填进去
+  function recImgsHTML(r,p){
+    var h="";
+    p.lines.forEach(function(li){var l=r.lines[li];if(!l.img)return;
+      l.img.forEach(function(x){h+='<figure class="rimg" data-img="'+x.id+'" data-li="'+li+'"><img alt="" data-src="'+x.id+'"><button type="button" class="x" data-imgx="'+x.id+'" title="'+esc(trv("删掉这张图"))+'">✕</button><figcaption>'+tsLabel(x.t)+'</figcaption></figure>';});});
+    return h?('<div class="imgs">'+h+'</div>'):"";}
+  function recImgsFill(box){
+    (box||document).querySelectorAll("img[data-src]").forEach(function(im){var id=im.getAttribute("data-src");im.removeAttribute("data-src");
+      recImgSrc(id).then(function(u){if(u)im.src=u;});});}
+  function recPickImage(){
+    var inp=document.createElement("input");inp.type="file";inp.accept="image/*";
+    inp.onchange=function(){var f=inp.files&&inp.files[0];if(f)recAddImage(f,recImgTarget());};inp.click();}
+  function recImgTarget(){return (recHovP&&recHovP.querySelector(".rl"))?+recHovP.querySelector(".rl").getAttribute("data-li"):-1;}
+  async function recPasteImage(){
+    try{
+      var items=await navigator.clipboard.read();
+      for(var i=0;i<items.length;i++){var it=items[i],ty=it.types.filter(function(t){return /^image\//.test(t);})[0];
+        if(ty){var b=await it.getType(ty);await recAddImage(b,recImgTarget());return;}}
+      recToast(trv("剪贴板里没有图片。"));
+    }catch(e){recToast(trv("浏览器不让读剪贴板，直接 Ctrl+V 粘贴也行。"));}}
 
   // ---------- 说话人：谁在什么时候说 ----------
   // 两个小模型，都在浏览器里跑、音频不出本机：
