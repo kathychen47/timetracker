@@ -2507,5 +2507,7 @@
 "录完会用这个模型精转。": "This model will be used after you stop.",
 "录完了，正在用 Whisper 精转（比实时字幕准很多），转好会自动换上。": "Recording saved. Whisper is re-transcribing it (much more accurate than live captions) and will swap it in when done.",
 "你在精转期间改过稿子，这次精转结果没换上去。": "You edited the transcript while it was re-transcribing, so the new version wasn't swapped in.",
-"Whisper 没听出字，保留实时字幕。": "Whisper heard nothing, so the live captions are kept."
+"Whisper 没听出字，保留实时字幕。": "Whisper heard nothing, so the live captions are kept.",
+"medium · 口音更稳（慢）": "medium · better with accents (slow)",
+"large-v3-turbo · 最准（要显卡）": "large-v3-turbo · most accurate (needs a GPU)"
 }

@@ -1667,6 +1667,9 @@
   .rec-menu.rec-imgmenu{right:0;left:auto;top:auto;bottom:46px;width:220px}
   .rec-lvl{width:100%}
   .rec-livebar .rec-ctl button{width:auto;height:38px;padding:0 16px;white-space:nowrap;border:1px solid var(--border);border-radius:99px;font-size:14px}
+  .rec-livebar .rec-ctl .rec-menu button{width:100%;height:auto;min-height:0;padding:9px 10px;border:0;border-radius:9px;white-space:normal;text-align:left;background:none;font-weight:500;display:flex;align-items:center;gap:10px}
+  .rec-livebar .rec-ctl .rec-menu button:hover{background:var(--surface-2)}
+  .rec-livebar .rec-ctl .rec-menu .h{white-space:normal}
   .rec-livebar .rec-ctl .rec-muteb{background:var(--surface);border-color:transparent}
   .rec-livebar .rec-ctl .rec-muteb.on{background:var(--primary-soft);color:var(--primary)}
   .rec-livebar .rec-ctl #rec-pause{background:var(--surface);border-color:transparent;display:inline-flex;align-items:center;gap:6px}
@@ -1678,7 +1681,7 @@
   .rec-micb .caret{width:14px;height:14px;color:var(--muted)}
   .rec-micb .lbl{font-size:14px;color:var(--muted);margin:0 2px 0 4px}
   .rec-micb.on{background:var(--primary-soft);color:var(--primary)}
-  .rec-menu.rec-micmenu{left:0;right:auto;top:auto;bottom:46px;width:min(360px,calc(100vw - 80px))}
+  .rec-menu.rec-micmenu{left:0;right:auto;top:auto;bottom:46px;width:min(380px,calc(100vw - 80px))}
   .rec-micmenu .h{padding:8px 10px 4px;font-size:13px;color:var(--muted)}
   .rec-micmenu button .ck{margin-left:auto;color:var(--primary)}
   .rec-micmenu button span.n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -6228,8 +6231,10 @@ margin-left: -22px;
     "finishUp:落库":"finishUp: save",
     "http://Mac的IP:11434":"http://your-Mac-IP:11434",
     "kg 公斤":"kg",
+    "large-v3-turbo · 最准（要显卡）":"large-v3-turbo · most accurate (needs a GPU)",
     "large-v3-turbo · 最准（要显卡，约 900MB）":"large-v3-turbo · most accurate (needs a GPU, ~900MB)",
     "leaveFollow:存档没了，手上还有时间":"leaveFollow: saved state gone, time still on hand",
+    "medium · 口音更稳（慢）":"medium · better with accents (slow)",
     "medium · 口音更稳（慢，约 500MB）":"medium · better with accents (slow, ~500MB)",
     "onComplete:不归我管":"onComplete: not this tab's timer",
     "small · 更准":"small · more accurate",
@@ -11123,8 +11128,8 @@ margin-left: -22px;
     {id:"onnx-community/whisper-tiny_timestamped",name:"tiny · 最快",mb:42,rt:0.25},
     {id:"onnx-community/whisper-base_timestamped",name:"base · 推荐",mb:77,rt:0.5},
     {id:"onnx-community/whisper-small_timestamped",name:"small · 更准",mb:240,rt:1.5},
-    {id:"onnx-community/whisper-medium_timestamped",name:"medium · 口音更稳（慢，约 500MB）",mb:500,rt:3},
-    {id:"onnx-community/whisper-large-v3-turbo_timestamped",name:"large-v3-turbo · 最准（要显卡，约 900MB）",mb:900,rt:4,gpu:true}];
+    {id:"onnx-community/whisper-medium_timestamped",name:"medium · 口音更稳（慢）",mb:500,rt:3},
+    {id:"onnx-community/whisper-large-v3-turbo_timestamped",name:"large-v3-turbo · 最准（要显卡）",mb:900,rt:4,gpu:true}];
   function wModelBig(id){return /medium|large/.test(String(id||""));}
   function wModelRT(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].rt||0.5;return 0.5;}
   function wModelName(id){for(var i=0;i<WMODELS.length;i++)if(WMODELS[i].id===id)return WMODELS[i].name;return "";}
