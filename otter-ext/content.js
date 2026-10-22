@@ -241,6 +241,8 @@
         '<div class="row"><button type="button" class="pri" data-cp="0">复制全部</button><button type="button" data-cp="5">最近 5 分钟</button></div>' +
         '<div class="row"><span>最近</span><input type="number" id="mtr-mins" min="1" max="600" step="1"><span>分钟</span><button type="button" data-cp="n">复制</button></div>' +
         '<label><input type="checkbox" id="mtr-withtr"> 复制时带上译文</label>' +
+        // 在 Otter app 里（经 Meowly 桥打开）才有：让 Claude Code 现在就回答
+        (window.__mtrBridge ? '<hr><div class="row"><button type="button" class="pri" id="mtr-ask">问 AI（让 Claude 回答刚才的问题）</button></div>' : '') +
       '</div>' +
       '<button type="button" id="mtr-fab" title="翻译 / 复制">' + ICO + '</button>';
     document.body.appendChild(p);
@@ -255,6 +257,11 @@
     p.querySelector("#mtr-ollmodel").addEventListener("change", e => { S.ollamaModel = e.target.value.trim(); saveCfg(); });
     p.querySelector("#mtr-mins").addEventListener("change", e => { S.mins = Math.max(1, parseInt(e.target.value, 10) || 10); saveCfg(); });
     p.querySelector("#mtr-withtr").addEventListener("change", e => { S.withTr = e.target.checked; saveCfg(); });
+    const askBtn = p.querySelector("#mtr-ask");
+    if (askBtn) askBtn.addEventListener("click", () => {
+      window.__mtrAskN = (window.__mtrAskN || 0) + 1;
+      toast("已经请 Claude Code 回答（它那边要开着 /meeting）");
+    });
     p.addEventListener("click", e => {
       const b = e.target.closest("[data-cp]"); if (!b) return;
       const v = b.getAttribute("data-cp");
