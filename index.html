@@ -1665,7 +1665,9 @@
   .rec-livebar .rec-right .rec-icb{position:relative}
   .rec-livebar .rec-right .rec-icb:hover{background:var(--surface-2)}
   .rec-menu.rec-imgmenu{right:0;left:auto;top:auto;bottom:46px;width:220px}
-  .rec-lvl{width:100%}
+  .rec-livebar .rec-mid{position:relative}
+  .rec-livebar .rec-lvl{position:absolute;left:0;right:0;bottom:100%;margin:0 0 10px;width:auto;overflow:hidden}
+  .rec-livebar{padding-top:40px!important}
   .rec-livebar .rec-ctl button{width:auto;height:38px;padding:0 16px;white-space:nowrap;border:1px solid var(--border);border-radius:99px;font-size:14px}
   .rec-livebar .rec-ctl .rec-menu button{width:100%;height:auto;min-height:0;padding:9px 10px;border:0;border-radius:9px;white-space:normal;text-align:left;background:none;font-weight:500;display:flex;align-items:center;gap:10px}
   .rec-livebar .rec-ctl .rec-menu button:hover{background:var(--surface-2)}
@@ -1778,9 +1780,11 @@
 
   /* 详情：正文 */
   /* 页面自己滚；顶栏贴顶、播放条贴底（sticky）。内容短时 flex 把播放条推到最下面 */
-  #rec-doc{position:relative;display:flex;flex-direction:column;min-height:calc(var(--vh,100vh) - 60px)}
-  #rec-livedoc{display:flex;flex-direction:column;min-height:calc(var(--vh,100vh) - 60px)}
-  #rec-doc>.rec-top{position:sticky;top:0;z-index:30;background:var(--bg)}
+  /* 顶栏钉顶、播放条 / 录音条钉底：position:fixed，left / width 由 recPinBars() 对齐到正文那一栏 */
+  #rec-doc{position:relative;padding-top:58px;padding-bottom:150px}
+  #rec-livedoc{padding-bottom:170px}
+  #rec-doc>.rec-top{position:fixed;top:0;z-index:40;background:var(--bg);margin:0;padding:10px 0 8px;box-sizing:border-box}
+  #view-rec .rec-player{position:fixed!important;bottom:12px;z-index:40;margin:0!important;max-width:none}
   #rec-livedoc[hidden]{display:none}
   .rec-scroll{flex:1 0 auto;overflow:visible!important;max-height:none!important;overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
   @media (prefers-reduced-motion:reduce){.rec-scroll{scroll-behavior:auto}}
@@ -1880,7 +1884,7 @@
   .rec-pk .ft button:hover{background:var(--surface)}
   .rec-pk .em{padding:8px 15px 13px;font-size:13.5px;color:var(--muted)}
   /* 底部播放条 */
-  .rec-player{max-width:1040px;margin:8px auto 0;width:100%;flex:none;position:sticky;bottom:10px;z-index:30;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
+  .rec-player{max-width:1040px;margin:8px auto 0;width:100%;flex:none;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
   .rec-bar2{height:6px;border-radius:99px;background:var(--surface-2);position:relative;cursor:pointer;margin:4px 0 8px}
   .rec-bar2 i{display:block;height:100%;width:0;background:var(--primary);border-radius:99px}
   .rec-bar2 b{position:absolute;top:50%;left:0;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.2)}
@@ -4685,7 +4689,6 @@ margin-left: -22px;
             </div>
           </div>
           <div class="rec-player rec-livebar">
-            <div class="rec-lvl" id="rec-lvl"></div>
             <div class="rec-ctl">
               <span class="rec-left"><div class="rec-morew rec-micw"><button type="button" class="rec-micb" id="rec-micbtn" title="选择麦克风"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg><svg viewBox="0 0 24 24" class="caret"><path d="M6 9l6 6 6-6"/></svg></button>
                 <div class="rec-menu rec-micmenu" id="rec-micmenu"></div></div>
@@ -4696,6 +4699,7 @@ margin-left: -22px;
                 <div class="rec-menu rec-micmenu" id="rec-modelmenu"></div></div>
               <button type="button" class="rec-micb" id="rec-livetrb" title="边录边翻：每定稿一句翻一句"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg></button></span>
               <span class="rec-mid">
+              <div class="rec-lvl" id="rec-lvl"></div>
               <button type="button" class="rec-pill" id="rec-pause"></button>
               <span class="rec-time" id="rec-time"></span>
               <button type="button" class="rec-pill rec-stopb" id="rec-stop"><span>停止</span></button>
@@ -10065,7 +10069,7 @@ margin-left: -22px;
       '<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'+esc(recDocDate(d))+'</span>';}
     recLangPaint();
     recMuted=false;var mb=document.getElementById("rec-mute");if(mb){mb.classList.remove("on");mb.querySelector("span").textContent=rtv("静音");}
-    recPaintPause();recLvlStart();recMicPaint();
+    recPaintPause();recLvlStart();recMicPaint();setTimeout(recPinBars,0);
     recTick=setInterval(recPaintTime,500);recPaintTime();
     recDrawLive();requestAnimationFrame(recLvlTick);}
 
@@ -10168,6 +10172,21 @@ margin-left: -22px;
     var sel=document.getElementById("rec-lang");if(!sel)return;sel.value=v;save("tt_reclang",v);
     if(recOn&&recSR&&!recPausedAt){var s0=recSR;recSR=null;try{s0.stop();}catch(e){}segFlush();recPend=null;recLastEnd=Math.max(recLastEnd,recElapsed());recSRStart();}
     recLangPaint();}
+  // 把钉住的顶栏 / 底栏对齐到当前看得见的正文那一栏（窗口缩放、左栏展开收起都会变）
+  function recPinBars(){
+    var z=recZ(),bars=[["#rec-doc",".rec-docin",["#rec-doc>.rec-top","#rec-player"]],["#rec-livedoc",".rec-docin",[".rec-livebar"]]];
+    bars.forEach(function(b){
+      var host=document.querySelector(b[0]);if(!host||!host.offsetParent)return;
+      var col=host.querySelector(b[1]);if(!col)return;
+      var r=col.getBoundingClientRect();if(!r.width)return;
+      b[2].forEach(function(sel){var el=document.querySelector(sel);if(!el)return;
+        el.style.left=(r.left/z)+"px";el.style.width=(r.width/z)+"px";});});}
+  (function(){
+    var t=null;function later(){if(t)return;t=requestAnimationFrame(function(){t=null;recPinBars();});}
+    window.addEventListener("resize",later);
+    try{new ResizeObserver(later).observe(document.body);}catch(e){}
+    try{new MutationObserver(later).observe(document.documentElement,{attributes:true,attributeFilter:["style","class"]});}catch(e){}
+    setInterval(function(){if(state&&state.tab==="rec")recPinBars();},1500);})();
   function recPaintPause(){
     var b=document.getElementById("rec-pause");if(!b)return;
     b.innerHTML=recPausedAt
@@ -10368,7 +10387,7 @@ margin-left: -22px;
     if(blob){recURL=URL.createObjectURL(blob);au.src=recURL;miss.hidden=true;}
     else{au.removeAttribute("src");miss.hidden=false;}
     recApplyRate();
-    recPaintLines();recPaintPlayer();}
+    recPaintLines();recPaintPlayer();setTimeout(recPinBars,0);}
   function recBack(){
     var au=document.getElementById("rec-audio");try{au.pause();}catch(e){}
     if(recURL){URL.revokeObjectURL(recURL);recURL=null;}
