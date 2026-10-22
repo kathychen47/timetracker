@@ -2495,5 +2495,17 @@
 "边录边翻：开": "Live translation: on",
 "边录边翻：关": "Live translation: off",
 "这两页的界面语言": "Language of these two pages",
-"跟全站": "Same as the app"
+"跟全站": "Same as the app",
+"复制最近 5 分钟的稿子（发给 AI 问）": "Copy the last 5 minutes of the transcript (to ask an AI)",
+"复制到现在为止的全部稿子": "Copy the whole transcript so far",
+"这段时间里还没有字。": "Nothing transcribed in that span yet.",
+"边录边翻没翻出来（网络或翻译引擎不通），录音不受影响。": "Live translation didn't come through (network or translation engine), but the recording is fine.",
+"录完后精转用的模型": "Model for the clean-up pass after recording",
+"实时字幕是浏览器自带的，录完再用 Whisper 精转一遍": "Live captions come from the browser; Whisper re-transcribes after you stop",
+"录完自动精转": "Re-transcribe automatically when I stop",
+"精转用的模型": "Model for the clean-up pass",
+"录完会用这个模型精转。": "This model will be used after you stop.",
+"录完了，正在用 Whisper 精转（比实时字幕准很多），转好会自动换上。": "Recording saved. Whisper is re-transcribing it (much more accurate than live captions) and will swap it in when done.",
+"你在精转期间改过稿子，这次精转结果没换上去。": "You edited the transcript while it was re-transcribing, so the new version wasn't swapped in.",
+"Whisper 没听出字，保留实时字幕。": "Whisper heard nothing, so the live captions are kept."
 }

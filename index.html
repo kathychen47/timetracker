@@ -1652,14 +1652,17 @@
   #rec-home.recording .rec-home-only,#rec-home.recording .rec-list,#rec-home.recording .tm-panel{display:none!important}
   .rec-pill.rec-recb{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
   .rec-pill.rec-recb:hover{filter:brightness(1.06);background:var(--primary)}
-  .rec-livescroll{max-height:none}
+  .rec-livescroll{max-height:none;overflow:visible}
   .rec-live .rp.int .body{opacity:.55;font-style:italic}
   .rec-livebar .rec-ctl{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px}
   .rec-livebar .rec-ctl>:first-child{justify-self:start}
   .rec-livebar .rec-left,.rec-livebar .rec-mid,.rec-livebar .rec-right{display:inline-flex;align-items:center;gap:10px}
   .rec-livebar .rec-mid{justify-self:center}
   .rec-livebar .rec-right{justify-self:end}
-  .rec-livebar .rec-right .rec-icb{border:0;background:none;width:38px}
+  .rec-livebar .rec-right .rec-icb{border:0;background:none;width:40px;padding:0!important;display:inline-flex;align-items:center;justify-content:center}
+  .rec-livebar .rec-right .rec-icb svg{width:22px;height:22px;flex:none}
+  .rec-livebar .rec-right .rec-icb small{position:absolute;font-size:9px;font-weight:700;right:2px;bottom:3px;color:var(--muted)}
+  .rec-livebar .rec-right .rec-icb{position:relative}
   .rec-livebar .rec-right .rec-icb:hover{background:var(--surface-2)}
   .rec-menu.rec-imgmenu{right:0;left:auto;top:auto;bottom:46px;width:220px}
   .rec-lvl{width:100%}
@@ -1771,11 +1774,12 @@
   .rec-chips button.on{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
 
   /* 详情：正文 */
-  #rec-doc{position:relative;display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 96px)}
-  #rec-livedoc{display:flex;flex-direction:column;height:calc(var(--vh,100vh) - 132px)}
-  main:has(#view-rec.on #rec-doc:not([style*="none"])),main:has(#rec-home.recording){padding-bottom:18px;overflow:hidden}
+  /* 页面自己滚；顶栏贴顶、播放条贴底（sticky）。内容短时 flex 把播放条推到最下面 */
+  #rec-doc{position:relative;display:flex;flex-direction:column;min-height:calc(var(--vh,100vh) - 60px)}
+  #rec-livedoc{display:flex;flex-direction:column;min-height:calc(var(--vh,100vh) - 60px)}
+  #rec-doc>.rec-top{position:sticky;top:0;z-index:30;background:var(--bg)}
   #rec-livedoc[hidden]{display:none}
-  .rec-scroll{flex:1;min-height:0;overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
+  .rec-scroll{flex:1 0 auto;overflow:visible!important;max-height:none!important;overflow:auto;scroll-behavior:smooth;padding-bottom:30px}
   @media (prefers-reduced-motion:reduce){.rec-scroll{scroll-behavior:auto}}
   .rec-docin{max-width:1040px;margin:0 auto;padding:18px 0 0}
   .rec-h1{font-size:var(--rh1);font-weight:500;line-height:1.2;letter-spacing:-.01em;outline:none;text-wrap:balance;margin:0 0 16px;border-radius:6px}
@@ -1873,7 +1877,7 @@
   .rec-pk .ft button:hover{background:var(--surface)}
   .rec-pk .em{padding:8px 15px 13px;font-size:13.5px;color:var(--muted)}
   /* 底部播放条 */
-  .rec-player{max-width:1040px;margin:8px auto 0;width:100%;flex:none;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
+  .rec-player{max-width:1040px;margin:8px auto 0;width:100%;flex:none;position:sticky;bottom:10px;z-index:30;box-sizing:border-box;background:var(--bg);border:1px solid var(--border);border-radius:14px;box-shadow:0 6px 24px rgba(0,0,0,.08);padding:12px 18px 10px;position:relative}
   .rec-bar2{height:6px;border-radius:99px;background:var(--surface-2);position:relative;cursor:pointer;margin:4px 0 8px}
   .rec-bar2 i{display:block;height:100%;width:0;background:var(--primary);border-radius:99px}
   .rec-bar2 b{position:absolute;top:50%;left:0;width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;background:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.2)}
@@ -1882,6 +1886,8 @@
   .rec-ctl button{width:40px;height:40px;border:0;background:none;color:var(--text);cursor:pointer;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;font:inherit;font-size:15px;font-weight:600}
   .rec-ctl button:hover{background:var(--surface-2)}
   .rec-ctl button.on{color:var(--primary);background:var(--primary-soft)}
+  .rec-ctl button.busy{animation:recbusy 1s ease-in-out infinite}
+  @keyframes recbusy{50%{opacity:.35}}
   .rec-ctl svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .rec-ctl .rec-ratebtn{width:auto;padding:0 12px;background:var(--surface)}
   .rec-pst{font-size:12.5px;color:var(--muted);margin-right:8px;max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1938,7 +1944,7 @@
   @media (max-width:640px){
     .rec-h1{font-size:calc(var(--rh1) - 4px)}.rec-card{grid-template-columns:34px 1fr;column-gap:10px}
     .rec-card .own{width:34px;height:34px;font-size:16px;margin-top:22px}.rec-card h2{font-size:20px}.rec-card .bx{padding:16px 14px 14px}
-    #rec-doc{height:calc(var(--vh,100vh) - 70px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
+    #rec-doc{min-height:calc(var(--vh,100vh) - 40px)}.rec-search kbd{display:none}.rec-tabs{gap:18px}.rec-pst{display:none}}
 
   /* ---------- 🎧 精听（竖排：原文在上、听写在下）---------- */
   .lt-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
@@ -4683,6 +4689,8 @@ margin-left: -22px;
               <button type="button" class="rec-pill rec-muteb" id="rec-mute"><span>静音</span></button>
               <div class="rec-morew"><button type="button" class="rec-micb" id="rec-langbtn" title="转写语言"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span id="rec-livelang" class="lbl"></span><svg viewBox="0 0 24 24" class="caret"><path d="M6 9l6 6 6-6"/></svg></button>
                 <div class="rec-menu rec-micmenu" id="rec-langmenu"></div></div>
+              <div class="rec-morew"><button type="button" class="rec-micb" id="rec-modelbtn" title="录完后精转用的模型"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/><path d="M9 9h6v6H9zM9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"/></svg><svg viewBox="0 0 24 24" class="caret"><path d="M6 9l6 6 6-6"/></svg></button>
+                <div class="rec-menu rec-micmenu" id="rec-modelmenu"></div></div>
               <button type="button" class="rec-micb" id="rec-livetrb" title="边录边翻：每定稿一句翻一句"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg></button></span>
               <span class="rec-mid">
               <button type="button" class="rec-pill" id="rec-pause"></button>
@@ -4691,6 +4699,8 @@ margin-left: -22px;
               </span>
               <span class="rec-right">
               <span class="wt-note rec-livehint" id="rec-hint" style="margin:0"></span>
+              <button type="button" class="rec-icb" id="rec-cp5" title="复制最近 5 分钟的稿子（发给 AI 问）"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><small>5m</small></button>
+              <button type="button" class="rec-icb" id="rec-cpall" title="复制到现在为止的全部稿子"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10M12 13h5M12 16h5"/></svg></button>
               <button type="button" class="rec-icb" id="rec-livecm" title="评论（记在现在这个时间点）"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg></button>
               <div class="rec-morew"><button type="button" class="rec-icb" id="rec-liveimg" title="加图片（记在现在这个时间点）"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg></button>
                 <div class="rec-menu rec-imgmenu" id="rec-imgmenu"><button type="button" data-im="up"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>上传图片</button><button type="button" data-im="paste"><svg viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h6"/></svg>从剪贴板粘贴</button></div></div>
@@ -6206,6 +6216,7 @@ margin-left: -22px;
     "Token 已存在这台设备上 ✓":"Token saved on this device ✓",
     "Whisper 引擎":"Whisper engine",
     "Whisper 是按停顿切的，这里按句末标点重新分。听写按时间搬过去，判分要重做":"Whisper splits at pauses; this re-splits at sentence-ending punctuation. Your dictation moves across by timestamp, but the scoring has to be redone",
+    "Whisper 没听出字，保留实时字幕。":"Whisper heard nothing, so the live captions are kept.",
     "Whisper 绑定失败":"Whisper failed to bind",
     "[图片 $1]":"[Image $1]",
     "base · 推荐":"base · recommended",
@@ -6524,6 +6535,7 @@ margin-left: -22px;
     "你删过的":"You deleted this",
     "你取消了":"You cancelled",
     "你取消了共享，这次只录麦克风。":"You cancelled sharing, so this one is mic only.",
+    "你在精转期间改过稿子，这次精转结果没换上去。":"You edited the transcript while it was re-transcribing, so the new version wasn't swapped in.",
     "你手动定的":"You set this manually",
     "你是不是想查：":"Did you mean:",
     "你最近改过的设置会排在这里，点一下直接跳过去。":"Settings you've changed recently show up here — click one to jump straight to it.",
@@ -6914,7 +6926,9 @@ margin-left: -22px;
     "复制代码":"Copy code",
     "复制全文":"Copy transcript",
     "复制到我的菜谱":"Copy to my recipes",
+    "复制到现在为止的全部稿子":"Copy the whole transcript so far",
     "复制失败":"Copy failed",
+    "复制最近 5 分钟的稿子（发给 AI 问）":"Copy the last 5 minutes of the transcript (to ask an AI)",
     "复数 / 时态 —— 词听对了，形态没跟上":"Plural / tense — right word, wrong form",
     "复盘":"retro",
     "外卖":"takeaway",
@@ -6982,6 +6996,7 @@ margin-left: -22px;
     "定期利息":"Term deposit interest",
     "宝贝工资":"Babe's salary",
     "实收":"Gross",
+    "实时字幕是浏览器自带的，录完再用 Whisper 精转一遍":"Live captions come from the browser; Whisper re-transcribes after you stop",
     "实际":"actual",
     "实际税率":"Effective rate",
     "家务":"chores",
@@ -7123,6 +7138,10 @@ margin-left: -22px;
     "当时多少秒":"Seconds at the time",
     "当时没勾「同时加到我的 Google 日历」的那些，在这儿一次性补上去。已经在 Google 里的、以及从 Google 存下来的，都会跳过，不会传重。中途可以停，下次接着来。":"The ones where you never ticked “Also add to my Google Calendar” get sent up in one go. Anything already in Google, and anything saved down from Google, is skipped — nothing gets sent twice. You can stop partway and pick up next time.",
     "录下来是什么格式就是什么格式":"Whatever format it was recorded in",
+    "录完了，正在用 Whisper 精转（比实时字幕准很多），转好会自动换上。":"Recording saved. Whisper is re-transcribing it (much more accurate than live captions) and will swap it in when done.",
+    "录完会用这个模型精转。":"This model will be used after you stop.",
+    "录完后精转用的模型":"Model for the clean-up pass after recording",
+    "录完自动精转":"Re-transcribe automatically when I stop",
     "录音":"Record",
     "录音 · 精听":"Record · Listen",
     "录音存在本机哪里、占了多少、会不会被浏览器清掉":"Where recordings sit on this device, how much space they take, and whether the browser might clear them",
@@ -7860,6 +7879,7 @@ margin-left: -22px;
     "精听 · 逐句听写对答案":"Listening · dictate line by line, then check",
     "精听设置":"Listening settings",
     "精听页绑定失败":"Listening page failed to bind",
+    "精转用的模型":"Model for the clean-up pass",
     "素材":"Clip",
     "紧":"Tight",
     "累计听了几遍":"Plays in total",
@@ -8106,6 +8126,7 @@ margin-left: -22px;
     "输入说话人名字":"Type a speaker name",
     "边录边出字 · 回放时逐句对照，点时间戳跳到那一刻":"Words appear as you record · play back line by line, click a timestamp to jump there",
     "边录边翻":"Translate as you record",
+    "边录边翻没翻出来（网络或翻译引擎不通），录音不受影响。":"Live translation didn't come through (network or translation engine), but the recording is fine.",
     "边录边翻：关":"Live translation: off",
     "边录边翻：开":"Live translation: on",
     "边录边翻：每定稿一句翻一句":"Live translation: each sentence is translated as it lands",
@@ -8266,6 +8287,7 @@ margin-left: -22px;
     "这段时间没用到的分类":"Categories not used in this period",
     "这段时间的分段（正计时里换任务记下来的）":"Segments in this block (logged when you switched tasks in Count up)",
     "这段时间还没有记录":"No readings in this period",
+    "这段时间里还没有字。":"Nothing transcribed in that span yet.",
     "这笔":"this entry",
     "进统计":"Counted",
     "进行中":"Active",
@@ -10056,6 +10078,8 @@ margin-left: -22px;
           var t=(recPend!==null)?recPend:recLastEnd,e=recElapsed();
           if(t<recLastEnd)t=recLastEnd;
           if(e<t+0.2)e=t+0.2;
+          // 说的是英文时，识别器偶尔会把杂音猜成一串日文 / 中文假名 —— 没有一个拉丁字母的整段直接丢掉
+          if(/^en/i.test(recSR&&recSR.lang||"")&&!/[A-Za-z0-9]/.test(txt)&&/[\u3040-\u30ff\u4e00-\u9fff\uac00-\ud7af]/.test(txt)){recLastEnd=e;recPend=null;continue;}
           // 不直接落行 —— 交给 segPush 攒成一句/一小段
           segPush({s:txt,t:Math.round(t*10)/10,e:Math.round(e*10)/10});
           recLastEnd=e;recPend=null;
@@ -10112,6 +10136,24 @@ margin-left: -22px;
     var dots=document.querySelectorAll("#rec-lvl i");
     for(var k=0;k<dots.length;k++){var h=recLvlHist[recLvlHist.length-dots.length+k];dots[k].style.height=(3+Math.round((h||0)*16))+"px";}
     requestAnimationFrame(recLvlTick);}
+  // 录音中复制稿子：mins=0 全部，否则最近 N 分钟（含还没落行的那半句）
+  function recCopyLive(mins){
+    var L=recLines.slice(),pend=segBuf.length?segJoin(segBuf):null;
+    if(pend&&pend.s)L.push({t:segBuf[0].t,s:pend.s});
+    var now=recElapsed(),from=mins?Math.max(0,now-mins*60):0;
+    var pick=L.filter(function(l){return (+l.t||0)>=from-0.01&&String(l.s||"").trim();});
+    if(!pick.length){recToast(rtv("这段时间里还没有字。"));return;}
+    var head=(mins?(recEN()?("Transcript, last "+mins+" min"):("最近 "+mins+" 分钟的会议稿")):(recEN()?"Transcript so far":"到现在为止的会议稿"))+"（"+tsLabel(from)+" – "+tsLabel(now)+"）";
+    var txt=head+"\n\n"+pick.map(function(l){return "["+tsLabel(l.t)+"] "+l.s;}).join("\n");
+    function ok(){recToast((recEN()?"Copied ":"已复制 ")+pick.length+(recEN()?" lines":" 句"));}
+    try{navigator.clipboard.writeText(txt).then(ok,function(){copyText(txt,null);ok();});}catch(e){copyText(txt,null);ok();}}
+  function recModelPaint(){
+    var m=document.getElementById("rec-modelmenu");if(!m)return;
+    var on=load("tt_recautowh",true)!==false,cur=wModel();
+    m.innerHTML='<div class="h">'+rtv("实时字幕是浏览器自带的，录完再用 Whisper 精转一遍")+'</div>'+
+      '<button type="button" data-autowh="1"><span class="n">'+rtv("录完自动精转")+'</span>'+(on?'<span class="ck">✓</span>':'')+'</button>'+
+      '<div class="h">'+rtv("精转用的模型")+'</div>'+
+      WMODELS.map(function(x){return '<button type="button" data-wm="'+x.id+'"><span class="n">'+esc(rtv(x.name))+' · '+x.mb+'MB</span>'+(x.id===cur?'<span class="ck">✓</span>':'')+'</button>';}).join("");}
   function recLangPaint(){
     var sel=document.getElementById("rec-lang"),ll=document.getElementById("rec-livelang"),menu=document.getElementById("rec-langmenu");
     if(ll&&sel)ll.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";
@@ -10166,7 +10208,9 @@ margin-left: -22px;
     if(!okSave)ttAlert("文字存下来了，但音频没能写进本机数据库（多半是空间满了）。");
     recNote(recLines.length?("记下 "+recLines.length+" 句 · "+tsLabel(dur)):("录了 "+tsLabel(dur)+"，但一句都没识别出来"+(SRC?"":"（这个浏览器不支持实时转写）")));
     recOpen(id);
-    if(okSave&&recLines.length)recDiarize(recs[0],true);}
+    // 实时字幕是 Chrome 自带的识别，准确度一般；录完默认马上用 Whisper 再转一遍
+    if(okSave&&load("tt_recautowh",true)!==false)whisperRedo(true);
+    else if(okSave&&recLines.length)recDiarize(recs[0],true);}
 
   function recToCalendar(r){
     var end=new Date(r.ts),start=new Date(r.ts-r.dur*1000);
@@ -10209,7 +10253,8 @@ margin-left: -22px;
     if(live)h+='<div class="rp live int"><span class="rec-av none">·</span><div class="name"><time>'+tsLabel(lt)+'</time></div><div class="body">'+esc(live)+'</div></div>';
     if(!h)h='<div class="dict-hint">'+(SRC?rtv("说话就会出字…"):rtv("这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。"))+'</div>';
     box.innerHTML=h;recImgsFill(box);
-    var sc=box.closest(".rec-scroll");if(sc)sc.scrollTop=sc.scrollHeight;else box.scrollTop=box.scrollHeight;
+    var de=document.scrollingElement||document.documentElement;
+    if(de.scrollHeight-de.scrollTop-innerHeight<400)de.scrollTop=de.scrollHeight;
     recLvlTick();}
 
   // ---- 说话人：人名库（tt_people，跟云同步）----
@@ -10464,10 +10509,10 @@ margin-left: -22px;
     if(!el)return;
     el.classList.add("cur");
     recSyncWord(box,i,now);
-    if(recFollow&&sc){
-      var br=sc.getBoundingClientRect(),er=el.getBoundingClientRect();
-      if(er.top<br.top+10||er.bottom>br.bottom-10)
-        sc.scrollTop+=(er.top-br.top)-sc.clientHeight*0.38;}}
+    if(recFollow){
+      var er=el.getBoundingClientRect(),pl=document.getElementById("rec-player"),tp=document.querySelector("#rec-doc>.rec-top");
+      var lo=tp?tp.getBoundingClientRect().bottom:0,hi=pl?pl.getBoundingClientRect().top:innerHeight;
+      if(er.top<lo+10||er.bottom>hi-10)try{el.scrollIntoView({block:"center",behavior:"smooth"});}catch(e){}}}
   // 底部播放条：进度、时间、播放键
   function recPaintPlayer(){
     var au=document.getElementById("rec-audio");if(!au)return;
@@ -10500,8 +10545,9 @@ margin-left: -22px;
     recCur.lines.forEach(function(l,i){if(!l.tr&&l.s&&l.s.trim()){idx.push(i);txt.push(l.s);}});
     if(!idx.length){recNote2("每一句都翻过了。");return;}
     recTrBusy=true;
-    var btn=document.getElementById("rec-tr"),old=btn?btn.textContent:"";
-    if(btn){btn.textContent="翻译中…";btn.disabled=true;}
+    var btn=document.getElementById("rec-tr");
+    if(btn){btn.classList.add("busy");btn.disabled=true;}
+    recBiOn(true);
     wProg("翻译 "+idx.length+" 句 · "+trEngName(trEngine)+"…",0);
     translateBlocks(txt,function(done,total,msg){
       wProg(msg||("翻译中 "+done+" / "+total+" 句 · "+trEngName(trEngine)),total?done/total*100:null);})
@@ -10509,7 +10555,9 @@ margin-left: -22px;
       var n=0;idx.forEach(function(li,k){if(out[k]){recCur.lines[li].tr=String(out[k]).trim();n++;}});
       saveRecs();recPaintLines();recNote2("翻好 "+n+" 句。");},
       function(err){ttAlert("翻译失败："+String(err&&err.message||err)+"\n\n可以在查词页右上角换个引擎再试。");})
-    .then(function(){recTrBusy=false;wProg(null);if(btn){btn.textContent=old;btn.disabled=false;}});}
+    .then(function(){recTrBusy=false;wProg(null);if(btn){btn.classList.remove("busy");btn.disabled=false;}});}
+  function recBiOn(on){var bi=document.getElementById("rec-bi"),ln=document.getElementById("rec-lines");
+    if(bi)bi.classList.toggle("on",on);if(ln)ln.classList.toggle("nobi",!on);save("tt_recbi",on);}
   function recNote2(m){recToast(m);}
   // 录的时候：每定稿一句排一次队。本地模型一句几秒，所以是排队，不是一股脑发出去。
   var ltQ=[],ltOn=false;
@@ -10522,8 +10570,13 @@ margin-left: -22px;
     var i=ltQ.shift(),l=recLines[i];
     if(!l||!l.s||l.tr){liveTrDrain();return;}
     ltOn=true;
-    translateText(l.s).then(function(r){l.tr=String(r.text||"").trim();recDrawLive();},function(){})
+    var to=new Promise(function(res,rej){setTimeout(function(){rej(new Error("timeout"));},12000);});
+    Promise.race([translateText(l.s),to])
+      .catch(function(){return gTranslate(l.s,trTL(l.s)).then(function(t){return {text:t};});})
+      .then(function(r){l.tr=String((r&&r.text)||"").trim();recDrawLive();},
+        function(){if(!liveTrWarned){liveTrWarned=true;recToast(rtv("边录边翻没翻出来（网络或翻译引擎不通），录音不受影响。"));}})
       .then(function(){ltOn=false;liveTrDrain();});}
+  var liveTrWarned=false;
   // ---- 导出：Word / PDF / txt / srt / Markdown，照 Teams 导出的转写稿那个样子 ----
   var REC_X={tx:true,hl:false,au:false};
   function recXOpt(k){var el=document.querySelector('#rec-exp [data-xo="'+k+'"]');return !!(el&&el.checked);}
@@ -10784,6 +10837,7 @@ margin-left: -22px;
       if(o.sp!==undefined&&o.sp!==null){                 // 说话人：新句子的中点落在旧句子里就继承
         newL.forEach(function(n){var m=((+n.t||0)+(+n.e||0))/2;if(m>=(+o.t||0)-0.05&&m<=(+o.e||0)+0.05&&(n.sp===undefined||n.sp===null))n.sp=o.sp;});}
       if(o.cm){var k=at(+o.t||0),n2=newL[k];if(n2)n2.cm=n2.cm?(n2.cm+"\n"+o.cm):o.cm;}
+      if(o.img&&o.img.length)o.img.forEach(function(g){var n4=newL[at(+g.t||+o.t||0)];if(n4){n4.img=n4.img||[];n4.img.push(g);}});
       if(o.h&&o.h.length){
         var ow=lineWords(o);
         o.h.forEach(function(wk){var w=ow[wk];if(!w||w.sp)return;
@@ -10821,10 +10875,21 @@ margin-left: -22px;
     recMicPaint();
     try{navigator.mediaDevices.addEventListener("devicechange",function(){recMicPaint();});}catch(e){}
     var lc=document.getElementById("rec-livecm");if(lc)lc.addEventListener("click",function(){recAddComment(-1);});
+    var c5=document.getElementById("rec-cp5");if(c5)c5.addEventListener("click",function(){recCopyLive(5);});
+    var ca=document.getElementById("rec-cpall");if(ca)ca.addEventListener("click",function(){recCopyLive(0);});
+    var mbn=document.getElementById("rec-modelbtn"),mmn=document.getElementById("rec-modelmenu");
+    if(mbn)mbn.addEventListener("click",function(e){e.stopPropagation();recModelPaint();mmn.classList.toggle("on");});
+    if(mmn)mmn.addEventListener("click",function(e){
+      var a=e.target.closest("[data-autowh]");if(a){save("tt_recautowh",!(load("tt_recautowh",true)!==false));recModelPaint();return;}
+      var b=e.target.closest("[data-wm]");if(!b)return;var v=b.getAttribute("data-wm");save("tt_wmodel",v);
+      try{var ms=document.getElementById("rec-model");if(ms)ms.value=v;}catch(err){}
+      if(typeof wkr!=="undefined"&&wkr&&!wkrBusy){try{wkr.terminate();}catch(err){}wkr=null;}
+      recModelPaint();recToast(rtv("录完会用这个模型精转。"));});
     var lb=document.getElementById("rec-langbtn"),lm=document.getElementById("rec-langmenu");
     if(lb)lb.addEventListener("click",function(e){e.stopPropagation();recLangPaint();lm.classList.toggle("on");});
     if(lm)lm.addEventListener("click",function(e){var b=e.target.closest("[data-lang]");if(!b)return;lm.classList.remove("on");recSetLang(b.getAttribute("data-lang"));});
     var tb=document.getElementById("rec-livetrb");if(tb)tb.addEventListener("click",function(){var cb=document.getElementById("rec-livetr");if(!cb)return;cb.checked=!cb.checked;save("tt_reclivetr",cb.checked);recLangPaint();
+      if(cb.checked&&recOn){liveTrWarned=false;recLines.forEach(function(l,i){if(!l.tr)ltQ.push(i);});liveTrDrain();}
       recToast(cb.checked?rtv("边录边翻：开"):rtv("边录边翻：关"));});
     var li0=document.getElementById("rec-liveimg"),im0=document.getElementById("rec-imgmenu");
     if(li0)li0.addEventListener("click",function(e){e.stopPropagation();im0.classList.toggle("on");});
@@ -10897,6 +10962,7 @@ margin-left: -22px;
       if(sp0&&sp0.classList.contains("on")&&!e.target.closest(".rec-morew"))sp0.classList.remove("on");
       var mm2=document.getElementById("rec-micmenu");if(mm2&&mm2.classList.contains("on")&&!e.target.closest(".rec-micw"))mm2.classList.remove("on");
       var lm2=document.getElementById("rec-langmenu");if(lm2&&lm2.classList.contains("on")&&!e.target.closest("#rec-langmenu")&&!e.target.closest("#rec-langbtn"))lm2.classList.remove("on");
+      var mm3=document.getElementById("rec-modelmenu");if(mm3&&mm3.classList.contains("on")&&!e.target.closest("#rec-modelmenu")&&!e.target.closest("#rec-modelbtn"))mm3.classList.remove("on");
       ["rec-imgmenu","rec-imgmenu2"].forEach(function(k){var mn=document.getElementById(k);if(mn&&mn.classList.contains("on")&&!e.target.closest("#"+k)&&!e.target.closest("#rec-liveimg")&&!e.target.closest('[data-act="img"]'))mn.classList.remove("on");});
       var pk=document.getElementById("rec-pk");
       if(pk&&pk.classList.contains("on")&&!e.target.closest("#rec-pk")&&!e.target.closest("[data-pk]"))recPkClose();
@@ -10985,8 +11051,9 @@ margin-left: -22px;
       if(au.currentTime>en+0.15&&(+nx.t||0)-en>1.2&&au.currentTime<(+nx.t||0)-0.2){try{au.currentTime=(+nx.t||0)-0.1;}catch(e){}}});
     document.getElementById("rec-tr").addEventListener("click",function(){
       if(!recCur)return;
-      var has=recCur.lines.some(function(l){return l.tr;});
-      if(!has){recTrAll();return;}
+      // 还有没翻的句子 → 先翻（翻完自动显示）；全都翻过了 → 显示 / 隐藏译文
+      var missing=recCur.lines.some(function(l){return !l.tr&&l.s&&String(l.s).trim();});
+      if(missing){recTrAll();return;}
       bi.click();});
     // 正文：点词跳、点时间跳、点名字选人、评论删
     lines.addEventListener("click",function(e){
@@ -11500,20 +11567,26 @@ margin-left: -22px;
       ttAlert("转写失败："+String(err&&err.message||err));}}
 
   // ---- 入口 ②：给已经录好的那条重转一遍 ----
-  async function whisperRedo(){
+  async function whisperRedo(auto){
     if(!recCur)return;
-    var blob=await recGet(recCur.id);
-    if(!blob){ttAlert("这台设备上没有它的音频（音频不进云端），没法重转。");return;}
-    var old=recCur.lines.slice();
-    if(old.length&&!await ttConfirm("用 Whisper 重转「"+recCur.title+"」？\n现在这 "+old.length+" 句会被换掉（包括你手改过的）。",
+    var r0=recCur;
+    var blob=await recGet(r0.id);
+    if(!blob){if(!auto)ttAlert("这台设备上没有它的音频（音频不进云端），没法重转。");return;}
+    var old=r0.lines.slice();
+    if(!auto&&old.length&&!await ttConfirm("用 Whisper 重转「"+recCur.title+"」？\n现在这 "+old.length+" 句会被换掉（包括你手改过的）。",
       {okText:"重转",danger:true,anchor:document.getElementById("rec-whisper")}))return;
     try{
+      if(auto)recToast(rtv("录完了，正在用 Whisper 精转（比实时字幕准很多），转好会自动换上。"));
       var out=await whisperRun(blob,wLang());
-      recCur.lines=out.lines;termAll(recCur.lines);try{recCarry(old,recCur.lines);}catch(e){}if(!recCur.dur)recCur.dur=Math.round(out.dur);
-      recCur.by="whisper";saveRecs();recCurLine=-1;recPaintLines();recPaintHead();
+      if(auto&&r0.lines.some(function(l,i){return old[i]&&l.s!==old[i].s;})){recToast(rtv("你在精转期间改过稿子，这次精转结果没换上去。"));return;}
+      if(!out.lines.length){if(auto)recToast(rtv("Whisper 没听出字，保留实时字幕。"));return;}
+      r0.lines=out.lines;termAll(r0.lines);try{recCarry(old,r0.lines);}catch(e){}if(!r0.dur)r0.dur=Math.round(out.dur);
+      r0.by="whisper";saveRecs();
+      if(recCur===r0){recCurLine=-1;recPaintLines();recPaintHead();}
+      recRenderList();
       recToast("重转好了："+out.lines.length+" 句（用了 "+Math.round(out.ms/1000)+" 秒）");
-      recDiarize(recCur,true);
-    }catch(err){ttAlert("转写失败："+String(err&&err.message||err));}}
+      recDiarize(r0,true);
+    }catch(err){if(auto)recToast("精转失败，先用实时字幕："+String(err&&err.message||err));else ttAlert("转写失败："+String(err&&err.message||err));}}
 
   function wLang(){var v=document.getElementById("rec-lang").value||"";return v.slice(0,2)||undefined;}
 
