@@ -4712,6 +4712,8 @@ margin-left: -22px;
               <hr>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M11 5c-.7 4-3.5 7-7 9M6 8c1 3 3.5 5.5 7 7M13 21l4-10 4 10M14.5 17h5"/></svg><span>翻译引擎</span>
                 <span class="rec-chips" id="rec-trchips"></span></div>
+              <div class="rec-mf"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg><span>这两页的界面语言</span>
+                <span class="rec-chips" id="rec-uichips"><button type="button" data-ui="auto">跟全站</button><button type="button" data-ui="zh">中文</button><button type="button" data-ui="en">English</button></span></div>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M4 20h16M7 16l3-9h4l3 9M9 13h6"/></svg><span>字号</span>
                 <span class="rec-chips" id="rec-fschips"><button type="button" data-fs="s">小</button><button type="button" data-fs="m">标准</button><button type="button" data-fs="l">大</button><button type="button" data-fs="xl">特大</button></span></div>
               <div class="rec-mf"><svg viewBox="0 0 24 24"><path d="M3 18l5-13 5 13M5 13h6M14 18l3-8 3 8M15.5 15h3"/></svg><span>字体</span>
@@ -8064,6 +8066,7 @@ margin-left: -22px;
     "距目标":"To goal",
     "跟上次选的一样":"Same as last time",
     "跟上面":"Follow above",
+    "跟全站":"Same as the app",
     "跟着看":"Following",
     "跟读":"Follow along",
     "跟读（读到哪滚到哪）":"Follow along (scroll to the current line)",
@@ -8167,6 +8170,7 @@ margin-left: -22px;
     "这一页没有文字层（扫描版）——点右上角「🔍 OCR」可识别成可选中的文字":"This page has no text layer (it's a scan)—tap \"🔍 OCR\" at the top right to turn it into selectable text",
     "这一页还没渲染出来，等一下再试":"This page hasn't rendered yet, try again in a moment",
     "这不是合法的 JSON":"That's not valid JSON",
+    "这两页的界面语言":"Language of these two pages",
     "这个分组没有可背的词。":"No words to study in this group.",
     "这个分组没有词可导出":"No words in this group to export",
     "这个分组还没有词。":"No words in this group yet.",
@@ -9167,7 +9171,13 @@ margin-left: -22px;
   // 界面上就成了 "Time distribution (… · by 大类)"。
   // 词表里没有就原样返回，所以她自建的分类（PhD / CMS）不会被乱动。
   function trv(s){if(lang!=="en"||!s)return s;var v=trLookup(String(s));return v===undefined?s:v;}
-  function sweepLang(root){if(lang!=="en"||!root)return;try{
+  var REC_SCOPE="#view-rec,#view-listen,#rec-tip,#rec-pk,#rec-exp,#rec-menu";
+  function inRecScope(n){var e=n&&(n.nodeType===1?n:n.parentNode);try{return !!(e&&e.closest&&e.closest(REC_SCOPE));}catch(x){return false;}}
+  function sweepLang(root){if(!root)return;
+    var rl=(typeof recUI==="function")?recUI():lang,rootIn=inRecScope(root);
+    if(rootIn){if(rl!=="en")return;}else if(lang!=="en"&&rl!=="en")return;
+    var effOf=function(n){return (rootIn||inRecScope(n))?rl:lang;};
+    try{
     // 替换一律走函数式：译文里可能带 $（记账页全是 $145.03 这种金额），
     // 直接当替换串传的话 $& / $1 会被当成特殊记号，金额就被吃掉了。
     var put=function(node,k,v){node.nodeValue=node.nodeValue.replace(k,function(){return v;});};
@@ -9175,11 +9185,11 @@ margin-left: -22px;
     // 拿去跑 505 条模板正则 = 页面永远打不开。它们从来就不是界面文案，跳过。
     var skip=function(tn){var p=tn&&tn.parentNode,t=p&&p.nodeName;
       return t==="SCRIPT"||t==="STYLE"||t==="NOSCRIPT";};
-    if(root.nodeType===3){if(skip(root))return;
+    if(root.nodeType===3){if(skip(root))return;if(effOf(root)!=="en")return;
       var kk=(root.nodeValue||"").trim(),vv=trLookup(kk);if(kk&&vv!==undefined)put(root,kk,vv);return;}
     if(root.nodeType!==1&&root.nodeType!==9)return;
     var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n,ns=[];while(n=w.nextNode())ns.push(n);
-    ns.forEach(function(tn){if(skip(tn))return;          // 先看父节点再 trim —— 别为了 1.7MB 的源码白做一次 trim
+    ns.forEach(function(tn){if(skip(tn))return;if(effOf(tn)!=="en")return;   // 先看父节点再 trim —— 别为了 1.7MB 的源码白做一次 trim
       var k=(tn.nodeValue||"").trim(),v=trLookup(k);if(k&&v!==undefined)put(tn,k,v);});
     // 属性：querySelectorAll **不包含根元素自己**。innerHTML 一赋值，
     // MutationObserver 给的 addedNode 往往就是那个带 title 的元素本身 ——
@@ -9191,6 +9201,7 @@ margin-left: -22px;
     // （所以原来那个 zh-CN 其实一直是空的。）改成 en 是为了语义上不说假话。
     var delang=function(el){if(el&&el.nodeType===1&&el.hasAttribute&&el.hasAttribute("lang"))el.setAttribute("lang","en");};
     var attrs=function(el){if(!el||el.nodeType!==1)return;
+      if(effOf(el)!=="en")return;
       delang(el);
       ["placeholder","title","aria-label"].forEach(function(a){
         if(!el.hasAttribute(a))return;
@@ -9672,6 +9683,10 @@ margin-left: -22px;
   // 音频存本地 IndexedDB（一小时 opus 约 30MB，不进云端）；文字进 tt_recs，跟着云同步走。
   var recs=load("tt_recs",[])||[];
   function saveRecs(){save("tt_recs",recs);}
+  // 录音 / 精听这两页可以单独选界面语言（她开会记英文稿，别的页想看中文）
+  function recUI(){var v=load("tt_recui","auto");return (v==="zh"||v==="en")?v:lang;}
+  function recEN(){return recUI()==="en";}
+  function rtv(s0){if(recUI()!=="en"||!s0)return s0;var v=trLookup(String(s0));return v===undefined?s0:v;}
   var SRC=window.SpeechRecognition||window.webkitSpeechRecognition||null;
   var recStream=null,recMR=null,recChunks=[],recSR=null,recT0=0,recTick=null;
   var recLines=[],recOn=false,recPend=null,recLastEnd=0,recBlobType="";
@@ -9934,21 +9949,21 @@ margin-left: -22px;
     var id=recMicId();
     try{return await navigator.mediaDevices.getUserMedia({audio:recMicConstraint(id)});}
     catch(e){if(!id)throw e;
-      save("tt_recmic","");recToast(trv("选的那个麦克风现在用不了，换回默认的。"));
+      save("tt_recmic","");recToast(rtv("选的那个麦克风现在用不了，换回默认的。"));
       return await navigator.mediaDevices.getUserMedia({audio:true});}}
   // 列出麦克风。没授权过时拿不到名字，所以列表在第一次录过之后才全
   async function recMicList(){
     var out=[];
     try{var ds=await navigator.mediaDevices.enumerateDevices();
-      ds.forEach(function(d){if(d.kind==="audioinput")out.push({id:d.deviceId,n:d.label||(trv("麦克风")+" "+(out.length+1))});});}catch(e){}
+      ds.forEach(function(d){if(d.kind==="audioinput")out.push({id:d.deviceId,n:d.label||(rtv("麦克风")+" "+(out.length+1))});});}catch(e){}
     return out;}
   async function recMicPaint(){
     var list=await recMicList(),cur=recMicId(),menu=document.getElementById("rec-micmenu"),sel=document.getElementById("rec-micsel");
-    var h='<div class="h">'+trv("选择麦克风")+'</div>';
+    var h='<div class="h">'+rtv("选择麦克风")+'</div>';
     list.forEach(function(d){h+='<button type="button" data-mic="'+esc(d.id)+'"><span class="n">'+esc(d.n)+'</span>'+((d.id===cur||(!cur&&d.id==="default"))?'<span class="ck">✓</span>':'')+'</button>';});
-    if(!list.length)h+='<div class="h">'+trv("还没拿到麦克风列表，先录一次再看。")+'</div>';
+    if(!list.length)h+='<div class="h">'+rtv("还没拿到麦克风列表，先录一次再看。")+'</div>';
     if(menu)menu.innerHTML=h;
-    if(sel){sel.innerHTML='<option value="">'+trv("默认")+'</option>'+list.map(function(d){return '<option value="'+esc(d.id)+'"'+(d.id===cur?" selected":"")+'>'+esc(d.n)+'</option>';}).join("");}}
+    if(sel){sel.innerHTML='<option value="">'+rtv("默认")+'</option>'+list.map(function(d){return '<option value="'+esc(d.id)+'"'+(d.id===cur?" selected":"")+'>'+esc(d.n)+'</option>';}).join("");}}
   // 录到一半换麦克风：新麦接进混音，旧的断掉。MediaRecorder 录的是混音出口，轨道没变，不会断
   async function recSetMic(id){
     save("tt_recmic",id||"");
@@ -9959,7 +9974,7 @@ margin-left: -22px;
         var old=recStream&&recStream.__mic;if(old&&old!==mic){try{old.getTracks().forEach(function(t){t.stop();});}catch(e){}}
         recMicSrc=src;if(recStream)recStream.__mic=mic;
         if(recMuted)mic.getAudioTracks().forEach(function(t){t.enabled=false;});
-      }catch(e){recToast(trv("换不过去：")+String(e&&e.message||e));}}
+      }catch(e){recToast(rtv("换不过去：")+String(e&&e.message||e));}}
     recMicPaint();}
   async function recBuildStream(wantSys){
     var mic=await recGetMic();
@@ -10008,12 +10023,12 @@ margin-left: -22px;
     recSRStart();
     var home=document.getElementById("rec-home");if(home)home.classList.add("recording");
     var ld=document.getElementById("rec-livedoc");if(ld)ld.hidden=false;
-    var lt=document.getElementById("rec-livetitle");if(lt){lt.textContent="";lt.setAttribute("data-ph",trv("录音"));}
+    var lt=document.getElementById("rec-livetitle");if(lt){lt.textContent="";lt.setAttribute("data-ph",rtv("录音"));}
     var lm=document.getElementById("rec-livemeta");
     if(lm){var d=new Date();lm.innerHTML='<span class="who">'+avHTML(myName(),"#8b6f62")+esc(myName())+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'+esc(recDocDate(d))+'</span>';}
     recLangPaint();
-    recMuted=false;var mb=document.getElementById("rec-mute");if(mb){mb.classList.remove("on");mb.querySelector("span").textContent=trv("静音");}
+    recMuted=false;var mb=document.getElementById("rec-mute");if(mb){mb.classList.remove("on");mb.querySelector("span").textContent=rtv("静音");}
     recPaintPause();recLvlStart();recMicPaint();
     recTick=setInterval(recPaintTime,500);recPaintTime();
     recDrawLive();requestAnimationFrame(recLvlTick);}
@@ -10069,7 +10084,7 @@ margin-left: -22px;
     try{if(mic)mic.getAudioTracks().forEach(function(t){t.enabled=!on;});}catch(e){}
     if(on){if(recSR){var s=recSR;recSR=null;try{s.stop();}catch(e){}}segFlush();}
     else if(recOn&&!recPausedAt){recPend=null;recLastEnd=Math.max(recLastEnd,recElapsed());recSRStart();}
-    var b=document.getElementById("rec-mute");if(b){b.classList.toggle("on",on);b.querySelector("span").textContent=on?trv("取消静音"):trv("静音");}}
+    var b=document.getElementById("rec-mute");if(b){b.classList.toggle("on",on);b.querySelector("span").textContent=on?rtv("取消静音"):rtv("静音");}}
   function recLvlStart(){
     try{var AC=window.AudioContext||window.webkitAudioContext;if(!AC||!recStream)return;
       recLvlCtx=new AC();recLvlAn=recLvlCtx.createAnalyser();recLvlAn.fftSize=512;
@@ -10091,7 +10106,7 @@ margin-left: -22px;
   function recLangPaint(){
     var sel=document.getElementById("rec-lang"),ll=document.getElementById("rec-livelang"),menu=document.getElementById("rec-langmenu");
     if(ll&&sel)ll.textContent=sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:"";
-    if(menu&&sel)menu.innerHTML='<div class="h">'+trv("转写语言")+'</div>'+[].map.call(sel.options,function(o){return '<button type="button" data-lang="'+esc(o.value)+'"><span class="n">'+esc(o.text)+'</span>'+(o.value===sel.value?'<span class="ck">✓</span>':'')+'</button>';}).join("");
+    if(menu&&sel)menu.innerHTML='<div class="h">'+rtv("转写语言")+'</div>'+[].map.call(sel.options,function(o){return '<button type="button" data-lang="'+esc(o.value)+'"><span class="n">'+esc(o.text)+'</span>'+(o.value===sel.value?'<span class="ck">✓</span>':'')+'</button>';}).join("");
     var tb=document.getElementById("rec-livetrb"),cb=document.getElementById("rec-livetr");if(tb&&cb)tb.classList.toggle("on",!!cb.checked);}
   function recSetLang(v){
     var sel=document.getElementById("rec-lang");if(!sel)return;sel.value=v;save("tt_reclang",v);
@@ -10100,8 +10115,8 @@ margin-left: -22px;
   function recPaintPause(){
     var b=document.getElementById("rec-pause");if(!b)return;
     b.innerHTML=recPausedAt
-      ?'<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" style="fill:currentColor"/></svg><span>'+trv("继续")+'</span>'
-      :'<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" style="fill:currentColor"/></svg><span>'+trv("暂停")+'</span>';
+      ?'<svg viewBox="0 0 24 24"><path d="M7 5v14l12-7z" style="fill:currentColor"/></svg><span>'+rtv("继续")+'</span>'
+      :'<svg viewBox="0 0 24 24"><path d="M7 5h4v14H7zM13 5h4v14h-4z" style="fill:currentColor"/></svg><span>'+rtv("暂停")+'</span>';
     b.classList.toggle("on",!!recPausedAt);}
 
   function recStop(){
@@ -10183,7 +10198,7 @@ margin-left: -22px;
         '<div class="body">'+esc(l.s)+(l.tr?('<span class="rtr">'+esc(l.tr)+'</span>'):"")+'</div>'+extras(k?(+l.t||0):0,t1)+'</div>';});
     if(!tail.length&&(recLiveImgs.length||recLiveCms.length))h+='<div class="rp live"><span class="rec-av none">·</span><div class="name"><time>0:00</time></div><div class="body"></div>'+extras(0,1e9)+'</div>';
     if(live)h+='<div class="rp live int"><span class="rec-av none">·</span><div class="name"><time>'+tsLabel(lt)+'</time></div><div class="body">'+esc(live)+'</div></div>';
-    if(!h)h='<div class="dict-hint">'+(SRC?trv("说话就会出字…"):trv("这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。"))+'</div>';
+    if(!h)h='<div class="dict-hint">'+(SRC?rtv("说话就会出字…"):rtv("这个浏览器不做实时转写（用 Chrome 或 Edge），音频照样在录。"))+'</div>';
     box.innerHTML=h;recImgsFill(box);
     var sc=box.closest(".rec-scroll");if(sc)sc.scrollTop=sc.scrollHeight;else box.scrollTop=box.scrollHeight;
     recLvlTick();}
@@ -10203,7 +10218,7 @@ margin-left: -22px;
   function recSpName(r,sp){                              // 这条录音里簇 sp 叫什么：人名 / 说话人 N / 空
     if(sp===undefined||sp===null)return "";
     var pid=r&&r.spk&&r.spk[sp],p=pid?personById(pid):null;
-    return p?p.n:((isEN()?"Speaker ":"说话人 ")+(+sp+1));}
+    return p?p.n:((recEN()?"Speaker ":"说话人 ")+(+sp+1));}
   function recSpColor(r,sp){
     var pid=r&&r.spk&&r.spk[sp],p=pid?personById(pid):null;return p?p.c:"";}
   function avChar(name){var m=/^(说话人|Speaker)\s*(\d+)$/.exec(String(name||"").trim());return m?m[2]:(String(name||"").trim().charAt(0).toUpperCase()||"·");}
@@ -10221,19 +10236,19 @@ margin-left: -22px;
       if(fresh)out.push({sp:sp,t:+l.t||0,e:+l.e||0,lines:[i]});
       else{p.lines.push(i);p.e=Math.max(p.e,+l.e||0);}}
     return out;}
-  function myName(){try{var n=ledMyName();if(n&&n!==ledMe().split("@")[0])return n;if(n)return n;}catch(e){}return isEN()?"Me":"我";}
+  function myName(){try{var n=ledMyName();if(n&&n!==ledMe().split("@")[0])return n;if(n)return n;}catch(e){}return recEN()?"Me":"我";}
   function recDateLabel(d){
-    if(isEN())return d.toLocaleDateString("en-NZ",{weekday:"long",month:"long",day:"numeric"});
+    if(recEN())return d.toLocaleDateString("en-NZ",{weekday:"long",month:"long",day:"numeric"});
     return (d.getMonth()+1)+" 月 "+d.getDate()+" 日 "+["周日","周一","周二","周三","周四","周五","周六"][d.getDay()];}
   function recTimeLabel(d){
-    if(isEN()){var h=d.getHours(),ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+pad(d.getMinutes())+" "+ap;}
+    if(recEN()){var h=d.getHours(),ap=h>=12?"PM":"AM";h=h%12||12;return h+":"+pad(d.getMinutes())+" "+ap;}
     return pad(d.getHours())+":"+pad(d.getMinutes());}
   function recDurLabel(sec){
     var m=Math.round((sec||0)/60);
-    if(isEN())return m>=60?(Math.floor(m/60)+" h "+(m%60)+" min"):(m+" min");
+    if(recEN())return m>=60?(Math.floor(m/60)+" h "+(m%60)+" min"):(m+" min");
     return m>=60?(Math.floor(m/60)+" 小时 "+(m%60)+" 分钟"):(m+" 分钟");}
   function recDocDate(d){
-    if(isEN())return d.toLocaleDateString("en-NZ",{month:"short",day:"numeric"})+" at "+recTimeLabel(d).toLowerCase();
+    if(recEN())return d.toLocaleDateString("en-NZ",{month:"short",day:"numeric"})+" at "+recTimeLabel(d).toLowerCase();
     return (d.getMonth()+1)+" 月 "+d.getDate()+" 日 "+recTimeLabel(d);}
   function recSpeakerAvs(r){
     var seen={},out="";
@@ -10262,13 +10277,13 @@ margin-left: -22px;
         '<div class="bx"><button type="button" class="cx" data-rdel="'+r.id+'" title="删除">✕</button>'+
         '<h2>'+esc(r.title||"")+'</h2>'+
         '<div class="cm">'+esc(recTimeLabel(d))+' • '+esc(recDurLabel(r.dur))+' • '+esc(me)+
-          (r.noAudio?' • '+trv("只有文字"):'')+'</div>'+
-        '<div class="cnote'+(note.length>220?" clip":"")+'" contenteditable="true" spellcheck="false" data-rnote="'+r.id+'" data-ph="'+esc(trv("写点笔记…"))+'">'+esc(note)+'</div>'+
-        (note.length>220?'<span class="cmore" data-rmore="1">'+trv("展开")+'</span>':'')+snip+
+          (r.noAudio?' • '+rtv("只有文字"):'')+'</div>'+
+        '<div class="cnote'+(note.length>220?" clip":"")+'" contenteditable="true" spellcheck="false" data-rnote="'+r.id+'" data-ph="'+esc(rtv("写点笔记…"))+'">'+esc(note)+'</div>'+
+        (note.length>220?'<span class="cmore" data-rmore="1">'+rtv("展开")+'</span>':'')+snip+
         '<div class="ft">'+recSpeakerAvs(r)+
-          '<span class="bd" title="'+trv("句数")+'"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'+r.lines.length+'</span></div>'+
+          '<span class="bd" title="'+rtv("句数")+'"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'+r.lines.length+'</span></div>'+
         '</div></div>';});
-    if(q&&!hit)h='<div class="dict-hint">'+trv("没有匹配的录音。")+'</div>';
+    if(q&&!hit)h='<div class="dict-hint">'+rtv("没有匹配的录音。")+'</div>';
     box.innerHTML=h;}
   var recGQ="";
 
@@ -10282,7 +10297,7 @@ margin-left: -22px;
     document.getElementById("rec-home").style.display="none";
     document.getElementById("rec-doc").style.display="";
     document.getElementById("view-rec").classList.add("docon");
-    var tt=document.getElementById("rec-title");tt.textContent=r.title||"";tt.setAttribute("data-ph",trv("给这段录音起个名字"));
+    var tt=document.getElementById("rec-title");tt.textContent=r.title||"";tt.setAttribute("data-ph",rtv("给这段录音起个名字"));
     document.getElementById("rec-q").value="";
     var nb=document.getElementById("rec-note");if(nb)nb.value=r.note||"";
     recPaintHead();recPaintTab();
@@ -10312,7 +10327,7 @@ margin-left: -22px;
     box.innerHTML='<span class="who">'+avHTML(me,"#8b6f62")+esc(me)+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>'+esc(recDocDate(d))+'</span>'+
       '<span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'+esc(recDurLabel(r.dur))+'</span>'+
-      (recImgCount(r)?('<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>'+recImgCount(r)+' '+(isEN()?"screenshot(s)":"张图")+'</span>'):'')+
+      (recImgCount(r)?('<span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.5"/><path d="M21 16l-5-5-8 8"/></svg>'+recImgCount(r)+' '+(recEN()?"screenshot(s)":"张图")+'</span>'):'')+
       '<span class="bar"></span>'+
       '<button type="button" id="rec-copyall"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg><span>复制全文</span></button>';
     // 关键词：按词频，去掉虚词。中文没有空格，先不做
@@ -10360,8 +10375,8 @@ margin-left: -22px;
       var name=recSpName(r,p.sp),col=recSpColor(r,p.sp);
       h+='<div class="rp" data-pi="'+pi+'" data-sp="'+(p.sp===null?"":p.sp)+'">'+
         avHTML(name||"·",col,p.sp===null?"none":"")+
-        '<div class="name"><button type="button" class="nm'+(p.sp===null?" none":"")+'" data-pk="'+pi+'" title="'+esc(trv("点一下：选已记过的人，或新建"))+'">'+
-          esc(name||trv("标记说话人"))+'</button><time data-seek="'+p.lines[0]+'" title="'+esc(trv("从这儿开始放"))+'">'+tsLabel(p.t)+'</time></div>'+
+        '<div class="name"><button type="button" class="nm'+(p.sp===null?" none":"")+'" data-pk="'+pi+'" title="'+esc(rtv("点一下：选已记过的人，或新建"))+'">'+
+          esc(name||rtv("标记说话人"))+'</button><time data-seek="'+p.lines[0]+'" title="'+esc(rtv("从这儿开始放"))+'">'+tsLabel(p.t)+'</time></div>'+
         '<div class="body">';
       p.lines.forEach(function(li){
         var l=r.lines[li];
@@ -10372,7 +10387,7 @@ margin-left: -22px;
       h+='</div>';
       h+=recImgsHTML(r,p);
       p.lines.forEach(function(li){var l=r.lines[li];if(!l.cm)return;hasCm=true;
-        h+='<div class="cm" data-cmli="'+li+'"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg><span class="t">'+esc(l.cm)+'</span><button type="button" class="x" data-cmx="'+li+'" title="'+esc(trv("删掉这条评论"))+'">✕</button></div>';});
+        h+='<div class="cm" data-cmli="'+li+'"><svg viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5.5A8 8 0 1 1 21 12z"/></svg><span class="t">'+esc(l.cm)+'</span><button type="button" class="x" data-cmx="'+li+'" title="'+esc(rtv("删掉这条评论"))+'">✕</button></div>';});
       h+='</div>';});
     box.innerHTML=h||'<div class="dict-hint">这条录音还没有文字。</div>';
     recImgsFill(box);
@@ -10523,17 +10538,17 @@ margin-left: -22px;
     var n=document.querySelector('#rec-exp [data-xo="names"]'),a=document.querySelector('#rec-exp [data-xo="av"]'),t=document.querySelector('#rec-exp [data-xo="tr"]');
     if(n){n.checked=hasSp;n.disabled=!hasSp;}if(a){a.checked=hasSp;a.disabled=!hasSp;}if(t){t.checked=hasTr;t.disabled=!hasTr;}
     var hl=recHlCount(recCur);
-    document.getElementById("rec-xhln").textContent=hl.h||hl.c?(trv("高亮")+" "+hl.h+" · "+trv("评论")+" "+hl.c):trv("这条录音还没有高亮和评论");
-    document.getElementById("rec-xaun").textContent=recCur.noAudio?trv("这台设备上没有它的音频"):trv("录下来是什么格式就是什么格式");
+    document.getElementById("rec-xhln").textContent=hl.h||hl.c?(rtv("高亮")+" "+hl.h+" · "+rtv("评论")+" "+hl.c):rtv("这条录音还没有高亮和评论");
+    document.getElementById("rec-xaun").textContent=recCur.noAudio?rtv("这台设备上没有它的音频"):rtv("录下来是什么格式就是什么格式");
     recXPrev();}
   function recHlCount(r){var h=0,c=0;(r.lines||[]).forEach(function(l){if(l.h&&l.h.length)h++;if(l.cm)c++;});return {h:h,c:c};}
   function recXPrev(){
     var r=recCur,box=document.getElementById("rec-xprev");if(!box||!r)return;
     var n=0;Object.keys(REC_X).forEach(function(k){if(REC_X[k])n++;});
-    document.getElementById("rec-xn").textContent=n+" "+trv("个文件");
+    document.getElementById("rec-xn").textContent=n+" "+rtv("个文件");
     var go=document.getElementById("rec-xgo");if(go)go.disabled=!n;
     document.querySelectorAll("#rec-exp .rec-sw[data-xk]").forEach(function(s){s.classList.toggle("on",!!REC_X[s.getAttribute("data-xk")]);});
-    if(!REC_X.tx){box.innerHTML='<div class="mu">'+trv("转写稿没勾，预览空着。")+'</div>';return;}
+    if(!REC_X.tx){box.innerHTML='<div class="mu">'+rtv("转写稿没勾，预览空着。")+'</div>';return;}
     var fmt=recXFmt();
     if(fmt==="srt"){box.innerHTML='<pre>'+esc(recXSrt(r,6))+'\n…</pre>';return;}
     if(fmt==="txt"||fmt==="md"){box.innerHTML='<pre>'+esc(recXPlain(r,fmt,8))+'\n…</pre>';return;}
@@ -10627,8 +10642,8 @@ margin-left: -22px;
   function recXHl(r){
     var out=[];(r.lines||[]).forEach(function(l){
       if(l.h&&l.h.length){var ws=lineWords(l).filter(function(w){return !w.sp;});
-        out.push("["+tsLabel(l.t)+"] "+trv("高亮")+": "+l.h.map(function(k){var w=lineWords(l)[k];return w?w.s:"";}).join(" "));}
-      if(l.cm)out.push("["+tsLabel(l.t)+"] "+trv("评论")+": "+l.cm+"\n    "+l.s);});
+        out.push("["+tsLabel(l.t)+"] "+rtv("高亮")+": "+l.h.map(function(k){var w=lineWords(l)[k];return w?w.s:"";}).join(" "));}
+      if(l.cm)out.push("["+tsLabel(l.t)+"] "+rtv("评论")+": "+l.cm+"\n    "+l.s);});
     return (r.title||"")+"\n\n"+out.join("\n\n")+"\n";}
   async function recXGo(){
     var r=recCur;if(!r)return;
@@ -10640,7 +10655,7 @@ margin-left: -22px;
         else downloadFile(recXFile(r,fmt),recXPlain(r,fmt),fmt==="md"?"text/markdown":"text/plain");}
       if(REC_X.hl)downloadFile(recXFile(r,"highlights.txt"),recXHl(r),"text/plain");
       if(REC_X.au){var b=await recGet(r.id);
-        if(!b)recToast(trv("这台设备上没有它的音频 —— 音频不进云端，得回到录它的那台机器。"));
+        if(!b)recToast(rtv("这台设备上没有它的音频 —— 音频不进云端，得回到录它的那台机器。"));
         else{var ty=b.type||"audio/webm",ext=ty.indexOf("mp4")>=0?"m4a":(ty.indexOf("ogg")>=0?"ogg":(ty.indexOf("wav")>=0?"wav":"webm"));
           downloadFile(recXFile(r,ext),b,ty);}}
       document.getElementById("rec-exp").classList.remove("on");
@@ -10648,7 +10663,7 @@ margin-left: -22px;
   function recCopyAll(){
     if(!recCur)return;
     var r=recCur,t=recParas(r).map(function(p){var nm=recSpName(r,p.sp);return (nm?(nm+"  "):"")+tsLabel(p.t)+"\n"+recXText(r,p);}).join("\n\n");
-    copyText(t,null);recToast(trv("已复制"));}
+    copyText(t,null);recToast(rtv("已复制"));}
 
   // ---- 说话人选择框 ----
   var recPkPara=-1,recPkMg=false;
@@ -10667,16 +10682,16 @@ margin-left: -22px;
   function recPkList(){
     var ls=document.getElementById("rec-pkls"),inp=document.getElementById("rec-pkin"),q=String(inp.value||"").trim().toLowerCase();
     var sp=recPkCurSp(),curPid=(recCur&&recCur.spk&&sp!==null)?recCur.spk[sp]:null;
-    document.getElementById("rec-pkh").textContent=recPkMg?trv("管理说话人"):trv("选择说话人");
+    document.getElementById("rec-pkh").textContent=recPkMg?rtv("管理说话人"):rtv("选择说话人");
     var hit=people.filter(function(p){return !q||p.n.toLowerCase().indexOf(q)>=0;});
     ls.innerHTML=hit.map(function(p){
       return '<div class="it" data-pid="'+p.id+'">'+avHTML(p.n,p.c)+'<span>'+esc(p.n)+'</span>'+
-        (recPkMg?('<button type="button" class="ib" data-pren="'+p.id+'" title="'+esc(trv("改名"))+'">✎</button><button type="button" class="ib del" data-pdel="'+p.id+'" title="'+esc(trv("删掉这个人"))+'">✕</button>')
-                :(p.id===curPid?'<button type="button" class="un" data-untag="1">'+trv("取消标记")+'</button>':''))+'</div>';}).join("")||
-      '<div class="em">'+trv("没有这个人，点「新建」记下来，下次直接选。")+'</div>';
+        (recPkMg?('<button type="button" class="ib" data-pren="'+p.id+'" title="'+esc(rtv("改名"))+'">✎</button><button type="button" class="ib del" data-pdel="'+p.id+'" title="'+esc(rtv("删掉这个人"))+'">✕</button>')
+                :(p.id===curPid?'<button type="button" class="un" data-untag="1">'+rtv("取消标记")+'</button>':''))+'</div>';}).join("")||
+      '<div class="em">'+rtv("没有这个人，点「新建」记下来，下次直接选。")+'</div>';
     var exists=people.some(function(p){return p.n.toLowerCase()===q;});
     document.getElementById("rec-pknew").classList.toggle("ok",!!q&&!exists);
-    document.getElementById("rec-pkmg").textContent=recPkMg?trv("← 回到选择"):trv("管理说话人");}
+    document.getElementById("rec-pkmg").textContent=recPkMg?rtv("← 回到选择"):rtv("管理说话人");}
   function recPkAssign(pid){
     var r=recCur;if(!r||recPkPara<0)return;
     var ps=recParas(r),p=ps[recPkPara];if(!p)return;
@@ -10712,7 +10727,7 @@ margin-left: -22px;
     var r=recCur;if(!r)return;
     var ws=recSelWords(),p=recHovP;
     if(act==="hl"){
-      if(!ws.length){btn.classList.add("shake");setTimeout(function(){btn.classList.remove("shake");},400);recToast(trv("先选中要高亮的词"));return;}
+      if(!ws.length){btn.classList.add("shake");setTimeout(function(){btn.classList.remove("shake");},400);recToast(rtv("先选中要高亮的词"));return;}
       var allOn=ws.every(function(w){return w.classList.contains("hl");});
       ws.forEach(function(w){var li=+w.getAttribute("data-li"),k=+w.getAttribute("data-wk"),l=r.lines[li];if(!l)return;
         l.h=l.h||[];var at=l.h.indexOf(k);
@@ -10721,21 +10736,21 @@ margin-left: -22px;
       saveRecs();window.getSelection().removeAllRanges();return;}
     if(act==="cp"){
       var t=ws.length?window.getSelection().toString():(p?p.querySelector(".body").textContent:"");
-      copyText(t,null);recToast(trv("已复制"));return;}
+      copyText(t,null);recToast(rtv("已复制"));return;}
     if(act==="wb"){
       var words=ws.length?ws.map(function(w){return w.textContent;}):[],n=0;
-      if(!words.length){recToast(trv("先选中要加的词"));return;}
+      if(!words.length){recToast(rtv("先选中要加的词"));return;}
       words.forEach(function(x){var w=String(x||"").replace(/^[^A-Za-z]+|[^A-Za-z'-]+$/g,"").toLowerCase();
         if(!w||w.length<2)return;try{if(!isSaved(w)){toggleWord(w,w,"oald");n++;}}catch(e){}});
       try{updateWbCount();}catch(e){}
-      recToast(n?(trv("加进生词本")+" "+n):trv("这些词生词本里都已经有了。"));window.getSelection().removeAllRanges();return;}
+      recToast(n?(rtv("加进生词本")+" "+n):rtv("这些词生词本里都已经有了。"));window.getSelection().removeAllRanges();return;}
     if(act==="img"){
       var tipm=document.getElementById("rec-imgmenu2"),tp=document.getElementById("rec-tip");
       if(tipm){tipm.style.left=tp.style.left;tipm.style.top=(parseFloat(tp.style.top)+40)+"px";tipm.classList.toggle("on");}return;}
     if(act==="cm"){
       var li=ws.length?+ws[0].getAttribute("data-li"):(p?+p.querySelector(".rl").getAttribute("data-li"):-1);
       var l=r.lines[li];if(!l)return;
-      ttPromptLong(trv("评论"),l.cm||"",{anchor:btn}).then(function(v){
+      ttPromptLong(rtv("评论"),l.cm||"",{anchor:btn}).then(function(v){
         if(v===null)return;l.cm=String(v).trim();if(!l.cm)delete l.cm;saveRecs();recPaintLines();});}}
 
   // ---- 菜单：··· ----
@@ -10746,7 +10761,9 @@ margin-left: -22px;
     var f=load("tt_recfont","figtree");
     document.querySelectorAll("#rec-fontchips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-font")===f);});
     var fs=load("tt_recfs","m");
-    document.querySelectorAll("#rec-fschips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-fs")===fs);});}
+    document.querySelectorAll("#rec-fschips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-fs")===fs);});
+    var ui=load("tt_recui","auto");
+    document.querySelectorAll("#rec-uichips button").forEach(function(b){b.classList.toggle("on",b.getAttribute("data-ui")===ui);});}
   function recApplyFont(){var f=load("tt_recfont","figtree");document.body.setAttribute("data-recfont",f);
     document.body.setAttribute("data-recfs",load("tt_recfs","m"));}
   // 重转 / 重新断句之后，句子全换了 —— 评论、高亮、说话人按**时间**搬到新句子上。
@@ -10774,7 +10791,7 @@ margin-left: -22px;
     try{recCarry(old,recCur.lines);}catch(e){}
     recCurLine=-1;recCurWord=null;
     saveRecs();recPaintLines();recPaintHead();
-    recToast(before+" → "+recCur.lines.length+" "+trv("句")+(before===recCur.lines.length?trv("（没有可合并的）"):trv("，合并过的句子要重新翻译")));}
+    recToast(before+" → "+recCur.lines.length+" "+rtv("句")+(before===recCur.lines.length?rtv("（没有可合并的）"):rtv("，合并过的句子要重新翻译")));}
   async function recDelCur(){
     var r=recCur;if(!r)return;
     if(!await ttConfirm("删掉「"+r.title+"」？音频和文字都会没有，撤不回来。",{danger:true,anchor:document.getElementById("rec-more")}))return;
@@ -10799,7 +10816,7 @@ margin-left: -22px;
     if(lb)lb.addEventListener("click",function(e){e.stopPropagation();recLangPaint();lm.classList.toggle("on");});
     if(lm)lm.addEventListener("click",function(e){var b=e.target.closest("[data-lang]");if(!b)return;lm.classList.remove("on");recSetLang(b.getAttribute("data-lang"));});
     var tb=document.getElementById("rec-livetrb");if(tb)tb.addEventListener("click",function(){var cb=document.getElementById("rec-livetr");if(!cb)return;cb.checked=!cb.checked;save("tt_reclivetr",cb.checked);recLangPaint();
-      recToast(cb.checked?trv("边录边翻：开"):trv("边录边翻：关"));});
+      recToast(cb.checked?rtv("边录边翻：开"):rtv("边录边翻：关"));});
     var li0=document.getElementById("rec-liveimg"),im0=document.getElementById("rec-imgmenu");
     if(li0)li0.addEventListener("click",function(e){e.stopPropagation();im0.classList.toggle("on");});
     document.querySelectorAll("#rec-imgmenu,#rec-imgmenu2").forEach(function(mn){
@@ -10820,7 +10837,7 @@ margin-left: -22px;
       sys.checked=!!load("tt_recsys",false);                  // 默认关：开会要录对方时再去 ··· 打开，不然每次都弹共享窗
       sys.addEventListener("change",function(){save("tt_recsys",this.checked);});
       if(/Mac OS X/i.test(navigator.userAgent||"")&&lab)
-        lab.title=trv("开会时把对方的声音也录进来（戴耳机也行）。macOS 上只有浏览器标签页的声音抓得到 —— "+
+        lab.title=rtv("开会时把对方的声音也录进来（戴耳机也行）。macOS 上只有浏览器标签页的声音抓得到 —— "+
           "会议开在网页里就选那个标签页并勾「分享音频」；开在 Zoom/Teams 桌面版里的话 macOS 不放行，需要 BlackHole 之类的虚拟声卡。");
     })();
     document.getElementById("rec-lang").addEventListener("change",function(){save("tt_reclang",this.value);});
@@ -10836,7 +10853,7 @@ margin-left: -22px;
         recs=recs.filter(function(x){return x.id!==id;});saveRecs();recRenderList();return;}
       if(e.target.closest("[data-rnote]"))return;
       var mo=e.target.closest("[data-rmore]");
-      if(mo){var n=mo.previousElementSibling;n.classList.toggle("clip");mo.textContent=n.classList.contains("clip")?trv("展开"):trv("收起");return;}
+      if(mo){var n=mo.previousElementSibling;n.classList.toggle("clip");mo.textContent=n.classList.contains("clip")?rtv("展开"):rtv("收起");return;}
       var it=e.target.closest("[data-rid]");if(it)recOpen(it.getAttribute("data-rid"));});
     list.addEventListener("focusout",function(e){
       var n=e.target.closest("[data-rnote]");if(!n)return;
@@ -10855,7 +10872,7 @@ margin-left: -22px;
       var s=e.target.closest("[data-rt]");if(!s)return;recTab=s.getAttribute("data-rt");recPaintTab();});
     document.getElementById("rec-editall").addEventListener("click",function(){
       recEditing=!recEditing;this.classList.toggle("on",recEditing);
-      this.querySelector("span").textContent=recEditing?trv("完成"):trv("编辑转写");recPaintLines();});
+      this.querySelector("span").textContent=recEditing?rtv("完成"):rtv("编辑转写");recPaintLines();});
     document.getElementById("rec-q").addEventListener("input",function(){
       recQ=(this.value||"").trim().toLowerCase();recCurLine=-1;recPaintLines();});
     document.getElementById("rec-metarow").addEventListener("click",function(e){if(e.target.closest("#rec-copyall"))recCopyAll();});
@@ -10882,6 +10899,8 @@ margin-left: -22px;
       if(ft){save("tt_recfont",ft);recApplyFont();recMenuPaint();return;}
       var fs=b.getAttribute("data-fs");
       if(fs){save("tt_recfs",fs);recApplyFont();recMenuPaint();return;}
+      var ui=b.getAttribute("data-ui");
+      if(ui){save("tt_recui",ui);location.reload();return;}
       var m=b.getAttribute("data-rm");menu.classList.remove("on");
       if(m==="copy")recCopyAll();
       else if(m==="spk")recDiarize(recCur,false);
@@ -10905,7 +10924,7 @@ margin-left: -22px;
       if(e.target.closest("[data-untag]")){recPkAssign(null);return;}
       var rn=e.target.closest("[data-pren]");
       if(rn){var p=personById(rn.getAttribute("data-pren"));if(!p)return;
-        var v=await ttPrompt(trv("改名"),p.n,{anchor:rn});if(v===null)return;v=String(v).trim();if(!v)return;
+        var v=await ttPrompt(rtv("改名"),p.n,{anchor:rn});if(v===null)return;v=String(v).trim();if(!v)return;
         p.n=v;savePeople();recPkList();recPaintLines();recPaintHead();return;}
       var dl=e.target.closest("[data-pdel]");
       if(dl){var pid=dl.getAttribute("data-pdel"),p2=personById(pid);if(!p2)return;
@@ -11254,12 +11273,12 @@ margin-left: -22px;
     var small=await recImgShrink(blob),id="i"+uid();
     try{await recImgPut(id,small);}catch(e){ttAlert("图片存不进本机库："+String(e&&e.message||e));return;}
     var t=recNowT();
-    if(recOn){recLiveImgs.push({id:id,t:t});recToast(trv("图片记在")+" "+tsLabel(t));recDrawLive();return;}
+    if(recOn){recLiveImgs.push({id:id,t:t});recToast(rtv("图片记在")+" "+tsLabel(t));recDrawLive();return;}
     var r=recCur;if(!r)return;
     if(li===undefined||li===null||li<0)li=recLineAt(r,t);
     if(li<0){if(!r.lines.length)r.lines.push({t:0,e:1,s:""});li=0;}
     var l=r.lines[li];l.img=l.img||[];l.img.push({id:id,t:Math.round(t*10)/10});
-    saveRecs();recPaintLines();recPaintHead();recToast(trv("图片已加到")+" "+tsLabel(l.t));}
+    saveRecs();recPaintLines();recPaintHead();recToast(rtv("图片已加到")+" "+tsLabel(l.t));}
   async function recDelImage(li,id){
     var r=recCur;if(!r)return;var l=r.lines[li];if(!l||!l.img)return;
     l.img=l.img.filter(function(x){return x.id!==id;});if(!l.img.length)delete l.img;
@@ -11267,12 +11286,12 @@ margin-left: -22px;
     saveRecs();recPaintLines();recPaintHead();}
   function recAddComment(li){
     var t=recNowT();
-    if(recOn){ttPromptLong(trv("评论")+" · "+tsLabel(t),"",{}).then(function(v){if(v===null)return;v=String(v).trim();if(!v)return;
-      recLiveCms.push({t:t,cm:v});recToast(trv("评论记在")+" "+tsLabel(t));recDrawLive();});return;}
+    if(recOn){ttPromptLong(rtv("评论")+" · "+tsLabel(t),"",{}).then(function(v){if(v===null)return;v=String(v).trim();if(!v)return;
+      recLiveCms.push({t:t,cm:v});recToast(rtv("评论记在")+" "+tsLabel(t));recDrawLive();});return;}
     var r=recCur;if(!r)return;
     if(li===undefined||li===null||li<0)li=recLineAt(r,t);
     var l=r.lines[li];if(!l)return;
-    ttPromptLong(trv("评论"),l.cm||"",{}).then(function(v){if(v===null)return;l.cm=String(v).trim();if(!l.cm)delete l.cm;saveRecs();recPaintLines();});}
+    ttPromptLong(rtv("评论"),l.cm||"",{}).then(function(v){if(v===null)return;l.cm=String(v).trim();if(!l.cm)delete l.cm;saveRecs();recPaintLines();});}
   // 录完：把攒着的图片和评论挂到句子上
   function recAttachLive(r){
     if(!recLiveImgs.length&&!recLiveCms.length)return;
@@ -11285,7 +11304,7 @@ margin-left: -22px;
   function recImgsHTML(r,p){
     var h="";
     p.lines.forEach(function(li){var l=r.lines[li];if(!l.img)return;
-      l.img.forEach(function(x){h+='<figure class="rimg" data-img="'+x.id+'" data-li="'+li+'"><img alt="" data-src="'+x.id+'"><button type="button" class="x" data-imgx="'+x.id+'" title="'+esc(trv("删掉这张图"))+'">✕</button><figcaption>'+tsLabel(x.t)+'</figcaption></figure>';});});
+      l.img.forEach(function(x){h+='<figure class="rimg" data-img="'+x.id+'" data-li="'+li+'"><img alt="" data-src="'+x.id+'"><button type="button" class="x" data-imgx="'+x.id+'" title="'+esc(rtv("删掉这张图"))+'">✕</button><figcaption>'+tsLabel(x.t)+'</figcaption></figure>';});});
     return h?('<div class="imgs">'+h+'</div>'):"";}
   function recImgsFill(box){
     (box||document).querySelectorAll("img[data-src]").forEach(function(im){var id=im.getAttribute("data-src");im.removeAttribute("data-src");
@@ -11299,8 +11318,8 @@ margin-left: -22px;
       var items=await navigator.clipboard.read();
       for(var i=0;i<items.length;i++){var it=items[i],ty=it.types.filter(function(t){return /^image\//.test(t);})[0];
         if(ty){var b=await it.getType(ty);await recAddImage(b,recImgTarget());return;}}
-      recToast(trv("剪贴板里没有图片。"));
-    }catch(e){recToast(trv("浏览器不让读剪贴板，直接 Ctrl+V 粘贴也行。"));}}
+      recToast(rtv("剪贴板里没有图片。"));
+    }catch(e){recToast(rtv("浏览器不让读剪贴板，直接 Ctrl+V 粘贴也行。"));}}
 
   // ---------- 说话人：谁在什么时候说 ----------
   // 两个小模型，都在浏览器里跑、音频不出本机：
@@ -11439,7 +11458,7 @@ margin-left: -22px;
       if(recCur===r){recPaintLines();recPaintHead();}
       recRenderList();
       var named=Object.keys(r.spk||{}).length,n=clusters.length;
-      if(!quiet)recToast((isEN()?("Found "+n+" speaker(s)"+(named?(", recognised "+named):"")):("听出 "+n+" 个人"+(named?("，认出 "+named+" 个"):"")))+(isEN()?". Click a name to tag.":"。点名字可以标人。"));
+      if(!quiet)recToast((recEN()?("Found "+n+" speaker(s)"+(named?(", recognised "+named):"")):("听出 "+n+" 个人"+(named?("，认出 "+named+" 个"):"")))+(recEN()?". Click a name to tag.":"。点名字可以标人。"));
       return true;
     }).catch(function(err){dwkrBusy=false;wProg(null);if(!quiet)ttAlert("识别说话人失败："+String(err&&err.message||err));return false;});}
   // 她把某个簇标成某个人：这个簇的声纹记到那个人名下（最多留 8 份，老的挤掉）
@@ -11991,13 +12010,13 @@ margin-left: -22px;
     var h='<div class="lt-row'+(done?" done-row":"")+'" data-ltrow="'+i+'"><span class="n">'+(i+1)+'</span><div class="c">'+
       '<div class="lt-src'+(ltCfg.showSrc?"":" lt-hidden")+'">'+esc(l.s)+'</div>';
     if(l.tr&&ltCfg.showTr)h+='<div class="lt-tr">'+esc(l.tr)+'</div>';
-    if(done)h+='<span class="st"><span class="ok">'+LT_ICO.ok+'</span>'+(isEN()?('Checked · '+sc.pct+'% · played '+(+l.n||0)+'×'):('对过 · '+sc.pct+'% · 听了 '+(+l.n||0)+' 遍'))+'</span>'+ltDoneHTML(l,ops,sc);
+    if(done)h+='<span class="st"><span class="ok">'+LT_ICO.ok+'</span>'+(recEN()?('Checked · '+sc.pct+'% · played '+(+l.n||0)+'×'):('对过 · '+sc.pct+'% · 听了 '+(+l.n||0)+' 遍'))+'</span>'+ltDoneHTML(l,ops,sc);
     else h+='<span class="st">'+tsLabel(l.t)+' – '+tsLabel(l.e)+'</span>';
     return h+'</div></div>';}
   function ltCurHTML(l,i){
     var srcOn=!!ltCfg.showSrc,trOn=!!ltCfg.showTr;
     var h='<div class="lt-row cur" data-ltrow="'+i+'"><span class="n">'+(i+1)+'</span><div class="c">'+
-      '<div class="meta"><b>'+tsLabel(l.t)+' – '+tsLabel(l.e)+'</b><span>'+(isEN()?('played '+(+l.n||0)+'×'):('听了 '+(+l.n||0)+' 遍'))+'</span><span class="lt-st2" id="lt-st2"></span></div>'+
+      '<div class="meta"><b>'+tsLabel(l.t)+' – '+tsLabel(l.e)+'</b><span>'+(recEN()?('played '+(+l.n||0)+'×'):('听了 '+(+l.n||0)+' 遍'))+'</span><span class="lt-st2" id="lt-st2"></span></div>'+
       '<div class="lt-src'+(srcOn?"":" lt-hidden")+'" data-ltrev="src">'+(srcOn?ltSrcHTML(l):esc(l.s))+'</div>';
     if(trOn)h+='<div class="lt-tr" data-ltrev="tr">'+(l.tr?esc(l.tr):"（这句还没翻译）")+'</div>';
     h+='<textarea class="lt-in" id="lt-in-'+i+'" data-ltin="'+i+'" rows="3" '+
@@ -12064,7 +12083,7 @@ margin-left: -22px;
     if(ltSumOn){ltRenderSum();return;}
     var tt=document.getElementById("lt-t");if(tt)tt.textContent=ltCur.title||"（没名字）";
     var done=0;ltCur.lines.forEach(function(l){if(l.ck)done++;});
-    ltMeta(isEN()?("Sentence "+(ltIdx+1)+" / "+ltCur.lines.length+" · "+done+" done"):("第 "+(ltIdx+1)+" / "+ltCur.lines.length+" 句 · 做过 "+done+" 句"));
+    ltMeta(recEN()?("Sentence "+(ltIdx+1)+" / "+ltCur.lines.length+" · "+done+" done"):("第 "+(ltIdx+1)+" / "+ltCur.lines.length+" 句 · 做过 "+done+" 句"));
     var pb=document.getElementById("lt-pgbar");
     if(pb)pb.style.width=(ltCur.lines.length?(done/ltCur.lines.length*100):0)+"%";
     ltRenderOne();
