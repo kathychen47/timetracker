@@ -1633,6 +1633,7 @@
   #view-rec button,#view-rec input,#view-rec select,#view-rec textarea,
   #view-listen button,#view-listen input,#view-listen select,#view-listen textarea{font-family:inherit}
   #view-rec.docon .rec-home-only,#view-listen.docon .lt-home-only{display:none}
+  #view-rec .cs-row.rec-home-only,#view-listen .cs-row.lt-home-only{display:none}
   .rec-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
   .rec-bar select{padding:6px 9px;border:1px solid var(--border);border-radius:9px;background:var(--bg);color:var(--text);font-size:12.5px}
   .rec-ck{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);cursor:pointer}
@@ -1727,7 +1728,11 @@
   .rec-card .snip{margin-top:10px;font-size:14px;color:var(--muted);line-height:1.5}
   .rec-card .snip time{font-variant-numeric:tabular-nums;margin-right:8px;color:var(--primary)}
   .rec-card .snip mark{background:#ffe08a;color:#1f2430;border-radius:3px;padding:0 2px}
-  .rec-card .ft{display:flex;align-items:center;margin-top:14px;gap:6px}
+  .rec-card .ft{display:flex;align-items:center;margin-top:10px;gap:6px;min-height:28px}
+  .rec-card .cadd{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;padding:4px 6px;border-radius:7px;opacity:0;transition:opacity .12s}
+  .rec-card .bx:hover .cadd{opacity:1}
+  .rec-card .cadd:hover{background:var(--surface-2);color:var(--text)}
+  .rec-card .bx{padding:18px 20px 14px}
   .rec-card .ft .bd{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:9px;background:var(--surface);color:var(--muted);font-size:14px}
   .rec-card .ft .bd svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .rec-card .cx{position:absolute;top:14px;right:14px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:16px;width:30px;height:30px;border-radius:8px;opacity:0;transition:opacity .12s}
@@ -1736,7 +1741,7 @@
   .rec-av{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;background:var(--cat-life);flex:none}
 
   /* 详情：顶栏 */
-  .rec-top{display:flex;align-items:center;gap:10px;max-width:1040px;margin:0 auto 4px;padding:4px 0 10px}
+  .rec-top{display:flex;align-items:center;gap:10px;max-width:1040px;width:100%;margin:0 auto 4px;padding:4px 0 10px}
   .rec-icb{width:36px;height:36px;border:0;background:none;border-radius:10px;color:var(--text);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none;font:inherit}
   .rec-icb:hover,.rec-pill:hover{background:var(--surface-2)}
   .rec-icb svg,.rec-pill svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -9212,11 +9217,15 @@ margin-left: -22px;
       Array.prototype.forEach.call(root.querySelectorAll("[placeholder],[title],[aria-label]"),attrs);
       Array.prototype.forEach.call(root.querySelectorAll("[lang]"),delang);}
   }catch(e){}}
-  function initLang(){if(lang!=="en")return;
+  function initLang(){
+    // 全站中文、但录音 / 精听两页选了 English：也要扫一遍（sweepLang 自己只翻那两页范围内的）
+    if(lang!=="en"&&!(typeof recUI==="function"&&recUI()==="en"))return;
+    if(lang!=="en"){sweepLang(document.body);recObserveLang();return;}
     try{document.documentElement.setAttribute("lang","en");}catch(e){}
     // <title> 在 <head> 里，sweepLang 扫的是 document.body —— 它永远轮不到。
     try{var t=trLookup(document.title.trim());if(t!==undefined)document.title=t;}catch(e){}
-    sweepLang(document.body);
+    sweepLang(document.body);recObserveLang();}
+  function recObserveLang(){
     try{new MutationObserver(function(muts){muts.forEach(function(m){Array.prototype.forEach.call(m.addedNodes,function(nd){sweepLang(nd);});});}).observe(document.body,{childList:true,subtree:true});}catch(e){}}
 
   // ---------- categories (2-level) ----------
@@ -9672,7 +9681,7 @@ margin-left: -22px;
     var b=e.target.closest("button[data-tab]");if(!b)return;
     var t=b.getAttribute("data-tab");
     // 她：录音和精听并成一个入口，点图标「回到上次那档」—— 上次在精听，回来就还在精听
-    if(t==="rec"){var rl=load("tt_reclast","rec");if(rl==="listen")t="listen";}
+    if(t==="rec")save("tt_reclast","rec");                // 精听不再单独当一页：从录音稿里的「精听」进去
     showTab(t);
   });
 
@@ -10278,14 +10287,14 @@ margin-left: -22px;
         '<h2>'+esc(r.title||"")+'</h2>'+
         '<div class="cm">'+esc(recTimeLabel(d))+' • '+esc(recDurLabel(r.dur))+' • '+esc(me)+
           (r.noAudio?' • '+rtv("只有文字"):'')+'</div>'+
-        '<div class="cnote'+(note.length>220?" clip":"")+'" contenteditable="true" spellcheck="false" data-rnote="'+r.id+'" data-ph="'+esc(rtv("写点笔记…"))+'">'+esc(note)+'</div>'+
+        ((note||recNoteOpen[r.id])?('<div class="cnote'+(note.length>220?" clip":"")+'" contenteditable="true" spellcheck="false" data-rnote="'+r.id+'" data-ph="'+esc(rtv("写点笔记…"))+'">'+esc(note)+'</div>'):'')+
         (note.length>220?'<span class="cmore" data-rmore="1">'+rtv("展开")+'</span>':'')+snip+
-        '<div class="ft">'+recSpeakerAvs(r)+
+        '<div class="ft">'+recSpeakerAvs(r)+((note||recNoteOpen[r.id])?'':'<button type="button" class="cadd" data-rnoteadd="'+r.id+'">+ '+rtv("笔记")+'</button>')+
           '<span class="bd" title="'+rtv("句数")+'"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>'+r.lines.length+'</span></div>'+
         '</div></div>';});
     if(q&&!hit)h='<div class="dict-hint">'+rtv("没有匹配的录音。")+'</div>';
     box.innerHTML=h;}
-  var recGQ="";
+  var recGQ="",recNoteOpen={};
 
   // ---- 打开一条：边听边看 ----
   var recTab="tx",recEditing=false;
@@ -10852,12 +10861,16 @@ margin-left: -22px;
         recDrop(id);if(r0)(r0.lines||[]).forEach(function(l){(l.img||[]).forEach(function(x){recImgDrop(x.id);});});
         recs=recs.filter(function(x){return x.id!==id;});saveRecs();recRenderList();return;}
       if(e.target.closest("[data-rnote]"))return;
+      var na=e.target.closest("[data-rnoteadd]");
+      if(na){var nid=na.getAttribute("data-rnoteadd");recNoteOpen[nid]=true;recRenderList();
+        var el=list.querySelector('[data-rnote="'+nid+'"]');if(el)el.focus();return;}
       var mo=e.target.closest("[data-rmore]");
       if(mo){var n=mo.previousElementSibling;n.classList.toggle("clip");mo.textContent=n.classList.contains("clip")?rtv("展开"):rtv("收起");return;}
       var it=e.target.closest("[data-rid]");if(it)recOpen(it.getAttribute("data-rid"));});
     list.addEventListener("focusout",function(e){
       var n=e.target.closest("[data-rnote]");if(!n)return;
-      var id=n.getAttribute("data-rnote");recs.forEach(function(x){if(x.id===id){var v=(n.textContent||"").trim();if(v!==(x.note||"")){x.note=v;if(!v)delete x.note;saveRecs();}}});});
+      var id=n.getAttribute("data-rnote");recs.forEach(function(x){if(x.id===id){var v=(n.textContent||"").trim();if(v!==(x.note||"")){x.note=v;if(!v)delete x.note;saveRecs();}}});
+      delete recNoteOpen[id];setTimeout(recRenderList,120);});
     var gq=document.getElementById("rec-gq");
     if(gq)gq.addEventListener("input",function(){recGQ=(this.value||"").trim().toLowerCase();recRenderList();});
     // 详情
@@ -12752,7 +12765,7 @@ margin-left: -22px;
         var p=document.getElementById(a[1]);if(!p)return;
         p.hidden=!p.hidden;if(!p.hidden)p.innerHTML=ltSetHTML();});});
     var bk=document.getElementById("lt-back");
-    if(bk)bk.addEventListener("click",ltBack);
+    if(bk)bk.addEventListener("click",function(){if(ltCur){listenToRec();}else{ltBack();showTab("rec");}});
     var sb=document.getElementById("lt-sumbtn");
     if(sb)sb.addEventListener("click",function(){ltShowSum(!ltSumOn);});
     ltDropInit();
