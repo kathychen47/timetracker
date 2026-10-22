@@ -43,3 +43,5 @@ tools/i18n-patch.json
 # 蓝牙体重秤的探针页，当初调试用的一次性文件
 tools/ble-scale-probe.html
 
+# 会议稿（Meowly /meeting），只留本机
+meetings/
