@@ -2471,5 +2471,6 @@
 "静音": "Mute",
 "取消静音": "Unmute",
 "麦克风": "Microphone",
-"Chrome 问你要录哪里的声音：开会选「Entire Screen」并打开「Share system audio」；只录麦克风就点 Cancel。不想每次问，去 ··· 里关掉「连电脑里的声音一起录」。": "Chrome is asking which audio to capture: for a meeting pick Entire Screen and turn on Share system audio; for mic only press Cancel. To stop being asked, turn off \"Also record the computer's audio\" under ···."
+"Chrome 问你要录哪里的声音：开会选「Entire Screen」并打开「Share system audio」；只录麦克风就点 Cancel。不想每次问，去 ··· 里关掉「连电脑里的声音一起录」。": "Chrome is asking which audio to capture: for a meeting pick Entire Screen and turn on Share system audio; for mic only press Cancel. To stop being asked, turn off \"Also record the computer's audio\" under ···.",
+"接下来 Chrome 会弹一个「选择共享内容」的窗口 —— 这是它唯一能把电脑里的声音（比如会议里对方说话）录进来的办法。\n\n· 开会：点「Entire Screen」，把下面「Share system audio」打开，再点 Share。\n· 会议开在某个浏览器标签页里：点那个标签页，保持「Share with tab audio」打开。\n· 只想录自己说话：点 Cancel，就只录麦克风。\n\n不想每次都弹，去 ··· 里关掉「连电脑里的声音一起录」。": "Chrome is about to show a \"Choose what to share\" window. It is the only way it can capture the computer's audio (for example the other people in a meeting).\n\n· For a meeting: click Entire Screen, turn on Share system audio, then Share.\n· If the meeting runs in a browser tab: pick that tab and keep Share with tab audio on.\n· To record only yourself: click Cancel and only the mic is recorded.\n\nTo stop this prompt, turn off \"Also record the computer's audio\" under ···."
 }
