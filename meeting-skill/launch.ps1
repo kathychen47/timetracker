@@ -1,4 +1,4 @@
-# Otter（Meowly 版）：用本机调试通道打开 Otter app，并在后台起 Meowly 会议桥。
+﻿# Otter（Meowly 版）：用本机调试通道打开 Otter app，并在后台起 Meowly 会议桥。
 # 桌面上的「Otter (Meowly)」快捷方式就是跑这个。
 $ErrorActionPreference = 'SilentlyContinue'
 # 从 VS Code 里起的话会继承这个变量，Otter（Electron）就会当成普通 Node 跑、一闪就退
