@@ -24,7 +24,7 @@ const base = [{ t: 0, sp: "Speaker 1", text: "Hello everyone.", u: now - 60000 }
   W("state.json", { page: "/u/a", title: "T", ask: 0, segs: base.concat([{ t: 5, sp: "Speaker 1", text: "Old question?", u: now - 50000 },
     { t: 30, sp: "Speaker 2", text: "What was your sample size?", u: Date.now() - 4000 }]) });
   r = await run([], 3000);
-  ok(r.code === 0 && /对方提问/.test(r.out) && /sample size/.test(r.out) && !r.out.split("最近 6 分钟稿子")[0].includes("Old question"), "新问题触发，只带新问题：" + r.code);
+  ok(r.code === 0 && /问句/.test(r.out) && /sample size/.test(r.out) && !r.out.split("最近 6 分钟稿子")[0].includes("Old question"), "新问题触发，只带新问题：" + r.code);
   // 3. 同一个问题不会再触发
   r = await run([], 1500);
   ok(r.code === "running", "处理过的问题不再触发");
@@ -43,6 +43,28 @@ const base = [{ t: 0, sp: "Speaker 1", text: "Hello everyone.", u: now - 60000 }
   W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 50, sp: "Speaker 2", text: "And how did you recruit them?", u: now - 9000 }]) });
   r = await run([], 3000);
   ok(r.code === 0 && /问 AI/.test(r.out) && /recruit them/.test(r.out), "问 AI 触发");
+  // 6b. 提到她的名字（没问号）
+  W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 60, sp: "Speaker 2", text: "Kathy, I sent the flowchart this morning.", u: Date.now() - 4000 }]) });
+  r = await run([], 3000);
+  ok(r.code === 0 && /提到她/.test(r.out), "提到 Kathy 触发：" + r.code);
+  // 6c. 对她说话的句式（没问号）
+  W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 70, sp: "Speaker 2", text: "Maybe you could walk us through the duration calculation.", u: Date.now() - 4000 }]) });
+  r = await run([], 3000);
+  ok(r.code === 0 && /像在问她/.test(r.out), "walk us through 触发：" + r.code);
+  // 6d. 录音条上的 Pause / Stop 不算话
+  W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 75, sp: "Pause", text: "Stop?", u: Date.now() - 4000 }]) });
+  r = await run([], 1500);
+  ok(r.code === "running" || !/Stop\?/.test(r.out), "Pause / Stop 不当成问句");
+  // 6e. 对方说完一大段、停住（冷却过了）
+  { const h = JSON.parse(fs.readFileSync(path.join(DIR, "handled.json"), "utf8")); h.lastTurn = 0; h.seenU = 0; fs.writeFileSync(path.join(DIR, "handled.json"), JSON.stringify(h)); }
+  W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 90, sp: "Speaker 3", text: "So the plan is to finish cleaning the remaining worksheets this week and then start the exploratory analysis on turnaround times next Monday with the new flowchart.", u: Date.now() - 5000 }]) });
+  r = await run([], 3000);
+  ok(r.code === 0 && /说完一段/.test(r.out), "说完一大段触发：" + r.code);
+  // 6f. 冷却期内再来一段不触发
+  W("state.json", { page: "/u/a", title: "T", ask: 1, segs: base.concat([{ t: 90, sp: "Speaker 3", text: "So the plan is to finish cleaning the remaining worksheets this week and then start the exploratory analysis on turnaround times next Monday with the new flowchart.", u: Date.now() - 5000 },
+    { t: 110, sp: "Speaker 3", text: "And after that we will look at the registration delays across the three laboratories and compare them month by month for the report.", u: Date.now() - 5000 }]) });
+  r = await run([], 1800);
+  ok(r.code === "running", "45 秒冷却内不再因「说完一段」触发");
   // 7. 到时间
   W("session.json", { active: true, me: ["Kathy"], until: Date.now() - 1 });
   r = await run([], 3000);

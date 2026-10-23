@@ -15,6 +15,9 @@
   const asked = new Set();      // 正在翻的原文
   const segs = new Map();       // 这一页见过的所有段（Otter 长稿子只渲染看得见的部分，所以要自己攒）
   const lastChange = new Map(); // 段 key → 最后一次文字变化的时间（实时录音时最后一句还在长）
+  const dropped = [];           // 认错 / 被 Otter 改写掉的段 key（桥按这个从稿子里删）
+  // 实时录音条上的按钮字（旁边的计时器长得像时间戳），不是人说的话
+  const QUIET_TXT = /^(?:(?:pause|stop|resume|record(?:ing)?|mute|unmute)\s*[:·|/,]?\s*)+$/i;
   let pageKey = location.pathname;
   let warned = false;
 
@@ -121,7 +124,7 @@
         const nodes = textNodes(body).filter(n => !tsEl.contains(n) && !(spEl && spEl.contains(n)));
         const text = nodes.map(n => n.nodeValue).join(" ").replace(/\s+/g, " ").replace(/\s+([,.!?;:])/g, "$1").trim();
         out.push({ seg: row, t: parseTs(tsEl.textContent), sp: spEl ? spEl.textContent.replace(/\s+/g, " ").trim() : "",
-          text, anchor: body !== row ? body : null, last: nodes[nodes.length - 1] || null });
+          text, anchor: body !== row ? body : null, last: nodes[nodes.length - 1] || null, src: "row" });
       }
       return out;
     }
@@ -129,20 +132,36 @@
     for (const tsEl of all) {
       const seg = segmentOf(tsEl, all);
       const r = readSeg(seg, tsEl);
-      out.push({ seg, t: parseTs(tsEl.textContent), sp: r.sp, text: r.text, anchor: null, last: r.last });
+      out.push({ seg, t: parseTs(tsEl.textContent), sp: r.sp, text: r.text, anchor: null, last: r.last, src: "guess" });
     }
     return out;
   }
   function scan() {
     if (location.pathname !== pageKey) { pageKey = location.pathname; segs.clear(); lastChange.clear(); }
-    const list = collect().filter(x => x.text);
+    const list = collect().filter(x => x.text && !QUIET_TXT.test(x.text));
     const now = Date.now();
+    // 攒下来的段里哪些该扔：
+    //  · 认到 Otter 自己的段了 → 之前按长相猜的全扔（录完那一刻页面会从实时版换成整理版，同一句不能记两遍）
+    //  · 按长相猜的段，现在看得见的时间范围内却找不到了 → Otter 改写过（实时稿常把 0:17 / 0:21 重新切）
+    //  看不见的范围不动：长稿子 Otter 只渲染屏幕附近的部分
+    const here = new Set(list.map(x => x.t + "|" + x.sp));
+    const rowMode = list.some(x => x.src === "row");
+    let lo = Infinity, hi = -Infinity;
+    list.forEach(x => { if (x.t < lo) lo = x.t; if (x.t > hi) hi = x.t; });
+    for (const [k, s] of segs) {
+      if (here.has(k) || s.src !== "guess") continue;
+      if (rowMode || (s.t >= lo && s.t <= hi)) {
+        segs.delete(k); lastChange.delete(k); dropped.push(k);
+        if (dropped.length > 1000) dropped.splice(0, dropped.length - 1000);
+      }
+    }
     let maxT = -1, lastKey = null;
     for (const x of list) {
       x.key = x.t + "|" + x.sp;
       const old = segs.get(x.key);
       if (!old || old.text !== x.text) lastChange.set(x.key, now);
-      segs.set(x.key, { t: x.t, sp: x.sp, text: x.text });
+      if (!old) { const di = dropped.indexOf(x.key); if (di >= 0) dropped.splice(di, 1); }
+      segs.set(x.key, { t: x.t, sp: x.sp, text: x.text, src: x.src });
       if (x.t >= maxT) { maxT = x.t; lastKey = x.key; }
       placeTr(x);
     }
@@ -294,5 +313,5 @@
     }
   }).observe(document.body, { childList: true, subtree: true, characterData: true });
   // 给测试用
-  window.__mtr = { scan, copy, segs, cache, S };
+  window.__mtr = { scan, copy, segs, cache, S, dropped };
 })();

@@ -174,7 +174,7 @@ async function poll() {
   let v;
   try {
     v = await evalJS(`window.__mtr ? JSON.stringify({ path: location.pathname, title: document.title, ask: window.__mtrAskN || 0,
-      segs: [...window.__mtr.segs.values()] }) : null`);
+      segs: [...window.__mtr.segs.values()], dropped: window.__mtr.dropped || [] }) : null`);
   } catch (e) { return; }
   if (!v) return;
   const d = JSON.parse(v);
@@ -185,6 +185,8 @@ async function poll() {
     log("新的一场：" + safe(d.title));
   }
   let changed = false;
+  // 面板认错 / 被 Otter 改写掉的段：稿子里也删掉（录完换成整理版、实时稿重新切句时会有）
+  for (const k of d.dropped || []) if (cur.segs[k]) { delete cur.segs[k]; changed = true; }
   for (const s of d.segs) {
     const k = s.t + "|" + s.sp, o = cur.segs[k];
     if (!o || o.text !== s.text) { cur.segs[k] = { t: s.t, sp: s.sp, text: s.text, u: Date.now() }; changed = true; }

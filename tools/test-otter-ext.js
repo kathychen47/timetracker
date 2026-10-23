@@ -106,6 +106,21 @@ const html = '<!doctype html><html><body><div id="app"><h1>EDA Plan and Data Fee
   await sleep(700);
   ok(M.segs.size === 1 && M.segs.get("5|Glenn"), "换页后只剩新页面的段（实际 " + M.segs.size + "）");
 
+  // 8b. 实时录音页：录音条（计时器 + Pause / Stop）不算一句；Otter 把 0:17 / 0:21 重新切成一句 → 0:21 那条要删掉
+  list.insertAdjacentHTML("beforeend", seg("", "0:17", "We still might not want to") + seg("", "0:21", "not want to do Alaska") +
+    seg("", "0:30", "There was one other one.") + '<div class="recbar"><span>3:30</span><button>Pause</button><button>Stop</button></div>');
+  await sleep(700);
+  ok(M.segs.get("21|") && !M.segs.get("210|"), "实时：录音条没被当成一句（" + [...M.segs.keys()].join(",") + "）");
+  list.children[2].remove();
+  list.children[1].querySelector(".txt").innerHTML = "<span>We still might not want to do Alaska</span>";
+  await sleep(700);
+  ok(!M.segs.get("21|") && M.segs.get("17|").text === "We still might not want to do Alaska", "实时：被 Otter 改写掉的 0:21 删了");
+  ok(M.dropped.includes("21|"), "删掉的 key 告诉桥");
+  // 看不见的范围不动：Otter 长稿子只渲染屏幕附近，滚走的段不能删
+  list.children[0].remove();
+  await sleep(700);
+  ok(M.segs.get("5|Glenn"), "滚出屏幕（不在现有范围内）的段留着");
+
   // 9. 真 Otter 的结构（2026-10 实测）：transcript-bubble-row / speaker-name / transcript-bubble-timestamp / 一词一个 span
   function row(sp, ts, words) {
     return '<div class="flex flex-col gap-1" data-testid="transcript-bubble-row"><div class="flex items-center h-[30px]"><div class="flex items-center gap-2">' +
@@ -122,6 +137,16 @@ const html = '<!doctype html><html><body><div id="app"><h1>EDA Plan and Data Fee
   ok(r1 && r1.text === "Hello there, how are you?", "真结构：一词一个 span 拼回整句、标点贴回去：" + (r1 && r1.text));
   const b9 = list.querySelectorAll("[data-mtr='tr']");
   ok(b9.length === 2 && b9[0].previousElementSibling.classList.contains("transcript-bubble-wrapper"), "真结构：译文接在正文块后面");
+
+  // 10. 录完那一刻：同一页从实时版（按长相猜）换成整理版（bubble-row）→ 猜的全扔，不能一句记两遍
+  dom.reconfigure({ url: "https://otter.ai/u/live" });
+  list.innerHTML = seg("", "0:00", "Version one.") + seg("", "0:09", "Okay I think we are done.");
+  await sleep(700);
+  ok(M.segs.size === 2 && M.segs.get("9|"), "实时版先认出 2 段");
+  list.innerHTML = row("Speaker 1", "0:00", "Version one . Okay I think we are done .");
+  await sleep(900);
+  ok(M.segs.size === 1 && M.segs.get("0|Speaker 1"), "换成整理版后只剩 1 段（实际 " + [...M.segs.keys()].join(",") + "）");
+  ok(M.dropped.includes("0|") && M.dropped.includes("9|"), "扔掉的告诉桥");
 
   console.log("\n== Otter 扩展 ==\n" + (fail ? "x " + fail + " 条不通过，" : "") + "v " + pass + " 条通过");
   process.exit(fail ? 1 : 0);
