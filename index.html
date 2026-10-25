@@ -5734,6 +5734,12 @@ margin-left: -22px;
 <script>
 (function(){
   "use strict";
+  // 弹窗里拖着选字、松手落在弹窗外：浏览器把这次 click 算到遮罩上，弹窗就被关了。
+  // 按下和松开都在遮罩本身上，才算「点外面关闭」。
+  var ovDown=null;
+  document.addEventListener("pointerdown",function(e){ovDown=e.target;},true);
+  document.addEventListener("click",function(e){
+    var t=e.target;if(t&&t.classList&&t.classList.contains("overlay")&&ovDown!==t)e.stopPropagation();},true);
   var LS=window.localStorage;
   function load(k,d){try{var v=LS.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
   // 副屏模式：同一个 app 以 ?solo=1 装进 iframe 当第二个阅读窗口
