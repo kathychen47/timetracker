@@ -29,6 +29,8 @@ if (-not (PortUp)) {
 
 if (-not (BridgeUp)) {
   $node = (Get-Command node -ErrorAction SilentlyContinue).Source
+  # 刚装完 Node、桌面还没拿到新 PATH 时，直接去常见安装位置找
+  if (-not $node) { $node = @("$env:LOCALAPPDATA\Programs\nodejs\node.exe", "$env:ProgramFiles\nodejs\node.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1 }
   if (-not $node) { [System.Windows.Forms.MessageBox]::Show("没找到 Node.js，会议桥起不来（Otter 照常能用）。", "Otter (Meowly)") | Out-Null; exit }
   Start-Process -FilePath $node -ArgumentList "`"$here\bridge.js`"" -WindowStyle Hidden
 }
