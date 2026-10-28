@@ -2491,6 +2491,8 @@
   .exp-controls select:disabled{opacity:.5}
   .exp-ck{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--muted);cursor:pointer;user-select:none}
   .exp-ck input{margin:0}
+  .stat-fut{font-size:13.5px;padding:6px 4px}
+  .stat-fut input{width:15px;height:15px;accent-color:var(--primary);cursor:pointer}
   .rep-cut{margin-top:9px;font-size:12px;color:var(--muted)}
   .rep-table tfoot td{font-weight:650;border-top:2px solid var(--border);border-bottom:none;padding-top:8px}
   #exp-report{border:1px solid var(--border);border-radius:10px;padding:16px;background:var(--bg)}
@@ -6781,6 +6783,7 @@ margin-left: -22px;
     "加载失败（需要联网）":"Failed to load (needs internet)",
     "加载释义…":"Loading the definition…",
     "加进生词本":"Added to wordbook",
+    "勾上：还没开始的事（日历上淡的那些）也算进这一页的统计":"When ticked, events that haven't started yet (the faded ones on the calendar) count in these stats too",
     "勾了":"Checked",
     "勾选哪些方式能查词。开了「悬停」或「点击」后，鼠标指到的词会有":"Tick which ways trigger a look-up. With \"Hover\" or \"Click\" on, the word under your cursor gets a ",
     "勾选多条，一起删":"Tick several and delete them together",
@@ -6871,6 +6874,7 @@ margin-left: -22px;
     "含GST":"GST included",
     "含奇怪符号":"Odd characters",
     "含数字":"Has digits",
+    "含未开始":"Include upcoming",
     "听力":"listening",
     "听对了，拼错了 —— 不算听力问题":"Heard right, spelled wrong — not a listening problem",
     "听成":"heard as",
@@ -16388,7 +16392,7 @@ margin-left: -22px;
     d.innerHTML=document.getElementById("stats-wrap").innerHTML;
     // 导出件里用不着的：导出按钮、日期框、各种切换、「把它们也算上」那颗
     // 自家的提醒不该跟着发出去：「几条没算进统计」这种是给她自己看的
-    d.querySelectorAll(".exp-controls,.stat-custom,.stat-nav,.stat-catsel,.seg,#stat-gon,.stat-gnote,.stat-anote").forEach(function(x){x.remove();});
+    d.querySelectorAll(".exp-controls,.stat-custom,.stat-nav,.stat-fut,.stat-catsel,.seg,#stat-gon,.stat-gnote,.stat-anote").forEach(function(x){x.remove();});
     return d.innerHTML;}
   function exportPageHTML(){
     var rr=repRange(statPeriod());
@@ -16473,7 +16477,11 @@ margin-left: -22px;
   statState.rep=statView.rep||"ts";          // ts 工时表 | detail 明细
   statState.tsR=(statView.tsR===undefined||statView.tsR===null)?0.25:+statView.tsR;
   statState.tsClock=!!statView.tsClock;
-  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo,rep:statState.rep,tsR:statState.tsR,tsClock:statState.tsClock});}
+  // 「含未开始」：日期右边那个勾。她要的：「我要一个按钮在那里可以算或者不算」。
+  // 默认不勾 = 老规矩，还没开始的不算；勾上 = 这一页（图、卡片、报告）把排着的计划也算进来。
+  // 只管统计页，日历图例 / 仪表盘 / 目标进度照旧只算发生过的。
+  statState.fut=!!statView.fut;
+  function saveStatView(){save("tt_statview",{dist:statState.dist,trend:statState.trend,by:statState.by,expFrom:statState.expFrom,expTo:statState.expTo,rep:statState.rep,tsR:statState.tsR,tsClock:statState.tsClock,fut:statState.fut});}
   function repRange(p){                         // → {start,end,label,own}
     if(!statState.expFrom&&!statState.expTo)return {start:p.start,end:p.end,label:p.label,own:false};
     var f=statState.expFrom?parse(statState.expFrom):p.start,t=statState.expTo?parse(statState.expTo):p.end;
@@ -16500,12 +16508,17 @@ margin-left: -22px;
   function statPool(pred){   // 是否把 Google 日历的事件也算进来（去重）。pred 不传 = 进统计的那些
     // 先滤再短路 —— 顺序不能反：断开 Google 之后 gcalEvents 是空的，
     // 要是先短路 return events，已经归档下来的那批就无条件混进统计了。
-    var base=events.filter(pred||evCounts);
+    var fut=statState.fut;
+    var base=events.filter(function(e){
+      if(fut&&!evStarted(e)){                 // 勾了「含未开始」：还没开始的照其他规矩过（归档 / 不进统计）
+        if(e.arch&&!gcalCount)return false;
+        return pred===evRecorded||!evNoStat(e);}
+      return (pred||evCounts)(e);});
     if(!gcalCount||!gcalEvents.length)return base;
     var gids={},sig={};
     base.forEach(function(e){if(e.gid)gids[e.gid]=1;sig[e.title+"|"+e.date+"|"+e.start]=1;});
     return base.concat(gcalEvents.filter(function(e){
-      return evStarted(e)&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
+      return (fut||evStarted(e))&&!gids[e.id.slice(2)]&&!sig[e.title+"|"+e.date+"|"+e.start];}));}
   function statEvents(p){var sf=fmt(p.start),ef=fmt(p.end);
     return statPool().filter(function(e){var d=statDay(e);if(d<sf||d>ef)return false;
       return evHasCat(e,statState.cat,statState.sub);});}   // 分段事件：任一段命中就算，时长只算命中那部分
@@ -16756,7 +16769,7 @@ margin-left: -22px;
         return e.date>=_sf&&e.date<=_ef&&!_gid[e.id.slice(2)]&&!_sig[e.title+"|"+e.date+"|"+e.start];}).length;}
     // 标了「不进统计」的也数出来，明说。不然又是「某个大类凭空消失」，你无从查起。
     var noN=0,noMin=0;(function(){var _sf=fmt(p.start),_ef=fmt(p.end);
-      events.forEach(function(e){if(e&&!e.arch&&evNoStat(e)&&e.date>=_sf&&e.date<=_ef&&evStarted(e)){noN++;noMin+=evNetMin(e);}});})();
+      events.forEach(function(e){if(e&&!e.arch&&evNoStat(e)&&e.date>=_sf&&e.date<=_ef&&(statState.fut||evStarted(e))){noN++;noMin+=evNetMin(e);}});})();
     var noNote=noN?('<div class="panel stat-gnote">⊘ 这个区间有 <b>'+noN+'</b> 条标了「不进统计」'+(noMin?trv('（共 '+fmtDur(noMin)+'）'):'')+'，没算进来。</div>'):"";
     var skipN=gcalSkip+archSkip;
     var rr=repRange(p);
@@ -16769,6 +16782,7 @@ margin-left: -22px;
         '<div class="stat-nav"'+(statState.mode==="custom"?' style="display:none"':'')+'><button class="arrow" id="stat-prev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><b id="stat-label">'+esc(p.label)+'</b><button class="arrow" id="stat-next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>'+
           (statAtNow()?"":'<button class="btn stat-now" id="stat-now">'+STAT_NOWLAB[statState.mode]+'</button>')+'</div>'+
         '<div class="stat-custom"'+(statState.mode==="custom"?'':' style="display:none"')+'><input type="date" lang="zh-CN" id="stat-from" value="'+(statState.from||fmt(p.start))+'"><span>~</span><input type="date" lang="zh-CN" id="stat-to" value="'+(statState.to||fmt(p.end))+'"></div>'+
+        '<label class="exp-ck stat-fut" title="勾上：还没开始的事（日历上淡的那些）也算进这一页的统计"><input type="checkbox" id="stat-fut"'+(statState.fut?" checked":"")+'>含未开始</label>'+
         catRow+subRow+
       '</div>'+gcalNote+noNote+
       '<div class="stat-cards">'+
@@ -16824,6 +16838,8 @@ margin-left: -22px;
     if(nx)nx.addEventListener("click",function(){statShift(1);renderStatsView();});
     var nw=wrap.querySelector("#stat-now");
     if(nw)nw.addEventListener("click",function(){statState.cursor=new Date();renderStatsView();});
+    var fck=wrap.querySelector("#stat-fut");
+    if(fck)fck.addEventListener("change",function(){statState.fut=fck.checked;saveStatView();renderStatsView();});
     var sfI=wrap.querySelector("#stat-from"),stI=wrap.querySelector("#stat-to");
     if(sfI)sfI.addEventListener("change",function(){statState.from=sfI.value;renderStatsView();});
     if(stI)stI.addEventListener("change",function(){statState.to=stI.value;renderStatsView();});

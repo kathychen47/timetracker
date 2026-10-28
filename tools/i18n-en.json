@@ -894,6 +894,8 @@
 "带例句": "With example",
 "带备注": "With note",
 "带钟点": "With times",
+"含未开始": "Include upcoming",
+"勾上：还没开始的事（日历上淡的那些）也算进这一页的统计": "When ticked, events that haven't started yet (the faded ones on the calendar) count in these stats too",
 "常用虚词，不用背": "a common function word — not worth studying",
 "常驻": "Persistent",
 "平均": "Average",
