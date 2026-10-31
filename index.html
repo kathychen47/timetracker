@@ -2870,9 +2870,15 @@
   .hq{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--border);background:var(--surface);color:var(--muted);font:700 10.5px/1 inherit;font-family:inherit;margin-left:6px;vertical-align:-2px;cursor:pointer;padding:0;flex:none;transition:color .12s,border-color .12s}
   .hq:hover,.hq.on{border-color:var(--primary);color:var(--primary);background:color-mix(in srgb,var(--primary) 10%,var(--surface))}
   .set-sec-h .hq{width:15px;height:15px;font-size:10px;margin-left:5px;vertical-align:-3px;letter-spacing:0;text-transform:none}
-  .set-desc.clamp{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
-  .set-desc.clamp.open{display:block;-webkit-line-clamp:unset;overflow:visible}
-  .set-desc .hq.lead{margin:0 6px 0 0;vertical-align:-3px}
+  .set-desc.hq-hide{display:none}
+  .hq.lead{margin:0 0 0 0}
+  /* 点「?」弹出的小框：贴在标题下面，盖在别的内容上，不把下面的行往下挤 */
+  .hq-anchor{position:relative}
+  .hq-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:60;width:max-content;max-width:min(420px,calc(100vw - 48px));
+    padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);
+    box-shadow:0 8px 28px rgba(0,0,0,.28);font-size:12.5px;font-weight:400;line-height:1.65;text-align:left;white-space:normal;letter-spacing:0;text-transform:none;cursor:default}
+  .hq-pop p{margin:0}
+  .hq-pop p+p{margin-top:6px}
   .switch{position:relative;flex:none;cursor:pointer;display:inline-flex}
   .switch input{position:absolute;opacity:0;width:0;height:0}
   .sw-track{display:block;width:42px;height:24px;border-radius:99px;background:var(--surface-2);border:1px solid var(--border);position:relative;transition:background .2s}
@@ -16890,9 +16896,28 @@ margin-left: -22px;
   // ---------- 设置里的说明文字：长的收进「?」 ----------
   // 她说的：「成熟的软件是把详细信息放在标题后一个圆形的小问号里，而不是全部平铺」，
   // 又补了一句「平铺的只需要非常简单的信息，但也不能全部没有，不然不能马上识别出这是干嘛的」。
-  // 所以：短说明照旧平铺；长的只露第一行，标题旁边加一个圆形「?」，点开看全文。
+  // 所以：短说明照旧平铺；长的整段藏起来，标题旁边一个圆形「?」，点一下弹出小框看全文。
+  // 第一版是「露第一行、点问号就地展开」，她纠正了：「不是说点一下问号收起，而是文字完全隐藏，
+  // 点问号出一个小框显示具体的解释」。小框同一时间只开一个，点别处 / Esc / 再点问号就关。
   // 在运行时做而不是改 61 处 HTML：文字一个字不动，词表照旧能对上，英文也不用重翻。
   // 只处理启动时就在页面上的那些；后来由 JS 填进去的（连接状态、报错）是状态不是说明，不能藏。
+  var hqOpen=null;
+  function hqClose(){if(!hqOpen)return;var b=hqOpen;hqOpen=null;
+    b.classList.remove("on");b.title=trv("展开说明");if(b._pop){b._pop.remove();b._pop=null;}}
+  function hqShow(b){
+    hqClose();
+    var pop=document.createElement("div");pop.className="hq-pop";pop.setAttribute("role","tooltip");
+    b._descs.forEach(function(x){var p=document.createElement("p");p.innerHTML=x.innerHTML;pop.appendChild(p);});
+    // 小框可能落在 <label> 里：点框里的字别去勾那个开关（链接照常能点）
+    pop.addEventListener("click",function(e){e.stopPropagation();if(!e.target.closest("a"))e.preventDefault();});
+    var anc=b.parentElement;anc.classList.add("hq-anchor");anc.appendChild(pop);
+    // 右边放不下就往左挪，别伸出设置面板
+    var box=b.closest(".set-pane")||b.closest(".set-main")||document.body,
+        br=box.getBoundingClientRect(),pr=pop.getBoundingClientRect(),over=pr.right-(br.right-8);
+    if(over>0)pop.style.left=(-over/recZ())+"px";       // 整页有 zoom 时量出来的是放大后的像素
+    b._pop=pop;b.classList.add("on");b.title=trv("收起");hqOpen=b;}
+  document.addEventListener("click",function(e){if(hqOpen&&!e.target.closest(".hq-pop,.hq"))hqClose();},true);
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&hqOpen)hqClose();});
   function helpify(root){
     root=root||document;
     var LIM=isEN()?90:44;                     // 英文同一句话字数多一倍
@@ -16909,18 +16934,17 @@ margin-left: -22px;
       if(!host){var item=d.closest(".set-item"),ps=item&&item.previousElementSibling;   // 节标题下第一段无主的介绍
         if(ps&&ps.classList.contains("set-sec-h")&&item.querySelectorAll(".set-desc")[0]===d)host=ps;}
       if(!host){host=d;lead=true;}             // 实在无主：问号放在这行开头
-      d.classList.add("clamp");
+      d.classList.add("hq-hide");
       var b=lead?null:host.querySelector(":scope > .hq");
       if(!b){
         b=document.createElement("button");
         b.type="button";b.className="hq"+(lead?" lead":"");b.textContent="?";b._descs=[];
         b.setAttribute("aria-label",trv("展开说明"));b.title=trv("展开说明");
         b.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();
-          var open=!b.classList.contains("on");
-          b.classList.toggle("on",open);
-          b._descs.forEach(function(x){x.classList.toggle("open",open);});
-          b.title=open?trv("收起"):trv("展开说明");});
-        if(lead)d.insertBefore(b,d.firstChild);else host.appendChild(b);}
+          if(hqOpen===b)hqClose();else hqShow(b);});
+        if(lead){var w=document.createElement("div");w.className="set-desc";w.setAttribute("data-hq","1");   // 无主的：问号单独占一行
+          w.appendChild(b);d.parentNode.insertBefore(w,d);}
+        else host.appendChild(b);}
       b._descs.push(d);                        // 同一个标题下好几段：一个问号一起展开
     });}
   // ---------- settings (Gemini API key，只存本机) ----------
