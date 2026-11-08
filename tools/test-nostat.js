@@ -220,8 +220,8 @@ T("统计那些数字都走 evNetMin，记录那些都走 evRecMin", function ()
 T("报告列的是记录，不是「进统计的」", function () {
   // 导出网页那边（expHas）故意用同一把筛子，所以这儿只盯报告自己那一行。
   ok(count("var repRows=statPool(evRecorded)") === 1, "报告那条路传 evRecorded 进去");
-  ok(count("var base=events.filter(pred||evCounts);") === 1, "不传筛子时 statPool 默认就是 evCounts");
-  ok(count("events.filter(pred||evCounts)") === 1, "statPool 默认还是 evCounts —— 数字那边不受影响");
+  // f3e5aae 起 statPool 里多了「含未开始」那道闸，但不勾时走的还是这一句
+  ok(count("return (pred||evCounts)(e);") === 1, "不传筛子时 statPool 默认就是 evCounts");
 });
 
 T("日历块上有角标；设了「不进统计」就不再叠 ≈", function () {

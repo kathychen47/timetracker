@@ -136,12 +136,12 @@ T("统计只有一个出口，改一处就全覆盖", function () {
   // 目标 / 图例 / 常用排序 / AI 周总结都是 evCounts(e) 这样调的
   ok(count("evCounts(") >= 5, "带括号的调用点至少 5 处（含定义），实得 " + count("evCounts("));
   // statPool 是直接把它当 filter 的回调传进去的，没有括号
-  ok(count("events.filter(pred||evCounts)") === 1, "统计页那条路也得走同一个口径（报告那条路传自己的 pred 进来）");
+  ok(count("return (pred||evCounts)(e);") === 1, "统计页那条路也得走同一个口径（f3e5aae 后包了一层「含未开始」，不勾时还是这句）");
 });
 
 T("Google 那边的镜像也得拦一道", function () {
   // gcalCount 开着时，statPool 会把 gcalEvents 并进来 —— 那一路绕过了 evCounts
-  ok(count("return evStarted(e)&&!gids[e.id.slice(2)]") === 1,
+  ok(count("return (fut||evStarted(e))&&!gids[e.id.slice(2)]") === 1,   // fut = 统计页「含未开始」那颗勾
     "不在这儿补一刀，未来的 Google 会议照样会进统计");
 });
 

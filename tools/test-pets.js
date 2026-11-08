@@ -14,7 +14,7 @@ var pass = 0, fail = 0;
 function ok(c, m) { if (c) pass++; else { fail++; console.log("  x " + m); } }
 
 // ---- 把 PETS 注册表原样抠出来 ----
-var a = html.indexOf("  var PETS=[\n"), b = html.indexOf("\n  function petFind(k)");
+var a = html.indexOf("  var PETS=["), b = html.indexOf("  function petFind(k)");   // index.html 是 CRLF，锚点别带换行符
 if (a < 0 || b < 0) { console.log("  x 找不到 PETS 注册表"); process.exit(1); }
 var PETS = (new Function(html.slice(a, b).replace(/^\s*var PETS=/, "return ") ))();
 

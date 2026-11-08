@@ -197,7 +197,9 @@ function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
   var kv0=await ev(KV);
   await ev("document.getElementById('wb-start').click()");await sleep(1500);
   var kvF=await ev(KV),fOn=await ev("document.getElementById('flash-overlay').classList.contains('on')");
-  await ev("document.getElementById('flash-overlay').dispatchEvent(new MouseEvent('click',{bubbles:true}))");await sleep(500);
+  // 82a92f4 起，点遮罩关闭要求 pointerdown 和 click 都落在遮罩上（拖选字误关的修法），
+  // 所以合成事件也得像真鼠标一样先按下再点击
+  await ev("(function(o){o.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true}));o.dispatchEvent(new MouseEvent('click',{bubbles:true}));})(document.getElementById('flash-overlay'))");await sleep(500);
   var kvF2=await ev(KV);
   await ev("document.getElementById('wb-rapid').click()");await sleep(1500);
   var kvR=await ev(KV),rOn=await ev("!!document.querySelector('#wbtool-overlay.on #rp')");

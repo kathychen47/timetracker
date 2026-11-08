@@ -862,6 +862,9 @@
   .mn-row.neutral{opacity:.62}
   .mn-row.neutral .am{opacity:.55;font-weight:500}
   .mn-row.neutral:hover{opacity:1}
+  .mn-row.rev .am{text-decoration:line-through}
+  .mn-row.rev{opacity:.5}
+  .mn-row.rev:hover{opacity:1}
   .mn-row .am small{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:1px}
   .mn-row .am small.nofx{color:#d9534f}
   /* 删除键平时留着位置但不显形 —— 用 visibility 而不是 display，
@@ -4550,6 +4553,7 @@ margin-left: -22px;
         <div class="tax-bar">
           <div class="seg" id="tax-tabs">
             <button data-tt="rec" class="on">收入记录</button>
+            <button data-tt="pay">交税进度</button>
             <button data-tt="sum">汇总</button>
             <button data-tt="chart">图表</button>
             <button data-tt="rate">税率设置</button>
@@ -6136,6 +6140,7 @@ margin-left: -22px;
     " 天":" days",
     " 笔":" entries",
     " 笔已申报":" declared",
+    " 笔转账/存款/缴税没算":" transfers / savings / tax payments not counted",
     " 笔转账/存款没算":" transfers / savings not counted",
     " 词":" words",
     "# 我的菜谱":"# My recipes",
@@ -6191,6 +6196,8 @@ margin-left: -22px;
     "GST 总额":"GST total",
     "GST 税率 (%)":"GST rate (%)",
     "GST 还没定":"GST isn't set yet",
+    "GST已交":"GST paid",
+    "GST待交":"GST due",
     "Gemini 3 Flash · 最新":"Gemini 3 Flash · newest",
     "Gemini Flash（自动用最新版 · 推荐）":"Gemini Flash (always latest · recommended)",
     "Gemini 出错":"Gemini error",
@@ -6272,6 +6279,7 @@ margin-left: -22px;
     "· 未估":"· no estimate",
     "· 税后":"· after tax",
     "· 被":"· Hidden by the",
+    "· 转账/存款/缴税在设置里藏起来了":"· Transfers/savings/tax payments are hidden in settings",
     "· 转账/存款在设置里藏起来了":"· Transfers/savings are hidden in settings",
     "· 📁 导入":"· 📁 Imported",
     "· 📝 已对齐":"· 📝 Aligned",
@@ -6505,6 +6513,7 @@ margin-left: -22px;
     "云端（换设备也能听）":"Cloud (listen on any device)",
     "五":"Fri",
     "五金":"hardware",
+    "交税进度":"Tax payments",
     "交通":"Transport",
     "什么时候吃？（留空=不指定；可写 今天/明天 或 2026-07-28）":"When? (leave empty = no date; you can write today/tomorrow or 2026-07-28)",
     "今天之前":"everything before today",
@@ -6530,6 +6539,7 @@ margin-left: -22px;
     "从这天起记":"Track from this date",
     "付款方":"Payer",
     "付款方（可选）":"Payer (optional)",
+    "付款日":"Paid on",
     "代付":"Paid on behalf",
     "代付回款":"Paid back",
     "代写":"Freelance writing",
@@ -6663,6 +6673,7 @@ margin-left: -22px;
     "关键词，比如 cai,yuele":"Keywords, e.g. cai,yuele",
     "关键词，逗号分隔":"Keywords, comma-separated",
     "关闭对照":"Close bilingual view",
+    "其中已交":"Already paid",
     "其他":"Other",
     "其他收入":"Other income",
     "内容":"Task",
@@ -7126,6 +7137,8 @@ margin-left: -22px;
     "已记税，但 GST 还没定 —— 点一下撤回重记":"Counted for tax, but GST isn't set — click to undo and redo it",
     "已读入文件，点「下一步」":"File loaded, click \"Next\"",
     "已读入文件，点「导入」":"File loaded, click \"Import\"",
+    "已退回 · 不算":"Reversed — not counted",
+    "已退回 · 两笔抵消":"Reversed — the pair cancels out",
     "已重置":"Reset",
     "币种":"Currency",
     "带例句":"With example",
@@ -7139,6 +7152,7 @@ margin-left: -22px;
     "年":"Year",
     "年费":"Annual fee",
     "并下一句":"Merge with next",
+    "应交（预估）":"Due (estimated)",
     "应付合计":"Total payable",
     "应税额":"Taxable",
     "建在当前文件夹下面，可以一层套一层":"Created inside the current folder; nest as deep as you like",
@@ -7207,9 +7221,11 @@ margin-left: -22px;
     "或者把文件直接拖进这一页 —— 音频、字幕（srt / vtt）、txt 都行，一起拖就自动对齐":"Or just drag files onto this page — audio, subtitles (srt / vtt), txt all work; drop them together and they're aligned automatically",
     "或自己加书签":"or add your own bookmarks",
     "或选文件（.txt / .csv）":"Or pick a file (.txt / .csv)",
+    "截止":"Due by",
     "截止日期":"Due date",
     "房租":"rent",
     "房险":"home insurance",
+    "所得税":"Income tax",
     "手动改过":"Manually edited",
     "手机上没有书签栏，可用「复制代码」新建一个书签把网址替换成它。少数网站（如 GitHub）有安全限制会挡住书签脚本，属正常。":"Phones have no bookmarks bar — use \"Copy code\", create a bookmark, and replace its URL with that. A few sites (GitHub, for one) block bookmarklets for security reasons; that's normal.",
     "手机费":"mobile bill",
@@ -7224,6 +7240,7 @@ margin-left: -22px;
     "打开完整应用 ↗":"Open full app ↗",
     "打车":"taxi",
     "托运":"consignment",
+    "扣款被银行退回了：这笔和对面那笔（编号、金额一样）互相抵消，谁都不算":"The bank reversed this direct debit: it and its counterpart (same reference and amount) cancel out, so neither is counted",
     "扣款账户":"Account",
     "技能":"Skill",
     "技能 · 学习计划":"Skills · Study plan",
@@ -7500,6 +7517,7 @@ margin-left: -22px;
     "显示译文":"Show translation",
     "显示说话人":"Show speaker names",
     "显示转账/存款":"Show transfers/savings",
+    "显示转账/存款/缴税":"Show transfers/savings/tax",
     "晚餐":"dinner",
     "晚餐后":"After dinner",
     "晨会":"Standup",
@@ -7635,6 +7653,7 @@ margin-left: -22px;
     "每月固定一天扣费":"A charge on a fixed day each month",
     "每月平均":"Monthly average",
     "每月构成（实收 = 到手 + PAYE + ACC + GST）":"Monthly breakdown (Gross = Take-home + PAYE + ACC + GST)",
+    "每期进度":"Progress by period",
     "每次番茄钟「结束 / 完成 / 让位给别的网页 / 归零」都会在这里记一行，只留最近 60 条。哪次专注没记进日历，看这张表就知道卡在哪一步了——截图发我，或者点导出。":"Every time a pomodoro ends / completes / hands over to another tab / resets, a line lands here; only the last 60 are kept. If a focus session never made it into the calendar, this table shows you where it stopped — screenshot it for me, or hit export.",
     "每次背完自动在日历上添一条，时间就是你实际背的那段（不足 1 分钟不记）。":"Each session adds one calendar entry covering the time you actually spent (under 1 minute isn't logged).",
     "每笔那天的汇率":"each entry's own-day rate",
@@ -7785,6 +7804,7 @@ margin-left: -22px;
     "物业":"property fees",
     "物流":"logistics",
     "特大":"Extra large",
+    "状态":"Status",
     "环形":"Donut",
     "现在不自动翻，卡片上有按钮想翻再点 · 点一下打开":"Auto-translate is off; use the button on the card when you want it · click to turn on",
     "现在按真实日期算，零点一过就是新的一天。":"Days follow the real date right now — a new one starts the moment it hits midnight.",
@@ -7863,11 +7883,13 @@ margin-left: -22px;
     "税务账户":"Tax account",
     "税务账户已保存":"Tax account saved",
     "税后":"after tax",
+    "税已交":"Tax paid",
     "税年的税率。新税年会自动继承上一年设置。":"tax year rates. A new tax year inherits the previous year's settings automatically.",
     "税款":"Tax",
     "税率":"Rate",
     "税率 (%)":"Rate (%)",
     "税率设置":"Tax rates",
+    "税种":"Tax",
     "税额":"Tax",
     "稳的：MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM。 视频（MP4 / MOV / WebM）多数也行 —— 会自动只取声音那一轨。 不行的多半是 WMA、AMR，还有某些相机/录音笔的私有格式。":"Reliable: MP3 · M4A/AAC · WAV · FLAC · OGG/Opus · WebM. Video (MP4 / MOV / WebM) usually works too — only the audio track is taken. What won't work is mostly WMA, AMR, and some proprietary camera/recorder formats.",
     "空格":"Space",
@@ -7891,6 +7913,7 @@ margin-left: -22px;
     "筛选挡着，点一下那个来源取消":"filter — click that source again to clear it",
     "简体中文":"Simplified Chinese",
     "算":"basis",
+    "算哪一期的":"Counts toward",
     "算工资的门槛":"Salary threshold",
     "管理你自己的大类 / 小类和配色。":"Manage your own categories / sub-categories and their colors. ",
     "管理分组…":"Manage groups…",
@@ -7937,6 +7960,8 @@ margin-left: -22px;
     "编辑菜谱":"Edit recipe",
     "编辑转写":"Edit transcript",
     "缩小字号":"Smaller text",
+    "缴税":"Tax payment",
+    "缴税，不计入收支合计":"Tax payment, not counted in the totals",
     "网络错误（预览页会被拦，请在你的网站上用）":"Network error (blocked on the preview page — use it on your own site)",
     "网费":"internet bill",
     "罚款":"Fine",
@@ -8209,6 +8234,7 @@ margin-left: -22px;
     "还没进 Google 的事件":"Events not in Google yet",
     "还没选":"None selected",
     "还没选文件夹，或者授权已经过期 —— 点一下「🗂 本地文件夹」重新选一次。":"No folder chosen yet, or the permission expired — click \"🗂 Local folder\" and pick it again.",
+    "还要留着交税":"Still to set aside",
     "这一件的分类已经被删掉了，把它 ✕ 掉重放一次":"This one's category has been deleted — ✕ it and add it again",
     "这一整类都不算进总时长 / 日均 / 目标进度。日历上照样显示":"This whole category is left out of total time / daily average / goal progress. Still shown on the calendar",
     "这一格看哪本书":"Which book goes in this pane",
@@ -9068,8 +9094,8 @@ margin-left: -22px;
     ["收入合计","^收入合计(.+?)$","Total income\u00011"],
     ["没有流水","^这(.+?)(.+?)没有流水(.+?)$","No transactions\u00012 this \u00011\u00013"],
     ["点分类标签可以改，改过的以后不会被自动分类覆盖","^点分类标签可以改，改过的以后不会被自动分类覆盖(.+?)$","Click a category tag to change it — once you've changed it, auto-categorising won't overwrite it\u00011"],
-    ["笔是转账/存款，不计入合计","^灰掉的 (.+?) 笔是转账/存款，不计入合计$","The \u00011 greyed-out ones are transfers/savings and aren't in the totals"],
-    ["藏起转账/存款（","^藏起转账/存款（(.+?) 笔）$","Hide transfers/savings (\u00011)"],
+    ["笔是转账/存款/缴税，不计入合计","^灰掉的 (.+?) 笔是转账/存款/缴税，不计入合计$","The \u00011 greyed-out ones are transfers/savings/tax payments and aren't in the totals"],
+    ["藏起转账/存款/缴税（","^藏起转账/存款/缴税（(.+?) 笔）$","Hide transfers/savings/tax (\u00011)"],
     ["月","^(.+?)(.+?) 月 (.+?) 日$","\u00011\u00012/\u00013"],
     ["无汇率","^(.+?) 无汇率$","\u00011 — no rate"],
     ["账单记录（","^账单记录（(.+?) 条）$","Entries logged (\u00011)"],
@@ -25290,6 +25316,7 @@ margin-left: -22px;
     renderTaxYearSel();
     var rows=txRows(),T=txTotals(rows);
     if(taxTab==="rec")return renderTaxRecs(box,rows);
+    if(taxTab==="pay")return renderTaxPay(box);
     if(!T&&taxTab!=="rate"){box.innerHTML='<div class="tx-empty">这个税年还没有记录。<br>点右上角「+ 记一笔」添加收入。</div>';return;}
     if(taxTab==="sum")return renderTaxSum(box,rows,T);
     if(taxTab==="chart")return renderTaxChart(box,rows,T);
@@ -25298,11 +25325,23 @@ margin-left: -22px;
   function renderTaxRecs(box,rows){
     if(!rows.length){box.innerHTML='<div class="tx-empty">还没有收入记录。<br>点右上角「+ 记一笔」开始，或用「⬇️ 导出」备份。</div>';return;}
     var r2=rows.slice().reverse();
+    // 每行挂个小标：这笔收入的 GST 那一期交了没有（从交税进度推出来的，不用手勾）。
+    // 所得税交清了才标 —— 大多数时候都还没到交的时候，全标「待交」太吵。
+    var P=mnTaxProgress(),today=fmt(new Date());
+    function payTag(c){
+      var h="";
+      if(c.gstIncluded&&c.gstAmt){
+        var k=gstKeyOfDate(c.date),e=P.est["gst:"+k]||0,p=P.paid["gst:"+k]||0;
+        if(e&&p>=e-Math.max(1,e*0.02))h+='<span class="tx-gst" style="color:#1D7A54;background:#E3F4EA">GST已交</span>';
+        else if(gstDue(k)<today)h+='<span class="tx-gst" style="color:#B4720B;background:#FFF1DC">GST待交</span>';}
+      var ei=P.est["iit:"+c.ty]||0,pi=P.paid["iit:"+c.ty]||0;
+      if(ei&&pi>=ei-Math.max(1,ei*0.02))h+='<span class="tx-gst" style="color:#1D7A54;background:#E3F4EA">税已交</span>';
+      return h;}
     box.innerHTML='<div class="tx-tbl"><h4>收入记录 · '+rows.length+' 笔</h4><div class="tx-scroll"><table>'+
       '<thead><tr><th>日期</th><th class="num">实收</th><th class="num">税前收入</th><th class="num">PAYE</th><th class="num">ACC</th><th class="num">GST</th><th class="num">到手</th><th>付款方</th><th></th></tr></thead><tbody>'+
       r2.map(function(c){
         return '<tr data-id="'+c.id+'"><td>'+esc(c.date)+(c.gstIncluded?'<span class="tx-gst">含GST</span>':'')+
-          (c.gstTodo?'<span class="tx-gst" style="color:#B4720B;background:#FFF1DC">GST 待定</span>':'')+'</td>'+
+          (c.gstTodo?'<span class="tx-gst" style="color:#B4720B;background:#FFF1DC">GST 待定</span>':'')+payTag(c)+'</td>'+
           '<td class="num">'+txMoney(c.gross)+'</td><td class="num">'+txMoney(c.inc)+'</td>'+
           '<td class="num" style="color:'+TXC.tax+'">'+txMoney(c.mTax)+'</td>'+
           '<td class="num" style="color:'+TXC.acc+'">'+txMoney(c.mAcc)+'</td>'+
@@ -25312,11 +25351,72 @@ margin-left: -22px;
           '<td style="text-align:right"><button class="act" data-edit="'+c.id+'">✎</button><button class="act del" data-del="'+c.id+'">✕</button></td></tr>';}).join("")+
       '</tbody></table></div></div>';}
 
+  // 交税进度：每种税按自己的期间一行，预估应交 vs 实际已交。
+  // 「已交」从记账页认出的 IRD / ACC 扣款里来（被退回的那对不算）。
+  // 不按上面的税年下拉筛 —— 交税的时间跨税年（4~9 月的 GST 要 10 月底才交），按税年切会把已交切丢。
+  function renderTaxPay(box){
+    var P=mnTaxProgress(),today=fmt(new Date());
+    var keys={};Object.keys(P.est).forEach(function(k){keys[k]=1;});
+    Object.keys(P.paid).forEach(function(k){keys[k]=1;});
+    var ks=Object.keys(keys).sort(function(a,b){
+      var o={gst:0,iit:1,acc:2},oa=o[a.split(":")[0]],ob=o[b.split(":")[0]];
+      return oa!==ob?oa-ob:(a<b?-1:1);});
+    if(!ks.length){box.innerHTML='<div class="tx-empty">还没有能算的东西。<br>'+
+      '预估来自「收入记录」，已交来自记账页里 IRD / ACC 的扣款 —— 两边都还没有。</div>';return;}
+    var rows=ks.map(function(k){
+      var e=P.est[k],p=P.paid[k]||0,isGst=k.slice(0,3)==="gst";
+      var due=isGst?gstDue(k.split(":")[1]):"";
+      var tol=Math.max(1,(e||0)*0.02),diff=(e||0)-p,st;
+      if(e===undefined)st='<span style="color:var(--muted)">没有对应的收入记录</span>';
+      else if(diff>tol)st=(due&&due<today&&!p)
+        ?'<b style="color:#c0564f">还差 '+txMoney(diff)+'（已过截止）</b>'
+        :('还差 '+txMoney(diff));
+      else if(diff<-tol)st='<b style="color:#B4720B">比预估多 '+txMoney(-diff)+'</b> · 预估是毛估的，以申报数为准';
+      else st='<b style="color:'+TXC.income+'">✓ 交清了</b>';
+      return '<tr><td>'+taxPerLabel(k)+'</td>'+
+        '<td class="num">'+(e===undefined?"—":txMoney(e))+'</td>'+
+        '<td class="num"'+(p?' style="color:'+TXC.income+';font-weight:600"':'')+'>'+(p?txMoney(p):"—")+'</td>'+
+        '<td>'+st+'</td><td>'+(due?esc(due):"—")+'</td></tr>';}).join("");
+    var payRows=P.pays.map(function(x){
+      var t=x.t,autoKey=mnTaxPayKey({d:t.d},x.tk);
+      var sel=x.rev
+        ?'<span style="color:#c0564f">已退回 · 不算</span>'
+        :('<select class="tx-in txp-per" data-txp="'+esc(t.id)+'" style="width:auto;font-size:12.5px;padding:4px 6px">'+
+          '<option value=""'+(t.taxPeriod?"":" selected")+'>自动：'+esc(taxPerLabel(autoKey))+'</option>'+
+          ks.map(function(k){return '<option value="'+k+'"'+(t.taxPeriod===k?" selected":"")+'>'+esc(taxPerLabel(k))+'</option>';}).join("")+
+          '</select>');
+      return '<tr'+(x.rev?' style="opacity:.55;text-decoration:line-through"':'')+'>'+
+        '<td>'+esc(t.d)+'</td><td class="num">'+txMoney(-t.amt)+'</td>'+
+        '<td>'+({gst:"GST",iit:"所得税",acc:"ACC"}[x.tk.k])+'</td>'+
+        '<td style="text-decoration:none">'+sel+'</td></tr>';}).join("");
+    box.innerHTML='<div class="tx-note" style="background:var(--surface-2);border-radius:10px;padding:11px 14px;margin-bottom:14px">'+
+        '「应交」按收入记录预估，「已交」是记账页认出的 IRD / ACC 扣款（被退回的那对两笔抵消，不算）。<br>'+
+        '每笔默认挂到按日期推测的那一期 —— 会计安排的时间可能不一样，下面的下拉可以改。截止日是 IRD 的默认日期，一切以 myIR 为准。</div>'+
+      '<div class="tx-tbl"><h4>每期进度</h4><div class="tx-scroll"><table>'+
+      '<thead><tr><th>税种 · 期间</th><th class="num">应交（预估）</th><th class="num">已交</th><th>状态</th><th>截止</th></tr></thead>'+
+      '<tbody>'+rows+'</tbody></table></div></div>'+
+      (payRows?('<div class="tx-tbl"><h4>认出的缴税 · '+P.pays.length+' 笔</h4><div class="tx-scroll"><table>'+
+        '<thead><tr><th>付款日</th><th class="num">金额</th><th>税种</th><th>算哪一期的</th></tr></thead>'+
+        '<tbody>'+payRows+'</tbody></table></div></div>'):"");
+    box.querySelectorAll(".txp-per").forEach(function(s){
+      s.addEventListener("change",function(){
+        var id=this.getAttribute("data-txp"),v=this.value;
+        mnTxns.forEach(function(t){if(String(t.id)===id){if(v)t.taxPeriod=v;else delete t.taxPeriod;}});
+        mnSave();renderTax();});});}
+
   function renderTaxSum(box,rows,T){
     var mc=txMonths(rows),rt=txRates(taxYear===null?(txYears().pop()||2025):taxYear);
+    // 已交：缴税流水按期间挂到税年（gst:2026-04 和 gst:2026-10 都属于 2026/27 之前那套划分 ——
+    // 期间 key 的年份就是它的税年起点），选了税年就只算那一年的
+    var P=mnTaxProgress(),paidTot=0;
+    Object.keys(P.paid).forEach(function(k){
+      var ty=+(k.split(":")[1].slice(0,4));
+      if(taxYear===null||ty===taxYear)paidTot+=P.paid[k];});
     var cards=[["总收入（税前）",txMoney(T.income),"var(--text)"],["实际税率",T.eff.toFixed(2)+"%",TXC.tax],
       ["PAYE 所得税",txMoney(T.tax),TXC.tax],["ACC 保险费",txMoney(T.acc),TXC.acc],
       ["GST 总额",txMoney(T.gst),TXC.gst],["应付合计",txMoney(T.tax+T.acc+T.gst),TXC.total],
+      ["其中已交",txMoney(paidTot),TXC.income],
+      ["还要留着交税",txMoney(Math.max(0,T.tax+T.acc+T.gst-paidTot)),TXC.total],
       ["到手收入",txMoney(T.net),TXC.income],["记录月数",mc+" 个月","var(--muted)"]];
     var avg=[["月均收入",T.income],["月均 PAYE",T.tax],["月均 ACC",T.acc],["月均 GST",T.gst],
       ["月均应付",T.tax+T.acc+T.gst],["月均到手",T.net]];
@@ -25488,6 +25588,7 @@ margin-left: -22px;
           if(!await ttConfirm("删除这笔记录？",{danger:true,anchor:dl}))return;
           taxRecs=taxRecs.filter(function(x){return String(x.id)!==did;});saveTax();renderTax();}});
     }
+    try{mnTaxpayMigrate();}catch(e){}   // 先进税务页也要能把 IRD / ACC 的老流水补认出来
     renderTax();}
 
   // ---------- 💰 记账：银行流水自动进账本 ----------
@@ -25519,6 +25620,9 @@ margin-left: -22px;
     {k:"travel",   n:"旅行",     i:"✈️", c:"#2f8f96"},
     {k:"post",     n:"快递 / 海运", i:"🚢", c:"#9b8ec4"},
     {k:"fee",      n:"费用 / 税", i:"🏦", c:"#c9a227"},
+    // 缴税（IRD 的 GST / 所得税、ACC）不是消费 —— 税务页已经按收入把税算过一遍了，
+    // 扣款再进支出就是同一笔税看着扣两遍。跟转账一样灰掉、不进收支合计。
+    {k:"taxpay",   n:"缴税",     i:"🧾", c:"#8d99ae"},
     {k:"income",   n:"收入",     i:"💵", c:"#2e9e58"},
     {k:"saving",   n:"存款 / 资产", i:"💰", c:"#2b7d63"},
     {k:"transfer", n:"转账",     i:"↔", c:"#6f7887"},
@@ -25540,15 +25644,16 @@ margin-left: -22px;
   // 进账时允许落到的分类。转账和存款必须在里面 —— 定期的两条腿一出一进，
   // 进的那条（定期账户 +32000）如果不许判成存款，就会掉进「收入」，
   // 把收入凭空抬高几十万。
-  var MN_IN_OK={income:1,transfer:1,saving:1,other:1};
+  var MN_IN_OK={income:1,transfer:1,saving:1,other:1,taxpay:1};
   // 反过来也一样：出账不能落到「收入」。
   // 负数金额被判成收入的话，它会跑进支出的分类汇总里，
   // 出现「收入 -$1,693」这种自相矛盾的一行。
   function mnDirOk(k,inc){return inc?!!MN_IN_OK[k]:(k!=="income");}
-  // 这两类都不是"花掉"或"赚到"，一律不进收支合计：
+  // 这几类都不是"花掉"或"赚到"，一律不进收支合计：
   // 转账 = 自己账户之间倒钱（两条腿一进一出，算进去会凭空翻倍）
   // 存款 = 钱换个地方放着，取回来时也不是收入
-  var MN_NEUTRAL={transfer:1,saving:1};
+  // 缴税 = 税务页按收入算过的那份税真交出去了 —— 算支出就是同一笔税扣两遍
+  var MN_NEUTRAL={transfer:1,saving:1,taxpay:1};
   // 「这段期间存了多少」不能靠关键词加总 —— 两个账户都连了 Akahu 的话，
   // 每笔定期都被记两次（支票账户出一次、定期账户进一次），加起来永远是 0。
   // 正确做法是看定期/储蓄账户的净流入，账户类型 Akahu 已经给了（TERMDEPOSIT）。
@@ -25947,6 +26052,91 @@ margin-left: -22px;
     return done;}
   // 存量回填：规则是后设的，之前那些流水补不上 —— 同步对已存在的记录直接 early return。
   function mnAutoTaxAll(){return mnAutoTax(mnTxns);}
+
+  // ---- 缴税识别（IRD / ACC）----
+  // 银行摘要里认得出三种："INLAND REVENUE … GST" 是 GST，其他 INLAND REVENUE 的扣款
+  // 是所得税（Iit / INC TAX / PROV…），"Accident Compens" 是 ACC。
+  // 正数且不带 Reversed / NOT PAID 的 IRD 进账是真退税，照旧算收入，不归这里管。
+  // 返回 {k:"gst"|"iit"|"acc", rev:是不是被退回的那笔} 或 null。
+  function mnTaxKind(t){
+    var s=" "+String((t&&t.merchant||"")+" "+(t&&t.desc||"")+" "+(t&&t.ref||"")).toLowerCase()+" ";
+    if(s.indexOf("accident compens")>=0)return (+t.amt<0)?{k:"acc",rev:false}:null;
+    if(s.indexOf("inland revenue")<0)return null;
+    var rev=s.indexOf("reversed")>=0||s.indexOf("not paid")>=0;
+    if(+t.amt>0&&!rev)return null;
+    return {k:s.indexOf("gst")>=0?"gst":"iit",rev:rev};}
+  // 被退回的扣款：IRD 扣了没扣成，银行记一笔 "Reversed Dr DD NOT PAID <编号>" 的进账。
+  // 按编号 + 金额跟原扣款配成一对，两笔互相抵消 —— 退回不是收入，白扣的那笔也不算真交了。
+  // 返回 {这笔id: 对面那笔id}，两个方向都放进去。
+  function mnRevPairs(){
+    var m={},debs=[];
+    mnTxns.forEach(function(t){
+      var tk=mnTaxKind(t);
+      if(tk&&!tk.rev&&+t.amt<0)debs.push(t);});
+    mnTxns.forEach(function(t){
+      var tk=mnTaxKind(t);
+      if(!tk||!tk.rev||+t.amt<=0)return;
+      var nums=String(t.desc||"").match(/\d{6,}/g)||[];
+      for(var i=0;i<debs.length;i++){var d=debs[i];
+        if(m[d.id])continue;
+        if(Math.abs(Math.abs(+d.amt)-(+t.amt))>0.005)continue;
+        var hay=String((d.desc||"")+" "+(d.ref||""));
+        for(var j=0;j<nums.length;j++)
+          if(hay.indexOf(nums[j])>=0){m[t.id]=d.id;m[d.id]=t.id;i=debs.length;break;}}});
+    return m;}
+  // ---- 交税进度：期间划分 ----
+  // GST 按半年期（4~9 月、10~次年 3 月），所得税和 ACC 按税年。
+  // 每笔缴税默认挂到按日期推测的那一期；她有会计，交的时间可能跟默认不一样，
+  // 所以每笔都能在进度页手动改期（存在流水的 taxPeriod 上，跟账本一起同步）。
+  function gstKeyOfDate(ds){     // 收入发生日 → 它属于哪个 GST 期（返回期间起点 "YYYY-MM"）
+    var d=parse(ds),y=d.getFullYear(),m=d.getMonth()+1;
+    return m>=10?(y+"-10"):(m>=4?(y+"-04"):((y-1)+"-10"));}
+  function gstKeyOfPay(ds){      // 付款日 → 默认交的是「刚结束的那一期」
+    var d=parse(ds),y=d.getFullYear(),m=d.getMonth()+1;
+    return m>=10?(y+"-04"):(m>=4?((y-1)+"-10"):((y-1)+"-04"));}
+  function gstLabel(k){var y=+k.slice(0,4);
+    return k.slice(5)==="04"?(y+"-04 ~ "+y+"-09"):(y+"-10 ~ "+(y+1)+"-03");}
+  function gstDue(k){var y=+k.slice(0,4);   // IRD 的默认截止：9 月期 10-28，3 月期次年 5-07
+    return k.slice(5)==="04"?(y+"-10-28"):((y+1)+"-05-07");}
+  function taxPerLabel(key){     // "gst:2026-04" / "iit:2025" / "acc:2025" → 给人看的
+    var p=key.split(":"),nm={gst:"GST",iit:"所得税",acc:"ACC"}[p[0]]||p[0];
+    return nm+"　"+(p[0]==="gst"?gstLabel(p[1]):tyLabel(+p[1])+" 税年");}
+  function mnTaxPayKey(t,tk){    // 这笔缴税挂在哪一期：手动改过的优先，否则按日期推
+    if(t.taxPeriod)return t.taxPeriod;
+    tk=tk||mnTaxKind(t);if(!tk)return "";
+    if(tk.k==="gst")return "gst:"+gstKeyOfPay(t.d);
+    // 所得税 / ACC 的账单都是税年结束后才来的，默认算上一个税年的
+    return tk.k+":"+(taxYearOf(t.d)-1);}
+  // 应交（按税务页的收入记录算）+ 已交（按记账页认出的缴税流水算）。
+  // 交税进度页、汇总卡片、收入记录行上的小标签共用这一份。
+  function mnTaxProgress(){
+    var est={},rows;
+    try{rows=txCompute();}catch(e){rows=[];}
+    rows.forEach(function(r){
+      if(r.gstAmt){var gk="gst:"+gstKeyOfDate(r.date);est[gk]=(est[gk]||0)+r.gstAmt;}
+      if(r.mTax)est["iit:"+r.ty]=(est["iit:"+r.ty]||0)+r.mTax;
+      if(r.mAcc)est["acc:"+r.ty]=(est["acc:"+r.ty]||0)+r.mAcc;});
+    var RV=mnRevPairs(),paid={},pays=[];
+    mnTxns.forEach(function(t){
+      var tk=mnTaxKind(t);
+      if(!tk||tk.rev||+t.amt>=0)return;
+      var p={t:t,tk:tk,rev:!!RV[t.id]};
+      pays.push(p);
+      if(p.rev)return;                       // 被退回的扣款不算真交了
+      var k=mnTaxPayKey(t,tk);
+      paid[k]=(paid[k]||0)+(-t.amt);});
+    pays.sort(function(a,b){return (a.t.d<b.t.d)?1:((a.t.d>b.t.d)?-1:0);});
+    return {est:est,paid:paid,pays:pays,rv:RV};}
+  // 存量流水补一遍：缴税这一类是后加的，之前 IRD 的扣款被判成了费用、退回被判成了收入。
+  // 只动没手改过的，跑一次记个标记就不再跑。
+  function mnTaxpayMigrate(){
+    if(mnCfg.taxpayV)return;
+    mnCfg.taxpayV=1;save("tt_mncfg",mnCfg);
+    var n=0;mnTxns.forEach(function(t){
+      if(t.manual)return;
+      if(mnTaxKind(t)&&t.cat!=="taxpay"){t.cat="taxpay";n++;}});
+    if(n)mnSave();}
+
   function mnGuess(t){
     var hay=" "+((t.merchant||"")+" "+(t.desc||"")+" "+(t.ref||"")).toLowerCase()+" ";
     // 1) 你自己加的规则 —— 内置表永远猜不到「房东 Mike」这种
@@ -25957,6 +26147,10 @@ margin-left: -22px;
     //      你亲手教过的，比我猜的准。
     var lk=mnMerchKey(t),lc=(mnCfg&&mnCfg.learned||{})[lk];
     if(lc&&MN_CAT[lc]&&mnDirOk(lc,inc))return lc;
+    // 1.7) IRD / ACC：缴税和被退回的扣款都归「缴税」。关键词表分不开
+    //      「扣款、退回、真退税」这三种 —— income 的关键词里就有 inland revenue，
+    //      退回那笔会被它抢成收入、扣款会掉进费用，所以放在内置表前面专门判。
+    if(mnTaxKind(t))return "taxpay";
     // 2) 内置商户表：英文（新西兰常见商户）+ 中文（钱迹搬来的分类名）
     //    进账只许落到收入/转账/其他 —— 否则「UNIVERSITY … NET PAY」这笔工资
     //    会因为含 "university" 被判成教育支出。你自己写的规则不受这条限制。
@@ -26449,7 +26643,7 @@ margin-left: -22px;
     if(!mnInPeriod(t))return "　·　这笔在 "+esc(t.d)+"，不在当前「"+esc(mnPeriodLabel())+"」里";
     if(mnAcct&&t.acct!==mnAcct)return "　·　手记的不挂在任何账户上，被<b>账户筛选</b>挡着，切回「全部账户」就看得到";
     if(!mnIsAll()&&mnCurOf(t)!==mnCur)return "　·　现在只在看 <b>"+esc(mnCur)+"</b>，这笔是 "+esc(mnCurOf(t));
-    if(mnCfg.hideTf&&MN_NEUTRAL[t.cat]&&mnPick!==t.cat)return "　·　转账/存款在设置里藏起来了";
+    if(mnCfg.hideTf&&MN_NEUTRAL[t.cat]&&mnPick!==t.cat)return "　·　转账/存款/缴税在设置里藏起来了";
     if(mnSide==="in"&&mnSrc&&!(t.amt>0&&mnPayer(t)===mnSrc))return "　·　被<b>收入来源</b>筛选挡着，点一下那个来源取消";
     if(mnPick&&t.cat!==mnPick)return "　·　被<b>分类筛选</b>挡着，再点一下那一类取消";
     if(mnIsAll()&&!mnHasFx(t))return "　·　"+esc(mnCurOf(t))+" 还没填汇率，这笔在合计里按 <b>0</b> 算（设置 → 跨币种折算）";
@@ -26787,7 +26981,7 @@ margin-left: -22px;
       '<div class="mn-kpi"><div class="k">'+trv(afterTax?"结余（税后）":"结余")+'</div>'+
         '<div class="v'+(netShow<0?" out":"")+'">'+mnMoney(netShow)+'</div>'+
         '<div class="sub">'+(afterTax?(trv("税前")+' '+mnMoney(net)):
-          (A.tf?(A.tf+trv(" 笔转账/存款没算")):trv("收入减支出")))+'</div></div>'+
+          (A.tf?(A.tf+trv(" 笔转账/存款/缴税没算")):trv("收入减支出")))+'</div></div>'+
       (A.nSav?('<div class="mn-kpi"><div class="k">'+trv("存入")+'</div>'+
         '<div class="v'+(A.sav<0?"":" in")+'">'+mnMoney(A.sav>0?A.sav:A.sav)+'</div>'+
         '<div class="sub">'+A.nSav+trv(" 笔")+' · '+trv(A.sav>=0?"净存入":"净取出")+
@@ -26894,7 +27088,7 @@ margin-left: -22px;
         '</div></div></div>';}
 
     // 明细，按天分组，日期行右边给当天合计
-    var list=mnFiltered();
+    var list=mnFiltered(),RVP=mnRevPairs();
     if(!list.length){
       // 空列表要说清是"这段时间没有"还是"这个账户压根没拉到过" ——
       // 定期存款很多银行不给明细，只给余额，光看一句"没有流水"会以为是同步坏了。
@@ -26911,10 +27105,10 @@ margin-left: -22px;
       var WD=["日","一","二","三","四","五","六"];
       h+='<div class="panel"><h3>明细 <span style="font-weight:400;color:var(--muted);font-size:12px">'+
         '点分类标签可以改，改过的以后不会被自动分类覆盖'+
-        (A.tf?('　·　<b style="color:var(--muted)">灰掉的 '+A.tf+' 笔是转账/存款，不计入合计</b>'):"")+
+        (A.tf?('　·　<b style="color:var(--muted)">灰掉的 '+A.tf+' 笔是转账/存款/缴税，不计入合计</b>'):"")+
         '</span>'+
         (A.tf?('<button class="mn-mini" data-hidetf style="float:right;margin:0">'+
-          (mnCfg.hideTf?"显示转账/存款":"藏起转账/存款（"+A.tf+" 笔）")+'</button>'):"")+'</h3>';
+          (mnCfg.hideTf?"显示转账/存款/缴税":"藏起转账/存款/缴税（"+A.tf+" 笔）")+'</button>'):"")+'</h3>';
       var day="";
       list.forEach(function(t){
         if(t.d!==day){day=t.d;
@@ -26933,12 +27127,16 @@ margin-left: -22px;
         var c=MN_CAT[t.cat]||MN_CAT.other;
         // 转账/存款不进任何合计，视觉上要能一眼分出来 ——
         // 光靠分类标签得自己记住哪几类不算，太费脑子
-        h+='<div class="mn-row'+(MN_NEUTRAL[t.cat]?" neutral":"")+'" data-id="'+esc(t.id)+'"'+
-          (MN_NEUTRAL[t.cat]?' title="转账/存款，不计入收支合计"':"")+'>'+
+        // 被退回的扣款和退回本身配成一对，划掉 —— 看着像交了两次收了一次，其实互相抵消
+        var rvd=!!RVP[t.id];
+        h+='<div class="mn-row'+(MN_NEUTRAL[t.cat]?" neutral":"")+(rvd?" rev":"")+'" data-id="'+esc(t.id)+'"'+
+          (rvd?' title="扣款被银行退回了：这笔和对面那笔（编号、金额一样）互相抵消，谁都不算"'
+              :(MN_NEUTRAL[t.cat]?' title="'+(t.cat==="taxpay"?"缴税，不计入收支合计":"转账/存款，不计入收支合计")+'"':""))+'>'+
           '<span class="ic">'+c.i+'</span>'+
           '<span class="ds">'+esc(mnAlias(t.merchant||t.desc||"（无摘要）"))+
             (t.merchant&&t.desc?'<small>'+esc(mnAlias(t.desc))+'</small>':"")+
             (t.src==="manual"?'<small>手记</small>':(t.src==="recur"?'<small>周期</small>':(t.src==="akahu"?"":'<small>导入</small>')))+
+            (rvd?'<small style="color:#c0564f">已退回 · 两笔抵消</small>':"")+
             ledWhoTag(t.id)+'</span>'+
           '<button class="tag'+(t.manual?"":" guess")+'" data-tag="'+esc(t.id)+'" title="'+
             (t.manual?"你手动定的":"自动猜的，点一下可以改")+'">'+esc(c.n)+'</button>'+
@@ -27504,6 +27702,7 @@ margin-left: -22px;
     if(!mnTo){mnTo=mnCfg.to||mnYmd(new Date());}
     if(!mnCur)mnCur=mnCfg.defCur||mnCfg.cur||"NZD";   // 设了默认档就按它，没设才跟着上次选的走
     try{mnRecurRun();}catch(e){}                      // 周期记账：把今天及以前该记的补上
+    try{mnTaxpayMigrate();}catch(e){}                 // 老流水里的 IRD / ACC 补认成「缴税」
     if(mnCfg.scope)mnScope=mnCfg.scope;
     if(!mnInit){
       mnInit=true;
