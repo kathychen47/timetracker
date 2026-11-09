@@ -81,55 +81,62 @@ function injectSource() {
 }
 
 // ---------------- CDP ----------------
-let ws = null, wsTarget = null, seq = 0;
-const pending = new Map();
-function call(method, params) {
+// Otter app 1.13 起有了标签页：每个 otter.ai 标签是单独一个页面。
+// 每个标签都连上、都放面板；稿子跟着「最近有新句子」的那个标签记。
+const tabs = new Map();   // CDP target id → { ws, seq, pending, sig, changed, ask }
+const isOtter = t => t.type === "page" && /^https:\/\/([a-z0-9-]+\.)?otter\.ai\//.test(t.url);
+const live = () => [...tabs.values()].some(t => t.ws.readyState === 1);
+function call(tab, method, params) {
   return new Promise((res, rej) => {
-    if (!ws || ws.readyState !== 1) return rej(new Error("not connected"));
-    const id = ++seq; pending.set(id, { res, rej });
-    ws.send(JSON.stringify({ id, method, params: params || {} }));
-    setTimeout(() => { if (pending.has(id)) { pending.delete(id); rej(new Error("timeout " + method)); } }, 8000);
+    if (tab.ws.readyState !== 1) return rej(new Error("not connected"));
+    const id = ++tab.seq; tab.pending.set(id, { res, rej });
+    tab.ws.send(JSON.stringify({ id, method, params: params || {} }));
+    setTimeout(() => { if (tab.pending.has(id)) { tab.pending.delete(id); rej(new Error("timeout " + method)); } }, 8000);
   });
 }
-async function evalJS(expr) {
-  const r = await call("Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: false });
+async function evalJS(tab, expr) {
+  const r = await call(tab, "Runtime.evaluate", { expression: expr, returnByValue: true, awaitPromise: false });
   if (r && r.exceptionDetails) throw new Error(r.exceptionDetails.text || "eval error");
   return r && r.result ? r.result.value : undefined;
 }
-async function connect() {
+async function attach(page) {
+  const tab = { ws: new WebSocket(page.webSocketDebuggerUrl), seq: 0, pending: new Map(), sig: "", changed: 0, ask: null };
+  tabs.set(page.id, tab);
+  try {
+    await new Promise((res, rej) => { tab.ws.addEventListener("open", res, { once: true }); tab.ws.addEventListener("error", rej, { once: true }); });
+    tab.ws.addEventListener("message", async ev => {
+      const m = JSON.parse(ev.data);
+      if (m.id && tab.pending.has(m.id)) { const p = tab.pending.get(m.id); tab.pending.delete(m.id); m.error ? p.rej(new Error(m.error.message)) : p.res(m.result); return; }
+      if (m.method === "Runtime.bindingCalled" && m.params.name === "__mtrSend") {
+        let req; try { req = JSON.parse(m.params.payload); } catch (e) { return; }
+        const res = req.msg && req.msg.type === "mtr-translate" ? await translate(req.msg) : { ok: false, error: "unknown" };
+        try { await evalJS(tab, `window.__mtrReply(${+req.id}, ${JSON.stringify(res)})`); } catch (e) {}
+      }
+    });
+    tab.ws.addEventListener("close", () => { tabs.delete(page.id); log(tabs.size ? "关了一个 Otter 标签" : "和 Otter 的连接断了，等它回来…"); });
+    await call(tab, "Runtime.enable");
+    await call(tab, "Page.enable");
+    await call(tab, "Runtime.addBinding", { name: "__mtrSend" });
+    const src = injectSource();
+    await call(tab, "Page.addScriptToEvaluateOnNewDocument", { source: src });
+    await evalJS(tab, src);
+    log("连上 Otter 标签：" + page.url.replace(/\?.*$/, ""));
+  } catch (e) {
+    tabs.delete(page.id); try { tab.ws.close(); } catch (_) {}   // 下一轮再试
+    log("连 Otter 标签失败：" + (e && e.message || "连不上"));
+  }
+}
+async function connect() {   // 新开的标签补连上；关掉的标签 ws 自己会断、从 tabs 里删掉
   let list;
   try { list = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/list`)).json(); }
-  catch (e) { return false; }
-  const page = list.find(t => t.type === "page" && /^https:\/\/([a-z0-9-]+\.)?otter\.ai\//.test(t.url));
-  if (!page) return false;
-  if (ws && wsTarget === page.id && ws.readyState === 1) return true;
-  if (ws) try { ws.close(); } catch (e) {}
-  ws = new WebSocket(page.webSocketDebuggerUrl); wsTarget = page.id;
-  await new Promise((res, rej) => { ws.addEventListener("open", res, { once: true }); ws.addEventListener("error", rej, { once: true }); });
-  ws.addEventListener("message", async ev => {
-    const m = JSON.parse(ev.data);
-    if (m.id && pending.has(m.id)) { const p = pending.get(m.id); pending.delete(m.id); m.error ? p.rej(new Error(m.error.message)) : p.res(m.result); return; }
-    if (m.method === "Runtime.bindingCalled" && m.params.name === "__mtrSend") {
-      let req; try { req = JSON.parse(m.params.payload); } catch (e) { return; }
-      const res = req.msg && req.msg.type === "mtr-translate" ? await translate(req.msg) : { ok: false, error: "unknown" };
-      try { await evalJS(`window.__mtrReply(${+req.id}, ${JSON.stringify(res)})`); } catch (e) {}
-    }
-  });
-  ws.addEventListener("close", () => { ws = null; wsTarget = null; log("和 Otter 的连接断了，等它回来…"); });
-  await call("Runtime.enable");
-  await call("Page.enable");
-  await call("Runtime.addBinding", { name: "__mtrSend" });
-  const src = injectSource();
-  await call("Page.addScriptToEvaluateOnNewDocument", { source: src });
-  await evalJS(src);
-  log("连上 Otter：" + page.url.replace(/\?.*$/, ""));
-  return true;
+  catch (e) { return; }
+  for (const p of list.filter(isOtter)) if (!tabs.has(p.id)) await attach(p);
 }
 
 // ---------------- 稿子落盘 ----------------
 let cur = { page: "", title: "", started: 0, updated: 0, ask: 0, segs: {} };
 try { cur = Object.assign(cur, JSON.parse(fs.readFileSync(path.join(DIR, "state.json"), "utf8"))); if (Array.isArray(cur.segs)) { const o = {}; cur.segs.forEach(s => o[s.t + "|" + s.sp] = s); cur.segs = o; } } catch (e) {}
-let lastAskSeen = null;
+const seen = new Map();   // 这次桥起来以后记过的每场：page → cur，标签之间切来切去时接着记，不重开一份
 const fmtT = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0"); };
 const stamp = d => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0") + " " +
@@ -170,38 +177,48 @@ function archive() {
   if (!Object.keys(cur.segs).length) return;
   try { atomic(path.join(DIR, "archive", stamp(new Date(cur.started || Date.now())) + " " + safe(cur.title) + ".md"), markdown()); } catch (e) {}
 }
+const SNAP = `window.__mtr ? JSON.stringify({ path: location.pathname, title: document.title, ask: window.__mtrAskN || 0,
+  segs: [...window.__mtr.segs.values()], dropped: window.__mtr.dropped || [] }) : null`;
 async function poll() {
-  let v;
-  try {
-    v = await evalJS(`window.__mtr ? JSON.stringify({ path: location.pathname, title: document.title, ask: window.__mtrAskN || 0,
-      segs: [...window.__mtr.segs.values()], dropped: window.__mtr.dropped || [] }) : null`);
-  } catch (e) { return; }
-  if (!v) return;
-  const d = JSON.parse(v);
-  // 换了一场会（Otter 里点开了另一条录音）：旧的存档，新的从头记
-  if (d.segs.length && d.path !== cur.page) {
-    archive();
-    cur = { page: d.path, title: d.title, started: Date.now(), updated: 0, ask: cur.ask || 0, segs: {} };
-    log("新的一场：" + safe(d.title));
+  let d = null, askNew = 0;
+  for (const tab of tabs.values()) {
+    let v; try { v = await evalJS(tab, SNAP); } catch (e) { continue; }
+    if (!v) continue;
+    const s = JSON.parse(v);
+    // 「问 AI」哪个标签点的都算；页面刷新过计数会从 0 重来
+    if (tab.ask !== null && s.ask > tab.ask) askNew += s.ask - tab.ask;
+    tab.ask = s.ask;
+    if (!s.segs.length) continue;
+    const sig = s.path + "|" + s.segs.length + "|" + s.segs.reduce((n, x) => n + x.text.length, 0);
+    if (sig !== tab.sig) { tab.sig = sig; tab.changed = Date.now(); }
+    if (!d || tab.changed > d.changed) d = Object.assign(s, { changed: tab.changed });
   }
-  let changed = false;
+  if (askNew) { cur.ask = (cur.ask || 0) + askNew; log("问 AI"); }
+  if (!d) { if (askNew) writeAll(); return; }
+  // 换了一场会（点开了另一条录音，或者别的标签里有新句子）：旧的存档，另一场接着记 / 从头记
+  if (d.path !== cur.page) {
+    archive();
+    if (cur.page) seen.set(cur.page, cur);
+    const ask = cur.ask || 0;
+    cur = seen.get(d.path) || { page: d.path, title: d.title, started: Date.now(), updated: 0, segs: {} };
+    cur.ask = Math.max(cur.ask || 0, ask);      // wait.js 靠 ask 只增不减来认「点了问 AI」
+    log("换到：" + safe(d.title));
+  }
+  let changed = askNew > 0;
   // 面板认错 / 被 Otter 改写掉的段：稿子里也删掉（录完换成整理版、实时稿重新切句时会有）
   for (const k of d.dropped || []) if (cur.segs[k]) { delete cur.segs[k]; changed = true; }
   for (const s of d.segs) {
     const k = s.t + "|" + s.sp, o = cur.segs[k];
     if (!o || o.text !== s.text) { cur.segs[k] = { t: s.t, sp: s.sp, text: s.text, u: Date.now() }; changed = true; }
   }
-  if (d.title && d.title !== cur.title && d.segs.length) { cur.title = d.title; changed = true; }
-  if (lastAskSeen === null) lastAskSeen = d.ask;
-  if (d.ask > lastAskSeen) { cur.ask = (cur.ask || 0) + (d.ask - lastAskSeen); lastAskSeen = d.ask; changed = true; log("问 AI"); }
-  else if (d.ask < lastAskSeen) lastAskSeen = d.ask;                  // 页面刷新过，计数从 0 重来
+  if (d.title && d.title !== cur.title) { cur.title = d.title; changed = true; }
   if (changed) writeAll();
 }
 
 // ---------------- 小 HTTP：给 /meeting 查状态、手动「问 AI」 ----------------
 http.createServer((req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  if (req.url === "/ping") { res.end(JSON.stringify({ ok: true, otter: !!(ws && ws.readyState === 1), dir: DIR, segs: Object.keys(cur.segs).length, title: cur.title })); return; }
+  if (req.url === "/ping") { res.end(JSON.stringify({ ok: true, otter: live(), tabs: tabs.size, dir: DIR, segs: Object.keys(cur.segs).length, title: cur.title })); return; }
   if (req.url === "/ask" && req.method === "POST") { cur.ask = (cur.ask || 0) + 1; writeAll(); res.end('{"ok":true}'); return; }
   res.statusCode = 404; res.end();
 }).on("error", e => { if (e.code === "EADDRINUSE") { log("已经有一个桥在跑了，这个退出"); process.exit(0); } log("HTTP 出错：" + e.message); })
@@ -209,7 +226,7 @@ http.createServer((req, res) => {
 
 (async function loop() {
   for (;;) {
-    try { if (!(ws && ws.readyState === 1)) await connect(); else await poll(); } catch (e) { log("出错：" + e.message); }
-    await new Promise(r => setTimeout(r, ws && ws.readyState === 1 ? 1000 : 3000));
+    try { await connect(); if (live()) await poll(); } catch (e) { log("出错：" + e.message); }
+    await new Promise(r => setTimeout(r, live() ? 1000 : 3000));
   }
 })();
