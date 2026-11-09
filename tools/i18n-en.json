@@ -2533,5 +2533,20 @@
 "税已交": "Tax paid",
 " 笔转账/存款/缴税没算": " transfers / savings / tax payments not counted",
 "显示转账/存款/缴税": "Show transfers/savings/tax",
-"· 转账/存款/缴税在设置里藏起来了": "· Transfers/savings/tax payments are hidden in settings"
+"· 转账/存款/缴税在设置里藏起来了": "· Transfers/savings/tax payments are hidden in settings",
+"网站图标": "Site icon",
+"浏览器标签页上和左上角的小猫。换了立刻生效，跟着云同步走，别的设备也会换。": "The little cat on the browser tab and in the top-left corner. Changes apply right away and follow cloud sync, so your other devices switch too.",
+"像素蓝猫（默认）": "Pixel blue cat (default)",
+"眨眼蓝虎斑": "Winking blue tabby",
+"蓝花白猫": "Blue-patched white cat",
+"趴着睡蓝猫": "Sleepy blue cat",
+"深蓝圆眼": "Round-eyed navy cat",
+"蓝毛团": "Fluffy blue cat",
+"蓝白眨眼": "Winking blue-and-white cat",
+"橘猫": "Orange tabby",
+"三花": "Calico",
+"趴着睡灰虎斑": "Sleepy grey tabby",
+"黑猫": "Black cat",
+"白毛团": "Fluffy white cat",
+"灰白眨眼": "Winking grey-and-white cat"
 }
