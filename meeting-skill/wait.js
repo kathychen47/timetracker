@@ -4,10 +4,12 @@
 //   · 对她说话的句式（what do you think / could you / any thoughts / walk us through …），不一定有问号
 //   · 带问号的话
 //   · 别人说完一大段（≥ 20 词）后停了约 4 秒 —— 像是在等人接话（最少隔 45 秒才触发一次）
+//   · 冷场：8 秒没有任何人说话（每段沉默只报一次）
 //   · 她在 Otter 面板里点了「问 AI」
 //   · 到了 session.json 里设的结束时间
 // 只看「说完了」的句子：最后一句还在长就先等（2.5 秒没变才算说完）。
-// 用法：node wait.js [--fresh]      --fresh = 刚开始盯，之前的都当作已处理
+// 用法：node wait.js [--fresh] [--class]      --fresh = 刚开始盯，之前的都当作已处理
+//   --class = 上课模式：只认问句、提到她、点「问 AI」，不报「像在问她」「说完一段」「冷场」（她讲课时这些一直在发生）
 const fs = require("fs"), path = require("path"), os = require("os");
 const DIR = process.env.MEETING_LIVE_DIR || path.join(os.homedir(), "meeting-live");
 const F = n => path.join(DIR, n);
@@ -15,7 +17,9 @@ const read = (n, d) => { try { return JSON.parse(fs.readFileSync(F(n), "utf8"));
 const fmt = t => { t = Math.max(0, Math.round(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = t % 60;
   return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(s).padStart(2, "0"); };
 const fresh = process.argv.includes("--fresh");
+const classMode = process.argv.includes("--class");
 const SETTLE = 2500, TURN_GAP = 4000, TURN_WORDS = 20, TURN_COOLDOWN = 45000;
+const SILENCE = 8000, SILENCE_MAX = 30000;   // 稿子 8 秒没动 = 冷场；超过 30 秒的老沉默（刚起 wait.js 时）不算
 
 const ses = read("session.json", {}) || {};
 const me = (ses.me || ["Kathy", "Kathy Chen", "Kaisi", "Kaisi Chen"]).map(x => x.toLowerCase());
@@ -71,14 +75,18 @@ const started = Date.now();
     const add = (r, s) => { if (!reasons.includes(r)) reasons.push(r); if (s && !target.includes(s)) target.push(s); };
     fresh.forEach(s => {
       if (NAME_RE && NAME_RE.test(s.text)) add("提到她", s);
-      if (CUE_RE.test(s.text.replace(/(you know|you see|you guys|thank you|see you)/gi, " "))) add("像在问她 / 等她回应", s);   // 口头禅不算
+      if (!classMode && CUE_RE.test(s.text.replace(/(you know|you see|you guys|thank you|see you)/gi, " "))) add("像在问她 / 等她回应", s);   // 口头禅不算
       if (/\?/.test(s.text)) add("问句", s);
     });
     // 别人说完一大段、停住了
-    if (!reasons.length && last && !isMe(last.sp) && now - (last.u || 0) > TURN_GAP && now - (handled.lastTurn || 0) > TURN_COOLDOWN) {
+    if (!classMode && !reasons.length && last && !isMe(last.sp) && now - (last.u || 0) > TURN_GAP && now - (handled.lastTurn || 0) > TURN_COOLDOWN) {
       const turn = segs.filter(s => (s.u || 0) > (handled.seenU || 0) && !isMe(s.sp));
       const words = turn.reduce((n, s) => n + s.text.split(/\s+/).filter(Boolean).length, 0);
       if (words >= TURN_WORDS) { add("对方说完一段、停下来了"); turn.slice(-3).forEach(s => target.push(s)); handled.lastTurn = now; }
+    }
+    // 冷场：谁都没说话（包括她自己），每段沉默只报一次
+    if (!classMode && !reasons.length && last && now - (last.u || 0) > SILENCE && now - (last.u || 0) < SILENCE_MAX && (last.u || 0) !== handled.silenceU) {
+      add("冷场了（" + Math.round((now - (last.u || 0)) / 1000) + " 秒没人说话）"); target.push(last);
     }
     const asked = (st.ask || 0) > (handled.ask || 0);
     if (asked) {
@@ -89,6 +97,7 @@ const started = Date.now();
       segs.forEach(s => { if (settled(s)) handled.keys[s.t + "|" + s.sp] = s.text.length; });
       handled.ask = st.ask || 0;
       handled.seenU = Math.max(handled.seenU || 0, ...segs.filter(settled).map(s => s.u || 0));
+      if (last) handled.silenceU = last.u || 0;   // 这段沉默已经报过（或刚回答过），别再报
       save();
       console.log(context(st, reasons, target));
       process.exit(0);
